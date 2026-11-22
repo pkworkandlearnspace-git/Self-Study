@@ -5,7 +5,7 @@
 |---|---|---|
 | National olympiad round 1 | | |
 | National final / team selection | | |
-| IOI 2027 | summer 2027 | check eligibility |
+| IOI 2027 (Germany) | summer 2027 | eligible if ≤ 20 on 1 July 2027 and in secondary school Sep–Dec 2026 |
 
 ## Status board
 ⬜ not started · 🟨 in progress · ✅ done
