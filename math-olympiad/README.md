@@ -31,6 +31,7 @@ Modules 02–05 run **in parallel**: rotate topics weekly instead of finishing o
 - **Games lab:** Nim vs a perfect computer, P/N tables and Grundy values.
 - **Which technique? quiz:** 22 classic problems; pick the tool that cracks each one (auto-graded).
 - **Invariant & pigeonhole lab:** play erase-and-replace games, drag points in a square, tile a mutilated chessboard.
+- **Mock exam timer & log:** 4.5 h countdown with phases, strict grading, score chart.
 - **Flashcards:** spaced repetition for theorems, lemmas, and techniques.
 
 ## Weekly routine (~10–12 h)

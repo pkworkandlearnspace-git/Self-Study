@@ -20,6 +20,8 @@
 | 06 | Contest practice | ⬜ | mocks: | |
 
 ## Mock exam log
+Run mocks with the [Mock exam timer & log](interactive/mock-exam.html), then paste its Markdown export here.
+
 | Date | Source | P1 | P2 | P3 | Total /21 | Key lesson |
 |---|---|---|---|---|---|---|
 | | | | | | | |
