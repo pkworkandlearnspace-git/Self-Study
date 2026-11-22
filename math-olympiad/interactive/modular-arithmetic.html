@@ -15,6 +15,16 @@
   table.pow tr.prim th:first-child { background: var(--good); color: #fff; }
   table.pow tr.sel td, table.pow tr.sel th { outline: 2px solid var(--c2); outline-offset: -2px; }
   table.pow tr { cursor: pointer; }
+  .strip { display: flex; flex-wrap: wrap; gap: 4px; }
+  .strip span { min-width: 30px; padding: 4px 0; text-align: center; font-family: var(--mono); font-size: 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-2); cursor: pointer; }
+  .strip span.qr { background: var(--good); border-color: var(--good); color: #fff; }
+  .strip span.sel { outline: 2px solid var(--c2); outline-offset: 1px; }
+  table.rec { border-collapse: collapse; font-family: var(--mono); font-size: 11px; }
+  table.rec td, table.rec th { width: 24px; height: 22px; text-align: center; border: 1px solid var(--border); }
+  table.rec th { color: var(--muted); font-weight: 500; background: var(--surface-2); }
+  table.rec td.p1 { background: var(--accent-soft); color: var(--accent); }
+  table.rec td.m1 { background: var(--bad); color: #fff; font-weight: 700; }
+  table.rec td.hot { outline: 2px solid var(--c2); outline-offset: -2px; }
 </style>
 </head>
 <body>
@@ -43,13 +53,47 @@
   <p class="note">Rows: bases coprime to n. Blue cells: a<sup>k</sup> ≡ 1. A <span class="good"><b>green</b></span> row label = primitive root (order = φ(n)). Click a row to select that base.</p>
   <div class="card scroll-x" id="tablewrap"></div>
 
+
+  <h2 id="qr">Quadratic residues (p an odd prime)</h2>
+  <p class="note">a is a <b>quadratic residue</b> (QR) mod p if x² ≡ a has a solution. Squaring is 2-to-1 on the units (x and −x have the same square), so exactly (p−1)/2 units are QRs. The <b>Legendre symbol</b> (a/p) is +1 for a QR, −1 for a non-residue, 0 if p ∣ a. Euler's criterion computes it: (a/p) ≡ a<sup>(p−1)/2</sup> (mod p).</p>
+  <div class="grid two">
+    <div class="card">
+      <svg class="plot" id="sqclock" viewBox="-260 -260 520 520" aria-label="Squaring map x to x squared mod p"></svg>
+      <div class="legend" style="justify-content:center;margin-top:8px">
+        <span><i style="background:var(--c4)"></i>arrow x → x² mod p (both x and p−x land on the same square)</span>
+        <span><i style="background:var(--good)"></i>QR</span>
+      </div>
+    </div>
+    <div class="controls">
+      <label class="ctl">Prime p
+        <select id="p"></select></label>
+      <div class="strip" id="strip" aria-label="Residues 1 to p-1, green = QR. Click one."></div>
+      <div class="card" id="qrstats"></div>
+      <div class="callout" id="qrinsight"></div>
+    </div>
+  </div>
+
+  <h3>Quadratic reciprocity at a glance</h3>
+  <p class="note">Cell (p, q) shows (p/q)·(q/p) for distinct odd primes. The law says it equals (−1)<sup>((p−1)/2)·((q−1)/2)</sup>: it is −1 <b>exactly</b> when p ≡ q ≡ 3 (mod 4). The red cells sit exactly where the row prime and the column prime are both ≡ 3 (mod 4). Hover or tap a cell for the details.</p>
+  <div class="card scroll-x" id="recwrap"></div>
+  <p class="note" id="recinfo">&nbsp;</p>
+  <details class="card" style="margin-top:12px"><summary><b>Practice: use the laws (answers inside)</b></summary>
+    <ol style="margin:8px 0 0;padding-left:20px">
+      <li>Is 3 a QR mod 13? <i>13 ≡ 1 (mod 4), so (3/13) = (13/3) = (1/3) = +1. Indeed 4² = 16 ≡ 3.</i></li>
+      <li>Is 5 a QR mod 23? <i>5 ≡ 1 (mod 4), so (5/23) = (23/5) = (3/5) = −1 (squares mod 5 are 1, 4). No.</i></li>
+      <li>For which odd primes p is 2 a QR? <i>(2/p) = (−1)<sup>(p²−1)/8</sup>: +1 iff p ≡ ±1 (mod 8). Check p = 7 (3² ≡ 2) and p = 5 (no).</i></li>
+      <li>Show every prime divisor p of n² + 1 is 2 or ≡ 1 (mod 4). <i>n² ≡ −1 (mod p) means (−1/p) = 1, i.e. (−1)<sup>(p−1)/2</sup> = 1, so p ≡ 1 (mod 4).</i></li>
+    </ol>
+  </details>
+
   <h2>Try these</h2>
   <div class="card">
     <ol style="margin:0;padding-left:20px">
       <li>For prime n, does every order divide n − 1? (Fermat + order lemma.)</li>
       <li>For n = 13, count the elements of each order d. Compare with φ(d).</li>
-      <li>Find an n with <b>no</b> primitive root (try 8, 12, 15). Primitive roots exist only for n = 1, 2, 4, p<sup>k</sup>, 2p<sup>k</sup>.</li>
-      <li>For prime p, is (p−1)! ≡ −1? Check Wilson's theorem in the panel.</li>
+      <li>Find an n with <b>no</b> primitive root (try 8, 12, 15). Primitive roots exist exactly for n = 1, 2, 4, p<sup>k</sup>, 2p<sup>k</sup> with p an <b>odd</b> prime (so 8 = 2³ has none).</li>
+      <li>For prime p, is (p−1)! ≡ −1? Check Wilson's theorem in the panel. For composite n &gt; 4, (n−1)! ≡ 0.</li>
+      <li>In the QR panel, compare the QRs mod p with the <i>even</i> powers of a primitive root. Why are they the same set?</li>
     </ol>
   </div>
   <footer class="foot">Part of the Self-Study repo · math-olympiad/interactive</footer>
@@ -129,6 +173,79 @@ function update() {
 $("n").addEventListener("input", update); $("a").addEventListener("input", update);
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", update);
 update();
+
+// ---------- Quadratic residues ----------
+const oddPrimes = []; for (let q = 3; q < 100; q++) if (isPrime(q)) oddPrimes.push(q);
+$("p").innerHTML = oddPrimes.map((q) => `<option ${q === 13 ? "selected" : ""}>${q}</option>`).join("");
+let qrSel = 3;
+const legendre = (a, p) => { a = ((a % p) + p) % p; if (a === 0) return 0; return powmod(a, (p - 1) / 2, p) === 1 ? 1 : -1; };
+function drawSq(p) {
+  const svg = $("sqclock"), NS = "http://www.w3.org/2000/svg"; svg.innerHTML = "";
+  const R = 215, pos = (i) => [R * Math.sin((2 * Math.PI * i) / p), -R * Math.cos((2 * Math.PI * i) / p)];
+  const mk = (tag, at) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); svg.appendChild(e); return e; };
+  const defs = mk("defs", {}); const m = document.createElementNS(NS, "marker");
+  Object.entries({ id: "ah", viewBox: "0 0 10 10", refX: 9, refY: 5, markerWidth: 6, markerHeight: 6, orient: "auto-start-reverse" }).forEach(([k, v]) => m.setAttribute(k, v));
+  const pa = document.createElementNS(NS, "path"); pa.setAttribute("d", "M0,0 L10,5 L0,10 z"); pa.setAttribute("fill", cv("--c4")); m.appendChild(pa); defs.appendChild(m);
+  mk("circle", { cx: 0, cy: 0, r: R, fill: "none", stroke: cv("--border") });
+  for (let x = 1; x < p; x++) {
+    const y = (x * x) % p; if (y === x) continue;
+    const [x1, y1] = pos(x), [x2, y2] = pos(y), hl = x === qrSel || p - x === qrSel || y === qrSel;
+    const k = 0.93; // stop short of the dot
+    mk("line", { x1, y1, x2: x1 + (x2 - x1) * k, y2: y1 + (y2 - y1) * k, stroke: cv("--c4"), "stroke-width": hl ? 2.6 : 1, opacity: hl ? 1 : 0.35, "marker-end": "url(#ah)" });
+  }
+  for (let i = 0; i < p; i++) {
+    const [x, y] = pos(i), L = legendre(i, p);
+    mk("circle", { cx: x, cy: y, r: p > 50 ? 4 : 6, fill: L === 1 ? cv("--good") : L === 0 ? cv("--muted") : cv("--surface-2"), stroke: i === qrSel ? cv("--c2") : cv("--border"), "stroke-width": i === qrSel ? 3 : 1 });
+    if (p <= 50 || i % 5 === 0) { const t = mk("text", { x: x * 1.1, y: y * 1.1 + 4, "text-anchor": "middle" }); t.textContent = i; }
+  }
+}
+function updateQR() {
+  const p = +$("p").value; if (qrSel >= p) qrSel = 2;
+  const qrs = []; for (let x = 1; x < p; x++) if (legendre(x, p) === 1) qrs.push(x);
+  $("strip").innerHTML = Array.from({ length: p - 1 }, (_, i) => i + 1).map((a) => `<span data-a="${a}" class="${legendre(a, p) === 1 ? "qr" : ""} ${a === qrSel ? "sel" : ""}" title="(${a}/${p}) = ${legendre(a, p)}">${a}</span>`).join("");
+  $("strip").querySelectorAll("span").forEach((sp) => sp.addEventListener("click", () => { qrSel = +sp.dataset.a; updateQR(); }));
+  const a = qrSel, L = legendre(a, p), e = (p - 1) / 2, roots = [];
+  for (let x = 1; x < p; x++) if ((x * x) % p === a) roots.push(x);
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  const m1 = legendre(-1, p), two = legendre(2, p);
+  $("qrstats").innerHTML =
+    row("QRs mod " + p, qrs.length <= 24 ? qrs.join(", ") : qrs.slice(0, 24).join(", ") + " …") +
+    row("# QRs = (p−1)/2", qrs.length + " = " + e + " ✓") +
+    row(`a<sup>(p−1)/2</sup> = ${a}<sup>${e}</sup> mod ${p}`, powmod(a, e, p) === 1 ? "1" : powmod(a, e, p) + " ≡ −1") +
+    row(`(${a}/${p})`, L === 1 ? "+1 (QR)" : "−1 (non-residue)") +
+    row(`x with x² ≡ ${a}`, roots.length ? roots.join(" and ") : "none") +
+    row(`(−1/${p}): p mod 4 = ${p % 4}`, m1 === 1 ? "+1" : "−1") +
+    row(`(2/${p}): p mod 8 = ${p % 8}`, two === 1 ? "+1" : "−1");
+  $("qrinsight").innerHTML = L === 1
+    ? `${a} is a square: ${roots[0]}² ≡ ${roots[1]}² ≡ ${a} (mod ${p}), and ${roots[0]} + ${roots[1]} = ${p}. Euler's criterion gives +1.`
+    : `${a} is not a square mod ${p}: no arrow lands on it, and ${a}<sup>${e}</sup> ≡ −1. (Product rule: QR·QR = QR, QR·NR = NR, NR·NR = QR.)`;
+  drawSq(p);
+}
+function drawRec() {
+  const ps = oddPrimes.filter((q) => q < 60);
+  let h = `<table class="rec"><tr><th>p\\q</th>` + ps.map((q) => `<th>${q}</th>`).join("") + `</tr>`;
+  for (const p of ps) {
+    h += `<tr><th>${p}</th>`;
+    for (const q of ps) {
+      if (p === q) { h += `<td></td>`; continue; }
+      const v = legendre(p, q) * legendre(q, p);
+      h += `<td class="${v === 1 ? "p1" : "m1"}" data-p="${p}" data-q="${q}">${v === 1 ? "+" : "−"}</td>`;
+    }
+    h += `</tr>`;
+  }
+  $("recwrap").innerHTML = h + `</table>`;
+  $("recwrap").querySelectorAll("td[data-p]").forEach((td) => {
+    const show = () => {
+      const p = +td.dataset.p, q = +td.dataset.q, ex = ((p - 1) / 2) * ((q - 1) / 2);
+      $("recwrap").querySelectorAll("td.hot").forEach((x) => x.classList.remove("hot")); td.classList.add("hot");
+      $("recinfo").innerHTML = `(${p}/${q}) = ${legendre(p, q)}, (${q}/${p}) = ${legendre(q, p)}; product ${legendre(p, q) * legendre(q, p)}. Exponent ((p−1)/2)((q−1)/2) = ${ex} is ${ex % 2 ? "odd → −1" : "even → +1"} ✓ (p ≡ ${p % 4}, q ≡ ${q % 4} mod 4).`;
+    };
+    td.addEventListener("mouseenter", show); td.addEventListener("click", show);
+  });
+}
+$("p").addEventListener("change", updateQR);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", updateQR);
+updateQR(); drawRec();
 </script>
 </body>
 </html>
