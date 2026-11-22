@@ -24,13 +24,13 @@
 
 ```mermaid
 flowchart LR
-  A[Theory: y = f(x; unknowns)] --> B[Choose X(x), Y(y)<br/>so that Y = mX + b]
+  A["Theory: y = f(x; unknowns)"] --> B["Choose X(x), Y(y)<br/>so that Y = mX + b"]
   B --> C[Table: raw data + X, Y<br/>units in headers]
   C --> D[Plot with error bars]
   D --> E{Straight?}
-  E -- no --> F[Model wrong or systematic error:<br/>restrict range / rethink]
+  E -- no --> F["Model wrong or systematic error:<br/>restrict range / rethink"]
   E -- yes --> G[Fit: slope ± Δslope]
-  G --> H[Constants ± uncertainty<br/>rounded consistently]
+  G --> H["Constants ± uncertainty<br/>rounded consistently"]
 ```
 
 ## Worked example: g from a pendulum
