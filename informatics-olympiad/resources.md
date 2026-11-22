@@ -24,4 +24,4 @@
 - **Colin Galen**, **William Lin** (YouTube): contest walkthroughs and how they practice.
 
 ## This repo
-- **[Interactive tools](interactive/index.html)**: graph search, segment tree, DP table, flashcards.
+- **[Interactive tools](interactive/index.html)**: binary search on the answer, constraints quiz, graph search, segment tree, Fenwick tree, union-find, DP table, flashcards.
