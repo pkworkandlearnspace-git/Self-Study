@@ -35,6 +35,7 @@ Order: 01 → 02 → (03 & 04 interleaved) → 05 → 06 → 07. Start doing **v
 - **Segment tree visualizer:** watch the build, point update, and range query visit exactly O(log n) nodes.
 - **Fenwick tree & union-find visualizers:** lowbit ranges and query/update paths; a DSU forest with the optimizations toggled on and off.
 - **DP table animator:** LCS, edit distance, 0/1 knapsack filled cell by cell, with traceback.
+- **LIS in O(n log n):** the tails array, step by step, with reconstruction.
 - **Flashcards:** complexities, patterns, and "constraints → algorithm" recall.
 
 ## Weekly routine (~10–12 h)
