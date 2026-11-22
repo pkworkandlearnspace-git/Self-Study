@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IELTS Writing Practice</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg.plot { aspect-ratio: 1.6 / 1; }
+  svg text { font: 12px system-ui, sans-serif; fill: var(--muted); }
+  .timer { font-family: var(--mono); font-size: 34px; font-weight: 700; }
+  .check label { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; margin: 6px 0; cursor: pointer; }
+  .prompt { font-size: 16px; line-height: 1.55; }
+  textarea { min-height: 340px; font-size: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← IELTS tools</a></header>
+  <h1>Writing Practice</h1>
+  <p class="lead">Timed practice under real conditions. Get a prompt, write against the clock, watch the word count, then grade yourself with the band-7 checklist. Your draft is saved in this browser. Use <b>Download</b> to keep a copy.</p>
+  <div class="row" id="tasks" style="margin-bottom:12px">
+    <button data-t="t1" class="active">Task 1 · 20 min · 150+ words</button>
+    <button data-t="t2">Task 2 · 40 min · 250+ words</button>
+    <button id="newp">🎲 New prompt</button>
+  </div>
+  <div class="grid two">
+    <div>
+      <div class="card prompt" id="prompt"></div>
+      <textarea id="text" placeholder="Start writing here… (the timer starts on your first keystroke)" style="margin-top:12px"></textarea>
+      <div class="row" style="justify-content:space-between;margin-top:8px">
+        <span class="note" id="wc"></span>
+        <div class="row"><button id="download">Download .txt</button><button id="clear">Clear text</button></div>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="card">
+        <div class="row" style="justify-content:space-between;align-items:center"><span class="timer" id="clock">20:00</span>
+          <div class="row"><button id="start" class="primary">Start</button><button id="treset">Reset</button></div></div>
+        <div class="fc-bar" style="margin-top:10px"><div id="tbar" style="width:0%;background:var(--accent)"></div></div>
+        <p class="note" style="margin:8px 0 0" id="tplan"></p>
+      </div>
+      <div class="card check" id="check"></div>
+      <div class="card" id="score"></div>
+    </div>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · ielts/interactive · prompts are original practice items, not official test questions</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const cssv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+let task = "t1", secs = 1200, left = 1200, timer = null, prompt = null;
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+const rnd = (a, b) => a + Math.random() * (b - a);
+
+const T2 = [
+  ["Opinion", "Some people believe that universities should focus on preparing students for employment, while others think their main purpose is to develop knowledge for its own sake. To what extent do you agree that the main purpose of university is employment?"],
+  ["Discussion", "Some argue that governments should invest heavily in space exploration, while others believe the money would be better spent on problems on Earth. Discuss both views and give your own opinion."],
+  ["Advantages/disadvantages", "In many countries, more students are now taking online courses instead of attending classes in person. Do the advantages of this development outweigh the disadvantages?"],
+  ["Problem/solution", "In many cities, traffic congestion has become a serious problem. What are the main causes of this problem, and what measures could be taken to reduce it?"],
+  ["Opinion", "Artificial intelligence will soon replace teachers in most classrooms. To what extent do you agree or disagree?"],
+  ["Two-part", "Many young people today spend several hours a day on social media. Why is this the case? Is this a positive or negative development?"],
+  ["Discussion", "Some people think that competitive sports teach children valuable life skills, while others feel that competition puts unnecessary pressure on them. Discuss both views and give your opinion."],
+  ["Opinion", "Scientific research should be funded mainly by governments rather than by private companies. To what extent do you agree or disagree?"],
+  ["Advantages/disadvantages", "Many people now work from home for at least part of the week. Do the advantages of remote work outweigh the disadvantages?"],
+  ["Problem/solution", "The amount of plastic waste produced worldwide continues to increase. What problems does this cause, and what can individuals and governments do about it?"],
+  ["Opinion", "It is more important for school students to learn practical skills, such as managing money, than academic subjects like history or literature. To what extent do you agree or disagree?"],
+  ["Two-part", "In some countries, the number of people choosing to live alone is increasing. What are the reasons for this? Is it a positive or negative trend?"],
+  ["Discussion", "Some believe that the best way to improve public health is to build more sports facilities, while others think it would have little effect and other measures are needed. Discuss both views and give your opinion."],
+  ["Opinion", "Museums and art galleries should be free for everyone to visit. To what extent do you agree or disagree?"],
+  ["Advantages/disadvantages", "Some students take a gap year between finishing school and starting university. Do the advantages of this outweigh the disadvantages?"],
+  ["Problem/solution", "Many talented scientists and engineers leave their home countries to work abroad. What problems does this cause, and what could be done to encourage them to stay?"],
+];
+
+function genT1() {
+  const kind = pick(["line", "bar", "table"]);
+  if (kind === "line") {
+    const topic = pick([
+      ["The line graph shows the percentage of households with high-speed internet access in four countries between 2000 and 2020.", "%", ["Country A", "Country B", "Country C", "Country D"], 0, 100],
+      ["The line graph shows the average price of one kilowatt-hour of solar electricity (in US cents) in four regions from 2000 to 2020.", "cents", ["Region A", "Region B", "Region C", "Region D"], 0, 60],
+      ["The line graph shows the number of international tourists (millions) visiting four cities between 2000 and 2020.", "millions", ["City A", "City B", "City C", "City D"], 0, 30],
+    ]);
+    const years = [2000, 2005, 2010, 2015, 2020];
+    const series = topic[2].map(() => { let v = rnd(topic[3] + 5, topic[4] * 0.6); const slope = rnd(-0.25, 0.35) * (topic[4] - topic[3]) / 5; return years.map(() => { const out = Math.max(topic[3], Math.min(topic[4], v)); v += slope + rnd(-0.05, 0.05) * topic[4]; return Math.round(out); }); });
+    return { text: topic[0], kind, years, labels: topic[2], series, unit: topic[1], max: topic[4] };
+  }
+  if (kind === "bar") {
+    const topic = pick([
+      ["The bar chart compares the average number of hours per week that people in three age groups spent on four leisure activities in 2023.", "hours", ["Watching videos", "Exercise", "Reading", "Gaming"], ["16–24", "25–44", "45+"], 20],
+      ["The bar chart shows the percentage of students who chose each of four subjects at university in three countries in 2022.", "%", ["Engineering", "Medicine", "Business", "Arts"], ["Country X", "Country Y", "Country Z"], 40],
+    ]);
+    const data = topic[2].map(() => topic[3].map(() => Math.round(rnd(2, topic[4]))));
+    return { text: topic[0], kind, cats: topic[2], groups: topic[3], data, unit: topic[1], max: topic[4] };
+  }
+  const topic = pick([
+    ["The table gives the number of international students (in thousands) enrolled at universities in five countries in 2012 and 2022.", ["Country", "2012", "2022"], ["Country P", "Country Q", "Country R", "Country S", "Country T"], [20, 450]],
+    ["The table shows the percentage of energy produced from renewable sources in five countries in 2010 and 2020.", ["Country", "2010 (%)", "2020 (%)"], ["Country P", "Country Q", "Country R", "Country S", "Country T"], [3, 70]],
+  ]);
+  const rows = topic[2].map((c) => { const a = Math.round(rnd(...topic[3])); return [c, a, Math.max(1, Math.round(a * rnd(0.6, 2.2)))]; });
+  return { text: topic[0], kind: "table", head: topic[1], rows };
+}
+
+function chartSVG(p) {
+  const W = 600, H = 375, L = 48, R = 120, T = 16, B = 40, cols = [cssv("--c1"), cssv("--c2"), cssv("--c3"), cssv("--c4")];
+  let s = `<svg class="plot" viewBox="0 0 ${W} ${H}" role="img" aria-label="Task 1 chart">`;
+  const Y = (v) => H - B - (v / p.max) * (H - B - T);
+  for (let i = 0; i <= 4; i++) { const v = (p.max * i) / 4; s += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="${cssv("--border")}"/><text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end">${Math.round(v)}</text>`; }
+  s += `<text x="12" y="${T + 4}">${p.unit}</text>`;
+  if (p.kind === "line") {
+    const X = (i) => L + (i / (p.years.length - 1)) * (W - L - R);
+    p.years.forEach((y, i) => (s += `<text x="${X(i)}" y="${H - B + 18}" text-anchor="middle">${y}</text>`));
+    p.series.forEach((ser, k) => {
+      s += `<polyline fill="none" stroke="${cols[k]}" stroke-width="2.5" points="${ser.map((v, i) => `${X(i)},${Y(v)}`).join(" ")}"/>`;
+      ser.forEach((v, i) => (s += `<circle cx="${X(i)}" cy="${Y(v)}" r="3.5" fill="${cols[k]}"/>`));
+      s += `<text x="${W - R + 8}" y="${Y(ser[ser.length - 1]) + 4}" style="fill:${cols[k]}">${p.labels[k]}</text>`;
+    });
+  } else {
+    const gw = (W - L - R) / p.cats.length, bw = (gw * 0.75) / p.groups.length;
+    p.cats.forEach((c, i) => {
+      p.groups.forEach((g, j) => { const v = p.data[i][j], x = L + i * gw + gw * 0.125 + j * bw; s += `<rect x="${x}" y="${Y(v)}" width="${bw - 2}" height="${H - B - Y(v)}" fill="${cols[j]}"/>`; });
+      s += `<text x="${L + i * gw + gw / 2}" y="${H - B + 18}" text-anchor="middle">${c}</text>`;
+    });
+    p.groups.forEach((g, j) => (s += `<rect x="${W - R + 10}" y="${T + j * 20}" width="12" height="12" fill="${cols[j]}"/><text x="${W - R + 28}" y="${T + j * 20 + 11}">${g}</text>`));
+  }
+  return s + "</svg>";
+}
+function renderPrompt() {
+  if (task === "t1") {
+    const p = prompt;
+    let body = `<p style="margin:0 0 10px"><b>${p.text}</b> Summarise the information by selecting and reporting the main features, and make comparisons where relevant.</p>`;
+    if (p.kind === "table") body += `<div class="scroll-x"><table class="t"><tr>${p.head.map((h) => `<th>${h}</th>`).join("")}</tr>${p.rows.map((r) => `<tr>${r.map((c) => `<td>${c}</td>`).join("")}</tr>`).join("")}</table></div>`;
+    else body += chartSVG(p);
+    $("prompt").innerHTML = body + `<p class="note" style="margin:8px 0 0">Write at least 150 words. Data is randomly generated for practice.</p>`;
+  } else {
+    $("prompt").innerHTML = `<span class="tag" style="font-size:12px;color:var(--accent);background:var(--accent-soft);border-radius:99px;padding:1px 8px">${prompt[0]}</span><p style="margin:10px 0 8px"><b>${prompt[1]}</b></p><p class="note" style="margin:0">Give reasons for your answer and include any relevant examples from your own knowledge or experience. Write at least 250 words.</p>`;
+  }
+}
+const CHECK = {
+  t1: [["TA", "Introduction paraphrases the prompt (not copied)"], ["TA", "A clear OVERVIEW of the main trends, with no numbers"], ["TA", "Key features supported with accurate data"], ["CC", "Data grouped logically into 2 body paragraphs"], ["CC", "Comparisons made (whereas, while, twice as…)"], ["LR", "Varied trend vocabulary (verb+adverb AND adjective+noun)"], ["GRA", "Mix of simple and complex sentences, mostly error-free"], ["GRA", "Consistent past tense for past data"], ["—", "At least 150 words"]],
+  t2: [["TR", "Essay type identified, and ALL parts of the question answered"], ["TR", "A clear position in the intro, kept consistent to the conclusion"], ["TR", "Each main idea explained AND supported with an example"], ["CC", "One central idea per paragraph, with a clear topic sentence"], ["CC", "Varied linking + reference words (this, such…), not mechanical"], ["LR", "Topic collocations, some less common words used precisely"], ["LR", "No repeated key words: paraphrased the prompt"], ["GRA", "A range of complex structures (conditionals, relative and concessive clauses)"], ["GRA", "Most sentences error-free (articles, plurals, agreement checked)"], ["—", "At least 250 words, finished within 40 min"]],
+};
+function renderCheck() {
+  $("check").innerHTML = `<b>Band-7 self-check</b>` + CHECK[task].map((c, i) => `<label><input type="checkbox" data-i="${i}"> <span><span class="note">${c[0]}</span> ${c[1]}</span></label>`).join("");
+  $("check").querySelectorAll("input").forEach((x) => x.addEventListener("change", score));
+  score();
+}
+function score() {
+  const boxes = [...$("check").querySelectorAll("input")], n = boxes.filter((b) => b.checked).length;
+  const r = n / boxes.length;
+  $("score").innerHTML = `<div class="stat"><span>Checklist</span><b>${n}/${boxes.length}</b></div><p class="note" style="margin:6px 0 0">${r === 1 ? "Every box ticked: this looks like band-7 territory. Get a teacher to confirm." : r >= 0.75 ? "Close. Rewrite one paragraph to fix the unticked items." : "Focus on the unticked items first. Task Response/Achievement and accuracy matter most."}</p>`;
+}
+function words() { const t = $("text").value.trim(); return t ? t.split(/\s+/).length : 0; }
+function updWC() {
+  const n = words(), min = task === "t1" ? 150 : 250;
+  $("wc").innerHTML = `<b>${n}</b> words · target ${min}+ ${n >= min ? '<span class="good">✓</span>' : `<span class="warn">(${min - n} to go)</span>`}`;
+  store.set("ielts-draft-" + task, $("text").value);
+}
+const fmt = (s) => `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+function tick() {
+  left = Math.max(0, left - 1); $("clock").textContent = fmt(left);
+  $("clock").className = "timer " + (left === 0 ? "bad" : left <= 300 ? "warn" : "");
+  $("tbar").style.width = ((secs - left) / secs) * 100 + "%";
+  if (left === 0) { clearInterval(timer); timer = null; $("start").textContent = "Start"; }
+}
+function setTask(t) {
+  task = t; secs = left = t === "t1" ? 1200 : 2400; clearInterval(timer); timer = null; $("start").textContent = "Start";
+  $("clock").textContent = fmt(left); $("clock").className = "timer"; $("tbar").style.width = "0%";
+  $("tplan").textContent = t === "t1" ? "Plan: 3 min study the chart → 14 min write → 3 min check" : "Plan: 5 min plan → 30 min write → 5 min check";
+  $("text").value = store.get("ielts-draft-" + t) || "";
+  prompt = t === "t1" ? genT1() : pick(T2); renderPrompt(); renderCheck(); updWC();
+}
+document.querySelectorAll("#tasks [data-t]").forEach((b) => b.addEventListener("click", () => { document.querySelectorAll("#tasks [data-t]").forEach((x) => x.classList.remove("active")); b.classList.add("active"); setTask(b.dataset.t); }));
+$("newp").addEventListener("click", () => { prompt = task === "t1" ? genT1() : pick(T2); renderPrompt(); renderCheck(); });
+$("start").addEventListener("click", () => { if (timer) { clearInterval(timer); timer = null; $("start").textContent = "Resume"; } else { if (left === 0) left = secs; timer = setInterval(tick, 1000); $("start").textContent = "Pause"; } });
+$("treset").addEventListener("click", () => { clearInterval(timer); timer = null; left = secs; $("clock").textContent = fmt(left); $("clock").className = "timer"; $("tbar").style.width = "0%"; $("start").textContent = "Start"; });
+$("text").addEventListener("input", () => { if (!timer && left === secs) { timer = setInterval(tick, 1000); $("start").textContent = "Pause"; } updWC(); });
+$("clear").addEventListener("click", () => { if (confirm("Clear your text?")) { $("text").value = ""; updWC(); } });
+$("download").addEventListener("click", () => {
+  const ptxt = task === "t1" ? prompt.text : prompt[1];
+  const blob = new Blob([`IELTS ${task.toUpperCase()} — ${new Date().toISOString().slice(0, 10)}\nPrompt: ${ptxt}\nWords: ${words()} · Time used: ${fmt(secs - left)}\n\n${$("text").value}\n`], { type: "text/plain" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `ielts-${task}-${new Date().toISOString().slice(0, 10)}.txt`; a.click(); URL.revokeObjectURL(a.href);
+});
+setTask("t1");
+</script>
+</body>
+</html>

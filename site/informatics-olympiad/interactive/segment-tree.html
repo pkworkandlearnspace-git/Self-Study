@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Segment Tree Visualizer</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg.plot { aspect-ratio: 2.2 / 1; }
+  svg text { font: 12px var(--mono); fill: var(--text); }
+  svg .rng { font-size: 10px; fill: var(--muted); }
+  .arr { display: flex; gap: 4px; flex-wrap: wrap; }
+  .arr input { width: 52px; text-align: center; font-family: var(--mono); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Informatics Olympiad tools</a></header>
+  <h1>Segment Tree Visualizer</h1>
+  <p class="lead">Each node stores the aggregate of a range. A query or update touches only <b>O(log n)</b> nodes. Run one and count the highlighted nodes (module 03).</p>
+  <svg class="plot" id="tree" viewBox="0 0 1000 455" aria-label="Segment tree"></svg>
+  <div class="legend" style="margin:8px 0 16px"><span><i style="background:var(--c3)"></i>fully inside the query: used as-is</span><span><i style="background:var(--warn)"></i>partially overlapping: recurse</span><span><i style="background:var(--border)"></i>outside: return immediately</span><span><i style="background:var(--c4)"></i>updated</span></div>
+  <div class="grid two">
+    <div class="controls">
+      <div><b style="font-size:14px">Array (edit values, then Rebuild)</b><div class="arr" id="arr" style="margin-top:6px"></div></div>
+      <div class="row">
+        <label class="ctl">Operation<select id="op"><option value="sum">sum</option><option value="min">min</option><option value="max">max</option></select></label>
+        <label class="ctl">Size n<select id="n"><option>4</option><option>8</option><option selected>12</option><option>16</option></select></label>
+        <button id="rebuild">Rebuild</button><button id="rand">Random values</button>
+      </div>
+      <div class="row">
+        <label class="ctl">Query l<input type="number" id="ql" value="2" min="0" style="width:70px"></label>
+        <label class="ctl">r<input type="number" id="qr" value="9" min="0" style="width:70px"></label>
+        <button class="primary" id="query">Query [l, r]</button>
+      </div>
+      <div class="row">
+        <label class="ctl">Update index i<input type="number" id="ui" value="5" min="0" style="width:70px"></label>
+        <label class="ctl">new value<input type="number" id="uv" value="10" style="width:80px"></label>
+        <button id="update">Point update</button>
+      </div>
+    </div>
+    <div>
+      <div class="card" id="stats"></div>
+      <pre class="card mono" style="margin-top:12px;font-size:13px;overflow-x:auto;white-space:pre">int query(int v, int tl, int tr, int l, int r) {
+  if (r &lt; tl || tr &lt; l) return NEUTRAL;      // outside
+  if (l &lt;= tl &amp;&amp; tr &lt;= r) return t[v];      // fully inside
+  int tm = (tl + tr) / 2;                    // partial
+  return op(query(2*v,   tl,   tm, l, r),
+            query(2*v+1, tm+1, tr, l, r));
+}</pre>
+    </div>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · informatics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const cssv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const NS = "http://www.w3.org/2000/svg";
+let a = [5, 3, 8, 6, 1, 4, 7, 2, 9, 3, 6, 5], n = 12, t = [], marks = {};
+const OPS = { sum: [(x, y) => x + y, 0], min: [Math.min, Infinity], max: [Math.max, -Infinity] };
+const opf = () => OPS[$("op").value][0], neutral = () => OPS[$("op").value][1];
+
+function renderArr() {
+  $("arr").innerHTML = a.map((v, i) => `<label class="ctl" style="gap:0;text-align:center"><span class="note">${i}</span><input type="number" data-i="${i}" value="${v}"></label>`).join("");
+  $("arr").querySelectorAll("input").forEach((inp) => inp.addEventListener("change", () => { a[+inp.dataset.i] = +inp.value; build(); }));
+}
+function buildRec(v, tl, tr) { if (tl === tr) { t[v] = a[tl]; return; } const tm = (tl + tr) >> 1; buildRec(2 * v, tl, tm); buildRec(2 * v + 1, tm + 1, tr); t[v] = opf()(t[2 * v], t[2 * v + 1]); }
+function build() { t = []; buildRec(1, 0, n - 1); marks = {}; draw(); $("stats").innerHTML = `<div class="stat"><span>Nodes in tree</span><b>${2 * n - 1}</b></div><div class="stat"><span>Height ⌈log₂ n⌉</span><b>${Math.ceil(Math.log2(n))}</b></div>`; }
+let visits = 0;
+function queryRec(v, tl, tr, l, r) {
+  visits++;
+  if (r < tl || tr < l) { marks[v] = "out"; return neutral(); }
+  if (l <= tl && tr <= r) { marks[v] = "in"; return t[v]; }
+  marks[v] = "part"; const tm = (tl + tr) >> 1;
+  return opf()(queryRec(2 * v, tl, tm, l, r), queryRec(2 * v + 1, tm + 1, tr, l, r));
+}
+function updRec(v, tl, tr, i, val) {
+  visits++; marks[v] = "upd";
+  if (tl === tr) { t[v] = val; return; }
+  const tm = (tl + tr) >> 1;
+  i <= tm ? updRec(2 * v, tl, tm, i, val) : updRec(2 * v + 1, tm + 1, tr, i, val);
+  t[v] = opf()(t[2 * v], t[2 * v + 1]);
+}
+function draw() {
+  const svg = $("tree"); svg.innerHTML = "";
+  const depth = Math.ceil(Math.log2(n)) + 1, W = 1000, H = 455, lh = (H - 30) / depth;
+  const mk = (tag, at, txt) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt != null) e.textContent = txt; svg.appendChild(e); return e; };
+  const pos = {};
+  (function place(v, tl, tr, d) { pos[v] = [((tl + tr + 1) / 2 / n) * (W - 20) + 10, 22 + d * lh, tl, tr]; if (tl === tr) return; const tm = (tl + tr) >> 1; place(2 * v, tl, tm, d + 1); place(2 * v + 1, tm + 1, tr, d + 1); })(1, 0, n - 1, 0);
+  for (const v in pos) { const c = [2 * v, 2 * v + 1].filter((x) => pos[x]); c.forEach((x) => mk("line", { x1: pos[v][0], y1: pos[v][1], x2: pos[x][0], y2: pos[x][1], stroke: cssv("--border") })); }
+  const fill = { in: cssv("--c3"), part: cssv("--warn"), out: cssv("--surface-2"), upd: cssv("--c4") };
+  for (const v in pos) {
+    const [x, y, tl, tr] = pos[v], m = marks[v], w = Math.min(64, (W / n) * (tr - tl + 1) - 6);
+    mk("rect", { x: x - w / 2, y: y - 13, width: w, height: 26, rx: 6, fill: m ? fill[m] : cssv("--surface"), stroke: m === "out" ? cssv("--border") : (m ? "none" : cssv("--border")) });
+    const lbl = mk("text", { x, y: y + 4, "text-anchor": "middle" }, t[v] === Infinity ? "∞" : t[v]);
+    if (m === "in" || m === "upd" || m === "part") lbl.setAttribute("style", "fill:#fff;font-weight:700");
+    mk("text", { x, y: y + 24, "text-anchor": "middle", class: "rng" }, tl === tr ? `[${tl}]` : `[${tl},${tr}]`);
+  }
+}
+$("query").addEventListener("click", () => {
+  const l = Math.max(0, Math.min(n - 1, +$("ql").value)), r = Math.max(l, Math.min(n - 1, +$("qr").value));
+  marks = {}; visits = 0; const res = queryRec(1, 0, n - 1, l, r); draw();
+  const used = Object.values(marks).filter((m) => m === "in").length;
+  const brute = a.slice(l, r + 1).reduce(opf(), neutral());
+  $("stats").innerHTML = `<div class="stat"><span>${$("op").value}[${l}..${r}]</span><b>${res} ${res === brute ? "✓" : "✗"}</b></div><div class="stat"><span>Nodes visited</span><b>${visits}</b></div><div class="stat"><span>Nodes combined (green)</span><b>${used} (≤ 2·log₂ n ≈ ${2 * Math.ceil(Math.log2(n))})</b></div><div class="stat"><span>Brute force would touch</span><b>${r - l + 1} elements</b></div>`;
+});
+$("update").addEventListener("click", () => {
+  const i = Math.max(0, Math.min(n - 1, +$("ui").value)), v = +$("uv").value;
+  a[i] = v; marks = {}; visits = 0; updRec(1, 0, n - 1, i, v); renderArr(); draw();
+  $("stats").innerHTML = `<div class="stat"><span>a[${i}] := ${v}</span><b>done</b></div><div class="stat"><span>Nodes recomputed (root→leaf path)</span><b>${visits}</b></div>`;
+});
+$("rebuild").addEventListener("click", build);
+$("op").addEventListener("change", build);
+$("n").addEventListener("change", () => { n = +$("n").value; a = Array.from({ length: n }, (_, i) => a[i] ?? Math.floor(Math.random() * 10)); renderArr(); build(); });
+$("rand").addEventListener("click", () => { a = a.map(() => Math.floor(Math.random() * 20)); renderArr(); build(); });
+renderArr(); build();
+</script>
+</body>
+</html>

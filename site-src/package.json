@@ -1,0 +1,13 @@
+{
+  "name": "self-study-site",
+  "private": true,
+  "type": "module",
+  "description": "Builds the offline Self-Study website into ../site",
+  "scripts": { "build": "node build.mjs" },
+  "dependencies": {
+    "katex": "^0.16.11",
+    "markdown-it": "^14.1.0",
+    "markdown-it-task-lists": "^2.1.1",
+    "markdown-it-texmath": "^1.0.0"
+  }
+}
