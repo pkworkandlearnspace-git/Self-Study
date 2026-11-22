@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Power of a Point Lab</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg.plot { aspect-ratio: 4 / 3; }
+  svg text { font: 13px system-ui, sans-serif; fill: var(--text); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+  .h { cursor: grab; }
+  .h:active { cursor: grabbing; }
+  .toggles label { display: flex; gap: 8px; align-items: center; font-size: 14px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Math Olympiad tools</a><span class="note">Module 05 · Geometry</span></header>
+  <h1>Power of a Point &amp; Radical Axis</h1>
+  <p class="lead">Drag <b>P</b>, the circle centres, the radius handles (small squares) and the <b>direction handle</b> on the line through P. However the line turns, <b>PA · PB</b> stays the same: it is the power of P, equal to <b>PO² − r²</b>.</p>
+
+  <div class="grid two">
+    <svg class="plot" id="svg" viewBox="0 0 640 480" aria-label="Circles, a point and its power"></svg>
+    <div class="controls">
+      <div class="card toggles">
+        <b style="display:block;margin-bottom:8px">Show</b>
+        <label><input type="checkbox" id="t2" checked> Second circle + radical axis</label>
+        <label><input type="checkbox" id="t3"> Third circle + radical center</label>
+        <label><input type="checkbox" id="tTan" checked> Tangent from P (when outside)</label>
+        <label><input type="checkbox" id="tSnap"> Keep P on the radical axis</label>
+      </div>
+      <div class="card" id="stats"></div>
+      <div class="callout" id="hint"></div>
+      <div class="row"><button id="reset">Reset</button><button id="spin">Spin the line</button></div>
+    </div>
+  </div>
+
+  <h2>Try these</h2>
+  <div class="card">
+    <ol style="margin:0;padding-left:20px">
+      <li>Move P inside circle 1. The power becomes negative: PA · PB = −(r² − PO²) with signed lengths (A and B are on opposite sides of P).</li>
+      <li>Turn on <b>Keep P on the radical axis</b>: the powers to circles 1 and 2 stay equal, so the two tangent lengths are equal too (Example 2 in module 05).</li>
+      <li>Make circles 1 and 2 intersect. The radical axis passes through both intersection points: it is the line of the common chord.</li>
+      <li>Turn on the third circle. The three radical axes always meet at one point, unless the centres are collinear (then they are parallel).</li>
+    </ol>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · math-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const cv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+const U = 50; // 50 px = 1 unit in the readouts
+const f = (x) => (Math.abs(x) < 0.005 ? "0" : x.toFixed(2));
+const fa = (x) => f(x / (U * U)); // areas (powers) in unit²
+const W = 640, H = 480;
+let S;
+function init() {
+  S = { P: [120, 330], th: -0.35, c: [{ o: [270, 230], r: 110 }, { o: [470, 220], r: 85 }, { o: [380, 380], r: 70 }] };
+}
+init();
+const pow = (P, c) => (P[0] - c.o[0]) ** 2 + (P[1] - c.o[1]) ** 2 - c.r * c.r;
+function radicalLine(c1, c2) { // a·x + b·y = k
+  const a = 2 * (c2.o[0] - c1.o[0]), b = 2 * (c2.o[1] - c1.o[1]);
+  const k = c2.o[0] ** 2 + c2.o[1] ** 2 - c2.r ** 2 - (c1.o[0] ** 2 + c1.o[1] ** 2 - c1.r ** 2);
+  return { a, b, k };
+}
+function lineEnds({ a, b, k }) { // clip to the view box generously
+  const pts = [];
+  if (Math.abs(b) > 1e-9) { pts.push([-200, (k - a * -200) / b], [W + 200, (k - a * (W + 200)) / b]); }
+  else pts.push([k / a, -200], [k / a, H + 200]);
+  return pts;
+}
+function projectOnto(P, L) { const n2 = L.a * L.a + L.b * L.b, t = (L.a * P[0] + L.b * P[1] - L.k) / n2; return [P[0] - t * L.a, P[1] - t * L.b]; }
+function intersectLC(P, d, c) { // P + t d, |d| = 1
+  const fx = P[0] - c.o[0], fy = P[1] - c.o[1], B = fx * d[0] + fy * d[1], C = fx * fx + fy * fy - c.r * c.r, D = B * B - C;
+  if (D < 0) return null; const s = Math.sqrt(D); return [-B - s, -B + s];
+}
+
+let drag = null;
+function draw() {
+  const svg = $("svg"); svg.innerHTML = "";
+  const mk = (tag, at, txt) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt !== undefined) e.textContent = txt; svg.appendChild(e); return e; };
+  const n = $("t3").checked ? 3 : $("t2").checked ? 2 : 1;
+  const cols = ["--c1", "--c3", "--c4"];
+  if ($("tSnap").checked && n >= 2) S.P = projectOnto(S.P, radicalLine(S.c[0], S.c[1]));
+  // radical axes
+  const axes = [];
+  if (n >= 2) axes.push([0, 1]); if (n >= 3) axes.push([1, 2], [0, 2]);
+  axes.forEach(([i, j]) => { const L = radicalLine(S.c[i], S.c[j]), [p, q] = lineEnds(L); mk("line", { x1: p[0], y1: p[1], x2: q[0], y2: q[1], stroke: cv("--c2"), "stroke-width": 1.8, "stroke-dasharray": "8 5" }); });
+  let rc = null;
+  if (n >= 3) {
+    const L1 = radicalLine(S.c[0], S.c[1]), L2 = radicalLine(S.c[1], S.c[2]), det = L1.a * L2.b - L1.b * L2.a;
+    if (Math.abs(det) > 1e-6) { rc = [(L1.k * L2.b - L1.b * L2.k) / det, (L1.a * L2.k - L1.k * L2.a) / det]; mk("circle", { cx: rc[0], cy: rc[1], r: 7, fill: cv("--c2") }); mk("text", { x: rc[0] + 9, y: rc[1] - 8 }, "radical center"); }
+  }
+  // circles
+  for (let i = 0; i < n; i++) {
+    const c = S.c[i];
+    mk("circle", { cx: c.o[0], cy: c.o[1], r: c.r, fill: "none", stroke: cv(cols[i]), "stroke-width": 2.2 });
+    mk("circle", { cx: c.o[0], cy: c.o[1], r: 6, fill: cv(cols[i]), class: "h", "data-h": "o" + i });
+    mk("text", { x: c.o[0] + 8, y: c.o[1] - 8 }, "O" + (i + 1));
+    mk("rect", { x: c.o[0] + c.r - 6, y: c.o[1] - 6, width: 12, height: 12, fill: cv("--surface"), stroke: cv(cols[i]), "stroke-width": 2, class: "h", "data-h": "r" + i });
+  }
+  // the line through P
+  const d = [Math.cos(S.th), Math.sin(S.th)], P = S.P;
+  mk("line", { x1: P[0] - 900 * d[0], y1: P[1] - 900 * d[1], x2: P[0] + 900 * d[0], y2: P[1] + 900 * d[1], stroke: cv("--muted"), "stroke-width": 1.2 });
+  const tt = intersectLC(P, d, S.c[0]);
+  let prod = null;
+  if (tt) {
+    const A = [P[0] + tt[0] * d[0], P[1] + tt[0] * d[1]], B = [P[0] + tt[1] * d[0], P[1] + tt[1] * d[1]];
+    prod = tt[0] * tt[1];
+    mk("line", { x1: P[0], y1: P[1], x2: A[0], y2: A[1], stroke: cv("--accent"), "stroke-width": 4, opacity: 0.6 });
+    mk("line", { x1: P[0], y1: P[1], x2: B[0], y2: B[1], stroke: cv("--accent"), "stroke-width": 2, opacity: 0.9 });
+    [[A, "A"], [B, "B"]].forEach(([X, t]) => { mk("circle", { cx: X[0], cy: X[1], r: 5, fill: cv("--accent") }); mk("text", { x: X[0] + 7, y: X[1] + 16 }, t); });
+  }
+  // tangents
+  const p1 = pow(P, S.c[0]);
+  if ($("tTan").checked) for (let i = 0; i < n; i++) {
+    const c = S.c[i], pw = pow(P, c); if (pw <= 0) continue;
+    const dx = P[0] - c.o[0], dy = P[1] - c.o[1], dist = Math.hypot(dx, dy), ang = Math.atan2(dy, dx), al = Math.acos(c.r / dist);
+    const T = [c.o[0] + c.r * Math.cos(ang + al), c.o[1] + c.r * Math.sin(ang + al)];
+    mk("line", { x1: P[0], y1: P[1], x2: T[0], y2: T[1], stroke: cv(cols[i]), "stroke-width": 2, "stroke-dasharray": "3 3" });
+    mk("circle", { cx: T[0], cy: T[1], r: 4, fill: cv(cols[i]) });
+  }
+  const hh = [P[0] + 70 * d[0], P[1] + 70 * d[1]];
+  mk("circle", { cx: hh[0], cy: hh[1], r: 7, fill: cv("--surface"), stroke: cv("--muted"), "stroke-width": 2, class: "h", "data-h": "dir" });
+  mk("circle", { cx: P[0], cy: P[1], r: 8, fill: cv("--c5"), class: "h", "data-h": "P" });
+  mk("text", { x: P[0] - 18, y: P[1] - 10 }, "P");
+  svg.querySelectorAll(".h").forEach((el) => el.addEventListener("pointerdown", (e) => { drag = el.dataset.h; svg.setPointerCapture(e.pointerId); e.preventDefault(); }));
+
+  // stats
+  let st = row("PO₁² − r₁² (power wrt circle 1)", fa(p1));
+  st += row("PA · PB (signed)", prod === null ? "line misses circle 1" : fa(prod));
+  st += row("P is", p1 > 0.5 ? "outside circle 1" : p1 < -0.5 ? "inside circle 1" : "on circle 1");
+  if (p1 > 0) st += row("tangent length √power", f(Math.sqrt(p1) / U));
+  for (let i = 1; i < n; i++) st += row(`power wrt circle ${i + 1}`, fa(pow(P, S.c[i])));
+  if (rc) st += row("radical center powers", S.c.map((c) => fa(pow(rc, c))).join(" = "));
+  $("stats").innerHTML = st;
+  $("hint").innerHTML = prod === null ? "Turn the line (drag the hollow handle) until it cuts circle 1."
+    : `PA · PB = ${fa(prod)} matches PO² − r² = ${fa(p1)} (units: 50 px = 1). Turn the line: the product never changes.` + (n >= 2 ? ` On the orange dashed line (radical axis) the powers to circles 1 and 2 are equal.` : "");
+}
+$("svg").addEventListener("pointermove", (e) => {
+  if (!drag) return;
+  const r = $("svg").getBoundingClientRect(), x = ((e.clientX - r.left) / r.width) * W, y = ((e.clientY - r.top) / r.height) * H;
+  const X = [Math.max(0, Math.min(W, x)), Math.max(0, Math.min(H, y))];
+  if (drag === "P") S.P = X;
+  else if (drag === "dir") S.th = Math.atan2(X[1] - S.P[1], X[0] - S.P[0]);
+  else if (drag[0] === "o") S.c[+drag[1]].o = X;
+  else if (drag[0] === "r") { const c = S.c[+drag[1]]; c.r = Math.max(15, Math.hypot(X[0] - c.o[0], X[1] - c.o[1])); }
+  draw();
+});
+["pointerup", "pointercancel"].forEach((ev) => $("svg").addEventListener(ev, () => (drag = null)));
+["t2", "t3", "tTan", "tSnap"].forEach((id) => $(id).addEventListener("change", () => { if (id === "t3" && $("t3").checked) $("t2").checked = true; draw(); }));
+$("reset").addEventListener("click", () => { init(); draw(); });
+let spinning = null;
+$("spin").addEventListener("click", () => {
+  if (spinning) { cancelAnimationFrame(spinning); spinning = null; $("spin").textContent = "Spin the line"; return; }
+  $("spin").textContent = "Stop";
+  const step = () => { S.th += 0.01; draw(); spinning = requestAnimationFrame(step); }; step();
+});
+draw();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+</script>
+</body>
+</html>

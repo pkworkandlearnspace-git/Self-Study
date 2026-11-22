@@ -44,7 +44,8 @@ Small cases · draw it · work backwards · strengthen the induction · extremal
 
 ## Geometry (→ 05)
 - Inscribed angle = ½ arc · cyclic ⟺ opposite angles sum to 180° ⟺ equal angles on the same chord
-- Power of a point: $PA\cdot PB=PC\cdot PD=|PO^2-r^2|$ · radical axes of 3 circles concur
+- Power of a point: $PA\cdot PB=PC\cdot PD=|PO^2-r^2|$ ($=PT^2$ for a tangent) · radical axis of two circles ⊥ line of centres; three axes concur (centres not collinear)
+- Tangent lengths: from $B$ to the incircle $=s-b$ · $M_A$ (arc midpoint) $=$ centre of circle $BICI_A$ · complex: unit circle, $H=a+b+c$
 - Euler line: $O,G,H$ collinear, $OG:GH=1:2$ · nine-point circle center = midpoint of $OH$, radius $R/2$
 - Reflections of $H$ over the sides and side midpoints lie on the circumcircle · $AH=2R\cos A$
 - Incenter–excenter: $M_A$ (arc midpoint of $BC$) is the center of the circle through $B,C,I,I_A$
