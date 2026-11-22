@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prefix Function Step-Through</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .strip { display: grid; gap: 3px; margin: 4px 0; }
+  .strip div { text-align: center; font: 600 16px var(--mono); padding: 6px 0; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); min-width: 0; }
+  .strip.idx div, .strip.pi div { border: none; background: none; font-size: 12px; color: var(--muted); padding: 2px 0; }
+  .strip.pi div { font-size: 15px; color: var(--text); }
+  .strip div.i { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .strip div.k { background: var(--c2); color: #fff; border-color: var(--c2); }
+  .strip div.pre { background: color-mix(in srgb, var(--c3) 22%, var(--surface)); border-color: var(--c3); }
+  .strip div.suf { background: color-mix(in srgb, var(--c4) 22%, var(--surface)); border-color: var(--c4); }
+  .strip div.match { background: var(--c3); color: #fff; }
+  .strip.pi div.new { color: var(--accent); font-weight: 800; }
+  .rowlab { font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Informatics Olympiad tools</a></header>
+  <h1>Prefix Function (KMP) Step-Through</h1>
+  <p class="lead"><code>π[i]</code> = the length of the longest proper prefix of <code>s[0..i]</code> that is also its suffix (a <i>border</i>). To compute π[i], try to extend the previous border; on a mismatch, fall back to the next shorter border <code>π[k−1]</code> (module 06, worked example 2).</p>
+  <div class="card scroll-x">
+    <div class="rowlab">index</div><div class="strip idx" id="idx"></div>
+    <div class="rowlab">s</div><div class="strip" id="s"></div>
+    <div class="rowlab">π</div><div class="strip pi" id="pi"></div>
+    <div class="legend" style="margin-top:8px"><span><i style="background:var(--accent)"></i>s[i]</span><span><i style="background:var(--c2)"></i>s[k], compared with s[i]</span><span><i style="background:var(--c3)"></i>border as prefix</span><span><i style="background:var(--c4)"></i>same border as suffix</span></div>
+  </div>
+  <div class="callout" id="msg" style="margin:12px 0"></div>
+  <div class="grid two">
+    <div class="controls">
+      <div class="row">
+        <label class="ctl">Mode<select id="mode"><option value="pf">prefix function of s</option><option value="kmp">find pattern in text (P#T)</option></select></label>
+      </div>
+      <label class="ctl" id="l1">s<input type="text" id="a" value="aabaaab" maxlength="40" style="width:100%"></label>
+      <label class="ctl" id="l2" hidden>text<input type="text" id="b" value="abaabaabaab" maxlength="40" style="width:100%"></label>
+      <div class="row"><button class="primary" id="step">Step ▶</button><button id="next">Next i ⏭</button><button id="run">Run to end</button><button id="reset">Reset</button></div>
+    </div>
+    <div class="card" id="stats"></div>
+  </div>
+  <pre class="card mono scroll-x" style="margin-top:14px;font-size:13px">for (int i = 1; i &lt; n; i++) {
+  int k = pi[i-1];
+  while (k > 0 &amp;&amp; s[i] != s[k]) k = pi[k-1];   // fallback
+  if (s[i] == s[k]) k++;
+  pi[i] = k;
+}</pre>
+  <footer class="foot">Part of the Self-Study repo · informatics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+let s = "", n = 0, pi = [], gen = null, view = null, comps = 0, falls = 0, plen = 0, matches = [];
+
+function* run() {
+  for (let i = 1; i < n; i++) {
+    let k = pi[i - 1];
+    yield { i, k, text: `i = ${i}: start from the previous border, k = π[${i - 1}] = ${k}.` };
+    while (k > 0 && s[i] !== s[k]) {
+      comps++;
+      yield { i, k, cmp: true, text: `s[${i}] = '${s[i]}' ≠ s[${k}] = '${s[k]}': this border can't be extended. Fall back: k = π[${k - 1}] = ${pi[k - 1]}.` };
+      k = pi[k - 1]; falls++;
+    }
+    comps++;
+    if (s[i] === s[k]) { k++; pi[i] = k; yield { i, k, set: true, text: `s[${i}] = '${s[i]}' = s[${k - 1}]: extend. π[${i}] = ${k}.` + (plen && k === plen ? ` <b>Match of the pattern ending at text position ${i - plen - 1}!</b>` : "") }; }
+    else { pi[i] = 0; yield { i, k: 0, set: true, text: `s[${i}] = '${s[i]}' ≠ s[0] = '${s[0]}' and k = 0, so π[${i}] = 0.` }; }
+    if (plen && pi[i] === plen) matches.push(i - 2 * plen);
+  }
+  yield { done: true, text: "" };
+}
+function reset() {
+  const kmp = $("mode").value === "kmp";
+  $("l2").hidden = !kmp; $("l1").firstChild.textContent = kmp ? "pattern" : "s";
+  const A = $("a").value.replace(/#/g, "") || "a", B = $("b").value.replace(/#/g, "") || "a";
+  s = kmp ? A + "#" + B : A; n = s.length; plen = kmp ? A.length : 0;
+  pi = Array(n).fill(null); pi[0] = 0; gen = run(); comps = 0; falls = 0; matches = [];
+  view = { text: `π[0] = 0 by definition (a proper border of one character is empty). Press <b>Step</b>.` };
+  render();
+}
+function step() { const r = gen.next(); if (!r.done) view = r.value; if (view.done) finish(); render(); }
+function finish() {
+  view.text = `Done in ${comps} comparisons for n = ${n} (always ≤ 2n). Fallbacks: ${falls}.` +
+    (plen ? ` Pattern found at text positions: <b>${matches.length ? matches.join(", ") : "none"}</b>.` :
+    ` Smallest period p = n − π[n−1] = ${n - pi[n - 1]}${n % (n - pi[n - 1]) === 0 && pi[n - 1] ? ` (s is "${s.slice(0, n - pi[n - 1])}" repeated ${n / (n - pi[n - 1])} times)` : ""}.`);
+}
+function render() {
+  const cols = `repeat(${n}, minmax(26px, 1fr))`;
+  ["idx", "s", "pi"].forEach((id) => ($(id).style.gridTemplateColumns = cols));
+  $("idx").innerHTML = [...s].map((_, j) => `<div>${j}</div>`).join("");
+  const v = view || {};
+  const b = v.k || 0; // border length under consideration: s[0..k-1] equals s[i-k..i-1]
+  $("s").innerHTML = [...s].map((c, j) => {
+    let cl = "";
+    if (!v.done && v.i != null) {
+      if (j === v.i) cl = "i"; else if (j === v.k && !v.set) cl = "k";
+      else if (!v.set && j < b) cl = "pre"; else if (!v.set && j >= v.i - b && j < v.i) cl = "suf";
+      else if (v.set && j < v.k) cl = "pre"; else if (v.set && j > v.i - v.k && j < v.i) cl = "suf";
+    }
+    if (v.done && plen && matches.some((m) => j >= plen + 1 + m && j < 2 * plen + 1 + m)) cl = "match";
+    return `<div class="${cl}">${c === "#" ? "#" : c}</div>`;
+  }).join("");
+  $("pi").innerHTML = pi.map((x, j) => `<div class="${v.set && j === v.i ? "new" : ""}">${x == null ? "" : x}</div>`).join("");
+  $("msg").innerHTML = v.text;
+  $("stats").innerHTML = `<div class="stat"><span>n</span><b>${n}</b></div><div class="stat"><span>Character comparisons</span><b>${comps}</b></div><div class="stat"><span>Fallbacks (k = π[k−1])</span><b>${falls}</b></div><div class="stat"><span>Naive border check</span><b>O(n²) ≈ ${n * n}</b></div>`;
+  $("step").disabled = $("next").disabled = !!v.done;
+}
+$("step").addEventListener("click", step);
+$("next").addEventListener("click", () => { let g = 0; do { step(); } while (!view.done && !view.set && g++ < 200); });
+$("run").addEventListener("click", () => { let g = 0; while (!view.done && g++ < 5000) step(); });
+$("reset").addEventListener("click", reset);
+$("mode").addEventListener("change", () => { if ($("mode").value === "kmp") { $("a").value = "aab"; $("b").value = "aabaacaabaab"; } else $("a").value = "aabaaab"; reset(); });
+["a", "b"].forEach((id) => $(id).addEventListener("change", reset));
+reset();
+</script>
+</body>
+</html>
