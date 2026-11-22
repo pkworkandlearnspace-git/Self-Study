@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IOI Day Planner</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  table.t input { width: 64px; font-family: var(--mono); padding: 4px 6px; }
+  table.t td.on { background: color-mix(in srgb, var(--good) 14%, var(--surface)); }
+  .tl { display: flex; height: 38px; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); background: var(--surface-2); }
+  .tl div { display: flex; align-items: center; justify-content: center; font: 600 12px var(--mono); color: #fff; white-space: nowrap; overflow: hidden; border-right: 1px solid rgba(255,255,255,.4); }
+  .meter { position: relative; height: 16px; background: var(--surface-2); border-radius: 99px; margin: 26px 0 8px; }
+  .meter > .fill { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 99px; transition: width .3s; }
+  .meter > .cut { position: absolute; top: -20px; bottom: -4px; border-left: 2px dashed var(--muted); font-size: 11px; color: var(--muted); padding-left: 3px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Informatics Olympiad tools</a></header>
+  <h1>IOI Day Planner</h1>
+  <p class="lead">After reading the three tasks, estimate each subtask's <b>minutes</b> and your <b>chance</b> of getting it. The planner picks the set that maximizes <b>expected points</b> in the time you have, which is a 0/1 knapsack over subtasks (module 07). Then compare it with "go deep on one task".</p>
+
+  <div class="grid two">
+    <div class="card scroll-x"><table class="t" id="tab"></table>
+      <p class="note" style="margin:8px 0 0">Simplification: subtasks are treated as independent. In reality, a harder subtask's solution often also solves the easier ones, so enter the <i>extra</i> minutes it needs beyond the previous subtask.</p></div>
+    <div class="controls">
+      <label class="ctl">Contest minutes left after reading: <span class="val" id="tv">270</span><input type="range" id="time" min="30" max="300" step="5" value="270"></label>
+      <label class="ctl">Safety buffer for debugging: <span class="val" id="bv">15%</span><input type="range" id="buf" min="0" max="50" step="5" value="15"></label>
+      <div class="row"><button id="ex">Load worked example</button><button id="rand">Random day</button></div>
+      <div class="card" id="stats"></div>
+    </div>
+  </div>
+
+  <h2>Suggested order (highest points per minute first)</h2>
+  <div class="tl" id="tl"></div>
+  <div class="note" id="tlnote" style="margin-top:6px"></div>
+
+  <h2>Expected score vs. IOI 2026 medal cutoffs (per day ≈ half the two-day total)</h2>
+  <div class="meter" id="meter"></div>
+  <p class="note">IOI 2026 cutoffs over two days: bronze 228.80, silver 303.28, gold 361.12 of 600 (<a href="https://stats.ioinformatics.org/olympiads/2026">IOI stats</a>). Shown here halved, as a rough per-day guide.</p>
+  <footer class="foot">Part of the Self-Study repo · informatics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const TASKS = ["A", "B", "C"];
+const EXAMPLE = [
+  // task, points, minutes, chance %
+  ["A", 7, 10, 95], ["A", 18, 15, 90], ["A", 35, 60, 70], ["A", 40, 90, 25],
+  ["B", 12, 15, 95], ["B", 25, 40, 75], ["B", 63, 120, 20],
+  ["C", 5, 5, 100], ["C", 20, 45, 60], ["C", 75, 150, 15],
+];
+let rows = EXAMPLE.map((r) => r.slice());
+const COLORS = { A: "var(--c1)", B: "var(--c2)", C: "var(--c4)" };
+
+function renderTable(chosen = new Set()) {
+  $("tab").innerHTML = `<tr><th>Subtask</th><th>Points</th><th>Minutes</th><th>Chance %</th><th>Exp. pts</th></tr>` +
+    rows.map((r, i) => {
+      const idx = rows.slice(0, i + 1).filter((x) => x[0] === r[0]).length;
+      return `<tr><td class="${chosen.has(i) ? "on" : ""}"><b style="color:${COLORS[r[0]]}">${r[0]}${idx}</b>${chosen.has(i) ? " ✓" : ""}</td>` +
+        [1, 2, 3].map((c) => `<td><input type="number" min="0" max="${c === 3 ? 100 : 300}" data-r="${i}" data-c="${c}" value="${r[c]}" aria-label="${r[0]}${idx} ${["", "points", "minutes", "chance"][c]}"></td>`).join("") +
+        `<td class="mono">${(r[1] * r[3] / 100).toFixed(1)}</td></tr>`;
+    }).join("");
+  $("tab").querySelectorAll("input").forEach((inp) => inp.addEventListener("change", () => {
+    const v = Math.max(0, Math.min(+inp.max, Math.round(+inp.value || 0))); rows[+inp.dataset.r][+inp.dataset.c] = v; solve();
+  }));
+}
+function knap(items, T) {
+  // items: [{i, w, v}] → best value and chosen set, with integer minutes
+  const dp = Array(T + 1).fill(0), take = items.map(() => new Uint8Array(T + 1));
+  items.forEach((it, k) => { for (let t = T; t >= it.w; t--) if (dp[t - it.w] + it.v > dp[t]) { dp[t] = dp[t - it.w] + it.v; take[k][t] = 1; } });
+  const chosen = new Set(); let t = T;
+  for (let k = items.length - 1; k >= 0; k--) if (take[k][t]) { chosen.add(items[k].i); t -= items[k].w; }
+  return { val: dp[T], chosen };
+}
+function solve() {
+  const T = +$("time").value, buf = +$("buf").value / 100;
+  $("tv").textContent = T; $("bv").textContent = Math.round(buf * 100) + "%";
+  const items = rows.map((r, i) => ({ i, w: Math.ceil(r[2] * (1 + buf)), v: (r[1] * r[3]) / 100 })).filter((x) => x.w > 0 || x.v > 0);
+  const best = knap(items, T);
+  // "go deep": take subtasks of one task only, in order, while time lasts
+  let deep = { val: 0, task: "A" };
+  TASKS.forEach((tk) => { const r = knap(items.filter((x) => rows[x.i][0] === tk), T); if (r.val > deep.val) deep = { val: r.val, task: tk }; });
+  renderTable(best.chosen);
+  const order = [...best.chosen].sort((a, b) => (rows[b][1] * rows[b][3]) / Math.max(1, rows[b][2]) - (rows[a][1] * rows[a][3]) / Math.max(1, rows[a][2]));
+  const used = order.reduce((s, i) => s + Math.ceil(rows[i][2] * (1 + buf)), 0);
+  $("tl").innerHTML = order.map((i) => {
+    const r = rows[i], idx = rows.slice(0, i + 1).filter((x) => x[0] === r[0]).length, w = Math.ceil(r[2] * (1 + buf));
+    return `<div style="width:${(100 * w) / T}%;background:${COLORS[r[0]]}" title="${r[0]}${idx}: ${w} min, ${r[1]} pts × ${r[3]}%">${r[0]}${idx}</div>`;
+  }).join("") + (T - used > 0 ? `<div style="width:${(100 * (T - used)) / T}%;color:var(--muted)">${T - used} min spare</div>` : "");
+  $("tlnote").textContent = order.length ? `Do these first, in this order, then use spare time on the best remaining idea. Planned: ${used} of ${T} min (including the ${Math.round(buf * 100)}% buffer).` : "Nothing fits. Add time or lower your estimates.";
+  const maxPts = rows.reduce((s, r) => s + r[1], 0);
+  $("stats").innerHTML = `<div class="stat"><span>Plan: expected points</span><b class="good">${best.val.toFixed(1)}</b></div>
+    <div class="stat"><span>Plan: subtasks attempted</span><b>${best.chosen.size}</b></div>
+    <div class="stat"><span>Best single-task plan (task ${deep.task})</span><b>${deep.val.toFixed(1)}</b></div>
+    <div class="stat"><span>Gain from spreading out</span><b>${(best.val - deep.val >= 0 ? "+" : "") + (best.val - deep.val).toFixed(1)}</b></div>
+    <div class="stat"><span>Max possible today</span><b>${maxPts}</b></div>`;
+  const cuts = [["bronze", 228.8 / 2], ["silver", 303.28 / 2], ["gold", 361.12 / 2]], M = 300;
+  $("meter").innerHTML = `<div class="fill" style="width:${Math.min(100, (100 * best.val) / M)}%"></div>` + cuts.map(([n, c]) => `<div class="cut" style="left:${(100 * c) / M}%">${n} ≈ ${c.toFixed(0)}</div>`).join("");
+}
+$("time").addEventListener("input", solve);
+$("buf").addEventListener("input", solve);
+$("ex").addEventListener("click", () => { rows = EXAMPLE.map((r) => r.slice()); solve(); });
+$("rand").addEventListener("click", () => {
+  rows = [];
+  TASKS.forEach((tk) => {
+    const k = 2 + Math.floor(Math.random() * 3); let left = 100;
+    for (let j = 0; j < k; j++) {
+      const p = j === k - 1 ? Math.max(1, left) : Math.max(3, Math.round((left / (k - j)) * (0.4 + Math.random() * 0.8))); left -= p;
+      rows.push([tk, p, 5 + Math.round(Math.random() * (20 + 40 * j)), Math.max(5, Math.round(100 - j * (15 + Math.random() * 25)))]);
+    }
+  });
+  solve();
+});
+solve();
+</script>
+</body>
+</html>
