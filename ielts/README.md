@@ -6,12 +6,12 @@
 ## The test at a glance
 | Skill | Time | Format | Band 7 needs (approx.) |
 |---|---|---|---|
-| **Listening** | ~30 min (+ transfer time on paper) | 4 parts, 40 questions | ~30/40 (7.5 ≈ 32/40) |
+| **Listening** | ~30 min (+ 10 min transfer on paper; a short review on computer) | 4 parts, 40 questions | ~30/40 (7.5 ≈ 32/40) |
 | **Reading (Academic)** | 60 min | 3 long texts, 40 questions | ~30/40 (7.5 ≈ 33/40) |
-| **Writing** | 60 min | Task 1 (≥150 words, data/process/map) + Task 2 (≥250 words, essay). **Task 2 counts double.** | Band 7 on 4 criteria |
+| **Writing** | 60 min | Task 1 (≥150 words, data/process/map) + Task 2 (≥250 words, essay). **Task 2 carries more weight.** | Band 7 on 4 criteria |
 | **Speaking** | 11–14 min | Part 1 interview · Part 2 a 2-min talk · Part 3 discussion | Band 7 on 4 criteria |
 
-**Overall band** = the average of the four, rounded to the nearest half band (x.25 → x.5, x.75 → next whole band).
+**Overall band** = the average of the four, rounded to the nearest half band (x.25 → x.5, x.75 → next whole band). Many universities also set a **minimum per skill**.
 Raw-score conversions vary slightly between tests, so treat the numbers above as targets. Use the [band calculator](interactive/band-calculator.html).
 
 ## The map
@@ -28,10 +28,16 @@ Raw-score conversions vary slightly between tests, so treat the numbers above as
 Writing and Speaking are where most strong students lose marks. **Give them ~60% of your time.**
 
 ## Interactive tools → [`interactive/`](interactive/index.html)
-- **Band calculator:** raw Listening/Reading scores → bands, and overall band rounding.
-- **Writing practice:** timed Task 1/Task 2 with a live word count, a prompt bank, and a band-7 self-check.
-- **Speaking practice:** random Part 1/2/3 questions, a 1-min prep + 2-min talk timer, and recording yourself (if your browser allows the microphone).
-- **Flashcards:** academic collocations, linking language, Task 1 trend vocabulary.
+| Module | Tool | What it trains |
+|---|---|---|
+| 01 | [Band calculator](interactive/band-calculator.html) | raw → band, rounding visualizer + drill, per-skill minimums |
+| 02 | [Listening drills](interactive/listening-drills.html) | numbers & spelling dictation, distractors, word limits |
+| 03 | [Reading lab](interactive/reading-lab.html) | T/F/NG, Y/N/NG, matching headings, with the evidence highlighted |
+| 04 | [Task 1 trend lab](interactive/task1-trend-lab.html) | drag a chart → trend language; spot valid overviews |
+| 05 | [Essay builder](interactive/essay-builder.html) | essay type, thesis that answers every part, paragraph order |
+| 04–05 | [Writing practice](interactive/writing-practice.html) | timed Task 1/Task 2, word count, band-7 self-check |
+| 06 | [Speaking practice](interactive/speaking-practice.html) · [Answer upgrader](interactive/answer-upgrader.html) | timed Parts 1–3 with recording and a Part 2 stage guide · spotting/building band-7 answers |
+| 07 | [Grammar error hunter](interactive/error-hunter.html) · [Flashcards](interactive/flashcards.html) | band-6 errors by category · collocations, rules, spaced repetition |
 
 ## 10-week plan
 | Weeks | Focus |

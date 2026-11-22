@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grammar Error Hunter</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .sent { font-size: 20px; line-height: 2.1; margin: 10px 0 6px; }
+  .tok { display: inline-block; padding: 0 4px; margin: 0 1px; border-radius: 6px; cursor: pointer; border: 1px solid transparent; }
+  .tok:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .tok.hit { background: var(--good); color: #fff; }
+  .tok.miss { background: var(--bad); color: #fff; }
+  .tok.ans { outline: 2px solid var(--good); }
+  .fix { font-size: 17px; margin-top: 8px; padding: 10px 12px; background: var(--surface-2); border-radius: 8px; }
+  .fix ins { text-decoration: none; color: var(--good); font-weight: 700; }
+  .fix del { color: var(--bad); }
+  .cats { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .stats div { font-size: 13px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
+  .stats b { display: block; font-family: var(--mono); font-size: 16px; }
+</style>
+</head>
+<body>
+<div class="wrap" style="max-width:820px">
+  <header class="top"><a class="back" href="index.html">← IELTS tools</a><a class="back" href="../07-vocab-grammar.md">Module 07 · Grammar →</a></header>
+  <h1>Grammar Error Hunter</h1>
+  <p class="lead">Each sentence has <b>exactly one</b> error of the kind that keeps strong students at band 6–6.5. <b>Tap the wrong word</b> (or the comma, for a comma splice). You'll see the fix and the rule. Your per-category accuracy tells you what to check in your own essays.</p>
+  <div class="cats" id="cats"></div>
+  <div class="card">
+    <div class="row" style="justify-content:space-between"><span class="note" id="cat"></span><span class="note" id="score">0 / 0</span></div>
+    <div class="sent" id="sent"></div>
+    <div id="fb"></div>
+  </div>
+  <h2>Your error profile</h2>
+  <div class="stats" id="stats"></div>
+  <footer class="foot">Part of the Self-Study repo · ielts/interactive · original practice sentences</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+// s: sentence, bad: index of the wrong token (tokens = split on spaces; a standalone "," token marks a comma splice), fix: corrected sentence, rule
+const ITEMS = [
+  { c: "Articles", s: "The unemployment is a serious problem in many developing countries .", bad: 0, fix: "Unemployment is a serious problem…", rule: "No 'the' before an uncountable or plural noun used in a general sense." },
+  { c: "Articles", s: "Government should invest more in public transport .", bad: 0, fix: "The government / Governments should invest…", rule: "A singular countable noun needs an article (a/the) or a determiner. Use the plural for a general statement." },
+  { c: "Articles", s: "This is one of most important issues facing young people .", bad: 4, fix: "one of the most important issues", rule: "Superlatives take 'the': the most, the largest." },
+  { c: "Articles", s: "The graph shows a number of tourists who visited the city .", bad: 3, fix: "The graph shows the number of tourists…", rule: "'The number of' = a specific figure (what a chart shows). 'A number of' = several." },
+  { c: "Agreement", s: "The number of students studying abroad have increased sharply .", bad: 6, fix: "The number … has increased", rule: "The subject is 'the number' (singular), not 'students'." },
+  { c: "Agreement", s: "Every student in the class need a laptop .", bad: 5, fix: "Every student … needs", rule: "'Every' and 'each' take a singular verb." },
+  { c: "Agreement", s: "One of the main reasons are the high cost of living .", bad: 5, fix: "One of the main reasons is", rule: "The subject is 'one', so the verb is singular." },
+  { c: "Agreement", s: "People who lives in cities often suffer from stress .", bad: 2, fix: "People who live", rule: "'People' is plural, and the relative clause verb agrees with it." },
+  { c: "Uncountables", s: "Students can find useful informations online .", bad: 4, fix: "useful information", rule: "Information, advice, research, equipment, knowledge, evidence: no plural -s, and use much / a lot of." },
+  { c: "Uncountables", s: "My teacher gave me an advice about the exam .", bad: 4, fix: "some advice / a piece of advice", rule: "'Advice' is uncountable: no 'an', no plural." },
+  { c: "Uncountables", s: "We need more researches on this topic .", bad: 3, fix: "more research", rule: "'Research' is uncountable in standard academic English." },
+  { c: "Uncountables", s: "There are less cars on the road at weekends .", bad: 2, fix: "fewer cars", rule: "Fewer + countable plural (cars). Less + uncountable (traffic)." },
+  { c: "Prepositions", s: "Many teenagers are addicted with social media .", bad: 4, fix: "addicted to", rule: "Learn adjective + preposition as a chunk: addicted to, interested in, responsible for, dependent on." },
+  { c: "Prepositions", s: "The government is responsible of public health .", bad: 4, fix: "responsible for", rule: "responsible for something / to someone." },
+  { c: "Prepositions", s: "Sales increased with 20 % between 2010 and 2020 .", bad: 2, fix: "increased by 20%", rule: "increase BY an amount, TO a final level: rose by 20% to 60%." },
+  { c: "Prepositions", s: "This essay will discuss about the causes of obesity .", bad: 4, fix: "discuss the causes", rule: "'Discuss' takes a direct object: no 'about' (but: a discussion about)." },
+  { c: "Comma splice", s: "Public transport is cheap , many people still prefer to drive .", bad: 4, fix: "Public transport is cheap, but many people… / …cheap. However, many people…", rule: "Two full sentences can't be joined by a comma alone. Use a full stop, a semicolon, or a conjunction." },
+  { c: "Comma splice", s: "Technology has many benefits , however it also has drawbacks .", bad: 4, fix: "…many benefits; however, it also… / …benefits. However, it…", rule: "'However' is not a conjunction. Use a semicolon or a full stop before it." },
+  { c: "Tense", s: "In 2010 , the figure has risen to 45 % .", bad: 5, fix: "In 2010, the figure rose to 45%.", rule: "A finished past time (in 2010) needs the past simple, not the present perfect." },
+  { c: "Tense", s: "Since 2015 , the number of electric cars grew rapidly .", bad: 8, fix: "Since 2015, the number … has grown rapidly.", rule: "'Since' + a point in time → present perfect for an ongoing period." },
+  { c: "Tense", s: "If governments would invest more , congestion would fall .", bad: 2, fix: "If governments invested more, congestion would fall.", rule: "Second conditional: if + past simple, would + verb. No 'would' in the if-clause." },
+  { c: "Word form", s: "There has been a significant raise in house prices .", bad: 5, fix: "a significant rise", rule: "Rise (intransitive, noun: a rise) vs raise (transitive: raise prices). Prices rise; governments raise taxes." },
+  { c: "Word form", s: "Many people are worried about the economical situation .", bad: 6, fix: "the economic situation", rule: "Economic = about the economy. Economical = cheap to run (an economical car)." },
+  { c: "Word form", s: "Children need to develop critical thinking and creative .", bad: 7, fix: "critical thinking and creativity", rule: "Parallel structure: noun and noun (thinking, creativity), not noun and adjective." },
+  { c: "Word form", s: "The amount of plastic waste increased dramatical last year .", bad: 6, fix: "increased dramatically", rule: "A verb is modified by an adverb (-ly): rose dramatically / a dramatic rise." },
+];
+const CATS = ["All", ...new Set(ITEMS.map((i) => i.c))];
+let cat = "All", cur = null, done = false, last = null, right = 0, total = 0;
+const per = {}; CATS.slice(1).forEach((c) => (per[c] = [0, 0]));
+
+$("cats").innerHTML = CATS.map((c) => `<button data-c="${c}" class="${c === cat ? "active" : ""}">${c}</button>`).join("");
+$("cats").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { cat = b.dataset.c; $("cats").querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === b)); next(); }));
+
+function next() {
+  const pool = ITEMS.filter((i) => cat === "All" || i.c === cat);
+  do { cur = pool[Math.floor(Math.random() * pool.length)]; } while (pool.length > 1 && cur === last);
+  last = cur; done = false;
+  $("cat").textContent = cat === "All" ? "Mixed categories" : cat;
+  const toks = cur.s.split(" ");
+  $("sent").innerHTML = toks.map((t, i) => `<span class="tok" data-i="${i}">${t}</span>`).join(" ");
+  $("fb").innerHTML = `<p class="note" style="margin:0">Tap the word that's wrong.</p>`;
+  $("sent").querySelectorAll(".tok").forEach((t) => t.addEventListener("click", () => choose(+t.dataset.i, t)));
+}
+function choose(i, el) {
+  if (done) return; done = true;
+  const ok = i === cur.bad; total++; if (ok) right++;
+  per[cur.c][1]++; if (ok) per[cur.c][0]++;
+  el.classList.add(ok ? "hit" : "miss");
+  if (!ok) $("sent").querySelector(`[data-i="${cur.bad}"]`).classList.add("ans");
+  $("score").textContent = `${right} / ${total}`;
+  $("fb").innerHTML = `<b class="${ok ? "good" : "bad"}">${ok ? "✓ Found it" : "✗ The error is the outlined word"}</b> <span class="note">· ${cur.c}</span>
+    <div class="fix">✏️ ${cur.fix}</div><p style="margin:8px 0 0">📘 ${cur.rule}</p>
+    <div class="row" style="margin-top:10px"><button class="primary" id="nx">Next →</button><span class="note">or press Enter</span></div>`;
+  $("nx").addEventListener("click", next);
+  stats();
+}
+function stats() {
+  $("stats").innerHTML = Object.entries(per).map(([c, [r, t]]) => `<div>${c}<b class="${!t ? "" : r / t >= 0.8 ? "good" : r / t >= 0.5 ? "warn" : "bad"}">${t ? Math.round((100 * r) / t) + "%" : "—"}</b><span class="note">${r}/${t}</span></div>`).join("");
+}
+document.addEventListener("keydown", (e) => { if (e.key === "Enter" && done) next(); });
+stats(); next();
+
+window.__selftest = () => {
+  // every item: bad index within tokens, and the bad token isn't punctuation except for comma splices
+  const errs = ITEMS.filter((it) => { const t = it.s.split(" "); return it.bad >= t.length || (it.c === "Comma splice") !== (t[it.bad] === ","); }).map((it) => it.s.slice(0, 30));
+  const tok = $("sent").querySelector(`[data-i="${cur.bad}"]`); tok.click();
+  const ok = $("fb").textContent.includes("Found it");
+  return errs.length || !ok ? `FAIL ${errs.join(" | ")} click=${ok}` : `ok ${ITEMS.length} items`;
+};
+</script>
+</body>
+</html>

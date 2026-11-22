@@ -12,11 +12,16 @@
   .cue ul { margin: 8px 0 0; padding-left: 20px; }
   ol.q li { margin: 6px 0; font-size: 16px; }
   audio { width: 100%; margin-top: 6px; }
+  .stages { display: grid; grid-template-columns: 20fr 60fr 30fr 10fr; gap: 3px; margin-top: 10px; font-size: 11px; text-align: center; }
+  .stages div { padding: 5px 2px; border-radius: 6px; background: var(--surface-2); color: var(--muted); transition: background .2s; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .stages div.on { background: var(--accent); color: #fff; font-weight: 600; }
+  .stages div.past { background: var(--accent-soft); color: var(--accent); }
+  #notes { min-height: 90px; font-size: 15px; }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header class="top"><a class="back" href="index.html">← IELTS tools</a></header>
+  <header class="top"><a class="back" href="index.html">← IELTS tools</a><a class="back" href="../06-speaking.md">Module 06 · Speaking →</a></header>
   <h1>Speaking Practice</h1>
   <p class="lead">Answer <b>out loud</b>. That's the only way speaking improves. Pick a part, get random questions, use the timer, and record yourself to listen back for hesitations, repeated words, and grammar slips (module 06).</p>
   <div class="row" id="parts" style="margin-bottom:12px">
@@ -31,7 +36,9 @@
         <div class="timer" id="clock">0:00</div>
         <div class="fc-bar" style="margin-top:10px"><div id="tbar" style="width:0%;background:var(--accent)"></div></div>
         <div class="row" style="margin-top:12px"><button class="primary" id="go">Start timer</button><button id="stop">Stop</button></div>
+        <div class="stages" id="stages" hidden><div>Scene</div><div>Story / details</div><div>Feelings</div><div>Reflect</div></div>
         <p class="note" id="tip" style="margin:10px 0 0"></p>
+        <label class="ctl" id="notesbox" hidden style="margin-top:10px">Prep notes (keywords only, like the paper you get in the test)<textarea id="notes" placeholder="e.g. Ms Tan · physics · olympiad club · stayed late · confidence"></textarea></label>
       </div>
       <div class="card">
         <b>Record yourself</b>
@@ -97,7 +104,18 @@ function render() {
 const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 let actx;
 function beep(f = 880, d = 0.18) { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); const o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = f; g.gain.value = 0.12; o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + d); } catch (e) {} }
-function resetTimer() { clearInterval(timer); timer = null; step = 0; left = total = plan[0][1]; $("phase").textContent = plan[0][0]; $("clock").textContent = fmt(left); $("tbar").style.width = "0%"; $("go").textContent = "Start timer"; $("tip").textContent = part === "2" ? "Prep 1:00 → beep → talk 2:00 → beep. The examiner may stop you at 2:00." : ""; }
+function resetTimer() { clearInterval(timer); timer = null; step = 0; left = total = plan[0][1]; $("phase").textContent = plan[0][0]; $("clock").textContent = fmt(left); $("tbar").style.width = "0%"; $("go").textContent = "Start timer"; $("tip").textContent = part === "2" ? "Prep 1:00 → beep → talk 2:00 → beep. The examiner may stop you at 2:00. The bar shows where you should be in your story." : ""; stageGuide(); }
+// Part 2 talk guide: scene 0–20 s, story 20–80 s, feelings 80–110 s, reflection 110–120 s
+function stageGuide() {
+  const ph = plan[step] ? plan[step][0] : "", talk = /talk/i.test(ph), prep = /prep/i.test(ph);
+  $("stages").hidden = !(talk || prep || part === "2"); $("notesbox").hidden = !(part === "2" || part === "full");
+  const el = (total - left), cuts = [20, 80, 110, 120];
+  $("stages").querySelectorAll("div").forEach((d, i) => {
+    const lo = i ? cuts[i - 1] : 0;
+    d.classList.toggle("on", talk && el >= lo && el < cuts[i]);
+    d.classList.toggle("past", talk && el >= cuts[i]);
+  });
+}
 function tick() {
   left--; $("clock").textContent = fmt(Math.max(0, left)); $("tbar").style.width = ((total - left) / total) * 100 + "%";
   if (left <= 0) {
@@ -105,6 +123,7 @@ function tick() {
     if (step < plan.length) { left = total = plan[step][1]; $("phase").textContent = plan[step][0]; $("tbar").style.width = "0%"; }
     else { clearInterval(timer); timer = null; $("phase").textContent = "Done: now listen to your recording"; $("go").textContent = "Start timer"; setTimeout(() => beep(660, 0.3), 250); }
   }
+  stageGuide();
 }
 $("go").addEventListener("click", () => { if (timer) { clearInterval(timer); timer = null; $("go").textContent = "Resume"; } else { if (step >= plan.length) resetTimer(); beep(1046, 0.08); timer = setInterval(tick, 1000); $("go").textContent = "Pause"; } });
 $("stop").addEventListener("click", resetTimer);
@@ -131,6 +150,7 @@ $("rec").addEventListener("click", async () => {
   } catch (e) { $("recstat").textContent = "Microphone blocked or unavailable (" + e.name + "). Allow it in the browser, or use your phone's recorder."; }
 });
 render();
+window.__selftest = () => { document.querySelector('#parts [data-p="2"]').click(); step = 1; left = total = 120; left = 120 - 30; stageGuide(); const on = [...$("stages").children].findIndex((d) => d.classList.contains("on")); resetTimer(); return on === 1 && !$("notesbox").hidden ? "ok" : "FAIL stage " + on; };
 </script>
 </body>
 </html>

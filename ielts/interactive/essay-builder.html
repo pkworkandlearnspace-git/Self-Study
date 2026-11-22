@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task 2 Essay Builder</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .modes { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .prompt { font-size: 16.5px; line-height: 1.6; padding: 12px 14px; background: var(--surface-2); border-radius: 8px; margin: 8px 0 12px; }
+  .opts { display: grid; gap: 8px; }
+  .opts button { text-align: left; line-height: 1.45; padding: 10px 12px; }
+  .opts button.ok { background: var(--good); border-color: var(--good); color: #fff; }
+  .opts button.no { background: var(--bad); border-color: var(--bad); color: #fff; }
+  .pool, .built { display: grid; gap: 8px; min-height: 60px; }
+  .built { border: 2px dashed var(--border); border-radius: 10px; padding: 8px; }
+  .chip { text-align: left; padding: 9px 12px; line-height: 1.45; }
+  .chip .role { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--accent); display: block; }
+  .chip.ok { border-color: var(--good); background: color-mix(in srgb, var(--good) 14%, var(--surface)); }
+  .chip.no { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 14%, var(--surface)); }
+  .fb { margin-top: 12px; font-size: 15px; }
+  .meter { display: flex; gap: 4px; margin-top: 6px; }
+  .meter span { flex: 1; height: 6px; border-radius: 99px; background: var(--surface-2); }
+  .meter span.on { background: var(--good); }
+</style>
+</head>
+<body>
+<div class="wrap" style="max-width:860px">
+  <header class="top"><a class="back" href="index.html">← IELTS tools</a><a class="back" href="../05-writing-task2.md">Module 05 · Task 2 →</a></header>
+  <h1>Task 2 Essay Builder</h1>
+  <p class="lead">Three drills for the decisions that set your Task Response band before you write a word: <b>what type of essay is this?</b>, <b>does my thesis answer every part?</b>, and <b>is my body paragraph developed in a logical order?</b></p>
+
+  <div class="modes" id="modes">
+    <button data-m="type" class="active">1 · Identify the type</button>
+    <button data-m="thesis">2 · Pick the thesis</button>
+    <button data-m="para">3 · Build the paragraph</button>
+    <span class="note" style="margin-left:auto" id="score">0 / 0</span>
+  </div>
+  <div class="card" id="panel"></div>
+
+  <details class="card" style="margin-top:14px"><summary><b>Reference: the five essay types</b></summary>
+    <table class="t" style="margin-top:8px">
+      <tr><th>Type</th><th>Prompt signal</th><th>Your job</th></tr>
+      <tr><td>Opinion</td><td>To what extent do you agree or disagree?</td><td>One clear position, the same from intro to conclusion. Partial agreement is fine if it's clear.</td></tr>
+      <tr><td>Discussion</td><td>Discuss both views and give your own opinion.</td><td>Explain both views fairly + state <i>your</i> view.</td></tr>
+      <tr><td>Advantages / disadvantages</td><td>Do the advantages outweigh the disadvantages?</td><td>Both sides + a clear verdict on which outweighs.</td></tr>
+      <tr><td>Problem (cause) / solution</td><td>What problems / causes… What solutions…?</td><td>Answer <b>both</b> questions.</td></tr>
+      <tr><td>Two-part (direct questions)</td><td>Two different questions, e.g. Why…? Is this positive or negative?</td><td>Answer each question explicitly.</td></tr>
+    </table>
+  </details>
+  <footer class="foot">Part of the Self-Study repo · ielts/interactive · original practice items, not official test questions</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const shuffle = (a) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+let right = 0, total = 0;
+const bump = (ok) => { total++; if (ok) right++; $("score").textContent = `${right} / ${total}`; };
+
+const TYPES = ["Opinion", "Discussion", "Advantages / disadvantages", "Problem / solution", "Two-part"];
+const TYPEQ = [
+  { p: "Some people think that all university students should study a foreign language, whatever their main subject. To what extent do you agree or disagree?", a: "Opinion", why: "'To what extent do you agree or disagree?' → one clear position kept throughout." },
+  { p: "Some believe that children should start formal schooling at the age of four, while others think they should not start until seven. Discuss both views and give your own opinion.", a: "Discussion", why: "'Discuss both views and give your own opinion' → both views + yours. Forgetting your opinion caps Task Response." },
+  { p: "More and more people are choosing to shop online rather than in physical stores. Do the advantages of this trend outweigh the disadvantages?", a: "Advantages / disadvantages", why: "'Do the advantages outweigh…' → you must say which side outweighs, not just list both." },
+  { p: "In many countries, young people are finding it increasingly difficult to buy their own homes. What are the causes of this, and what solutions can you suggest?", a: "Problem / solution", why: "Two tasks: causes AND solutions. Covering only one of them is the classic band-5 Task Response mistake." },
+  { p: "Many people now get their news from social media rather than newspapers or television. Why is this happening? What effects might it have on society?", a: "Two-part", why: "Two direct questions (why? + effects?) → answer each explicitly, one body paragraph each works well." },
+  { p: "Some people say that the government should pay for all medical treatment, while others say individuals should pay for their own. Discuss both views and give your opinion.", a: "Discussion", why: "Two contrasting views + 'give your opinion' → discussion essay." },
+  { p: "International tourism has brought enormous benefits to many places, but it also causes problems. Do the benefits of international tourism outweigh the drawbacks?", a: "Advantages / disadvantages", why: "'Benefits outweigh drawbacks' is the same task as advantages/disadvantages: weigh them and give a verdict." },
+  { p: "Many cities have serious air pollution. What are the main causes, and what measures could governments and individuals take to reduce it?", a: "Problem / solution", why: "Causes + measures → cause/solution essay. Note the measures should cover governments AND individuals." },
+  { p: "Unpaid community service should be a compulsory part of high school programmes. To what extent do you agree or disagree?", a: "Opinion", why: "Classic opinion prompt. Note the key word 'compulsory': your position must be about compulsion, not just volunteering." },
+  { p: "These days, more people are choosing to have fewer children or none at all. What are the reasons for this? Is it a positive or a negative development?", a: "Two-part", why: "A 'why?' question + an evaluation question. The second part needs a clear position (positive / negative / both, with a verdict)." },
+];
+
+const THESIS = [
+  { p: "Some people believe that unpaid internships exploit young people, while others see them as a valuable opportunity. Discuss both views and give your own opinion.",
+    opts: [
+      { t: "Internships are a very controversial topic in today's modern world, and there are many arguments on both sides.", ok: false, why: "No position and no preview of either view. A memorised-sounding opener that answers nothing." },
+      { t: "While unpaid internships can offer useful experience, I believe they are largely exploitative because they exclude young people who cannot afford to work for free.", ok: true, why: "Acknowledges the other view and gives a clear position with a reason." },
+      { t: "In this essay I will discuss the advantages and disadvantages of internships.", ok: false, why: "Wrong essay type (it's a discussion of two views + your opinion) and no opinion." },
+    ] },
+  { p: "Many young people today spend several hours a day online. What are the reasons for this? Is it a positive or negative development?",
+    opts: [
+      { t: "Young people spend time online mainly because school, friendships and entertainment have moved there, and I would argue that this is a negative development overall because it displaces sleep and physical activity.", ok: true, why: "Answers BOTH questions (reasons + evaluation) and the evaluation is clear." },
+      { t: "There are several reasons why young people spend so much time online, which will be discussed in this essay.", ok: false, why: "Only addresses the first question, and says nothing specific." },
+      { t: "The internet has both positive and negative effects, so it is difficult to say whether it is good or bad.", ok: false, why: "Ignores the reasons question and sits on the fence on the evaluation." },
+    ] },
+  { p: "Scientific research should be funded mainly by governments rather than private companies. To what extent do you agree or disagree?",
+    opts: [
+      { t: "I partly agree: governments should fund basic research, which rarely brings quick profits, but private companies are better placed to fund applied work close to the market.", ok: true, why: "Partial agreement is fine when it is clear and the dividing line is stated." },
+      { t: "Some people think governments should fund research, while other people think companies should.", ok: false, why: "Restates the prompt without a position. An opinion essay needs your view from the introduction." },
+      { t: "I strongly agree that governments should fund research, although companies are also very important and should probably fund most of it.", ok: false, why: "Contradictory: 'strongly agree' then 'companies should fund most'. A position must be consistent." },
+    ] },
+  { p: "Traffic congestion is becoming a serious problem in many cities. What are the causes, and what can be done to solve it?",
+    opts: [
+      { t: "Congestion is mainly caused by rising car ownership and poor public transport, and it can be eased by congestion charges combined with investment in reliable buses and trains.", ok: true, why: "Names the causes and the solutions: a roadmap for both body paragraphs." },
+      { t: "I strongly agree that traffic is a serious problem in cities.", ok: false, why: "Treats it as an opinion essay. The task asks for causes and solutions." },
+      { t: "Traffic congestion can be solved by building more roads.", ok: false, why: "Answers only the solutions part, and gives no causes." },
+    ] },
+];
+
+const PARAS = [
+  { topic: "Discussion essay: should governments fund space exploration?", s: [
+    ["Topic sentence", "One strong argument for funding space exploration is that it drives technological progress with benefits far beyond space."],
+    ["Explanation", "This is because solving the extreme problems of spaceflight forces engineers to develop new materials, sensors and computing techniques."],
+    ["Development", "Many of these innovations are later adapted for everyday use, often decades after the original mission."],
+    ["Example", "For instance, research into compact, high-quality digital cameras for spacecraft contributed to the image sensors now found in almost every mobile phone."],
+    ["Link back", "Therefore, money spent on space programmes can indirectly improve life on Earth, rather than simply being lost to it."],
+  ] },
+  { topic: "Opinion essay: should university education be free?", s: [
+    ["Topic sentence", "The main reason I support free university education is that it widens access to talented students from low-income families."],
+    ["Explanation", "When tuition fees are high, many capable students choose not to apply, because the prospect of large debts seems too risky."],
+    ["Development", "This means that a country loses skilled graduates simply because of their parents' income, which is both unfair and economically wasteful."],
+    ["Example", "In countries that have abolished tuition fees, such as Germany, university participation does not depend on the ability to pay upfront."],
+    ["Link back", "For this reason, I believe that removing fees is an investment in a society's talent rather than a cost."],
+  ] },
+  { topic: "Problem/solution essay: plastic waste", s: [
+    ["Topic sentence", "The most effective solution would be to make producers responsible for the packaging they create."],
+    ["Explanation", "If manufacturers had to pay for collecting and recycling their packaging, they would have a direct financial incentive to use less plastic."],
+    ["Development", "Over time, this would push companies to design products that are easier to reuse or recycle."],
+    ["Example", "Deposit-return schemes for bottles, in which customers receive a small refund when they return a container, have led to very high return rates in several European countries."],
+    ["Link back", "Such policies tackle the problem at its source instead of relying solely on consumers to change their habits."],
+  ] },
+];
+
+let mode = "type";
+function renderType() {
+  const q = TYPEQ[Math.floor(Math.random() * TYPEQ.length)];
+  $("panel").innerHTML = `<b>What type of essay is this?</b><div class="prompt">${q.p}</div><div class="opts" id="opts">${TYPES.map((t) => `<button data-t="${t}">${t}</button>`).join("")}</div><div class="fb" id="fb"></div>`;
+  $("opts").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    if ($("opts").dataset.done) return; $("opts").dataset.done = 1;
+    const ok = b.dataset.t === q.a; bump(ok);
+    b.classList.add(ok ? "ok" : "no"); $("opts").querySelector(`[data-t="${q.a}"]`).classList.add("ok");
+    $("fb").innerHTML = `<b class="${ok ? "good" : "bad"}">${ok ? "✓" : "✗"} ${q.a}.</b> ${q.why} <div class="row" style="margin-top:10px"><button class="primary" id="nx">Next →</button></div>`;
+    $("nx").addEventListener("click", render);
+  }));
+}
+function renderThesis() {
+  const q = THESIS[Math.floor(Math.random() * THESIS.length)], opts = shuffle(q.opts);
+  $("panel").innerHTML = `<b>Which introduction thesis best answers the task?</b><div class="prompt">${q.p}</div><div class="opts" id="opts">${opts.map((o, i) => `<button data-i="${i}">${o.t}</button>`).join("")}</div><div class="fb" id="fb"></div>`;
+  $("opts").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    if ($("opts").dataset.done) return; $("opts").dataset.done = 1;
+    const o = opts[+b.dataset.i]; bump(o.ok);
+    opts.forEach((x, i) => { if (x.ok) $("opts").children[i].classList.add("ok"); });
+    if (!o.ok) b.classList.add("no");
+    $("fb").innerHTML = opts.map((x) => `<p style="margin:6px 0"><b class="${x.ok ? "good" : "bad"}">${x.ok ? "✓ Best" : "✗"}</b> <span class="note">“${x.t.slice(0, 60)}…”</span><br>${x.why}</p>`).join("") + `<div class="row"><button class="primary" id="nx">Next →</button></div>`;
+    $("nx").addEventListener("click", render);
+  }));
+}
+function renderPara() {
+  const q = PARAS[Math.floor(Math.random() * PARAS.length)];
+  let pool = shuffle(q.s.map((s, i) => ({ i, role: s[0], t: s[1] })));
+  while (pool.every((x, k) => x.i === k)) pool = shuffle(pool);
+  const built = [];
+  $("panel").innerHTML = `<b>Tap the sentences in a logical order</b> <span class="note">(${q.topic})</span>
+    <p class="note" style="margin:6px 0 10px">Target shape: topic sentence → explanation → development → specific example → link back to the question.</p>
+    <div class="built" id="built"><span class="note">Your paragraph appears here…</span></div>
+    <div class="meter" id="meter">${q.s.map(() => "<span></span>").join("")}</div>
+    <h3>Sentences</h3><div class="pool" id="pool"></div>
+    <div class="row" style="margin-top:12px"><button id="undo">↶ Undo</button><button class="primary" id="chk" disabled>Check</button></div><div class="fb" id="fb"></div>`;
+  const draw = () => {
+    $("pool").innerHTML = pool.map((x, k) => `<button class="chip" data-k="${k}">${x.t}</button>`).join("");
+    $("built").innerHTML = built.length ? built.map((x) => `<div class="chip card" data-i="${x.i}">${x.t}</div>`).join("") : `<span class="note">Your paragraph appears here…</span>`;
+    $("meter").querySelectorAll("span").forEach((m, k) => m.classList.toggle("on", k < built.length));
+    $("chk").disabled = pool.length > 0;
+    $("pool").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { built.push(pool.splice(+b.dataset.k, 1)[0]); draw(); }));
+  };
+  $("undo").addEventListener("click", () => { if (built.length && !$("panel").dataset.done) { pool.push(built.pop()); draw(); } });
+  $("chk").addEventListener("click", () => {
+    if ($("panel").dataset.done) return; $("panel").dataset.done = 1;
+    let n = 0;
+    $("built").querySelectorAll(".chip").forEach((c, k) => { const ok = +c.dataset.i === k; if (ok) n++; c.classList.add(ok ? "ok" : "no"); c.insertAdjacentHTML("afterbegin", `<span class="role">${built[k].role}${ok ? " ✓" : ` ✗ (should be #${built[k].i + 1})`}</span>`); });
+    const ok = n === q.s.length; bump(ok);
+    $("fb").innerHTML = `<b class="${ok ? "good" : "warn"}">${n}/${q.s.length} in position.</b> ${ok ? "Clear progression: each sentence builds on the one before." : "Look at the reference words: <i>This is because…</i>, <i>these innovations</i>, <i>Therefore</i> only make sense after the sentence they refer back to. That's what Coherence & Cohesion rewards."} <div class="row" style="margin-top:10px"><button class="primary" id="nx">Next →</button></div>`;
+    $("nx").addEventListener("click", render);
+  });
+  draw();
+}
+function render() { delete $("panel").dataset.done; ({ type: renderType, thesis: renderThesis, para: renderPara })[mode](); }
+$("modes").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+  $("modes").querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === b)); mode = b.dataset.m; render();
+}));
+render();
+
+window.__selftest = () => {
+  const errs = [];
+  TYPEQ.forEach((q, i) => { if (!TYPES.includes(q.a)) errs.push("type " + i); });
+  THESIS.forEach((q, i) => { if (q.opts.filter((o) => o.ok).length !== 1) errs.push("thesis " + i); });
+  // solve a paragraph in order
+  mode = "para"; render();
+  for (let k = 0; k < 5; k++) { const want = [...$("pool").querySelectorAll("button")].find((b) => PARAS.some((p) => p.s[k][1] === b.textContent && p.s.some((x) => x[1] === b.textContent))); if (want) want.click(); }
+  // fallback: order by index from DOM text
+  $("chk").click();
+  const okPara = /5\/5/.test($("fb").textContent);
+  mode = "type"; render(); const q = $("panel").querySelector(".prompt").textContent; const ans = TYPEQ.find((x) => x.p === q).a; $("opts").querySelector(`[data-t="${ans}"]`).click();
+  const okType = $("fb").textContent.includes("✓");
+  return errs.length || !okPara || !okType ? `FAIL ${errs} para=${okPara} type=${okType}` : "ok";
+};
+</script>
+</body>
+</html>

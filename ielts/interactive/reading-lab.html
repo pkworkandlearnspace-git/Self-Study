@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IELTS Reading Lab</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .modes { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .passage { font-size: 15.5px; line-height: 1.7; }
+  .passage p { margin: 0 0 10px; }
+  .passage .pl { font-weight: 700; color: var(--accent); margin-right: 6px; }
+  .passage span.ev { transition: background .2s; border-radius: 3px; }
+  .passage span.ev.on { background: var(--accent-soft); outline: 2px solid var(--accent); }
+  .stmt { border-bottom: 1px dashed var(--border); padding: 10px 0; }
+  .stmt:last-child { border-bottom: 0; }
+  .stmt .s { margin-bottom: 6px; }
+  .tfng { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tfng button { min-width: 82px; }
+  .tfng button.ok { background: var(--good); border-color: var(--good); color: #fff; }
+  .tfng button.no { background: var(--bad); border-color: var(--bad); color: #fff; }
+  .why { font-size: 14px; margin-top: 6px; color: var(--muted); }
+  .why b { color: var(--text); }
+  .sticky { position: sticky; top: 8px; }
+  @media (max-width: 819px) { .sticky { position: static; } }
+  select.h { width: 100%; margin-top: 4px; }
+  .timer { font-family: var(--mono); font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← IELTS tools</a><a class="back" href="../03-reading.md">Module 03 · Reading →</a></header>
+  <h1>Reading Lab</h1>
+  <p class="lead">The two question types that cost the most marks. Answer, then see the <b>exact evidence</b> highlighted in the passage and why each answer is right. Original practice passages, shorter than the real test.</p>
+
+  <div class="modes" id="modes">
+    <button data-m="tfng" class="active">True / False / Not Given</button>
+    <button data-m="ynng">Yes / No / Not Given</button>
+    <button data-m="head">Matching headings</button>
+    <span class="note" style="margin-left:auto">⏱ <span class="timer" id="clock">0:00</span> · aim ≈ 1 min per question</span>
+  </div>
+
+  <div class="grid two">
+    <div class="card passage sticky" id="passage"></div>
+    <div class="card" id="qs"></div>
+  </div>
+
+  <div class="card callout" style="margin-top:14px">
+    <b>The decision rule.</b> Find the part of the text the statement is about. Same meaning → <b>True/Yes</b>. Text says the <i>opposite</i> or something incompatible → <b>False/No</b>. Text doesn't say enough to decide → <b>Not Given</b>. Never use outside knowledge, and watch qualifiers (<i>all, some, always, only, first, most</i>).
+  </div>
+  <footer class="foot">Part of the Self-Study repo · ielts/interactive · original practice items, not official test material</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+// Passages: paragraphs use [[id|text]] to mark evidence spans.
+const SETS = {
+  tfng: [
+    { title: "The return of the urban beaver",
+      paras: [
+        "[[f|Beavers were hunted to extinction in Britain by the sixteenth century, mainly for their fur and for a gland secretion used in medicine.]] [[a|The first officially licensed release into the wild in England took place in 2025]], although unofficial populations had already been living on several rivers for over a decade.",
+        "Ecologists value beavers because their dams slow the flow of water. [[b|One study in Devon found that peak flows after heavy rain were, on average, around 30 per cent lower downstream of the dams]], which may reduce flooding in nearby towns. [[c|The dams also trap sediment, although researchers have not yet measured how much]].",
+        "Not everyone welcomes the animals. [[d|Some farmers report that beaver activity has flooded fields]], and a few have called for culls. [[e|Under current rules, landowners must obtain a licence before removing a dam]], and advisers now offer free visits to help them manage conflicts."
+      ],
+      qs: [
+        { s: "Beavers disappeared from Britain partly because of the value of their fur.", a: "T", ev: "f", why: "Para 1: 'hunted to extinction… mainly for their fur'. 'Partly' fits 'mainly' (fur was one reason)." },
+        { s: "No beavers lived in the wild in England before 2025.", a: "F", ev: "a", why: "'Unofficial populations had already been living on several rivers for over a decade' contradicts this. The trap: 2025 was the first <i>licensed</i> release." },
+        { s: "Beaver dams reduced peak water flow by about a third on one river.", a: "T", ev: "b", why: "'Around 30 per cent lower' ≈ about a third. Paraphrase of a number is still True." },
+        { s: "The dams trap more sediment than artificial barriers do.", a: "NG", ev: "c", why: "The text says they trap sediment but 'researchers have not yet measured how much'. No comparison with artificial barriers is made." },
+        { s: "Most farmers want beaver numbers to be reduced.", a: "NG", ev: "d", why: "'Some farmers' and 'a few have called for culls' — we don't know what <i>most</i> farmers think. Qualifier trap: some ≠ most. (Not False either: the text doesn't say most farmers <i>don't</i> want this.)" },
+        { s: "Landowners are free to remove beaver dams without permission.", a: "F", ev: "e", why: "'Must obtain a licence before removing a dam' directly contradicts 'free… without permission'." },
+      ] },
+    { title: "Sleep and memory",
+      paras: [
+        "For around a century, psychologists have known that people remember lists of words better after a night's sleep than after the same number of hours awake. [[a|Early researchers assumed this was simply because sleep protects memories from interference]]: nothing new is learned while we sleep, so nothing overwrites what we learned before.",
+        "[[b|Recent brain-imaging work suggests that sleep also plays an active role]]. During deep sleep, the hippocampus appears to 'replay' patterns of activity from the day, and these replays are linked to better recall the next morning. [[c|In one experiment, playing a sound associated with a task during sleep improved performance on that task]].",
+        "[[d|The effect is not equally strong for all types of memory]]. Facts and word lists seem to benefit most, while the evidence for physical skills is more mixed. [[e|Researchers caution that most studies have involved young adults]], so it is unclear whether the findings apply to older people."
+      ],
+      qs: [
+        { s: "The link between sleep and memory was first noticed in recent years.", a: "F", ev: "", why: "'For around a century, psychologists have known…' contradicts 'recent years'." },
+        { s: "Early researchers believed sleep helped memory mainly by preventing interference.", a: "T", ev: "a", why: "'Assumed this was simply because sleep protects memories from interference.'" },
+        { s: "Modern research shows interference plays no part in the effect.", a: "NG", ev: "b", why: "Sleep 'also' plays an active role — 'also' means in addition. The text neither confirms nor rules out interference. (Tempting: F. But nothing says interference plays <i>no</i> part.)" },
+        { s: "Sounds played during sleep can affect later performance.", a: "T", ev: "c", why: "'Playing a sound… during sleep improved performance on that task.'" },
+        { s: "Sleep improves memory for physical skills more than for facts.", a: "F", ev: "d", why: "'Facts and word lists seem to benefit most' — the opposite of the statement." },
+        { s: "The findings have been shown not to apply to older people.", a: "NG", ev: "e", why: "'It is unclear whether the findings apply to older people.' Unclear ≠ shown not to apply." },
+      ] },
+  ],
+  ynng: [
+    { title: "Why cities should rethink parking (opinion)",
+      paras: [
+        "[[a|Few urban policies are as quietly expensive as the requirement that every new building provide a minimum number of parking spaces]]. A single underground space can add tens of thousands to construction costs, and that cost is passed on to residents whether they own a car or not.",
+        "[[b|I do not argue that cities should abolish parking altogether]]; deliveries, disabled drivers and emergency services all need space. [[c|But minimum requirements should be replaced by maximums in areas with good public transport]]. Several cities have done exactly this, [[d|and the early evidence suggests that housing has become slightly cheaper to build there]].",
+        "[[e|Critics claim that fewer parking spaces will drive shoppers away from city centres. This fear is exaggerated]]: most spending in busy centres comes from people who walk, cycle or use public transport."
+      ],
+      qs: [
+        { s: "Parking requirements raise the cost of housing even for people without cars.", a: "Y", ev: "a", why: "'That cost is passed on to residents whether they own a car or not' — the writer agrees." },
+        { s: "Cities should remove all parking from new developments.", a: "N", ev: "b", why: "'I do not argue that cities should abolish parking altogether' — the writer disagrees." },
+        { s: "Parking maximums are suitable wherever there is good public transport.", a: "Y", ev: "c", why: "'Minimum requirements should be replaced by maximums in areas with good public transport.'" },
+        { s: "Housing has become dramatically cheaper in cities with parking maximums.", a: "N", ev: "d", why: "The writer says 'slightly cheaper'. Dramatically contradicts slightly → No. (Degree words matter!)" },
+        { s: "Shop owners in city centres generally support parking maximums.", a: "NG", ev: "e", why: "The writer discusses critics' fears and shoppers' spending, but says nothing about what shop owners think." },
+        { s: "Concerns about losing shoppers are overstated.", a: "Y", ev: "e", why: "'This fear is exaggerated' = overstated." },
+      ] },
+  ],
+  head: [
+    { title: "The science of queuing",
+      paras: [
+        "[[A|In the early 1900s, a Danish engineer working for a telephone company tried to work out how many operators were needed so that callers would rarely wait. His equations, describing random arrivals and service times, became the foundation of what is now called queueing theory.]]",
+        "[[B|One of its most useful results is surprisingly simple: the average number of people in a system equals the rate at which they arrive multiplied by the average time each spends there. It holds for supermarkets, hospitals and computer networks alike, regardless of how arrivals are distributed.]]",
+        "[[C|Yet the experience of waiting depends on more than the length of the wait. Studies show that unoccupied time feels longer than occupied time, and that people are far more irritated when someone who arrived later is served first. This is why many banks and post offices switched to a single line feeding several counters.]]",
+        "[[D|Designers now use these findings deliberately. Mirrors beside lifts, progress updates on websites and visible staff working on orders all make a wait feel shorter, even when it is not.]]"
+      ],
+      headings: ["i. A rule that applies to every kind of queue", "ii. Why some queues feel fairer than others", "iii. The cost of employing extra staff", "iv. A practical problem that started a field", "v. Making delays seem less painful", "vi. How computers have eliminated waiting"],
+      ans: { A: "iv", B: "i", C: "ii", D: "v" },
+      why: {
+        A: "Main idea = the telephone-operator problem that founded queueing theory. Heading iii mentions staff (a detail) but not the main idea.",
+        B: "One general result that 'holds for supermarkets, hospitals and computer networks alike' = applies to every kind of queue.",
+        C: "Unoccupied time and being overtaken → fairness and perception. 'Single line' is the example, not the topic.",
+        D: "Designers use tricks so a wait 'feels shorter' = seem less painful. vi is a trap: computers appear only as an example in B, and nothing says waiting is eliminated."
+      } },
+  ],
+};
+
+let mode = "tfng", set = null, t0 = Date.now();
+setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000); $("clock").textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; }, 1000);
+const renderPara = (txt) => txt.replace(/\[\[(\w+)\|([^\]]+)\]\]/g, '<span class="ev" data-ev="$1">$2</span>');
+function flash(ev) {
+  document.querySelectorAll(".ev").forEach((e) => e.classList.toggle("on", !!ev && e.dataset.ev === ev));
+  const el = ev && document.querySelector(`.ev[data-ev="${ev}"]`);
+  if (el && el.scrollIntoView && window.innerWidth < 820) el.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function load(m) {
+  mode = m; t0 = Date.now();
+  const pool = SETS[m]; set = pool[(pool.indexOf(set) + 1) % pool.length] || pool[0];
+  if (!pool.includes(set)) set = pool[0];
+  const letter = m === "head";
+  $("passage").innerHTML = `<h3 style="margin-top:0">${set.title}</h3>` + set.paras.map((p, i) => `<p>${letter ? `<span class="pl">${"ABCD"[i]}</span>` : ""}${renderPara(p)}</p>`).join("");
+  if (m === "head") return renderHeadings();
+  const opts = m === "tfng" ? [["T", "True"], ["F", "False"], ["NG", "Not Given"]] : [["Y", "Yes"], ["N", "No"], ["NG", "Not Given"]];
+  $("qs").innerHTML = `<b>${m === "tfng" ? "Do the statements agree with the information in the passage?" : "Do the statements agree with the claims of the writer?"}</b>` +
+    set.qs.map((q, i) => `<div class="stmt" data-i="${i}"><div class="s"><b>${i + 1}.</b> ${q.s}</div><div class="tfng">${opts.map(([k, l]) => `<button data-k="${k}">${l}</button>`).join("")}</div><div class="why" hidden></div></div>`).join("") +
+    `<div class="row" style="justify-content:space-between;margin-top:10px"><span id="res" class="note"></span><button id="nextset">Next passage →</button></div>`;
+  let done = 0, right = 0;
+  $("qs").querySelectorAll(".stmt").forEach((row) => {
+    const q = set.qs[+row.dataset.i];
+    row.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+      if (row.dataset.done) return; row.dataset.done = 1; done++;
+      const ok = b.dataset.k === q.a; if (ok) right++;
+      b.classList.add(ok ? "ok" : "no");
+      row.querySelector(`[data-k="${q.a}"]`).classList.add("ok");
+      const w = row.querySelector(".why"); w.hidden = false;
+      w.innerHTML = `<b>${ok ? "✓" : "✗"} ${opts.find(([k]) => k === q.a)[1]}.</b> ${q.why}`;
+      flash(q.ev);
+      row.addEventListener("mouseenter", () => flash(q.ev));
+      $("res").textContent = `${right}/${done} correct` + (done === set.qs.length ? ` · ${Math.round((Date.now() - t0) / 1000)} s` : "");
+    }));
+  });
+  $("nextset").addEventListener("click", () => load(mode));
+}
+
+function renderHeadings() {
+  const keys = Object.keys(set.ans);
+  $("qs").innerHTML = `<b>Choose the correct heading for each paragraph.</b> <span class="note">There are more headings than paragraphs.</span>
+    <ol class="note" style="padding-left:18px;margin:8px 0" type="none">${set.headings.map((h) => `<li>${h}</li>`).join("")}</ol>` +
+    keys.map((k) => `<div class="stmt"><label class="ctl"><b style="color:var(--text)">Paragraph ${k}</b><select class="h" data-k="${k}"><option value="">—</option>${set.headings.map((h) => `<option value="${h.split(".")[0]}">${h}</option>`).join("")}</select></label><div class="why" hidden data-w="${k}"></div></div>`).join("") +
+    `<div class="row" style="justify-content:space-between;margin-top:10px"><button class="primary" id="hchk">Check</button><span id="res" class="note"></span></div>
+     <p class="note">Method: read the headings first, then each paragraph's first and last sentences, then ask "what is this paragraph <i>about</i>?" not "which heading shares a word with it?".</p>`;
+  document.querySelectorAll("select.h").forEach((s) => s.addEventListener("focus", () => flash(s.dataset.k)));
+  $("hchk").addEventListener("click", () => {
+    let right = 0;
+    document.querySelectorAll("select.h").forEach((s) => {
+      const k = s.dataset.k, ok = s.value === set.ans[k]; if (ok) right++;
+      const w = document.querySelector(`[data-w="${k}"]`); w.hidden = false;
+      w.innerHTML = `<b class="${ok ? "good" : "bad"}">${ok ? "✓" : "✗"} ${set.ans[k]}.</b> ${set.why[k]}`;
+    });
+    $("res").textContent = `${right}/${keys.length} correct`;
+  });
+}
+
+$("modes").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+  $("modes").querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === b));
+  set = null; load(b.dataset.m);
+}));
+load("tfng");
+
+window.__selftest = () => {
+  const errs = [];
+  for (const [m, pool] of Object.entries(SETS)) for (const s of pool) {
+    const ids = new Set([...s.paras.join(" ").matchAll(/\[\[(\w+)\|/g)].map((x) => x[1]));
+    (s.qs || []).forEach((q, i) => { if (q.ev && !ids.has(q.ev)) errs.push(`${s.title} q${i + 1} ev ${q.ev}`); if (!(m === "tfng" ? ["T", "F", "NG"] : ["Y", "N", "NG"]).includes(q.a)) errs.push(`${s.title} q${i + 1} key`); });
+    if (s.ans) Object.values(s.ans).forEach((v) => { if (!s.headings.some((h) => h.startsWith(v + "."))) errs.push("heading " + v); });
+  }
+  // click every correct answer in the first tfng set
+  load("tfng"); set.qs.forEach((q, i) => document.querySelector(`.stmt[data-i="${i}"] [data-k="${q.a}"]`).click());
+  const full = $("res").textContent.startsWith(`${set.qs.length}/${set.qs.length}`);
+  load("head"); Object.entries(set.ans).forEach(([k, v]) => (document.querySelector(`select.h[data-k="${k}"]`).value = v)); $("hchk").click();
+  const hfull = $("res").textContent.startsWith("4/4");
+  return errs.length || !full || !hfull ? "FAIL " + errs.join("; ") + ` full=${full} h=${hfull}` : "ok";
+};
+</script>
+</body>
+</html>
