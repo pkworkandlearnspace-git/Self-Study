@@ -50,6 +50,7 @@ flowchart LR
 
 ## Interactive
 - 🧪 **[Gridworld RL](interactive/gridworld-rl.html)**: edit a stochastic gridworld, run value iteration sweep by sweep (watch the Bellman residual contract by γ), then train Q-learning with ε-greedy and compare the learned policy and its learning curve.
+- ✅ [Architectures → RL Quiz](interactive/advanced-quiz.html): auto-graded questions for modules 06–11 with explanations; filter by this module.
 
 ## Worked example: value iteration on a 3-state chain
 States A → B → C (terminal). From A or B the only action moves right; entering C gives reward +1, other steps give 0. $\gamma = 0.9$. Start with $V = 0$.

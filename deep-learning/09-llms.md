@@ -71,6 +71,7 @@ flowchart LR
 - 🧪 **[BPE Tokenizer Lab](interactive/bpe-lab.html)**: train BPE merge by merge on your own text, then encode new strings and see the strawberry/number/language quirks.
 - 🧪 **[Transformer Calculator](interactive/llm-calculator.html)**: parameters, $6ND$ compute, Chinchilla data, training memory, KV cache and bandwidth-bound decode speed for GPT-2 and Llama 3 configs.
 - [Attention & Sampling](interactive/attention.html): temperature, top-k, top-p.
+- ✅ [Architectures → RL Quiz](interactive/advanced-quiz.html): auto-graded questions for modules 06–11 with explanations; filter by this module.
 
 ## Worked example: budgeting a small pretraining run
 You want a compute-optimal model for a budget of $C = 10^{20}$ FLOPs.

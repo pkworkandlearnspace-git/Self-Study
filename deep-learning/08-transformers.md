@@ -64,6 +64,7 @@ flowchart TB
 - 🧪 **[Attention & Sampling](interactive/attention.html)**: drag $\mathbf q$ and $\mathbf k$, see what $\sqrt d$ does, and the causal mask.
 - 🧪 **[Positional Encodings & RoPE](interactive/positional-encoding.html)**: sinusoidal heatmap, RoPE rotation dials (shift both positions and the score doesn't change), long-range decay vs RoPE base.
 - 🧪 **[Transformer Calculator](interactive/llm-calculator.html)**: parameter counts for GPT-2 and Llama 3 configs, with the $12Ld^2$ breakdown.
+- ✅ [Architectures → RL Quiz](interactive/advanced-quiz.html): auto-graded questions for modules 06–11 with explanations; filter by this module.
 
 ## Worked example: attention by hand
 One query $\mathbf q = (1, 0)$ attends over three tokens with keys $\mathbf k_1=(1,0),\ \mathbf k_2=(0,1),\ \mathbf k_3=(1,1)$ and values equal to the keys. $d_k = 2$.

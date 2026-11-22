@@ -56,6 +56,7 @@ flowchart LR
 ## Interactive
 - 🧪 **[RNN Gradient Flow](interactive/rnn-gradients.html)**: watch $|\partial h_T/\partial h_k|$ vanish or explode as you change the recurrent weight, compare with the LSTM cell path $\prod f$, and compare RNN vs attention path lengths.
 - [Attention & Sampling](interactive/attention.html): greedy vs temperature / top-k / top-p decoding.
+- ✅ [Architectures → RL Quiz](interactive/advanced-quiz.html): auto-graded questions for modules 06–11 with explanations; filter by this module.
 
 ## Worked example: how fast does a gradient vanish?
 Scalar RNN $h_t = \tanh(w h_{t-1} + x_t)$ with $w = 0.9$, and suppose $|h_t| \approx 0.5$ on average, so $\tanh' = 1 - h^2 \approx 0.75$. Each step multiplies the gradient by about $0.9 \times 0.75 = 0.675$. After 20 steps: $0.675^{20} \approx 3.9\times10^{-4}$. After 50: $\approx 3\times10^{-9}$. A dependency 50 tokens back is invisible to gradient descent.

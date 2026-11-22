@@ -71,6 +71,7 @@ flowchart LR
 
 ## Interactive
 - 🧪 **[Diffusion & Flow Lab](interactive/diffusion-lab.html)**: 2D data with an *exact* score, so you can compare DDPM, DDIM and flow-matching samplers at 1–200 steps, watch the forward process and the score field, and push classifier-free guidance to see the diversity trade-off.
+- ✅ [Architectures → RL Quiz](interactive/advanced-quiz.html): auto-graded questions for modules 06–11 with explanations; filter by this module.
 
 ## Worked example: one DDPM training step by hand
 Linear schedule ($\beta_1=10^{-4}\to\beta_{1000}=0.02$). At $t=250$, $\bar\alpha_t\approx0.524$, so $\sqrt{\bar\alpha_t}\approx0.724$ and $\sqrt{1-\bar\alpha_t}\approx0.690$.

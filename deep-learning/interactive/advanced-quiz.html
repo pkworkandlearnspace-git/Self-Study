@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Architectures Quiz</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .q { margin-bottom: 14px; }
+  .q .qt { font-weight: 600; margin-bottom: 8px; }
+  .q .tag { font-size: 12px; color: var(--accent); background: var(--accent-soft); border-radius: 99px; padding: 1px 8px; margin-right: 6px; }
+  .opts { display: grid; gap: 6px; }
+  .opts button { text-align: left; white-space: normal; line-height: 1.4; }
+  .opts button.right { border-color: var(--good); background: color-mix(in srgb, var(--good) 15%, var(--surface)); }
+  .opts button.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 15%, var(--surface)); }
+  .exp { margin-top: 8px; font-size: 14px; }
+  .score { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 8px 0; }
+  table.t td:last-child { font-family: var(--mono); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a><span class="note">Modules 06–11 · Self-test</span></header>
+  <h1>Architectures → RL Quiz</h1>
+  <p class="lead">Auto-graded questions for modules 06–11, each with an explanation. Use the per-module score to decide which skip tests you are ready for. Nothing is saved; reload to start over.</p>
+  <div class="score row" style="justify-content:space-between">
+    <div class="row"><select id="filter" aria-label="Module filter"><option value="all">All modules</option></select><button id="shuffle">Shuffle</button><button id="resetq">Reset</button></div>
+    <b id="total"></b>
+  </div>
+  <div id="quiz"></div>
+  <h2>Score by module</h2>
+  <div class="card scroll-x"><table class="t"><thead><tr><th>Module</th><th>Answered</th><th>Correct</th></tr></thead><tbody id="bymod"></tbody></table>
+  <p class="note" id="advice" style="margin-bottom:0"></p></div>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive</footer>
+</div>
+<script>
+const QS = [
+  // 06
+  { m: "06 CNNs", q: "Input 32×32, Conv2d with kernel 5, stride 2, padding 2. Output spatial size?", o: ["14×14", "16×16", "15×15", "32×32"], a: 1, e: "⌊(32 + 2·2 − 5)/2⌋ + 1 = ⌊31/2⌋ + 1 = 16." },
+  { m: "06 CNNs", q: "Parameters of Conv2d(64, 128, kernel_size=3) with bias?", o: ["73,856", "73,728", "8,192", "589,952"], a: 0, e: "64·128·9 weights + 128 biases = 73,728 + 128 = 73,856. It does not depend on the image size." },
+  { m: "06 CNNs", q: "Receptive field of three stacked 3×3 convs, stride 1?", o: ["9", "7", "5", "27"], a: 1, e: "Each 3×3 stride-1 layer adds 2: 1 + 2 + 2 + 2 = 7. That is why VGG replaced 7×7 kernels with 3×3 stacks." },
+  { m: "06 CNNs", q: "The main reason ResNets of 100+ layers train well is…", o: ["they use fewer parameters", "the identity shortcut lets blocks default to ≈ identity and gives gradients a direct path", "they replace ReLU with sigmoid", "they have no BatchNorm"], a: 1, e: "Plain deep nets had higher *training* error than shallower ones (the degradation problem). y = x + F(x) makes 'do nothing' easy and gives ∂y/∂x = I + ∂F/∂x." },
+  { m: "06 CNNs", q: "A ViT-B/16 on a 224×224 image processes how many tokens (with [CLS])?", o: ["196", "197", "225", "256"], a: 1, e: "(224/16)² = 196 patches + 1 class token = 197." },
+  { m: "06 CNNs", q: "You fine-tune a pretrained CNN with batch size 2 and accuracy collapses. Most likely culprit?", o: ["learning-rate warmup", "BatchNorm statistics estimated from 2 images", "data augmentation", "weight decay"], a: 1, e: "Batch stats from 2 samples are noise. Freeze BN (eval mode) or switch to GroupNorm." },
+  // 07
+  { m: "07 RNNs", q: "In a vanilla tanh RNN, ∂h_T/∂h_k is a product of T−k Jacobians of the form…", o: ["W_x · diag(x_t)", "diag(tanh'(z_t)) · W_h", "W_h + I", "softmax(W_h)"], a: 1, e: "h_t = tanh(W_h h_{t−1} + W_x x_t + b), so ∂h_t/∂h_{t−1} = diag(tanh'(z_t)) W_h. Products of these vanish or explode." },
+  { m: "07 RNNs", q: "Exploding gradients in an RNN are usually handled by…", o: ["a bigger hidden size", "gradient-norm clipping", "removing the bias", "a smaller vocabulary"], a: 1, e: "torch.nn.utils.clip_grad_norm_. Vanishing gradients, in contrast, need an architectural fix (LSTM/GRU, residuals, attention)." },
+  { m: "07 RNNs", q: "Along the LSTM cell path, ∂c_t/∂c_{t−1} equals…", o: ["diag(f_t)", "W_c", "diag(o_t)·tanh'(c_t)", "I − f_t"], a: 0, e: "c_t = f_t ⊙ c_{t−1} + i_t ⊙ c̃_t. No weight matrix, no squashing: with f ≈ 1 the gradient passes almost unchanged." },
+  { m: "07 RNNs", q: "Parameters of nn.LSTM(input_size=100, hidden_size=256), one layer, PyTorch?", o: ["365,568", "366,592", "274,944", "91,392"], a: 1, e: "4·256·100 + 4·256·256 + 2·(4·256) = 102,400 + 262,144 + 2,048 = 366,592 (PyTorch keeps two bias vectors)." },
+  { m: "07 RNNs", q: "Teacher forcing means…", o: ["feeding the model its own previous prediction during training", "feeding the ground-truth previous token during training", "distilling from a teacher model", "forcing attention to be causal"], a: 1, e: "It makes training parallel and stable, but creates exposure bias: at test time the model sees its own outputs." },
+  // 08
+  { m: "08 Transformers", q: "Why divide attention scores by √d_k?", o: ["to make attention causal", "q·k has variance d_k for unit-variance components, which would saturate the softmax", "to normalize the values", "to save memory"], a: 1, e: "Var(Σ q_i k_i) = d_k for independent zero-mean unit-variance entries. Scaling restores variance 1." },
+  { m: "08 Transformers", q: "Where is the causal mask applied?", o: ["after the softmax, by zeroing future weights", "to the scores before the softmax, as −∞", "to the values", "to the output projection"], a: 1, e: "−∞ before the softmax gives exactly zero weight and rows that still sum to 1." },
+  { m: "08 Transformers", q: "FlashAttention changes the cost of exact attention from…", o: ["O(T²) FLOPs to O(T) FLOPs", "O(T²) memory to O(T) memory, with the same O(T²d) FLOPs", "exact to approximate", "nothing, it's only a CUDA rewrite"], a: 1, e: "It tiles Q, K, V through SRAM with an online softmax, never materializing the T×T matrix. Still exact, still quadratic compute, much less memory traffic." },
+  { m: "08 Transformers", q: "With RoPE, the score between query at position m and key at position n depends on positions only through…", o: ["m + n", "m − n", "m·n", "max(m, n)"], a: 1, e: "(R_m q)ᵀ(R_n k) = qᵀ R_{n−m} k since rotations compose and R_mᵀ = R_{−m}." },
+  { m: "08 Transformers", q: "Approximate non-embedding parameters of a GPT with L layers, width d, MLP 4d?", o: ["4Ld²", "8Ld²", "12Ld²", "16Ld²"], a: 2, e: "Attention 4d² (Q, K, V, O) + MLP 8d² (d→4d→d) = 12d² per layer." },
+  { m: "08 Transformers", q: "The original 2017 Transformer used ___, while GPT-2 and most LLMs use ___.", o: ["pre-norm; post-norm", "post-norm; pre-norm", "BatchNorm; LayerNorm", "no norm; RMSNorm"], a: 1, e: "Post-norm: x = LN(x + f(x)). Pre-norm: x = x + f(LN(x)), which keeps a clean residual path and trains more stably when deep." },
+  // 09
+  { m: "09 LLMs", q: "Chinchilla's compute-optimal rule of thumb is roughly…", o: ["1 token per parameter", "20 tokens per parameter", "200 tokens per parameter", "train as long as possible on a fixed model"], a: 1, e: "D ≈ 20N for a fixed compute budget C ≈ 6ND. Production models train far beyond it because smaller models are cheaper to serve." },
+  { m: "09 LLMs", q: "KV cache per token for L = 32, 8 KV heads, head dim 128, bf16?", o: ["32 KiB", "64 KiB", "128 KiB", "512 KiB"], a: 2, e: "2 (K and V) · 32 · 8 · 128 · 2 bytes = 131,072 B = 128 KiB." },
+  { m: "09 LLMs", q: "Batch-1 decoding of a large LLM on a GPU is usually limited by…", o: ["FLOPs", "memory bandwidth (reading weights + KV cache every token)", "the tokenizer", "PCIe latency"], a: 1, e: "About 2N FLOPs per token but ~N·bytes of reads: arithmetic intensity ≈ 1, far below a GPU's ridge point." },
+  { m: "09 LLMs", q: "In LoRA, B is initialized to zero so that…", o: ["the adapter is sparse", "training starts exactly from the pretrained model", "the rank stays low", "gradients vanish"], a: 1, e: "W + (α/r)BA = W at step 0. A is random so the gradient w.r.t. B isn't zero." },
+  { m: "09 LLMs", q: "Which method optimizes preferences without a separate reward model or RL loop?", o: ["PPO-based RLHF", "DPO", "GRPO", "SFT"], a: 1, e: "DPO turns the KL-regularized reward objective into a logistic loss on (chosen, rejected) log-ratios vs a reference model." },
+  { m: "09 LLMs", q: "Perplexity 20 corresponds to a cross-entropy of about…", o: ["2.0 nats", "3.0 nats", "4.3 nats", "20 nats"], a: 1, e: "ln 20 ≈ 3.00 nats (= log₂ 20 ≈ 4.32 bits)." },
+  // 10
+  { m: "10 Generative", q: "In DDPM, q(x_t | x_0) is…", o: ["N(x_0, tI)", "N(√ᾱ_t x_0, (1−ᾱ_t) I)", "N(0, I) for all t", "a GAN"], a: 1, e: "Closed form at any t, so training picks a random t and noises x_0 in one shot." },
+  { m: "10 Generative", q: "The optimal noise predictor relates to the score by…", o: ["∇log p_t = ε/√(1−ᾱ_t)", "∇log p_t = −ε/√(1−ᾱ_t)", "∇log p_t = −ε·√ᾱ_t", "they are unrelated"], a: 1, e: "Tweedie's formula: the score is minus the expected noise divided by the noise standard deviation." },
+  { m: "10 Generative", q: "KL( N(1, 0.5²) ‖ N(0, 1) ) is about…", o: ["0.32", "0.82", "1.25", "0"], a: 1, e: "½(μ² + σ² − 1 − ln σ²) = ½(1 + 0.25 − 1 + 1.386) ≈ 0.818 nats." },
+  { m: "10 Generative", q: "Raising the classifier-free guidance scale well above typical values mostly…", o: ["increases diversity", "makes samples more on-condition but less diverse and eventually over-saturated", "speeds up sampling", "has no effect"], a: 1, e: "ε̂ = ε_u + s(ε_c − ε_u) extrapolates past the conditional model; quality-diversity trade-off." },
+  { m: "10 Generative", q: "With x_t = (1−t)x_0 + t x_1 (x_0 noise, x_1 data), flow matching regresses v_θ(x_t, t) onto…", o: ["x_1", "x_1 − x_0", "x_0 − x_1", "ε"], a: 1, e: "The path's velocity d x_t/dt = x_1 − x_0. Its regression optimum is E[x_1 − x_0 | x_t]." },
+  { m: "10 Generative", q: "The reparameterization trick is needed because…", o: ["the KL term has no closed form", "you can't backpropagate through sampling z ~ q(z|x) directly", "the decoder is non-differentiable", "VAEs use discrete latents"], a: 1, e: "z = μ + σ⊙ε moves the randomness into ε, which doesn't depend on the parameters." },
+  // 11
+  { m: "11 RL", q: "Q(s,a) = 0.5, r = 1, γ = 0.9, max Q(s',·) = 2, α = 0.1. After one Q-learning update?", o: ["0.73", "2.8", "0.78", "0.6"], a: 0, e: "Target 1 + 0.9·2 = 2.8; TD error 2.3; 0.5 + 0.1·2.3 = 0.73." },
+  { m: "11 RL", q: "Subtracting a baseline b(s) in the policy gradient…", o: ["adds bias but lowers variance", "keeps it unbiased and lowers variance", "is only valid for deterministic policies", "replaces the need for exploration"], a: 1, e: "E_a[∇log π(a|s)] b(s) = b(s)∇Σ_a π(a|s) = b(s)∇1 = 0." },
+  { m: "11 RL", q: "DQN's target network exists to…", o: ["explore more", "keep the regression target from shifting every step", "store transitions", "compute advantages"], a: 1, e: "Bootstrapping from a network that changes each step chases its own tail. A slowly updated copy stabilizes the target." },
+  { m: "11 RL", q: "In GRPO, the advantage of sampled answer i to a prompt is…", o: ["its reward minus a learned value V(s)", "(r_i − mean of the group's rewards) / std of the group's rewards", "always +1 for correct answers", "the GAE estimate"], a: 1, e: "No critic: the group of answers to the same prompt is the baseline." },
+  { m: "11 RL", q: "Value iteration's Bellman residual shrinks per sweep by a factor of at most…", o: ["α", "γ", "ε", "1/γ"], a: 1, e: "The Bellman optimality operator is a γ-contraction in the max norm." },
+  { m: "11 RL", q: "In Gymnasium, an episode cut off by a time limit (truncated) should be bootstrapped…", o: ["with V = 0, like a terminal state", "from V(s'), since the state isn't really terminal", "never", "with the last reward only"], a: 1, e: "Treating truncation as termination teaches the agent that time-limit states are worthless." }
+];
+const $ = (id) => document.getElementById(id);
+let order = QS.map((_, i) => i), answers = {};
+// show options in a random order (stored once per page load) so the answer position can't be guessed
+const shuf = (n) => { const a = [...Array(n).keys()]; for (let i = n - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const perm = QS.map((q) => shuf(q.o.length));
+const mods = [...new Set(QS.map((q) => q.m))];
+mods.forEach((m) => { const o = document.createElement("option"); o.value = m; o.textContent = m; $("filter").appendChild(o); });
+function render() {
+  const f = $("filter").value, box = $("quiz"); box.innerHTML = "";
+  order.filter((i) => f === "all" || QS[i].m === f).forEach((i, n) => {
+    const Q = QS[i], c = document.createElement("div"); c.className = "card q";
+    c.innerHTML = `<div class="qt"><span class="tag">${Q.m}</span>${n + 1}. ${Q.q}</div><div class="opts"></div><div class="exp" hidden></div>`;
+    const opts = c.querySelector(".opts"), exp = c.querySelector(".exp");
+    perm[i].forEach((k) => {
+      const t = Q.o[k]; const b = document.createElement("button"); b.textContent = t;
+      if (i in answers) { b.disabled = true; if (k === Q.a) b.classList.add("right"); else if (k === answers[i]) b.classList.add("wrong"); }
+      b.onclick = () => { answers[i] = k; render(); };
+      opts.appendChild(b);
+    });
+    if (i in answers) { exp.hidden = false; exp.innerHTML = `${answers[i] === Q.a ? '<b class="good">Correct.</b>' : '<b class="bad">Not quite.</b>'} ${Q.e}`; }
+    box.appendChild(c);
+  });
+  const done = Object.keys(answers).length, right = Object.entries(answers).filter(([i, k]) => QS[i].a === k).length;
+  $("total").textContent = `${right} / ${done} correct · ${QS.length - done} left`;
+  $("bymod").innerHTML = mods.map((m) => { const ids = QS.map((q, i) => i).filter((i) => QS[i].m === m); const d = ids.filter((i) => i in answers).length, r = ids.filter((i) => answers[i] === QS[i].a).length; return `<tr><td>${m}</td><td>${d} / ${ids.length}</td><td>${d ? Math.round(100 * r / d) + "%" : "–"}</td></tr>`; }).join("");
+  const weak = mods.filter((m) => { const ids = QS.map((q, i) => i).filter((i) => QS[i].m === m && i in answers); return ids.length >= 3 && ids.filter((i) => answers[i] === QS[i].a).length / ids.length < 0.8; });
+  $("advice").textContent = done < 6 ? "Answer a few per module to get advice." : weak.length ? `Below 80% in: ${weak.join(", ")}. Work through those modules before trying their skip tests.` : "80%+ everywhere you answered: try those modules' skip tests on paper.";
+}
+$("filter").onchange = render;
+$("shuffle").onclick = () => { for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; } render(); };
+$("resetq").onclick = () => { answers = {}; render(); };
+render();
+</script>
+</body>
+</html>

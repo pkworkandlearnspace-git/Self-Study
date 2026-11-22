@@ -53,6 +53,7 @@ flowchart LR
 
 ## Interactive
 - 🧪 **[Convolution Explorer](interactive/conv-explorer.html)**: step a kernel over an image (stride, padding, dilation), stack layers to compute receptive fields, and compare conv vs dense parameter counts.
+- ✅ [Architectures → RL Quiz](interactive/advanced-quiz.html): auto-graded questions for modules 06–11 with explanations; filter by this module.
 
 ## Worked example: shapes through a small CNN
 Input `(B, 3, 32, 32)` (CIFAR-10).

@@ -52,6 +52,14 @@
 - **Attention & sampling:** drag q/k vectors, see the √d scaling and the causal mask, try temperature/top-k/top-p (modules 08–09).
 - **Flashcards:** ~50 core facts with spaced repetition.
 
+**Modules 06–11 tools:**
+- **Convolution explorer** (06): kernel stepping with stride/padding/dilation, receptive fields, conv vs dense params.
+- **RNN gradient flow** (07): vanishing/exploding gradients through time, LSTM cell path, RNN vs attention path length.
+- **Positional encodings & RoPE** (08) and **Transformer calculator** (08–09): params, 6ND compute, Chinchilla, KV cache, decode speed.
+- **BPE tokenizer lab** (09): train merges step by step and see tokenizer quirks.
+- **Diffusion & flow lab** (10): DDPM vs DDIM vs flow matching with an exact score, plus classifier-free guidance.
+- **Gridworld RL** (11): value iteration vs Q-learning. **Architectures → RL quiz** (06–11).
+
 ## Support files
 
 - **[cheatsheet.md](cheatsheet.md)**: every key formula on one page. Use it for recaps.
