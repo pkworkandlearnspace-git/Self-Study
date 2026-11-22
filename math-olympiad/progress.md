@@ -5,7 +5,7 @@
 |---|---|---|
 | National olympiad round 1 | | |
 | National final / team selection | | |
-| IMO 2027 | July 2027 | check eligibility |
+| IMO 2027 (Budapest, Hungary) | 16–26 July 2027 | eligible if born ≥ 1 Jul 2007 and still in school on 1 Dec 2026 |
 
 ## Status board
 ⬜ not started · 🟨 in progress · ✅ done
@@ -20,6 +20,8 @@
 | 06 | Contest practice | ⬜ | mocks: | |
 
 ## Mock exam log
+Run mocks with the [Mock exam timer & log](interactive/mock-exam.html), then paste its Markdown export here.
+
 | Date | Source | P1 | P2 | P3 | Total /21 | Key lesson |
 |---|---|---|---|---|---|---|
 | | | | | | | |

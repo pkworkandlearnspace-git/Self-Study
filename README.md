@@ -9,7 +9,7 @@ Each topic has one folder containing a **roadmap**, short **modules** you can sk
 
 | Topic | Level | Written material | Interactive |
 |---|---|---|---|
-| 🧮 **Math Olympiad** (IMO track) | regional → national → IMO | [`math-olympiad/`](math-olympiad/README.md) | triangle centers, modular lab, flashcards |
+| 🧮 **Math Olympiad** (IMO track) | regional → national → IMO | [`math-olympiad/`](math-olympiad/README.md) | technique quiz, invariants, inequalities, NT toolkit, modular lab, lattice paths, games, triangle centers, power of a point, mock exam timer, flashcards |
 | ⚛️ **Physics Olympiad** (IPhO track) | regional → national → IPhO | [`physics-olympiad/`](physics-olympiad/README.md) | orbits, oscillator, interference, linear fit, flashcards |
 | 💻 **Informatics Olympiad** (IOI track) | regional → national → IOI | [`informatics-olympiad/`](informatics-olympiad/README.md) | graph search, segment tree, DP table, flashcards |
 | 🗣️ **IELTS Academic** | target band 7.0–7.5 | [`ielts/`](ielts/README.md) | band calculator, writing timer, speaking practice, flashcards |

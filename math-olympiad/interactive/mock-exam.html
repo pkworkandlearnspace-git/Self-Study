@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mock Exam Timer &amp; Log</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .clock { font-family: var(--mono); font-size: clamp(44px, 12vw, 84px); font-weight: 700; text-align: center; letter-spacing: .02em; line-height: 1.1; }
+  .phase { text-align: center; font-size: 16px; margin-top: 4px; min-height: 24px; }
+  .bar { position: relative; height: 16px; background: var(--surface-2); border-radius: 99px; overflow: hidden; margin-top: 14px; }
+  .bar > .fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); width: 0; }
+  .bar > .mark { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--text); opacity: .45; }
+  .marks { position: relative; height: 18px; overflow: hidden; font-size: 11px; color: var(--muted); }
+  .marks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .score select { width: 70px; }
+  .scores { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+  table.t td, table.t th { font-size: 13px; }
+  svg.plot { aspect-ratio: 3 / 1; }
+  svg text { font: 11px system-ui, sans-serif; fill: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Math Olympiad tools</a><span class="note">Module 06 · Contest practice</span></header>
+  <h1>Mock Exam Timer &amp; Log</h1>
+  <p class="lead">Sit a real-length paper: 3 problems, 4.5 hours. The timer reminds you when to stop exploring and when to start writing. Afterwards, grade each problem strictly and log it. Your log is saved in this browser only, so export it to <code>progress.md</code>.</p>
+
+  <div class="grid two">
+    <div class="card">
+      <div class="clock" id="clock">4:30:00</div>
+      <div class="phase" id="phase">Ready</div>
+      <div class="bar"><div class="fill" id="fill"></div><div class="mark" id="m1"></div><div class="mark" id="m2"></div></div>
+      <div class="marks"><span id="l1">explore ends</span><span id="l2">write-up starts</span></div>
+      <div class="row" style="justify-content:center;margin-top:8px">
+        <button class="primary" id="start">Start</button><button id="pause" disabled>Pause</button><button id="reset">Reset</button>
+      </div>
+    </div>
+    <div class="controls">
+      <label class="ctl">Format
+        <select id="fmt">
+          <option value="270">IMO day: 3 problems · 4 h 30 min</option>
+          <option value="240">4 hours (many national olympiads)</option>
+          <option value="180">3 hours</option>
+          <option value="90">One hard problem · 1 h 30 min</option>
+          <option value="1">Test run · 1 minute</option>
+        </select>
+      </label>
+      <label class="ctl">Explore phase (min) <input type="number" id="explore" value="30" min="0" max="120"></label>
+      <label class="ctl">Write-up phase (last min) <input type="number" id="write" value="30" min="0" max="120"></label>
+      <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="beep" checked> Beep at phase changes</label>
+      <div class="callout">Rules: no notes, no calculator, no internet. Paper and compass/ruler only. Keep this tab open; the timer keeps correct time even if the screen sleeps.</div>
+    </div>
+  </div>
+
+  <h2>Grade and log the paper</h2>
+  <div class="card">
+    <div class="row">
+      <label class="ctl">Date <input type="text" id="date"></label>
+      <label class="ctl" style="flex:1;min-width:200px">Source <input type="text" id="src" placeholder="e.g. IMO 2019 day 1" style="width:100%"></label>
+    </div>
+    <div class="scores" style="margin-top:12px">
+      <label class="ctl score">P1 <select id="s1"></select></label>
+      <label class="ctl score">P2 <select id="s2"></select></label>
+      <label class="ctl score">P3 <select id="s3"></select></label>
+    </div>
+    <details style="margin-top:10px"><summary class="note">Strict grading guide</summary>
+      <table class="t" style="margin-top:6px">
+        <tr><td><b>7</b></td><td>Complete, correct proof.</td></tr>
+        <tr><td><b>5–6</b></td><td>Complete approach, small fixable gap or easy missing case.</td></tr>
+        <tr><td><b>2–4</b></td><td>Substantial progress: key lemma proven, or a reduction to a much simpler problem.</td></tr>
+        <tr><td><b>1</b></td><td>A useful non-trivial observation proven (e.g. the answer with a correct construction).</td></tr>
+        <tr><td><b>0</b></td><td>Small cases, conjectures, or ideas without proof.</td></tr>
+      </table>
+    </details>
+    <label class="ctl" style="margin-top:10px">Key lesson (one line) <input type="text" id="lesson" style="width:100%" placeholder="e.g. P2: should have tried the extremal element earlier"></label>
+    <div class="row" style="margin-top:12px"><button class="primary" id="save">Save to log</button><span class="note" id="saveMsg"></span></div>
+  </div>
+
+  <h2>Your mock log</h2>
+  <div class="card">
+    <svg class="plot" id="chart" viewBox="0 0 600 200" aria-label="Total score per mock"></svg>
+    <div class="scroll-x" style="margin-top:10px"><table class="t" id="logT"></table></div>
+    <div class="row" style="margin-top:10px"><button id="copy">Copy as Markdown (for progress.md)</button><button id="clearLog">Delete log</button><span class="note" id="copyMsg"></span></div>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · math-olympiad/interactive · the log is stored only in this browser</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const cv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const KEY = "selfstudy-mo-mocks";
+let total = 270 * 60, endAt = null, remaining = total, timer = null, lastPhase = "";
+
+function load() { try { return JSON.parse(localStorage.getItem(KEY) || "[]") || []; } catch (e) { return []; } }
+function store(v) { try { localStorage.setItem(KEY, JSON.stringify(v)); return true; } catch (e) { return false; } }
+const pad = (n) => String(n).padStart(2, "0");
+const hms = (s) => { s = Math.max(0, Math.ceil(s)); return `${Math.floor(s / 3600)}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`; };
+
+function beep() {
+  if (!$("beep").checked) return;
+  try { const A = new (window.AudioContext || window.webkitAudioContext)(), o = A.createOscillator(), g = A.createGain(); o.frequency.value = 880; o.connect(g); g.connect(A.destination); g.gain.setValueAtTime(0.15, A.currentTime); o.start(); o.stop(A.currentTime + 0.35); } catch (e) { /* audio unavailable */ }
+}
+function phases() {
+  const ex = Math.max(0, +$("explore").value) * 60, wr = Math.max(0, +$("write").value) * 60;
+  return { ex: Math.min(ex, total), wr: Math.min(wr, total) };
+}
+function render() {
+  const { ex, wr } = phases(), used = total - remaining;
+  $("clock").textContent = hms(remaining);
+  $("fill").style.width = `${Math.min(100, (100 * used) / total)}%`;
+  const p1 = (100 * ex) / total, p2 = (100 * (total - wr)) / total;
+  $("m1").style.left = p1 + "%"; $("m2").style.left = p2 + "%"; $("l1").style.left = p1 + "%"; $("l2").style.left = p2 + "%";
+  [["m1", "l1", ex], ["m2", "l2", wr]].forEach(([m, l, v]) => { $(m).style.display = $(l).style.display = v > 0 ? "" : "none"; });
+  $("l1").style.left = Math.max(p1, 8) + "%"; $("l2").style.left = Math.min(p2, 90) + "%";
+  let ph;
+  if (remaining <= 0) ph = "⏰ Time is up. Pens down.";
+  else if (endAt === null && used === 0) ph = "Ready";
+  else if (used < ex) ph = "Explore: read all three problems, try small cases, draw figures.";
+  else if (remaining > wr) ph = "Solve: focus on the problem you can most likely finish.";
+  else ph = "Write up: turn every proven piece into clean text now.";
+  if (endAt === null && used > 0 && remaining > 0) ph = "Paused · " + ph;
+  $("phase").textContent = ph;
+  const key = ph.replace("Paused · ", "").slice(0, 8);
+  if (endAt !== null && lastPhase && key !== lastPhase) beep();
+  lastPhase = key;
+}
+function tick() {
+  remaining = (endAt - Date.now()) / 1000;
+  if (remaining <= 0) { remaining = 0; clearInterval(timer); timer = null; endAt = null; $("start").disabled = false; $("pause").disabled = true; $("start").textContent = "Start"; }
+  render();
+}
+$("start").addEventListener("click", () => {
+  if (remaining <= 0) remaining = total;
+  endAt = Date.now() + remaining * 1000; timer = setInterval(tick, 250);
+  $("start").disabled = true; $("pause").disabled = false; tick();
+});
+$("pause").addEventListener("click", () => {
+  if (endAt === null) return; remaining = (endAt - Date.now()) / 1000; endAt = null; clearInterval(timer); timer = null;
+  $("start").disabled = false; $("start").textContent = "Resume"; $("pause").disabled = true; render();
+});
+function reset() { clearInterval(timer); timer = null; endAt = null; total = +$("fmt").value * 60; remaining = total; lastPhase = ""; $("start").disabled = false; $("start").textContent = "Start"; $("pause").disabled = true; render(); }
+$("reset").addEventListener("click", reset);
+$("fmt").addEventListener("change", () => {
+  const m = +$("fmt").value; $("explore").value = m >= 180 ? 30 : m >= 60 ? 15 : 0; $("write").value = m >= 180 ? 30 : m >= 60 ? 15 : 0; reset();
+});
+["explore", "write"].forEach((id) => $(id).addEventListener("input", render));
+
+/* grading + log */
+for (const id of ["s1", "s2", "s3"]) $(id).innerHTML = `<option value="">–</option>` + Array.from({ length: 8 }, (_, k) => `<option>${k}</option>`).join("");
+$("date").value = new Date().toISOString().slice(0, 10);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+function drawLog() {
+  const L = load();
+  $("logT").innerHTML = `<tr><th>Date</th><th>Source</th><th>P1</th><th>P2</th><th>P3</th><th>Total /21</th><th>Key lesson</th></tr>` +
+    (L.length ? L.map((r) => `<tr><td>${esc(r.date)}</td><td>${esc(r.src)}</td><td>${r.s[0]}</td><td>${r.s[1]}</td><td>${r.s[2]}</td><td><b>${r.s.reduce((a, b) => a + b, 0)}</b></td><td>${esc(r.lesson)}</td></tr>`).join("")
+      : `<tr><td colspan="7" class="note">No mocks logged yet.</td></tr>`);
+  const svg = $("chart"), NS = "http://www.w3.org/2000/svg"; svg.innerHTML = "";
+  const mk = (tag, at, txt) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt !== undefined) e.textContent = txt; svg.appendChild(e); return e; };
+  const Lp = 30, B = 24, H = 200, Wd = 600, n = Math.max(L.length, 1), bw = Math.min(40, (Wd - Lp - 10) / n - 6);
+  [0, 7, 14, 21].forEach((v) => { const y = H - B - (v / 21) * (H - B - 10); mk("line", { x1: Lp, y1: y, x2: Wd - 5, y2: y, stroke: cv("--border") }); mk("text", { x: Lp - 6, y: y + 4, "text-anchor": "end" }, v); });
+  L.forEach((r, i) => {
+    const x = Lp + 6 + i * ((Wd - Lp - 10) / n); let y0 = H - B;
+    r.s.forEach((v, k) => { const h = (v / 21) * (H - B - 10); mk("rect", { x, y: y0 - h, width: bw, height: h, fill: cv(["--c1", "--c3", "--c2"][k]) }); y0 -= h; });
+    if (n <= 14) mk("text", { x: x + bw / 2, y: H - 8, "text-anchor": "middle" }, r.date.slice(5));
+  });
+  if (!L.length) mk("text", { x: Wd / 2, y: H / 2, "text-anchor": "middle" }, "Your scores will appear here (P1 blue, P2 green, P3 orange).");
+}
+$("save").addEventListener("click", () => {
+  const s = ["s1", "s2", "s3"].map((id) => $(id).value);
+  if (s.some((v) => v === "")) { $("saveMsg").textContent = "Grade all three problems first."; return; }
+  const L = load(); L.push({ date: $("date").value, src: $("src").value || "(unnamed)", s: s.map(Number), lesson: $("lesson").value });
+  $("saveMsg").textContent = store(L) ? "Saved." : "Could not save (browser storage is blocked). Copy the Markdown instead.";
+  drawLog();
+});
+$("copy").addEventListener("click", async () => {
+  const L = load();
+  const md = L.map((r) => `| ${r.date} | ${r.src} | ${r.s[0]} | ${r.s[1]} | ${r.s[2]} | ${r.s.reduce((a, b) => a + b, 0)} | ${r.lesson} |`).join("\n");
+  try { await navigator.clipboard.writeText(md); $("copyMsg").textContent = "Copied. Paste under the Mock exam log table in progress.md."; }
+  catch (e) { $("copyMsg").textContent = "Clipboard blocked. Select the table above and copy it manually."; }
+});
+$("clearLog").addEventListener("click", () => { if (confirm("Delete every logged mock in this browser?")) { store([]); drawLog(); } });
+reset(); drawLog();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawLog);
+</script>
+</body>
+</html>

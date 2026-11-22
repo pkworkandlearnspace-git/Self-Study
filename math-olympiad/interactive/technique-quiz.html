@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which Technique? Quiz</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .q-prob { font-size: 18px; line-height: 1.5; margin: 6px 0 14px; }
+  .opts { display: grid; gap: 8px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); }
+  .opts button { text-align: left; padding: 10px 12px; }
+  .opts button.right { background: color-mix(in srgb, var(--good) 18%, var(--surface)); border-color: var(--good); }
+  .opts button.wrong { background: color-mix(in srgb, var(--bad) 18%, var(--surface)); border-color: var(--bad); }
+  .fb { margin-top: 14px; display: none; }
+  .fb.show { display: block; }
+  .pill { font-size: 12px; color: var(--accent); background: var(--accent-soft); border-radius: 99px; padding: 1px 8px; }
+  .dots { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 10px; }
+  .dots span { width: 12px; height: 12px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); }
+  .dots span.r { background: var(--good); border-color: var(--good); }
+  .dots span.w { background: var(--bad); border-color: var(--bad); }
+  .dots span.c { outline: 2px solid var(--accent); outline-offset: 1px; }
+</style>
+</head>
+<body>
+<div class="wrap" style="max-width:820px">
+  <header class="top"><a class="back" href="index.html">← Math Olympiad tools</a><span class="note">Module 01 · 04</span></header>
+  <h1>Which Technique? Quiz</h1>
+  <p class="lead">Read a problem and pick the tool that cracks it, <b>before</b> solving. Recognising the technique quickly is half the battle in a 4.5-hour paper. Each answer comes with the one-line key idea.</p>
+
+  <div class="row" style="margin-bottom:12px">
+    <label class="ctl" style="display:flex;gap:8px;align-items:center">Set
+      <select id="set" style="margin:0">
+        <option value="all">All problems</option>
+        <option value="01">Module 01 · general strategies</option>
+        <option value="04">Module 04 · combinatorics</option>
+      </select>
+    </label>
+    <button id="restart">Shuffle &amp; restart</button>
+    <span class="note" id="score"></span>
+  </div>
+
+  <div class="card" id="qcard">
+    <div class="row" style="justify-content:space-between"><span class="pill" id="qnum"></span><span class="note" id="qsrc"></span></div>
+    <div class="q-prob" id="qtext"></div>
+    <div class="opts" id="opts"></div>
+    <div class="fb callout" id="fb"></div>
+    <div class="row" style="margin-top:14px;justify-content:flex-end"><button class="primary" id="next" disabled>Next →</button></div>
+    <div class="dots" id="dots" aria-hidden="true"></div>
+  </div>
+  <div class="card" id="done" style="display:none"></div>
+
+  <footer class="foot">Part of the Self-Study repo · math-olympiad/interactive · nothing is saved</footer>
+</div>
+<script>
+const T = { inv: "Invariant", mono: "Monovariant", pig: "Pigeonhole", ext: "Extremal principle", ind: "Induction", col: "Colouring", desc: "Infinite descent / mod m", dbl: "Double counting", bij: "Bijection", ie: "Inclusion–exclusion", prob: "Probabilistic method", game: "Work backwards (games)" };
+const Q = [
+  { set: "01", ans: "inv", src: "classic", q: "The numbers 1, 2, …, 2026 are on a board. A move replaces two numbers a, b by a + b. Can the last number be odd?", why: "The sum never changes. 1 + … + 2026 = 2026·2027/2 is odd, so the last number is always odd: it is just the total." },
+  { set: "01", ans: "mono", src: "classic", q: "In a parliament each member has at most 3 enemies. Prove the members can be split into two houses so everyone has at most 1 enemy in their own house.", why: "Start with any split. While someone has ≥ 2 enemies in their house, move them. The number of 'enemy pairs in the same house' strictly decreases, so the process stops." },
+  { set: "01", ans: "pig", src: "classic", q: "Prove that among any 51 integers from 1 to 100, two are consecutive.", why: "Boxes {1,2}, {3,4}, …, {99,100}: 50 boxes, 51 numbers. Two land in one box." },
+  { set: "01", ans: "ext", src: "classic", q: "Finitely many points in the plane; every triangle formed by three of them has area ≤ 1. Prove all points fit in a triangle of area 4.", why: "Take the triangle of maximal area ABC. Every point lies in the triangle formed by lines through A, B, C parallel to the opposite sides (area 4·[ABC] ≤ 4), else a larger triangle exists." },
+  { set: "01", ans: "desc", src: "classic", q: "Show x³ + 2y³ = 4z³ has no solution in positive integers.", why: "x must be even; x = 2x₁ gives 4x₁³ + y³ = 2z³, so y is even; then z is even. (x/2, y/2, z/2) is a smaller solution: infinite descent." },
+  { set: "01", ans: "col", src: "classic", q: "An 8×8 board with two opposite corners removed: can it be tiled by 31 dominoes?", why: "Chessboard colouring: each domino covers one black and one white; the removed corners have the same colour, leaving 32 vs 30." },
+  { set: "01", ans: "ind", src: "classic", q: "Prove a 2ⁿ × 2ⁿ board with any one square removed can be tiled by L-trominoes.", why: "Split into four 2ⁿ⁻¹ boards; place one L-tromino at the centre covering one square of each of the three boards without the hole. Each quarter now has one missing square: induct." },
+  { set: "01", ans: "inv", src: "classic", q: "Chameleons: 13 grey, 15 brown, 17 red. When two of different colours meet, both change to the third colour. Can all become one colour?", why: "Differences of counts mod 3 are invariant: a meeting changes each count by −1, −1, +2, so pairwise differences change by 0 or ±3. 13, 15, 17 give differences 2, 2, 4 ≢ 0 mod 3 for every pair, so no two counts can both reach 0." },
+  { set: "01", ans: "pig", src: "classic", q: "Prove that any 5 points on a sphere include 4 that lie in a closed hemisphere.", why: "Take a great circle through 2 of the points. The other 3 lie in two closed hemispheres; one contains ≥ 2 of them (pigeonhole), plus the 2 on the circle." },
+  { set: "01", ans: "mono", src: "IMO 1986/3", q: "Integers on the vertices of a pentagon have positive sum. If some y < 0 has neighbours x, z, replace (x, y, z) by (x+y, −y, z+y). Prove this must stop.", why: "Σ (xᵢ₊₁ − xᵢ₋₁)² is a non-negative integer that decreases by −2·y·(sum) > 0 each move." },
+  { set: "01", ans: "ext", src: "classic", q: "In a finite tournament (every pair plays once, no draws) prove some player X has: for every other Y, X beat Y or X beat someone who beat Y.", why: "Take the player with the most wins. If some Y beat X and everyone X beat, Y would have more wins than X." },
+  { set: "01", ans: "desc", src: "classic", q: "Prove √2 is irrational using the smallest denominator.", why: "If √2 = p/q with q minimal, then √2 = (2q − p)/(p − q) with a smaller positive denominator: contradiction (descent)." },
+  { set: "04", ans: "dbl", src: "classic", q: "Each of 10 clubs has 5 members, and every 2 students share at most one club. Prove there are at least 15 students.", why: "Count (pair of students, shared club) triples: each club gives C(5,2) = 10 pairs, total 100 ≤ C(n,2). So n ≥ 15." },
+  { set: "04", ans: "bij", src: "classic", q: "Show the number of ways to write n as an ordered sum of 1s and 2s equals the number of subsets of {1,…,n−1} with no two consecutive elements.", why: "Map a composition to the set of values in {1,…,n−1} that are NOT partial sums. A part 2 skips exactly one value and a part 1 skips none, so skipped values are never consecutive. This is reversible: a bijection." },
+  { set: "04", ans: "ie", src: "classic", q: "How many permutations of {1,…,n} leave no element in its place?", why: "Inclusion–exclusion over the sets Aᵢ = {σ(i) = i}: Dₙ = Σ (−1)ᵏ C(n,k)(n−k)!." },
+  { set: "04", ans: "prob", src: "Erdős", q: "Prove that for k ≥ 3 the complete graph on ⌊2^{k/2}⌋ vertices can be 2-coloured with no monochromatic K_k.", why: "Colour each edge randomly. Expected number of monochromatic K_k is C(n,k)·2^{1−C(k,2)} < 1, so some colouring has none." },
+  { set: "04", ans: "game", src: "classic", q: "Two players take 1–3 stones from a pile of 2026. Whoever takes the last stone wins. Who wins?", why: "Work backwards: positions ≡ 0 (mod 4) are losing for the player to move. 2026 ≡ 2, so the first player takes 2 and wins." },
+  { set: "04", ans: "dbl", src: "classic", q: "Prove that in any graph the number of vertices of odd degree is even.", why: "Σ deg v = 2|E| is even (each edge counted twice), so the odd terms come in an even number." },
+  { set: "04", ans: "col", src: "classic", q: "Can a 6×6 board be tiled by 1×4 tiles?", why: "Colour (i + j) mod 4. Each tile covers one of each colour, but the 4 colour counts on a 6×6 board are 9, 10, 9, 8." },
+  { set: "04", ans: "ext", src: "classic", q: "In a graph every vertex has degree ≥ d ≥ 2. Prove it contains a cycle of length ≥ d + 1.", why: "Take a longest path v₀v₁…v_k. All neighbours of v₀ are on the path (else extend it), so some neighbour is v_j with j ≥ d. Close the cycle v₀…v_j." },
+  { set: "04", ans: "pig", src: "Erdős–Szekeres", q: "Prove any sequence of n² + 1 distinct reals has a monotone subsequence of length n + 1.", why: "Label each term with the length of the longest increasing subsequence starting there. If all labels ≤ n, some label repeats n + 1 times, and those terms form a decreasing subsequence." },
+  { set: "04", ans: "inv", src: "classic", q: "A 3×3 table holds +1 in every cell except one −1. A move flips the signs of a whole row or a whole column. Can you make every entry +1?", why: "Pick a 2×2 sub-rectangle containing the −1. A row or column flip changes 0 or 2 of its entries, so its product (−1) never changes. The target has product +1." },
+];
+
+const $ = (id) => document.getElementById(id);
+let deck = [], i = 0, results = [];
+const shuffle = (a) => { for (let k = a.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [a[k], a[j]] = [a[j], a[k]]; } return a; };
+
+function start() {
+  const s = $("set").value;
+  deck = shuffle(Q.filter((q) => s === "all" || q.set === s));
+  i = 0; results = [];
+  $("qcard").style.display = ""; $("done").style.display = "none";
+  show();
+}
+function options(q) {
+  const pool = Object.keys(T).filter((k) => k !== q.ans);
+  return shuffle([q.ans, ...shuffle(pool).slice(0, 3)]);
+}
+function dots() {
+  $("dots").innerHTML = deck.map((_, k) => `<span class="${results[k] === true ? "r" : results[k] === false ? "w" : ""} ${k === i ? "c" : ""}"></span>`).join("");
+  const right = results.filter(Boolean).length;
+  $("score").textContent = `Score: ${right} / ${results.length}`;
+}
+function show() {
+  const q = deck[i];
+  $("qnum").textContent = `Problem ${i + 1} of ${deck.length}`;
+  $("qsrc").textContent = q.src;
+  $("qtext").textContent = q.q;
+  $("fb").className = "fb callout"; $("fb").innerHTML = "";
+  $("next").disabled = true;
+  $("opts").innerHTML = "";
+  for (const k of options(q)) {
+    const b = document.createElement("button");
+    b.textContent = T[k]; b.dataset.k = k;
+    b.addEventListener("click", () => pick(k));
+    $("opts").appendChild(b);
+  }
+  dots();
+}
+function pick(k) {
+  if (results[i] !== undefined) return;
+  const q = deck[i], ok = k === q.ans;
+  results[i] = ok;
+  $("opts").querySelectorAll("button").forEach((b) => {
+    b.disabled = true;
+    if (b.dataset.k === q.ans) b.classList.add("right");
+    else if (b.dataset.k === k) b.classList.add("wrong");
+  });
+  $("fb").innerHTML = `<b class="${ok ? "good" : "bad"}">${ok ? "Right." : "Not quite: it's " + T[q.ans] + "."}</b> ${q.why}`;
+  $("fb").classList.add("show");
+  $("next").disabled = false; $("next").focus();
+  dots();
+}
+function next() {
+  if (i + 1 < deck.length) { i++; show(); return; }
+  const right = results.filter(Boolean).length, pct = Math.round((100 * right) / deck.length);
+  const missed = deck.filter((_, k) => !results[k]);
+  $("qcard").style.display = "none"; $("done").style.display = "";
+  $("done").innerHTML = `<div class="big ${pct >= 80 ? "good" : pct >= 50 ? "warn" : "bad"}">${right} / ${deck.length}</div>
+    <p>${pct >= 80 ? "Strong recognition. Move on to solving full problems." : "Review the key ideas below, then try again tomorrow."}</p>
+    ${missed.length ? `<h3>Review</h3><table class="t"><tr><th>Problem</th><th>Technique</th></tr>${missed.map((q) => `<tr><td>${q.q}</td><td><b>${T[q.ans]}</b><br><span class="note">${q.why}</span></td></tr>`).join("")}</table>` : ""}
+    <div class="row" style="margin-top:14px"><button class="primary" id="again">Try again</button></div>`;
+  $("again").addEventListener("click", start);
+}
+$("next").addEventListener("click", next);
+$("restart").addEventListener("click", start);
+$("set").addEventListener("change", start);
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "SELECT") return;
+  const n = parseInt(e.key, 10);
+  const bs = $("opts").querySelectorAll("button");
+  if (n >= 1 && n <= bs.length && results[i] === undefined) bs[n - 1].click();
+  if (e.key === "Enter" && !$("next").disabled) next();
+});
+start();
+</script>
+</body>
+</html>

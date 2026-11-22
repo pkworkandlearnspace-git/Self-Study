@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Number Theory Toolkit</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 14px; }
+  section.panel { display: none; }
+  section.panel.on { display: block; }
+  input[type="number"] { width: 110px; }
+  table.t td, table.t th { font-family: var(--mono); font-size: 13px; white-space: nowrap; }
+  table.t tr.hide { display: none; }
+  #crtSteps td, #crtSteps th { white-space: normal; }
+  table.t td.note { white-space: normal; font-family: inherit; }
+  table.t tr.now td { background: var(--accent-soft); }
+  .strip { display: grid; gap: 2px; margin-top: 8px; }
+  .strip .lab { font-family: var(--mono); font-size: 12px; color: var(--muted); align-self: center; white-space: nowrap; padding-right: 6px; }
+  .strip .c { height: 18px; border-radius: 3px; background: var(--surface-2); }
+  .strip .c.on { background: var(--accent); }
+  .strip .c.all { background: var(--good); }
+  .eqrow { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; font-family: var(--mono); }
+  .eqrow input { width: 80px; }
+  .verdict { font-size: 18px; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Math Olympiad tools</a><span class="note">Module 03 · Number theory</span></header>
+  <h1>Number Theory Toolkit</h1>
+  <p class="lead">Step through the algorithms behind Bézout and the Chinese Remainder Theorem, and test LTE and Legendre's formula on real (big) numbers. Exact integer arithmetic throughout.</p>
+
+  <div class="tabs">
+    <button class="active" data-p="euclid">1 · Euclid &amp; Bézout</button>
+    <button data-p="crt">2 · Chinese Remainder</button>
+    <button data-p="lte">3 · LTE checker</button>
+    <button data-p="leg">4 · Legendre's formula</button>
+  </div>
+
+  <!-- 1 Euclid -->
+  <section class="panel on" id="p-euclid">
+    <div class="grid two">
+      <div class="card scroll-x">
+        <table class="t" id="eTable"></table>
+      </div>
+      <div class="controls">
+        <div class="row"><label class="ctl">a <input type="number" id="ea" value="240"></label><label class="ctl">b <input type="number" id="eb" value="46"></label></div>
+        <div class="row"><button id="eStep" class="primary">Next step</button><button id="eAll">Show all</button><button id="eReset">Reset</button></div>
+        <div class="card" id="eStats"></div>
+        <div class="callout">Each row keeps the invariant <b>rᵢ = a·sᵢ + b·tᵢ</b>. The remainders shrink, so it stops; the last non-zero remainder is gcd(a, b), and its (s, t) is a Bézout pair.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 CRT -->
+  <section class="panel" id="p-crt">
+    <div class="grid two">
+      <div class="card">
+        <div id="crtRows"></div>
+        <div class="row" style="margin-top:10px"><button id="crtAdd">+ congruence</button><button id="crtRem">− congruence</button><button id="crtEx">Example: 2, 3, 2 mod 3, 5, 7</button></div>
+        <h3>Where the residue classes overlap</h3>
+        <div class="scroll-x"><div class="strip" id="strip"></div></div>
+        <p class="note" id="stripNote"></p>
+      </div>
+      <div class="controls">
+        <div class="card"><div class="verdict" id="crtAns"></div><div class="note" id="crtSub"></div></div>
+        <div class="card scroll-x" id="crtSteps"></div>
+        <div class="callout">Combine two congruences at a time: from x ≡ r₁ (mod m₁) write x = r₁ + m₁k and solve m₁k ≡ r₂ − r₁ (mod m₂). It is solvable iff gcd(m₁, m₂) divides r₂ − r₁, and the result is unique mod lcm(m₁, m₂).</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 LTE -->
+  <section class="panel" id="p-lte">
+    <div class="grid two">
+      <div class="card">
+        <div class="eqrow">v<sub>p</sub>( <input type="number" id="la" value="7"> <sup>n</sup> − <input type="number" id="lb" value="1"> <sup>n</sup> ), n = <input type="number" id="ln" value="18" min="1" max="400">, p = <input type="number" id="lp" value="3" min="2"></div>
+        <div class="row" style="margin-top:10px">
+          <button data-lte="7,1,18,3">7¹⁸ − 1, p = 3</button>
+          <button data-lte="3,1,64,2">3⁶⁴ − 1, p = 2</button>
+          <button data-lte="5,1,12,2">5¹² − 1, p = 2</button>
+          <button data-lte="2,-1,27,3">2²⁷ + 1, p = 3</button>
+          <button data-lte="6,3,2,3">6² − 3², p = 3 (trap)</button>
+        </div>
+        <div class="card" id="lteStats" style="margin-top:12px"></div>
+      </div>
+      <div class="controls">
+        <div class="card"><div class="verdict" id="lteVerdict"></div></div>
+        <div class="callout"><b>Odd p</b>, p | a − b, p ∤ ab: v<sub>p</sub>(aⁿ − bⁿ) = v<sub>p</sub>(a − b) + v<sub>p</sub>(n).<br><b>p = 2</b>, a, b odd: if 4 | a − b, the same formula; if n is even, v₂(aⁿ − bⁿ) = v₂(a − b) + v₂(a + b) + v₂(n) − 1.<br>Use b = −1 for aⁿ + 1 with n odd.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 Legendre -->
+  <section class="panel" id="p-leg">
+    <div class="grid two">
+      <div class="card">
+        <div class="row"><label class="ctl">n <input type="number" id="gn" value="1000" min="1"></label><label class="ctl">prime p <input type="number" id="gp" value="5" min="2"></label></div>
+        <div id="legView" style="margin-top:10px"></div>
+      </div>
+      <div class="controls">
+        <div class="card" id="legStats"></div>
+        <div class="callout">Legendre: v<sub>p</sub>(n!) = ⌊n/p⌋ + ⌊n/p²⌋ + ⌊n/p³⌋ + …  The first term counts multiples of p, the second gives an extra 1 to multiples of p², and so on. Equivalent form: (n − s<sub>p</sub>(n)) / (p − 1), where s<sub>p</sub>(n) is the digit sum of n in base p.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">Part of the Self-Study repo · math-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+const gcd = (x, y) => { x = Math.abs(x); y = Math.abs(y); while (y) [x, y] = [y, x % y]; return x; };
+const mod = (a, m) => ((a % m) + m) % m;
+const isPrime = (n) => { if (n < 2) return false; for (let i = 2; i * i <= n; i++) if (n % i === 0) return false; return true; };
+document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("active", x === b));
+  document.querySelectorAll("section.panel").forEach((s) => s.classList.toggle("on", s.id === "p-" + b.dataset.p));
+}));
+
+/* ---------- 1 Euclid ---------- */
+let eRows = [], eShown = 1;
+function eBuild() {
+  const a = Math.trunc(+$("ea").value), b = Math.trunc(+$("eb").value);
+  eRows = [{ r: a, s: 1, t: 0, q: null }, { r: b, s: 0, t: 1, q: null }];
+  let guard = 0;
+  while (eRows[eRows.length - 1].r !== 0 && guard++ < 200) {
+    const p = eRows[eRows.length - 2], c = eRows[eRows.length - 1];
+    const qq = Math.trunc(p.r / c.r);
+    eRows.push({ r: p.r - qq * c.r, s: p.s - qq * c.s, t: p.t - qq * c.t, q: qq });
+  }
+  eShown = 2; eDraw();
+}
+function eDraw() {
+  const a = +$("ea").value, b = +$("eb").value;
+  let h = `<tr><th>i</th><th>quotient q</th><th>rᵢ</th><th>sᵢ</th><th>tᵢ</th><th>check a·s + b·t</th></tr>`;
+  eRows.forEach((x, i) => {
+    const cls = i >= eShown ? "hide" : i === eShown - 1 ? "now" : "";
+    const expl = x.q === null ? "" : `r${i - 2} − ${x.q}·r${i - 1}`;
+    h += `<tr class="${cls}"><td>${i}</td><td>${x.q === null ? "—" : x.q}</td><td><b>${x.r}</b></td><td>${x.s}</td><td>${x.t}</td><td>${a}·(${x.s}) + ${b}·(${x.t}) = ${a * x.s + b * x.t} <span class="note">${expl}</span></td></tr>`;
+  });
+  $("eTable").innerHTML = h;
+  const last = eRows.length >= 2 ? eRows[eRows.length - 2] : eRows[0];
+  const done = eShown >= eRows.length;
+  $("eStats").innerHTML = done ? row("gcd(a, b)", Math.abs(last.r)) + row("Bézout", `${a}·(${last.s}) + ${b}·(${last.t}) = ${last.r}`) + row("steps", eRows.length - 2) +
+      (Math.abs(last.r) === 1 ? row(`inverse of ${b} mod ${a}`, mod(last.t * Math.sign(last.r), Math.abs(a))) : row("inverse of b mod a", "none (gcd ≠ 1)"))
+    : row("step", `${eShown - 1} of ${eRows.length - 1}`) + row("current remainder", eRows[eShown - 1].r);
+  $("eStep").disabled = done;
+}
+$("eStep").addEventListener("click", () => { eShown = Math.min(eRows.length, eShown + 1); eDraw(); });
+$("eAll").addEventListener("click", () => { eShown = eRows.length; eDraw(); });
+$("eReset").addEventListener("click", eBuild);
+["ea", "eb"].forEach((id) => $(id).addEventListener("input", () => { if (+$("eb").value !== 0) eBuild(); }));
+eBuild();
+
+/* ---------- 2 CRT ---------- */
+let C = [[2, 3], [3, 5], [2, 7]];
+function crtRowsUI() {
+  $("crtRows").innerHTML = C.map(([r, m], i) => `<div class="eqrow" style="margin-bottom:6px">x ≡ <input type="number" data-i="${i}" data-k="0" value="${r}"> (mod <input type="number" min="1" data-i="${i}" data-k="1" value="${m}">)</div>`).join("");
+  $("crtRows").querySelectorAll("input").forEach((inp) => inp.addEventListener("input", () => { const v = Math.trunc(+inp.value); C[+inp.dataset.i][+inp.dataset.k] = inp.dataset.k === "1" ? Math.max(1, v || 1) : v || 0; crtSolve(); }));
+}
+function extInv(a, m) { // inverse of a mod m, a,m coprime
+  let [r0, r1, s0, s1] = [a, m, 1, 0];
+  while (r1) { const q = Math.floor(r0 / r1); [r0, r1] = [r1, r0 - q * r1]; [s0, s1] = [s1, s0 - q * s1]; }
+  return mod(s0, m);
+}
+function crtSolve() {
+  let r = mod(C[0][0], C[0][1]), m = C[0][1], ok = true; const steps = [];
+  for (let i = 1; i < C.length; i++) {
+    const [r2raw, m2] = C[i], r2 = mod(r2raw, m2), g = gcd(m, m2);
+    if (mod(r2 - r, g) !== 0) { steps.push(`<tr><td>combine with x ≡ ${r2} (mod ${m2})</td><td class="bad">gcd(${m}, ${m2}) = ${g} does not divide ${r2} − ${r} → <b>no solution</b></td></tr>`); ok = false; break; }
+    // m*k ≡ r2 - r (mod m2) → (m/g)k ≡ (r2-r)/g (mod m2/g)
+    const M2 = m2 / g, k = mod(((r2 - r) / g) * extInv(mod(m / g, M2), M2), M2);
+    const L = (m / g) * m2, nr = mod(r + m * k, L);
+    steps.push(`<tr><td>x = ${r} + ${m}k ≡ ${r2} (mod ${m2})</td><td>${m}k ≡ ${r2 - r} (mod ${m2}) → k ≡ ${k} (mod ${M2}) → x ≡ <b>${nr}</b> (mod ${L})</td></tr>`);
+    r = nr; m = L;
+    if (m > 1e12) { steps.push(`<tr><td colspan="2" class="note">modulus too large to continue safely</td></tr>`); ok = false; break; }
+  }
+  $("crtAns").innerHTML = ok ? `x ≡ ${r} (mod ${m})` : `<span class="bad">No solution</span>`;
+  $("crtSub").textContent = ok ? `Smallest non-negative solution: ${r}. All solutions: ${r} + ${m}t.` : "The congruences contradict each other.";
+  $("crtSteps").innerHTML = `<table class="t"><tr><th>step</th><th>work</th></tr><tr><td>start</td><td>x ≡ ${mod(C[0][0], C[0][1])} (mod ${C[0][1]})</td></tr>${steps.join("")}</table>`;
+  // strip
+  const Lfull = C.reduce((acc, [, mm]) => (acc / gcd(acc, mm)) * mm, 1), N = Math.min(Lfull, 120);
+  const strip = $("strip"); strip.style.gridTemplateColumns = `auto repeat(${N}, minmax(6px, 1fr))`;
+  let h = "";
+  C.forEach(([rr, mm]) => { h += `<div class="lab">≡ ${mod(rr, mm)} (${mm})</div>`; for (let x = 0; x < N; x++) h += `<div class="c ${mod(x - rr, mm) === 0 ? "on" : ""}" title="${x}"></div>`; });
+  h += `<div class="lab">all</div>`; for (let x = 0; x < N; x++) { const all = C.every(([rr, mm]) => mod(x - rr, mm) === 0); h += `<div class="c ${all ? "all" : ""}" title="${x}"></div>`; }
+  strip.innerHTML = h;
+  $("stripNote").textContent = `Columns are x = 0 … ${N - 1}${Lfull > N ? ` (of lcm = ${Lfull})` : ` (one full period: lcm = ${Lfull})`}. Green = satisfies every congruence. Hover a cell to see x.`;
+}
+$("crtAdd").addEventListener("click", () => { if (C.length < 5) { C.push([1, 4]); crtRowsUI(); crtSolve(); } });
+$("crtRem").addEventListener("click", () => { if (C.length > 1) { C.pop(); crtRowsUI(); crtSolve(); } });
+$("crtEx").addEventListener("click", () => { C = [[2, 3], [3, 5], [2, 7]]; crtRowsUI(); crtSolve(); });
+crtRowsUI(); crtSolve();
+
+/* ---------- 3 LTE ---------- */
+const vpBig = (x, p) => { if (x === 0n) return Infinity; let v = 0; x = x < 0n ? -x : x; const P = BigInt(p); while (x % P === 0n) { x /= P; v++; } return v; };
+function lte() {
+  const a = Math.trunc(+$("la").value), b = Math.trunc(+$("lb").value), n = Math.max(1, Math.min(400, Math.trunc(+$("ln").value))), p = Math.trunc(+$("lp").value);
+  if (!isPrime(p)) { $("lteVerdict").innerHTML = `<span class="bad">p = ${p} is not prime</span>`; $("lteStats").innerHTML = ""; return; }
+  const A = BigInt(a), B = BigInt(b), val = A ** BigInt(n) - B ** BigInt(n);
+  const actual = vpBig(val, p), vab = vpBig(A - B, p), vapb = vpBig(A + B, p), vn = vpBig(BigInt(n), p);
+  const pa = vpBig(A, p) > 0 || vpBig(B, p) > 0;
+  let pred = null, why = "";
+  if (p !== 2) {
+    if (vab === 0 || vab === Infinity) why = `p ∤ a − b: LTE does not apply (then aⁿ − bⁿ is divisible by p only via the order of a/b mod p).`;
+    else if (pa) why = `p divides a or b: LTE's hypothesis p ∤ ab FAILS.`;
+    else { pred = vab + vn; why = `v<sub>p</sub>(a − b) + v<sub>p</sub>(n) = ${vab} + ${vn}`; }
+  } else {
+    if (a % 2 === 0 || b % 2 === 0) why = `p = 2 needs a, b odd.`;
+    else if (vab >= 2) { pred = vab + vn; why = `4 | a − b: v₂(a − b) + v₂(n) = ${vab} + ${vn}`; }
+    else if (n % 2 === 0) { pred = vab + vapb + vn - 1; why = `n even: v₂(a − b) + v₂(a + b) + v₂(n) − 1 = ${vab} + ${vapb} + ${vn} − 1`; }
+    else { pred = vab; why = `a ≡ −b (mod 4) and n odd: aⁿ − bⁿ = (a − b)(odd number), so v₂ = v₂(a − b) = ${vab}`; }
+  }
+  const s = val.toString();
+  $("lteStats").innerHTML = row("aⁿ − bⁿ", s.length > 40 ? s.slice(0, 18) + "…" + s.slice(-18) + ` (${s.length} digits)` : s) +
+    row("v<sub>p</sub>(a − b)", vab) + (p === 2 ? row("v₂(a + b)", vapb) : "") + row("v<sub>p</sub>(n)", vn) + row("actual v<sub>p</sub>(aⁿ − bⁿ)", actual);
+  $("lteVerdict").innerHTML = pred === null ? `<span class="warn">${why}</span><div class="note" style="font-weight:400;margin-top:6px">Actual value: ${actual}.</div>`
+    : `${pred === actual ? '<span class="good">✓ LTE predicts ' + pred + "</span>" : '<span class="bad">✗ predicted ' + pred + ", actual " + actual + "</span>"}<div class="note" style="font-weight:400;margin-top:6px">${why}</div>`;
+}
+["la", "lb", "ln", "lp"].forEach((id) => $(id).addEventListener("input", lte));
+document.querySelectorAll("[data-lte]").forEach((b) => b.addEventListener("click", () => { const [a, bb, n, p] = b.dataset.lte.split(","); $("la").value = a; $("lb").value = bb; $("ln").value = n; $("lp").value = p; lte(); }));
+lte();
+
+/* ---------- 4 Legendre ---------- */
+function leg() {
+  const n = Math.max(1, Math.min(1e9, Math.trunc(+$("gn").value))), p = Math.trunc(+$("gp").value);
+  if (!isPrime(p)) { $("legStats").innerHTML = row("error", `${p} is not prime`); $("legView").innerHTML = ""; return; }
+  const terms = []; for (let pk = p; pk <= n; pk *= p) terms.push([pk, Math.floor(n / pk)]);
+  const total = terms.reduce((s, [, t]) => s + t, 0);
+  const digits = n.toString(p), sp = [...digits].reduce((s, d) => s + parseInt(d, p), 0);
+  // dot picture for small n
+  let pic = "";
+  if (n <= 60) {
+    pic = `<p class="note">Each multiple of p gets one block per power of p dividing it. Total blocks = v<sub>p</sub>(n!).</p><div style="display:flex;flex-wrap:wrap;gap:4px">`;
+    for (let k = 1; k <= n; k++) { let v = 0, x = k; while (x % p === 0) { x /= p; v++; }
+      pic += `<div style="text-align:center;font:11px var(--mono);color:var(--muted);width:26px"><div style="display:flex;flex-direction:column-reverse;gap:2px;height:${Math.max(1, terms.length) * 10 + 2}px;justify-content:flex-start">${Array.from({ length: v }, (_, j) => `<div style="height:8px;border-radius:2px;background:var(--c${(j % 6) + 1})"></div>`).join("")}</div>${k}</div>`; }
+    pic += `</div>`;
+  } else pic = `<p class="note">Choose n ≤ 60 to see the block picture.</p>`;
+  $("legView").innerHTML = `<div class="scroll-x"><table class="t"><tr><th>pᵏ</th><th>⌊n / pᵏ⌋</th><th>meaning</th></tr>${terms.map(([pk, t], i) => `<tr><td>${pk}</td><td><b>${t}</b></td><td class="note">multiples of ${pk} ≤ ${n} (layer ${i + 1})</td></tr>`).join("")}</table></div>` + pic;
+  $("legStats").innerHTML = row(`v<sub>${p}</sub>(${n}!)`, total) + row(`${n} in base ${p}`, digits) + row(`digit sum s<sub>${p}</sub>(n)`, sp) + row("(n − s<sub>p</sub>(n)) / (p − 1)", (n - sp) / (p - 1)) +
+    (p === 5 ? row(`trailing zeros of ${n}!`, total) : "");
+}
+["gn", "gp"].forEach((id) => $(id).addEventListener("input", leg));
+leg();
+</script>
+</body>
+</html>

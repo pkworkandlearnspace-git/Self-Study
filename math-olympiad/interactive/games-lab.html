@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Games Lab</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 14px; }
+  section.panel { display: none; }
+  section.panel.on { display: block; }
+  .piles { display: flex; flex-direction: column; gap: 10px; }
+  .pile { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .pile .name { width: 64px; font-family: var(--mono); font-size: 13px; color: var(--muted); }
+  .stone { width: 26px; height: 26px; border-radius: 50%; background: var(--accent); border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--border); cursor: pointer; padding: 0; }
+  .stone.hl { background: var(--bad); }
+  .stone:disabled { cursor: default; }
+  table.bin { border-collapse: collapse; font-family: var(--mono); font-size: 14px; }
+  table.bin td, table.bin th { padding: 3px 9px; text-align: center; border-bottom: 1px solid var(--border); }
+  table.bin tr.x td { font-weight: 700; border-top: 2px solid var(--text); }
+  table.bin td.one { color: var(--accent); font-weight: 700; }
+  .pn { display: grid; grid-template-columns: repeat(auto-fill, minmax(42px, 1fr)); gap: 4px; }
+  .pn div { border-radius: 6px; padding: 4px 0; text-align: center; font-family: var(--mono); font-size: 12px; line-height: 1.25; border: 1px solid var(--border); }
+  .pn div b { display: block; font-size: 14px; }
+  .pn div.P { background: color-mix(in srgb, var(--bad) 22%, var(--surface)); border-color: var(--bad); }
+  .pn div.N { background: var(--surface); }
+  .log { font-family: var(--mono); font-size: 13px; max-height: 160px; overflow: auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Math Olympiad tools</a><span class="note">Module 04 · Combinatorics</span></header>
+  <h1>Games Lab</h1>
+  <p class="lead">Impartial games are solved by labelling positions <b>P</b> (the player to move loses) and <b>N</b> (the player to move wins). Play Nim against a perfect opponent, then compute P/N tables and Grundy values for any subtraction game.</p>
+
+  <div class="tabs">
+    <button class="active" data-p="nim">1 · Nim vs computer</button>
+    <button data-p="sub">2 · Subtraction games</button>
+  </div>
+
+  <section class="panel on" id="p-nim">
+    <div class="grid two">
+      <div class="card">
+        <div class="piles" id="piles"></div>
+        <p class="note">Click a stone to take it <b>and every stone to its right</b> in that pile. Whoever takes the last stone wins.</p>
+        <div class="callout" id="nimMsg"></div>
+      </div>
+      <div class="controls">
+        <div class="card scroll-x"><table class="bin" id="bin"></table></div>
+        <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="showXor" checked> Show the binary XOR (the secret)</label>
+        <div class="row"><button id="newGame" class="primary">New random game</button><button id="hint">Hint</button><label style="display:flex;gap:6px;align-items:center;font-size:14px"><input type="checkbox" id="cfirst"> Computer moves first</label></div>
+        <div class="card log" id="log"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel" id="p-sub">
+    <div class="grid two">
+      <div class="card">
+        <div class="pn" id="pn"></div>
+        <div class="legend" style="margin-top:10px"><span><i style="background:var(--bad)"></i>P-position (player to move loses)</span><span>small number = Grundy value</span></div>
+      </div>
+      <div class="controls">
+        <label class="ctl">Allowed moves (remove k stones), comma-separated
+          <input type="text" id="moves" value="1,3,4">
+        </label>
+        <div class="row">
+          <button data-mv="1,2,3">1,2,3</button><button data-mv="1,3,4">1,3,4</button><button data-mv="2,5">2,5</button><button data-mv="1,4">1,4</button><button data-mv="1,2,4,8">powers of 2</button>
+        </div>
+        <label class="ctl">Show n = 0 … <span class="val" id="Nv"></span><input type="range" id="N" min="20" max="120" value="60"></label>
+        <div class="card" id="subStats"></div>
+        <div class="callout">Rule: a position is <b>N</b> iff some move reaches a <b>P</b>-position. Grundy value g(n) = mex{g(n − k)}; P ⟺ g = 0. For a sum of games (play in any one each turn), the sum is P ⟺ the XOR of Grundy values is 0. Nim is the case g(n) = n.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">Part of the Self-Study repo · math-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("active", x === b));
+  document.querySelectorAll("section.panel").forEach((s) => s.classList.toggle("on", s.id === "p-" + b.dataset.p));
+}));
+
+/* ---------- Nim ---------- */
+let piles = [], turn = "you", over = false, hintMove = null;
+const xorAll = (ps) => ps.reduce((a, b) => a ^ b, 0);
+function bestMove(ps) {
+  const x = xorAll(ps);
+  if (x === 0) { const i = ps.findIndex((p) => p > 0); return { i, take: 1, winning: false }; } // stall
+  for (let i = 0; i < ps.length; i++) { const t = ps[i] ^ x; if (t < ps[i]) return { i, take: ps[i] - t, winning: true }; }
+}
+function log(s) { $("log").innerHTML = `<div>${s}</div>` + $("log").innerHTML; }
+function newGame() {
+  const k = 3 + Math.floor(Math.random() * 2);
+  piles = Array.from({ length: k }, () => 1 + Math.floor(Math.random() * 9));
+  over = false; hintMove = null; $("log").innerHTML = "";
+  turn = $("cfirst").checked ? "cpu" : "you";
+  log(`New game: piles ${piles.join(", ")} (XOR = ${xorAll(piles)})`);
+  render();
+  if (turn === "cpu") setTimeout(cpu, 600);
+}
+function take(i, n) {
+  piles[i] -= n; hintMove = null;
+  log(`${turn === "you" ? "You" : "Computer"}: take ${n} from pile ${i + 1} → ${piles.join(", ")} (XOR = ${xorAll(piles)})`);
+  if (piles.every((p) => p === 0)) { over = true; render(); return; }
+  turn = turn === "you" ? "cpu" : "you"; render();
+  if (turn === "cpu") setTimeout(cpu, 650);
+}
+function cpu() { if (over) return; const m = bestMove(piles); take(m.i, m.take); }
+function render() {
+  const P = $("piles"); P.innerHTML = "";
+  piles.forEach((p, i) => {
+    const d = document.createElement("div"); d.className = "pile";
+    d.innerHTML = `<span class="name">pile ${i + 1}: ${p}</span>`;
+    for (let s = 0; s < p; s++) {
+      const b = document.createElement("button"); b.className = "stone"; b.setAttribute("aria-label", `take ${p - s} from pile ${i + 1}`);
+      if (hintMove && hintMove.i === i && s >= p - hintMove.take) b.classList.add("hl");
+      b.disabled = over || turn !== "you";
+      b.addEventListener("click", () => take(i, p - s));
+      d.appendChild(b);
+    }
+    P.appendChild(d);
+  });
+  const bits = Math.max(1, ...piles.map((p) => p.toString(2).length), 4);
+  const bin = (v) => v.toString(2).padStart(bits, "0").split("").map((c) => `<td class="${c === "1" ? "one" : ""}">${c}</td>`).join("");
+  $("bin").innerHTML = $("showXor").checked
+    ? `<tr><th>pile</th><th>size</th>${Array.from({ length: bits }, (_, k) => `<th>${2 ** (bits - 1 - k)}</th>`).join("")}</tr>` +
+      piles.map((p, i) => `<tr><td>${i + 1}</td><td>${p}</td>${bin(p)}</tr>`).join("") +
+      `<tr class="x"><td>XOR</td><td>${xorAll(piles)}</td>${bin(xorAll(piles))}</tr>`
+    : `<tr><td class="note">XOR hidden. Can you find the pattern?</td></tr>`;
+  const x = xorAll(piles);
+  $("nimMsg").innerHTML = over ? (turn === "you" ? `<b class="good">You took the last stone. You win!</b>` : `<b class="bad">The computer took the last stone.</b> Try computer-first, or keep the XOR at 0 after your moves.`)
+    : turn === "you" ? (x === 0 ? "Your move. The XOR is 0, so this is a <b>P-position</b>: every move you make gives the computer a win (if it plays perfectly)." : "Your move. The XOR is not 0: there is a move that makes it 0. Find it!")
+    : "Computer is thinking…";
+}
+$("newGame").addEventListener("click", newGame);
+$("showXor").addEventListener("change", render);
+$("hint").addEventListener("click", () => {
+  if (over || turn !== "you") return;
+  const m = bestMove(piles); hintMove = m.winning ? m : null; render();
+  if (!m.winning) $("nimMsg").innerHTML = "No winning move exists from a P-position. Make a small move and hope for a mistake.";
+});
+newGame();
+
+/* ---------- subtraction games ---------- */
+function subtraction() {
+  const N = +$("N").value; $("Nv").textContent = N;
+  const mv = [...new Set($("moves").value.split(/[ ,]+/).map(Number).filter((k) => Number.isInteger(k) && k > 0 && k < 200))].sort((a, b) => a - b);
+  if (!mv.length) { $("pn").innerHTML = ""; $("subStats").innerHTML = row("error", "enter positive integers"); return; }
+  const L = N + 400, g = Array(L).fill(0);
+  for (let n = 0; n < L; n++) { const s = new Set(mv.filter((k) => k <= n).map((k) => g[n - k])); let x = 0; while (s.has(x)) x++; g[n] = x; }
+  $("pn").innerHTML = Array.from({ length: N + 1 }, (_, n) => `<div class="${g[n] === 0 ? "P" : "N"}" title="g(${n}) = ${g[n]}"><b>${n}</b>${g[n]}</div>`).join("");
+  // detect eventual period of g on a long tail
+  let period = null;
+  for (let p = 1; p <= 150 && !period; p++) { let ok = true; for (let n = 200; n < L - p; n++) if (g[n] !== g[n + p]) { ok = false; break; } if (ok) period = p; }
+  const Ps = []; for (let n = 0; n <= N; n++) if (g[n] === 0) Ps.push(n);
+  let pat = "";
+  if (period) { const res = [...new Set(Ps.filter((n) => n >= 0).map((n) => n % period))].sort((a, b) => a - b); pat = `n ≡ ${res.join(", ")} (mod ${period})`; }
+  $("subStats").innerHTML = row("moves", mv.join(", ")) + row("P-positions ≤ " + N, Ps.slice(0, 12).join(", ") + (Ps.length > 12 ? ", …" : "")) +
+    row("period of Grundy values", period ?? "none found ≤ 150") + (period ? row("P-positions (eventually)", pat) : "") + row("max Grundy value", Math.max(...g.slice(0, N + 1)));
+}
+$("moves").addEventListener("input", subtraction); $("N").addEventListener("input", subtraction);
+document.querySelectorAll("[data-mv]").forEach((b) => b.addEventListener("click", () => { $("moves").value = b.dataset.mv; subtraction(); }));
+subtraction();
+</script>
+</body>
+</html>
