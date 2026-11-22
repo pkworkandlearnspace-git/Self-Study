@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thin Lens Ray Tracer</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style> #c { aspect-ratio: 2 / 1; cursor: grab; } #c.drag { cursor: grabbing; } </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Physics Olympiad tools</a></header>
+  <h1>Thin Lens Ray Tracer</h1>
+  <p class="lead">Drag the object (the arrow) or use the sliders. The three principal rays are traced through one or two thin lenses. A real image is drawn solid; a virtual one dashed, where the backward extensions of the rays meet. Predict where the image lands, then check (module 05).</p>
+  <canvas id="c" width="1000" height="500" aria-label="Ray diagram. Drag the object arrow."></canvas>
+  <div class="legend" style="margin-top:6px"><span><i style="background:var(--c1)"></i>ray parallel to the axis</span><span><i style="background:var(--c2)"></i>ray through the centre</span><span><i style="background:var(--c3)"></i>ray through the front focus</span><span><i style="background:var(--c4)"></i>image</span></div>
+  <div class="grid two" style="margin-top:14px">
+    <div class="controls">
+      <label class="ctl">Object distance d<sub>o</sub> = <span class="val" id="dov"></span> cm<input type="range" id="do" min="2" max="78" step="0.5" value="30"></label>
+      <label class="ctl">Object height h = <span class="val" id="hv"></span> cm<input type="range" id="h" min="-12" max="12" step="0.5" value="8"></label>
+      <label class="ctl">Lens 1 focal length f₁ = <span class="val" id="f1v"></span> cm (negative = diverging)<input type="range" id="f1" min="-40" max="40" step="0.5" value="15"></label>
+      <label class="row note" style="cursor:pointer"><input type="checkbox" id="two" style="accent-color:var(--accent)"> Add a second lens</label>
+      <label class="ctl" id="l2a">Lens separation D = <span class="val" id="Dv"></span> cm<input type="range" id="D" min="5" max="100" step="0.5" value="50"></label>
+      <label class="ctl" id="l2b">Lens 2 focal length f₂ = <span class="val" id="f2v"></span> cm<input type="range" id="f2" min="-40" max="40" step="0.5" value="10"></label>
+      <div class="row"><button data-p="mag">Magnifying glass</button><button data-p="tel">Keplerian telescope</button><button data-p="div">Diverging lens</button></div>
+    </div>
+    <div class="card" id="stats"></div>
+  </div>
+  <h2>Rules (Gaussian sign convention)</h2>
+  <div class="card"><ul style="margin:0;padding-left:20px">
+    <li>1/f = 1/d<sub>o</sub> + 1/d<sub>i</sub>. Distances are positive for a real object (left of the lens) and a real image (right of the lens). f &gt; 0 converging, f &lt; 0 diverging.</li>
+    <li>Magnification m = −d<sub>i</sub>/d<sub>o</sub>. m &lt; 0 means inverted. In a system, the magnifications multiply.</li>
+    <li>Two lenses: the image of lens 1 is the object of lens 2. If it lies <i>beyond</i> lens 2, it is a virtual object (d<sub>o2</sub> &lt; 0).</li>
+    <li>Telescope (afocal, D = f₁ + f₂): angular magnification −f₁/f₂. Mirrors obey the same equation with f = R/2.</li>
+  </ul></div>
+  <footer class="foot">Part of the Self-Study repo · physics-olympiad/interactive · paraxial ray tracing</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const c = $("c"), XMIN = -80, XMAX = 130, YR = 26;
+let W, H;
+function fit() { const d = devicePixelRatio || 1; W = c.clientWidth; H = W / 2; c.width = W * d; c.height = H * d; c.getContext("2d").setTransform(d, 0, 0, d, 0, 0); }
+const X = (x) => ((x - XMIN) / (XMAX - XMIN)) * W, Y = (y) => H / 2 - (y / YR) * (H / 2);
+const IX = (px) => XMIN + (px / W) * (XMAX - XMIN), IY = (py) => ((H / 2 - py) / (H / 2)) * YR;
+const P = () => ({ d: +$("do").value, h: +$("h").value, f1: +$("f1").value || 0.5, two: $("two").checked, D: +$("D").value, f2: +$("f2").value || 0.5 });
+
+function image(dObj, f) { const inv = 1 / f - 1 / dObj; return Math.abs(inv) < 1e-9 ? Infinity : 1 / inv; }
+function system(p) {
+  const di1 = image(p.d, p.f1), m1 = -di1 / p.d;
+  const r = { di1, m1, x1: di1, h1: m1 * p.h };
+  if (!p.two) return { ...r, xf: di1, hf: m1 * p.h, m: m1, real: di1 > 0 };
+  const do2 = isFinite(di1) ? p.D - di1 : Infinity;
+  const di2 = isFinite(do2) ? image(do2, p.f2) : p.f2, m2 = isFinite(do2) ? -di2 / do2 : NaN;
+  return { ...r, do2, di2, m2, xf: p.D + di2, hf: m1 * m2 * p.h, m: m1 * m2, real: di2 > 0 };
+}
+function trace(x0, y0, s, lenses) {
+  const pts = [[x0, y0]]; let x = x0, y = y0;
+  for (const L of lenses) { y = y + s * (L.x - x); x = L.x; pts.push([x, y]); s = s - y / L.f; }
+  return { pts, s, end: [x, y] };
+}
+function arrow(ctx, x, h, color, dashed) {
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 3; ctx.setLineDash(dashed ? [6, 5] : []);
+  ctx.beginPath(); ctx.moveTo(X(x), Y(0)); ctx.lineTo(X(x), Y(h)); ctx.stroke(); ctx.setLineDash([]);
+  const dir = h >= 0 ? 1 : -1; ctx.beginPath(); ctx.moveTo(X(x), Y(h)); ctx.lineTo(X(x) - 7, Y(h) + 11 * dir); ctx.lineTo(X(x) + 7, Y(h) + 11 * dir); ctx.closePath(); ctx.fill();
+}
+function lensShape(ctx, x, f) {
+  ctx.strokeStyle = col("--accent"); ctx.lineWidth = 2.5; const top = Y(YR * 0.85), bot = Y(-YR * 0.85);
+  ctx.beginPath(); ctx.moveTo(X(x), top); ctx.lineTo(X(x), bot); ctx.stroke();
+  const tip = (yy, up) => { const d = f > 0 ? (up ? 1 : -1) : (up ? -1 : 1); ctx.beginPath(); ctx.moveTo(X(x) - 8, yy + 8 * d); ctx.lineTo(X(x), yy); ctx.lineTo(X(x) + 8, yy + 8 * d); ctx.stroke(); };
+  tip(top, true); tip(bot, false);
+  ctx.fillStyle = col("--muted"); ctx.font = "12px system-ui";
+  [-f, f].forEach((fx) => { ctx.beginPath(); ctx.arc(X(x + fx), Y(0), 3, 0, 7); ctx.fill(); });
+  ctx.fillText("F", X(x - Math.abs(f)) - 4, Y(0) + 16); ctx.fillText("F′", X(x + Math.abs(f)) - 4, Y(0) + 16);
+}
+function draw() {
+  const ctx = c.getContext("2d"), p = P(), S = system(p);
+  ctx.fillStyle = col("--surface"); ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = col("--border"); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, Y(0)); ctx.lineTo(W, Y(0)); ctx.stroke();
+  ctx.fillStyle = col("--muted"); ctx.font = "11px system-ui";
+  for (let x = -80; x <= 130; x += 10) { ctx.fillRect(X(x), Y(0) - 2, 1, 4); if (x % 20 === 0) ctx.fillText(x, X(x) - 6, H - 6); }
+  const lenses = [{ x: 0, f: p.f1 }]; if (p.two) lenses.push({ x: p.D, f: p.f2 });
+  lenses.forEach((L) => lensShape(ctx, L.x, L.f));
+  const xo = -p.d, h = p.h;
+  const rays = [[0, "--c1"], [-h / p.d, "--c2"], [(0 - h) / (-p.f1 - xo), "--c3"]]; // parallel, through centre, through front focus
+  rays.forEach(([s, cv]) => {
+    if (!isFinite(s)) return;
+    const t = trace(xo, h, s, lenses), color = col(cv);
+    ctx.strokeStyle = color; ctx.lineWidth = 1.6; ctx.beginPath();
+    t.pts.forEach((q, i) => (i ? ctx.lineTo(X(q[0]), Y(q[1])) : ctx.moveTo(X(q[0]), Y(q[1]))));
+    ctx.lineTo(X(XMAX), Y(t.end[1] + t.s * (XMAX - t.end[0]))); ctx.stroke();
+    if (!S.real && isFinite(S.xf)) { ctx.setLineDash([4, 4]); ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.moveTo(X(t.end[0]), Y(t.end[1])); ctx.lineTo(X(XMIN), Y(t.end[1] + t.s * (XMIN - t.end[0]))); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1; }
+  });
+  arrow(ctx, xo, h, col("--text"), false);
+  if (p.two && isFinite(S.x1)) { ctx.globalAlpha = 0.35; arrow(ctx, S.x1, S.h1, col("--c4"), S.di1 < 0); ctx.globalAlpha = 1; }
+  if (isFinite(S.xf) && Math.abs(S.hf) < 200) arrow(ctx, S.xf, S.hf, col("--c4"), !S.real);
+  stats(p, S);
+}
+function stats(p, S) {
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`, f = (x) => (isFinite(x) ? x.toFixed(1) : "∞");
+  let html = row("Lens 1: d<sub>i1</sub> = 1/(1/f₁ − 1/d<sub>o</sub>)", f(S.di1) + " cm") + row("m₁ = −d<sub>i1</sub>/d<sub>o</sub>", isFinite(S.m1) ? S.m1.toFixed(2) : "∞");
+  if (p.two) html += row("Lens 2 object distance d<sub>o2</sub> = D − d<sub>i1</sub>", f(S.do2) + " cm" + (S.do2 < 0 ? " (virtual object)" : "")) + row("d<sub>i2</sub>", f(S.di2) + " cm") + row("m₂", isFinite(S.m2) ? S.m2.toFixed(2) : "—");
+  html += row("Final image", !isFinite(S.xf) ? "at infinity (parallel rays)" : `${S.real ? "real" : "virtual"}, ${S.m < 0 ? "inverted" : "upright"}`) + row("Total magnification", isFinite(S.m) ? S.m.toFixed(2) + "×" : "∞");
+  if (p.two && Math.abs(p.D - (p.f1 + p.f2)) < 0.6) html += row("Afocal: angular magnification −f₁/f₂", (-p.f1 / p.f2).toFixed(2) + "×");
+  $("stats").innerHTML = html;
+  $("dov").textContent = p.d; $("hv").textContent = p.h; $("f1v").textContent = p.f1; $("Dv").textContent = p.D; $("f2v").textContent = p.f2;
+  $("l2a").style.display = $("l2b").style.display = p.two ? "" : "none";
+}
+let dragging = false;
+c.addEventListener("pointerdown", (e) => { const r = c.getBoundingClientRect(), x = IX(e.clientX - r.left); if (Math.abs(x + P().d) < 8) { dragging = true; c.classList.add("drag"); c.setPointerCapture(e.pointerId); } });
+c.addEventListener("pointermove", (e) => { if (!dragging) return; const r = c.getBoundingClientRect(); $("do").value = Math.max(2, Math.min(78, -IX(e.clientX - r.left))).toFixed(1); $("h").value = Math.max(-12, Math.min(12, IY(e.clientY - r.top))).toFixed(1); draw(); });
+c.addEventListener("pointerup", () => { dragging = false; c.classList.remove("drag"); });
+document.querySelectorAll("input").forEach((i) => i.addEventListener("input", draw));
+const PRE = { mag: { do: 8, h: 4, f1: 15, two: false }, tel: { do: 78, h: 6, f1: 30, two: true, D: 40, f2: 10 }, div: { do: 30, h: 8, f1: -15, two: false } };
+document.querySelectorAll("[data-p]").forEach((b) => b.addEventListener("click", () => { const s = PRE[b.dataset.p]; Object.entries(s).forEach(([k, v]) => (k === "two" ? ($("two").checked = v) : ($(k).value = v))); draw(); }));
+window.addEventListener("resize", () => { fit(); draw(); });
+fit(); draw();
+</script>
+</body>
+</html>

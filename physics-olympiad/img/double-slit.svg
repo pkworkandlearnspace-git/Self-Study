@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 220" width="640" height="220" role="img" aria-label="Double-slit geometry: path difference d sin theta" font-family="system-ui,sans-serif" font-size="13">
+  <rect x="0" y="0" width="640" height="220" fill="#ffffff" stroke="#dcdcd6"/>
+  <line x1="60" y1="20" x2="60" y2="90" stroke="#1d1d1b" stroke-width="4"/>
+  <line x1="60" y1="100" x2="60" y2="120" stroke="#1d1d1b" stroke-width="4"/>
+  <line x1="60" y1="130" x2="60" y2="200" stroke="#1d1d1b" stroke-width="4"/>
+  <line x1="600" y1="20" x2="600" y2="200" stroke="#5f5f5a" stroke-width="2"/>
+  <text x="608" y="30" fill="#5f5f5a">screen</text>
+  <line x1="60" y1="95" x2="600" y2="40" stroke="#2f6fde" stroke-width="1.5"/>
+  <line x1="60" y1="125" x2="600" y2="40" stroke="#d9622b" stroke-width="1.5"/>
+  <line x1="60" y1="110" x2="600" y2="110" stroke="#dcdcd6" stroke-dasharray="4 4"/>
+  <line x1="60" y1="125" x2="63" y2="94.7" stroke="#1f8a4c" stroke-width="3"/>
+  <text x="70" y="140" fill="#1f8a4c">extra path d·sinθ</text>
+  <text x="20" y="114" fill="#1d1d1b">d</text>
+  <text x="300" y="128" fill="#5f5f5a">L (≫ d)</text>
+  <text x="400" y="88" fill="#1d1d1b">θ</text>
+  <text x="560" y="60" fill="#5f5f5a">y = L tanθ</text>
+  <text x="200" y="190" fill="#1d1d1b">Bright when d sinθ = mλ  ⇒  fringe spacing Δy ≈ λL/d</text>
+</svg>
