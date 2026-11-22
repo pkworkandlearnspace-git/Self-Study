@@ -47,10 +47,14 @@
 ---
 
 ## Interactive tools → [`interactive/`](interactive/index.html)
+- **Matrix as a map:** drag a 2×2 matrix; see det, rank, eigenvectors, and the SVD as rotate → scale → rotate (module 01).
+- **Broadcasting lab:** right-align shapes, see stretch vs error and matmul rules, plus a predict-the-shape quiz (module 02).
+- **Generalization lab:** under/overfitting with train/val curves and ridge λ; thresholds, confusion matrix, ROC and PR curves (module 03).
+- **Backprop step-through:** run a computational graph forward and backward node by node, gradient-check it, take a GD step (module 04).
 - **Optimizer landscape:** SGD vs Momentum vs Adam on 2D loss surfaces (modules 01, 05).
 - **Neural net playground:** an MLP trained live with from-scratch backprop. Decision boundaries, overfitting, vanishing gradients (modules 03–05).
 - **Attention & sampling:** drag q/k vectors, see the √d scaling and the causal mask, try temperature/top-k/top-p (modules 08–09).
-- **Flashcards:** ~50 core facts with spaced repetition.
+- **Flashcards:** ~60 core facts with spaced repetition.
 
 ## Support files
 

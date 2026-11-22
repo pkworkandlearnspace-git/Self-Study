@@ -23,7 +23,7 @@ Everything key on one page. Skim this to recap, and open the module (→ NN) if 
 ## Neural nets (→ 04)
 - Layer: $\mathbf h=\phi(W\mathbf x+\mathbf b)$. Batch linear $Y=XW^\top$: $\partial L/\partial W = (\partial L/\partial Y)^\top X$, $\partial L/\partial X = (\partial L/\partial Y)W$
 - Softmax + CE: $\partial L/\partial\mathbf z = \hat{\mathbf y}-\mathbf y$
-- Init: Xavier $\text{Var}=1/n_{in}$ (tanh) · He $2/n_{in}$ (ReLU)
+- Init: Xavier/Glorot $\text{Var}=2/(n_{in}+n_{out})$ (tanh) · LeCun $1/n_{in}$ · He $2/n_{in}$ (ReLU)
 - Initial loss sanity check: $\approx\ln C$ for $C$ balanced classes
 
 ## Training (→ 05)
