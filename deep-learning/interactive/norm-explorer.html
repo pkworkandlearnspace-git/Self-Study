@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Normalization Explorer</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  #viz { width: 100%; height: auto; display: block; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+  .cell { cursor: pointer; }
+  .cell.sel { stroke: var(--text); stroke-width: 2.5; }
+  .cell.grp { stroke: var(--accent); stroke-width: 2; }
+  .lbl { fill: var(--muted); font: 12px system-ui; }
+  .scale { height: 10px; border-radius: 5px; background: linear-gradient(90deg, #2f6fde, #f7f7f5 50%, #d9622b); }
+  .normbtns { display: flex; flex-wrap: wrap; gap: 6px; }
+  .normbtns button { font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a><span class="note">Modules 05 · 06 · 08</span></header>
+  <h1>Normalization Explorer</h1>
+  <p class="lead">All the norm layers compute <code>y = γ · (x − μ) / √(σ² + ε) + β</code>. They differ only in <b>which numbers share one μ and σ</b>. Pick a layer and <b>click any cell</b>: the outlined cells are the ones normalized together.</p>
+  <div class="normbtns" id="norms"></div>
+  <div class="grid two" style="margin-top:12px">
+    <div>
+      <svg id="viz" role="img" aria-label="Tensor cells grouped by normalization statistics"></svg>
+      <div class="row" style="margin-top:8px;gap:10px;align-items:center"><span class="note">−3</span><div class="scale" style="flex:1"></div><span class="note">+3</span></div>
+    </div>
+    <div class="controls">
+      <div class="row"><label><input type="checkbox" id="normed"> show normalized values</label></div>
+      <label class="ctl">Batch size N = <span class="val" id="nv"></span><input type="range" id="n" min="1" max="6" value="4"></label>
+      <div class="row"><button id="regen">New random data</button></div>
+      <div class="card" id="stats"></div>
+      <div class="callout" id="desc"></div>
+    </div>
+  </div>
+  <h2>At a glance</h2>
+  <div class="card scroll-x"><table class="t">
+    <tr><th>Layer</th><th>Statistics over</th><th>Depends on batch?</th><th>Typical use</th></tr>
+    <tr><td>BatchNorm</td><td>(N, H, W) for each channel</td><td><b class="warn">yes</b>: running averages at eval</td><td>CNNs (ResNet)</td></tr>
+    <tr><td>LayerNorm</td><td>features of each token / sample</td><td>no</td><td>Transformers (original, GPT-2, BERT)</td></tr>
+    <tr><td>RMSNorm</td><td>features of each token, no mean subtraction</td><td>no</td><td>Most modern LLMs (LLaMA family and others)</td></tr>
+    <tr><td>InstanceNorm</td><td>(H, W) for each sample and channel</td><td>no</td><td>Style transfer</td></tr>
+    <tr><td>GroupNorm</td><td>(channel group, H, W) for each sample</td><td>no</td><td>Detection/segmentation with small batches, diffusion U-Nets</td></tr>
+  </table>
+  <p class="note" style="margin:10px 0 0">Sources: Ioffe & Szegedy 2015 (BatchNorm), Ba et al. 2016 (LayerNorm), Zhang & Sennrich 2019 (RMSNorm), Wu & He 2018 (GroupNorm), and the <a href="https://docs.pytorch.org/docs/stable/nn.html#normalization-layers">PyTorch normalization layers docs</a>.</p></div>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive · pairs with <code>05-pytorch-training.md</code></footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const C = 6, Lsp = 5, EPS = 1e-5;
+const NORMS = {
+  bn: { name: "BatchNorm", key: (n, c, l) => `c${c}`, rms: false, desc: "One μ, σ per <b>channel</b>, computed across the whole batch and all positions. At eval time PyTorch uses running averages collected during training, so <code>model.eval()</code> matters. With N = 1 the batch statistics get very noisy (try the slider): one reason transformers avoid it.", code: "nn.BatchNorm1d(C)  # input (N, C, L)" },
+  ln: { name: "LayerNorm (per token)", key: (n, c, l) => `n${n}l${l}`, rms: false, desc: "One μ, σ per <b>position of each sample</b> (here each column = one token), across its C features. Independent of the batch, so train and eval behave the same. This is the transformer's LayerNorm.", code: "nn.LayerNorm(C)  # input (N, L, C): normalizes the last dim" },
+  lnall: { name: "LayerNorm (per sample)", key: (n, c, l) => `n${n}`, rms: false, desc: "One μ, σ per <b>sample</b>, across all its channels and positions: the original CNN-style LayerNorm (equivalent to GroupNorm with 1 group).", code: "nn.LayerNorm([C, L])  # or nn.GroupNorm(1, C)" },
+  rms: { name: "RMSNorm (per token)", key: (n, c, l) => `n${n}l${l}`, rms: true, desc: "Same groups as transformer LayerNorm, but <b>no mean subtraction</b>: y = γ · x / √(mean(x²) + ε). Cheaper, works as well in practice, and is the default in most recent LLMs.", code: "nn.RMSNorm(C)  # PyTorch ≥ 2.4" },
+  in: { name: "InstanceNorm", key: (n, c, l) => `n${n}c${c}`, rms: false, desc: "One μ, σ per <b>sample and channel</b>, across positions only. Removes per-image contrast/style information, which is why style-transfer nets use it.", code: "nn.InstanceNorm1d(C)" },
+  gn: { name: "GroupNorm (2 groups)", key: (n, c, l) => `n${n}g${Math.floor(c / 3)}`, rms: false, desc: "Channels are split into groups (here 2 groups of 3). One μ, σ per <b>sample and group</b>. Batch-independent, so it works with batch size 1–2 where BatchNorm fails.", code: "nn.GroupNorm(num_groups=2, num_channels=C)" },
+};
+let norm = "bn", X = [], sel = [0, 0, 0];
+const N = () => +$("n").value;
+function gauss() { return Math.sqrt(-2 * Math.log(Math.random() + 1e-12)) * Math.cos(2 * Math.PI * Math.random()); }
+function regen() { X = Array.from({ length: 6 }, (_, n) => Array.from({ length: C }, (_, c) => Array.from({ length: Lsp }, () => 0.6 * gauss() + (c - 2.5) * 0.5 + (n % 2 ? 0.8 : -0.4)))); }
+function stats() {
+  const groups = {}, f = NORMS[norm];
+  for (let n = 0; n < N(); n++) for (let c = 0; c < C; c++) for (let l = 0; l < Lsp; l++) { const k = f.key(n, c, l); (groups[k] = groups[k] || []).push(X[n][c][l]); }
+  const out = {};
+  for (const k in groups) { const g = groups[k], mu = f.rms ? 0 : g.reduce((a, b) => a + b, 0) / g.length, ms = g.reduce((a, b) => a + (b - mu) ** 2, 0) / g.length; out[k] = { mu, sd: Math.sqrt(ms + EPS), size: g.length }; }
+  return out;
+}
+function color(v) {
+  const t = Math.max(-1, Math.min(1, v / 3));
+  const lerp = (a, b, u) => Math.round(a + (b - a) * u);
+  return t < 0 ? `rgb(${lerp(247, 47, -t)},${lerp(247, 111, -t)},${lerp(245, 222, -t)})` : `rgb(${lerp(247, 217, t)},${lerp(247, 98, t)},${lerp(245, 43, t)})`;
+}
+function draw() {
+  if (sel[0] >= N()) sel[0] = 0;
+  const f = NORMS[norm], st = stats(), cs = 22, gap = 26, perRow = 3, nb = N(), rows = Math.ceil(nb / perRow);
+  const bw = Lsp * cs, bh = C * cs, W = perRow * (bw + gap) + 40, H = rows * (bh + 56) + 10, selKey = f.key(...sel), show = $("normed").checked;
+  let s = "";
+  for (let n = 0; n < nb; n++) {
+    const ox = 40 + (n % perRow) * (bw + gap), oy = 26 + Math.floor(n / perRow) * (bh + 56);
+    s += `<text class="lbl" x="${ox}" y="${oy - 8}">sample n=${n}</text>`;
+    if (n % perRow === 0) for (let c = 0; c < C; c++) s += `<text class="lbl" x="${ox - 30}" y="${oy + c * cs + 15}">c${c}</text>`;
+    for (let c = 0; c < C; c++) for (let l = 0; l < Lsp; l++) {
+      const k = f.key(n, c, l), v = show ? (X[n][c][l] - st[k].mu) / st[k].sd : X[n][c][l];
+      const isSel = n === sel[0] && c === sel[1] && l === sel[2], inG = k === selKey;
+      s += `<rect class="cell${isSel ? " sel" : inG ? " grp" : ""}" data-i="${n},${c},${l}" x="${ox + l * cs}" y="${oy + c * cs}" width="${cs - 2}" height="${cs - 2}" rx="3" fill="${color(v)}" fill-opacity="${inG || isSel ? 1 : 0.55}"/>`;
+    }
+    s += `<text class="lbl" x="${ox}" y="${oy + bh + 14}">positions / tokens →</text>`;
+  }
+  const svg = $("viz"); svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.innerHTML = s;
+  svg.querySelectorAll(".cell").forEach((r) => r.addEventListener("click", () => { sel = r.dataset.i.split(",").map(Number); draw(); }));
+  const g = st[selKey], v = X[sel[0]][sel[1]][sel[2]], row = (l, val) => `<div class="stat"><span>${l}</span><b>${val}</b></div>`;
+  $("stats").innerHTML = row("selected cell", `n=${sel[0]}, c=${sel[1]}, pos=${sel[2]}`) + row("cells sharing its statistics", g.size) + row(f.rms ? "mean (not subtracted)" : "group mean μ", f.rms ? "—" : g.mu.toFixed(3)) + row(f.rms ? "RMS √(mean x² + ε)" : "group std σ", g.sd.toFixed(3)) + row("x → normalized", `${v.toFixed(2)} → ${((v - g.mu) / g.sd).toFixed(2)}`) + row("number of (μ, σ) pairs", Object.keys(st).length);
+  $("desc").innerHTML = f.desc + `<br><code>${f.code}</code>`;
+  $("nv").textContent = N();
+  document.querySelectorAll("#norms button").forEach((b) => b.classList.toggle("active", b.dataset.k === norm));
+}
+Object.entries(NORMS).forEach(([k, v]) => { const b = document.createElement("button"); b.textContent = v.name; b.dataset.k = k; b.onclick = () => { norm = k; draw(); }; $("norms").appendChild(b); });
+["normed", "n"].forEach((id) => $(id).addEventListener("input", draw));
+$("regen").onclick = () => { regen(); draw(); };
+regen(); draw();
+</script>
+</body>
+</html>
