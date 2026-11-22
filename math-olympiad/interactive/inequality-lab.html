@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inequality Lab</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 14px; }
+  section.panel { display: none; }
+  section.panel.on { display: block; }
+  svg.plot { aspect-ratio: 3 / 2; }
+  svg text { font: 12px system-ui, sans-serif; fill: var(--muted); }
+  svg text.lab { fill: var(--text); font-weight: 600; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+  canvas#heat { aspect-ratio: 1 / 1; max-width: 460px; margin: 0 auto; cursor: crosshair; }
+  .formula { font-family: var(--mono); font-size: 14px; background: var(--surface-2); border-radius: 8px; padding: 8px 10px; }
+  .scale { height: 10px; border-radius: 99px; background: linear-gradient(90deg, var(--bad), var(--surface-2) 30%, var(--accent)); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Math Olympiad tools</a><span class="note">Module 02 · Algebra</span></header>
+  <h1>Inequality Lab</h1>
+  <p class="lead">Three habits that solve most olympiad inequalities: know the <b>mean chain</b>, find the <b>equality case first</b>, and compare with the <b>tangent line</b>. Play with each one here.</p>
+
+  <div class="tabs">
+    <button class="active" data-p="means">1 · Power means</button>
+    <button data-p="eq">2 · Find the equality case</button>
+    <button data-p="tan">3 · Tangent line trick</button>
+  </div>
+
+  <!-- 1 power means -->
+  <section class="panel on" id="p-means">
+    <div class="grid two">
+      <div class="card">
+        <svg class="plot" id="pm" viewBox="0 0 600 400" aria-label="Power mean M_p as a function of p"></svg>
+        <div class="legend" style="margin-top:8px">
+          <span><i style="background:var(--c1)"></i>M<sub>p</sub> curve</span>
+          <span><i style="background:var(--c5)"></i>HM (p = −1)</span>
+          <span><i style="background:var(--c3)"></i>GM (p → 0)</span>
+          <span><i style="background:var(--c2)"></i>AM (p = 1)</span>
+          <span><i style="background:var(--c4)"></i>QM (p = 2)</span>
+        </div>
+      </div>
+      <div class="controls">
+        <div id="xsliders"></div>
+        <div class="row"><button id="addx">+ value</button><button id="remx">− value</button><button id="eqx">Make all equal</button></div>
+        <div class="card" id="pmStats"></div>
+        <div class="callout">M<sub>p</sub> = ((x₁<sup>p</sup> + … + x<sub>n</sub><sup>p</sup>)/n)<sup>1/p</sup> <b>increases with p</b>, from min(x) at p → −∞ to max(x) at p → +∞. Drag the values together: every mean meets at one point, the equality case.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 equality case heat map -->
+  <section class="panel" id="p-eq">
+    <div class="grid two">
+      <div class="card">
+        <canvas id="heat" width="460" height="460" aria-label="Heat map of LHS minus RHS"></canvas>
+        <div style="max-width:460px;margin:8px auto 0">
+          <div class="scale"></div>
+          <div class="row note" style="justify-content:space-between"><span>LHS − RHS &lt; 0 (inequality FAILS)</span><span>0</span><span>large</span></div>
+        </div>
+      </div>
+      <div class="controls">
+        <label class="ctl">Inequality (a, b, c &gt; 0, homogeneous so we fix c = 1)
+          <select id="ineq"></select>
+        </label>
+        <div class="formula" id="formula"></div>
+        <div class="card" id="eqStats"></div>
+        <div class="callout" id="eqHint"></div>
+        <p class="note">Axes: a (→) and b (↑) from 0 to 3, with c = 1. Click the map to read a value. The ✕ marks the minimum found on the grid.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 tangent line trick -->
+  <section class="panel" id="p-tan">
+    <div class="grid two">
+      <div class="card">
+        <svg class="plot" id="tl" viewBox="0 0 600 400" aria-label="Function and its tangent line"></svg>
+        <div class="legend" style="margin-top:8px">
+          <span><i style="background:var(--c1)"></i>f(x)</span>
+          <span><i style="background:var(--c2)"></i>tangent at x = m</span>
+          <span><i style="background:var(--bad)"></i>f below tangent (trick fails here)</span>
+        </div>
+      </div>
+      <div class="controls">
+        <label class="ctl">Problem
+          <select id="tprob"></select>
+        </label>
+        <div class="formula" id="tformula"></div>
+        <label class="ctl">Tangent point m = <span class="val" id="mv"></span><input type="range" id="m" min="0.2" max="2.8" step="0.05" value="1"></label>
+        <div class="card" id="tStats"></div>
+        <div class="callout" id="tHint"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">Part of the Self-Study repo · math-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const cv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+const fmt = (x, d = 3) => (Math.abs(x) < 1e-12 ? "0" : x.toFixed(d));
+function svgMk(svg) { return (tag, at, txt) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt !== undefined) e.textContent = txt; svg.appendChild(e); return e; }; }
+
+document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("active", x === b));
+  document.querySelectorAll("section.panel").forEach((s) => s.classList.toggle("on", s.id === "p-" + b.dataset.p));
+  redrawAll();
+}));
+
+/* ---------- 1. power means ---------- */
+let X = [1, 4, 9];
+const M = (p, xs) => {
+  if (Math.abs(p) < 1e-9) return Math.exp(xs.reduce((s, x) => s + Math.log(x), 0) / xs.length);
+  return Math.pow(xs.reduce((s, x) => s + Math.pow(x, p), 0) / xs.length, 1 / p);
+};
+function buildSliders() {
+  $("xsliders").innerHTML = X.map((x, i) => `<label class="ctl">x<sub>${i + 1}</sub> = <span class="val" id="xv${i}">${x.toFixed(1)}</span><input type="range" min="0.1" max="10" step="0.1" value="${x}" data-i="${i}"></label>`).join("");
+  $("xsliders").querySelectorAll("input").forEach((inp) => inp.addEventListener("input", () => { X[+inp.dataset.i] = +inp.value; $("xv" + inp.dataset.i).textContent = (+inp.value).toFixed(1); drawMeans(); }));
+}
+function drawMeans() {
+  const svg = $("pm"); svg.innerHTML = ""; const mk = svgMk(svg);
+  const W = 600, H = 400, L = 50, R = 20, T = 20, B = 40, pmin = -4, pmax = 4;
+  const lo = Math.min(...X), hi = Math.max(...X), ylo = Math.max(0, lo - 0.5), yhi = hi + 0.5;
+  const sx = (p) => L + ((p - pmin) / (pmax - pmin)) * (W - L - R), sy = (y) => H - B - ((y - ylo) / (yhi - ylo || 1)) * (H - T - B);
+  for (let p = pmin; p <= pmax; p++) { mk("line", { x1: sx(p), y1: T, x2: sx(p), y2: H - B, stroke: cv("--border"), "stroke-width": p === 0 ? 1.5 : 0.7 }); mk("text", { x: sx(p), y: H - B + 16, "text-anchor": "middle" }, p); }
+  mk("text", { x: W - R, y: H - 6, "text-anchor": "end" }, "p");
+  [lo, hi].forEach((v, k) => { mk("line", { x1: L, y1: sy(v), x2: W - R, y2: sy(v), stroke: cv("--muted"), "stroke-dasharray": "4 4" }); mk("text", { x: L - 6, y: sy(v) + 4, "text-anchor": "end" }, k ? "max" : "min"); });
+  let d = ""; for (let i = 0; i <= 200; i++) { const p = pmin + ((pmax - pmin) * i) / 200; d += (i ? "L" : "M") + sx(p).toFixed(1) + "," + sy(M(p, X)).toFixed(1); }
+  mk("path", { d, fill: "none", stroke: cv("--c1"), "stroke-width": 3 });
+  const named = [[-1, "HM", "--c5"], [0, "GM", "--c3"], [1, "AM", "--c2"], [2, "QM", "--c4"]];
+  named.forEach(([p, n, c]) => { const y = M(p, X); mk("circle", { cx: sx(p), cy: sy(y), r: 6, fill: cv(c), stroke: cv("--surface"), "stroke-width": 2 }); mk("text", { x: sx(p) + 8, y: sy(y) - 8, class: "lab" }, n); });
+  $("pmStats").innerHTML = named.map(([p, n]) => row(`${n} (p = ${p === 0 ? "0" : p})`, fmt(M(p, X)))).join("") +
+    row("QM ≥ AM ≥ GM ≥ HM?", M(2, X) >= M(1, X) - 1e-9 && M(1, X) >= M(0, X) - 1e-9 && M(0, X) >= M(-1, X) - 1e-9 ? '<span class="good">yes</span>' : "?") +
+    row("AM − GM", fmt(M(1, X) - M(0, X), 4));
+}
+$("addx").addEventListener("click", () => { if (X.length < 6) { X.push(+(1 + Math.random() * 8).toFixed(1)); buildSliders(); drawMeans(); } });
+$("remx").addEventListener("click", () => { if (X.length > 2) { X.pop(); buildSliders(); drawMeans(); } });
+$("eqx").addEventListener("click", () => { const a = +(X.reduce((s, x) => s + x, 0) / X.length).toFixed(1); X = X.map(() => a); buildSliders(); drawMeans(); });
+
+/* ---------- 2. equality-case heat map ---------- */
+const INEQ = [
+  { name: "AM-GM: (a+b+c)³ ≥ 27abc", f: (a, b, c) => (a + b + c) ** 3 - 27 * a * b * c, tex: "(a+b+c)^3 - 27abc", note: "Minimum 0 at a = b = c = 1 only. A one-point equality case: AM-GM, Cauchy, Jensen are all candidates." },
+  { name: "Nesbitt: Σ a/(b+c) ≥ 3/2", f: (a, b, c) => a / (b + c) + b / (c + a) + c / (a + b) - 1.5, tex: "a/(b+c) + b/(c+a) + c/(a+b) - 3/2", note: "Equality only at a = b = c. Titu, AM-HM and rearrangement all have that equality case: see module 02, Example 2." },
+  { name: "Schur (t = 1): Σ a(a−b)(a−c) ≥ 0", f: (a, b, c) => a * (a - b) * (a - c) + b * (b - a) * (b - c) + c * (c - a) * (c - b), tex: "a(a-b)(a-c) + b(b-a)(b-c) + c(c-a)(c-b)", note: "TWO equality cases: a = b = c, and (on the edge) two equal, one zero, e.g. a = 0, b = c = 1. AM-GM alone can never prove this, because AM-GM only has the first one." },
+  { name: "a² + b² + c² ≥ ab + bc + ca", f: (a, b, c) => a * a + b * b + c * c - a * b - b * c - c * a, tex: "a^2+b^2+c^2 - ab - bc - ca", note: "Equal to ½Σ(a−b)². Equality iff a = b = c." },
+  { name: "FALSE: Σ a/(b+c) ≥ 2", f: (a, b, c) => a / (b + c) + b / (c + a) + c / (a + b) - 2, tex: "a/(b+c) + b/(c+a) + c/(a+b) - 2", note: "Red region = counterexamples. Before trying to prove anything, test a = b = c: here it gives 3/2 < 2. That one check kills the claim." },
+  { name: "FALSE: a²b + b²c + c²a ≥ a³ + b³ + c³", f: (a, b, c) => a * a * b + b * b * c + c * c * a - (a ** 3 + b ** 3 + c ** 3), tex: "a^2b + b^2c + c^2a - (a^3+b^3+c^3)", note: "Equality at a = b = c, but it is the WRONG direction: by rearrangement a³+b³+c³ ≥ a²b+b²c+c²a. An equality case alone doesn't tell you the direction; test an unequal point too." },
+];
+$("ineq").innerHTML = INEQ.map((q, i) => `<option value="${i}">${q.name}</option>`).join("");
+let heatPick = null;
+function drawHeat() {
+  const q = INEQ[+$("ineq").value], cnv = $("heat"), ctx = cnv.getContext("2d"), N = 92, S = cnv.width, cell = S / N, A = 3;
+  const vals = []; let vmax = 0, vmin = Infinity, best = null;
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    const a = ((i + 0.5) / N) * A, b = ((j + 0.5) / N) * A, v = q.f(a, b, 1);
+    vals.push([i, j, v]); vmax = Math.max(vmax, v); if (v < vmin) { vmin = v; best = [a, b, v]; }
+  }
+  const pos = cv("--accent"), neg = cv("--bad"), bg = cv("--surface-2");
+  const mix = (c1, c2, t) => { const h = (c) => { const x = c.replace("#", ""); return [0, 2, 4].map((k) => parseInt(x.slice(k, k + 2), 16)); }; const u = h(c1), w = h(c2); return `rgb(${u.map((z, k) => Math.round(z + (w[k] - z) * t)).join(",")})`; };
+  const scale = Math.max(1e-9, Math.log1p(Math.max(vmax, -vmin)));
+  for (const [i, j, v] of vals) {
+    const t = Math.min(1, Math.log1p(Math.abs(v)) / scale);
+    ctx.fillStyle = v < -1e-9 ? mix(bg, neg, 0.35 + 0.65 * Math.min(1, t * 3)) : mix(bg, pos, Math.pow(t, 0.6));
+    ctx.fillRect(i * cell, S - (j + 1) * cell, cell + 1, cell + 1);
+  }
+  ctx.strokeStyle = cv("--text"); ctx.globalAlpha = 0.25; ctx.lineWidth = 1;
+  for (let k = 1; k < 3; k++) { const p = (k / 3) * S; ctx.beginPath(); ctx.moveTo(p, 0); ctx.lineTo(p, S); ctx.moveTo(0, p); ctx.lineTo(S, p); ctx.stroke(); }
+  ctx.globalAlpha = 1;
+  ctx.setLineDash([5, 4]); ctx.strokeStyle = cv("--text"); ctx.beginPath(); ctx.moveTo(0, S); ctx.lineTo(S, 0); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = cv("--text"); ctx.font = "12px system-ui"; ctx.fillText("a = b", S - 46, 16); ctx.fillText("1", S / 3 - 4, S - 4); ctx.fillText("2", (2 * S) / 3 - 4, S - 4); ctx.fillText("b", 4, 14); ctx.fillText("a →", S - 26, S - 6);
+  const mx = (best[0] / A) * S, my = S - (best[1] / A) * S;
+  ctx.strokeStyle = cv("--text"); ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(mx - 7, my - 7); ctx.lineTo(mx + 7, my + 7); ctx.moveTo(mx + 7, my - 7); ctx.lineTo(mx - 7, my + 7); ctx.stroke();
+  if (heatPick) { ctx.strokeStyle = cv("--c2"); ctx.beginPath(); ctx.arc((heatPick[0] / A) * S, S - (heatPick[1] / A) * S, 7, 0, 7); ctx.stroke(); }
+  $("formula").textContent = "LHS − RHS = " + q.tex;
+  const at1 = q.f(1, 1, 1), at0 = q.f(1e-9, 1, 1);
+  $("eqStats").innerHTML = row("value at a = b = c = 1", fmt(at1, 4)) + row("value at a → 0, b = c = 1", fmt(at0, 4)) +
+    row("grid minimum", `${fmt(best[2], 4)} at (${best[0].toFixed(2)}, ${best[1].toFixed(2)})`) +
+    row("ever negative?", vmin < -1e-6 ? '<span class="bad">yes: FALSE</span>' : '<span class="good">no</span>') +
+    (heatPick ? row(`clicked (${heatPick[0].toFixed(2)}, ${heatPick[1].toFixed(2)})`, fmt(q.f(heatPick[0], heatPick[1], 1), 4)) : "");
+  $("eqHint").innerHTML = q.note;
+}
+$("heat").addEventListener("click", (e) => { const r = $("heat").getBoundingClientRect(); heatPick = [((e.clientX - r.left) / r.width) * 3, (1 - (e.clientY - r.top) / r.height) * 3]; drawHeat(); });
+$("ineq").addEventListener("change", () => { heatPick = null; drawHeat(); });
+
+/* ---------- 3. tangent line trick ---------- */
+const TP = [
+  { name: "Σ 1/(a²+1) ≥ 3/2,  a+b+c = 3", f: (x) => 1 / (x * x + 1), df: (x) => (-2 * x) / (x * x + 1) ** 2, lo: 0, hi: 3, m0: 1, tex: "f(x) = 1/(x²+1) on (0, 3), mean m = 1", good: "f(x) − (1 − x/2) = x(x−1)²/(2(x²+1)) ≥ 0 on [0, 3]. Summing gives Σ f ≥ 3 − (a+b+c)/2 = 3/2. Jensen can't do this: f″(x) = (6x² − 2)/(x²+1)³ < 0 for x < 1/√3, so f is not convex on (0, 3)." },
+  { name: "Σ 1/(1+a) ≥ 3/2,  a+b+c = 3 (convex: plain Jensen)", f: (x) => 1 / (1 + x), df: (x) => -1 / (1 + x) ** 2, lo: 0, hi: 3, m0: 1, tex: "f(x) = 1/(1+x) on (0, 3), mean m = 1", good: "f is convex, so the tangent lies below everywhere: this is just Jensen." },
+  { name: "Σ a/(a²+1) ≤ 9/10,  a+b+c = 1", f: (x) => x / (x * x + 1), df: (x) => (1 - x * x) / (x * x + 1) ** 2, lo: 0, hi: 1, m0: 1 / 3, upper: true, tex: "f(x) = x/(x²+1) on (0, 1), mean m = 1/3, want f ≤ tangent", good: "f(x) ≤ 3/10 + (18/25)(x − 1/3) on [0, 1] because the difference is (3x−1)²(4x+3)/(50(x²+1)) ≥ 0. Summing gives ≤ 9/10. (Here f is concave on (0, 1), so Jensen works too; the tangent trick is the same idea in a form you can write as one line of algebra.)" },
+];
+$("tprob").innerHTML = TP.map((q, i) => `<option value="${i}">${q.name}</option>`).join("");
+function setTP() { const q = TP[+$("tprob").value]; $("m").min = q.lo + 0.02; $("m").max = q.hi - 0.02; $("m").step = (q.hi - q.lo) / 100; $("m").value = q.m0; drawTan(); }
+function drawTan() {
+  const q = TP[+$("tprob").value], m = +$("m").value; $("mv").textContent = m.toFixed(3);
+  const svg = $("tl"); svg.innerHTML = ""; const mk = svgMk(svg);
+  const W = 600, H = 400, L = 50, R = 20, T = 20, B = 40;
+  const f = q.f, t = (x) => f(m) + q.df(m) * (x - m);
+  const xs = Array.from({ length: 301 }, (_, i) => q.lo + ((q.hi - q.lo) * i) / 300);
+  const ys = xs.flatMap((x) => [f(x), t(x)]);
+  let ylo = Math.min(...ys), yhi = Math.max(...ys); const pad = (yhi - ylo) * 0.08; ylo -= pad; yhi += pad;
+  const sx = (x) => L + ((x - q.lo) / (q.hi - q.lo)) * (W - L - R), sy = (y) => H - B - ((y - ylo) / (yhi - ylo)) * (H - T - B);
+  for (let k = 0; k <= 6; k++) { const x = q.lo + ((q.hi - q.lo) * k) / 6; mk("line", { x1: sx(x), y1: T, x2: sx(x), y2: H - B, stroke: cv("--border"), "stroke-width": 0.7 }); mk("text", { x: sx(x), y: H - B + 16, "text-anchor": "middle" }, +x.toFixed(2)); }
+  // failure shading: where trick fails
+  let bad = 0, worst = 0;
+  for (let i = 0; i < xs.length - 1; i++) {
+    const x = xs[i], diff = q.upper ? t(x) - f(x) : f(x) - t(x);
+    if (diff < -1e-9) { bad++; worst = Math.min(worst, diff); mk("line", { x1: sx(x), y1: sy(f(x)), x2: sx(x), y2: sy(t(x)), stroke: cv("--bad"), "stroke-width": 2.4, opacity: 0.6 }); }
+  }
+  mk("path", { d: xs.map((x, i) => (i ? "L" : "M") + sx(x).toFixed(1) + "," + sy(t(x)).toFixed(1)).join(""), fill: "none", stroke: cv("--c2"), "stroke-width": 2.2, "stroke-dasharray": "7 4" });
+  mk("path", { d: xs.map((x, i) => (i ? "L" : "M") + sx(x).toFixed(1) + "," + sy(f(x)).toFixed(1)).join(""), fill: "none", stroke: cv("--c1"), "stroke-width": 3 });
+  mk("circle", { cx: sx(m), cy: sy(f(m)), r: 6, fill: cv("--c2"), stroke: cv("--surface"), "stroke-width": 2 });
+  mk("text", { x: sx(m) + 8, y: sy(f(m)) - 10, class: "lab" }, "m");
+  $("tformula").textContent = q.tex;
+  const ok = bad === 0;
+  $("tStats").innerHTML = row("tangent slope f′(m)", fmt(q.df(m), 4)) + row("tangent valid on whole range?", ok ? '<span class="good">yes</span>' : `<span class="bad">no (${bad} of 300 sample points fail)</span>`) + row("worst violation", fmt(worst, 4));
+  const atMean = Math.abs(m - q.m0) < 1e-6 || Math.abs(m - q.m0) < (q.hi - q.lo) / 150;
+  $("tHint").innerHTML = atMean ? (ok ? q.good : "At the mean but the tangent still fails somewhere: the trick needs another idea (SOS, case split).")
+    : `Move m to the <b>mean</b> ${+q.m0.toFixed(3)} (the equality case). Only there do the tangent terms sum to a constant, because Σ (aᵢ − m) = 0.`;
+}
+$("tprob").addEventListener("change", setTP); $("m").addEventListener("input", drawTan);
+
+function redrawAll() { drawMeans(); drawHeat(); drawTan(); }
+buildSliders(); setTP(); redrawAll();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", redrawAll);
+</script>
+</body>
+</html>

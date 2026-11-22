@@ -10,8 +10,11 @@ Small cases · draw it · work backwards · strengthen the induction · extremal
 | AM-GM | $\frac{\sum x_i}{n}\ge\sqrt[n]{\prod x_i}$, equality iff all are equal |
 | Cauchy–Schwarz | $(\sum a_i^2)(\sum b_i^2)\ge(\sum a_ib_i)^2$ |
 | Titu | $\sum\frac{a_i^2}{b_i}\ge\frac{(\sum a_i)^2}{\sum b_i}$ |
-| Schur ($t>0$) | $\sum a^t(a-b)(a-c)\ge0$ |
+| Schur ($a,b,c\ge0$, $t>0$) | $\sum a^t(a-b)(a-c)\ge0$ |
 | Jensen | convex $f$: $f(\text{mean})\le\text{mean of }f$ |
+| Power means | $M_p$ increasing in $p$: $\max\ge$ QM $\ge$ AM $\ge$ GM $\ge$ HM $\ge\min$ |
+| Tangent trick | $\sum x_i$ fixed: prove $f(x)\ge f(m)+f'(m)(x-m)$, factor $(x-m)^2$, sum |
+| Newton (3 vars) | $p_2=e_1^2-2e_2$, $p_3=e_1p_2-e_2p_1+3e_3$ |
 | Vieta (cubic) | $r+s+t=-\frac ba$, $rs+st+tr=\frac ca$, $rst=-\frac da$ |
 | Integer poly | $a-b\mid P(a)-P(b)$ |
 | FE plays | $x=y=0$; $y=0$; $y=x$; $y=-x$; swap; injective/surjective; fixed points; **verify the answer** |
