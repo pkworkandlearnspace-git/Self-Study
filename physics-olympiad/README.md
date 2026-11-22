@@ -4,7 +4,7 @@
 **Target:** national team selection, then IPhO-level theory **and** experiment.
 
 ## ⚠️ Read first: eligibility and format
-- IPhO contestants generally must be **under 20** and **not yet university students**. As a senior, **this cycle is likely your last**. Check your national rules and selection dates now.
+- The IPhO statutes say contestants must **not be older than 20 on 30 June** of the competition year and must **not have started university**. As a senior, **this cycle is likely your last**. Check your national rules and selection dates now. (IPhO 2026: Bucaramanga, Colombia, July 2026. IPhO 2027: Saudi Arabia.)
 - **IPhO format:** a **theory exam** (3 long multi-part problems, 5 h, 30 points) and an **experimental exam** (1–2 problems, 5 h, 20 points). **40% of the score is experimental**, and many self-learners neglect it.
 - Problems are long and *guided*. Each problem builds a model step by step, so **careful approximation and modeling** beat obscure formulas.
 
@@ -27,7 +27,9 @@ Order: 01 → 02 first (mechanics underlies everything). Then rotate 03–06. Ru
 - **Driven damped oscillator:** resonance curve, phase lag, Q-factor, transients.
 - **Wave interference:** two-source pattern + double-slit/grating intensity.
 - **Linear fit & uncertainty:** least squares with slope/intercept errors, for the experimental exam.
-- **Flashcards:** formulas, constants, and standard results.
+- **Uncertainty propagation:** any formula, which error dominates, Monte Carlo check.
+- **Dimensional analysis solver**, **coupled oscillators**, **p–V heat-engine cycles**, **RC/RL/RLC circuits**, **thin-lens ray tracer**, **Minkowski diagram**.
+- **Auto-graded quiz** (35 checks across all modules) and **flashcards**: formulas, constants, and standard results.
 
 ## Weekly routine (~10–12 h)
 | Block | Do |

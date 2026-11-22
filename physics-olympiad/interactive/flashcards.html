@@ -63,6 +63,23 @@ window.FLASHCARDS = { id: "physics-olympiad", cards: [
   { deck: "Experiment", q: "How to linearize y = a xⁿ?", a: "Plot ln y vs ln x. Slope = n, intercept = ln a." },
   { deck: "Experiment", q: "Standard error of the mean of N measurements", a: "σ/√N." },
   { deck: "Experiment", q: "Graph checklist at IPhO", a: "Title · axis labels with units · scale filling the page · error bars · best-fit line · a large slope triangle." },
+  { deck: "Methods", q: "Buckingham π theorem", a: "n quantities built from k base dimensions give n − k independent dimensionless groups. One group → answer fixed up to a constant; more → an unknown function remains." },
+  { deck: "Mechanics", q: "Normal modes of m–k–m with coupling spring κ and wall springs k", a: "In phase: ω₁ = √(k/m). Anti-phase: ω₂ = √((k+2κ)/m). Energy swaps fully every π/(ω₂−ω₁)." },
+  { deck: "Mechanics", q: "Shape of the water surface in a bucket spinning at ω", a: "Paraboloid z = ω²r²/(2g): the rotating-frame equipotential." },
+  { deck: "Mechanics", q: "Conveyor belt: sand dropped at rate λ onto a belt at speed v. Force and power?", a: "F = λv, P = λv². Half the power (½λv²) is lost to friction, always." },
+  { deck: "Thermo", q: "Entropy change of n mol of ideal gas between two states", a: "ΔS = nC_V ln(T₂/T₁) + nR ln(V₂/V₁). Valid for any process, including free expansion." },
+  { deck: "Thermo", q: "Otto-cycle efficiency", a: "η = 1 − r^(1−γ), r = compression ratio. r = 8, γ = 1.4 → 56.5%." },
+  { deck: "Thermo", q: "Scale height of the isothermal atmosphere", a: "H = kT/(mg) ≈ 8.4 km for air at 288 K. n(h) = n₀e^(−h/H)." },
+  { deck: "Thermo", q: "Maximum COP of a fridge and of a heat pump", a: "Fridge: T_c/(T_h − T_c). Heat pump: T_h/(T_h − T_c)." },
+  { deck: "E&M", q: "Energy lost charging a capacitor from a battery through R", a: "½CV₀², exactly half of what the battery supplies, independent of R." },
+  { deck: "E&M", q: "Image charge for a point charge q at distance d from a grounded sphere of radius R", a: "q' = −qR/d, at distance R²/d from the centre." },
+  { deck: "E&M", q: "Series RLC: condition for oscillation, and Q", a: "Under-damped if R < 2√(L/C). Q = ω₀L/R = (1/R)√(L/C)." },
+  { deck: "Waves/Optics", q: "Soap film in air: condition for bright reflection", a: "2nt = (m + ½)λ (one π flip, at the front face). Very thin films look black." },
+  { deck: "Waves/Optics", q: "Resolving power of a grating", a: "λ/Δλ = mN (order × number of illuminated lines)." },
+  { deck: "Waves/Optics", q: "Unpolarized light through polarizers at 0°, 45°, 90°", a: "I₀/8. Without the 45° one: 0." },
+  { deck: "Modern", q: "Threshold condition for a reaction with a fixed target", a: "Invariant s = (E_tot)² − (p_tot c)² equals (Σ m_products c²)²: all products at rest in the CM frame." },
+  { deck: "Modern", q: "Spacelike vs timelike separation", a: "Δs² = (cΔt)² − Δx². > 0 timelike: order fixed in all frames. < 0 spacelike: order depends on the frame; no signal can connect them." },
+  { deck: "Experiment", q: "Rounding a result with its uncertainty", a: "Uncertainty to 1–2 s.f. (2 if it starts with 1 or 2), value to the same decimal place: 9.81 ± 0.11." },
 ]};
 </script>
 <script src="../../_shared/flashcards.js"></script>

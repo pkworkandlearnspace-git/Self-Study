@@ -79,7 +79,7 @@ $T \approx 2\pi\sqrt{L/g}\left(1+\frac{\theta_0^2}{16}\right)$. At $\theta_0 = 2
 
 ## Learn from
 - ⭐ **[Kevin Zhou's handouts](https://knzhou.github.io/#handouts)**: **P1** (dimensional analysis, limiting cases, series expansions) and **P2** (estimation, error analysis). Oscillation ODEs are in **M4**. These are the best free olympiad physics materials.
-- **[Street-Fighting Mathematics](https://mitpress.mit.edu/9780262514293/street-fighting-mathematics/), Sanjoy Mahajan**: an open-access book (free PDF from MIT Press) on estimation and approximation.
+- **[Street-Fighting Mathematics](https://library.oapen.org/handle/20.500.12657/26090), Sanjoy Mahajan**: an open-access book (CC-licensed, free PDF via OAPEN) on estimation and approximation.
 - **Mathematical Methods for Physics and Engineering**, Riley, Hobson & Bence 💲: reference only.
 
 ## Build

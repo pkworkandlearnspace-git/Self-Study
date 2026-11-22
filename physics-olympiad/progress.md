@@ -5,7 +5,7 @@
 |---|---|---|
 | National olympiad round 1 | | |
 | National final / team selection | | |
-| IPhO 2027 | July 2027 | check eligibility |
+| IPhO 2027 | Saudi Arabia, summer 2027 (dates TBA) | check eligibility: ≤ 20 on 30 June 2027, not yet at university |
 
 ## Status board
 ⬜ not started · 🟨 in progress · ✅ done

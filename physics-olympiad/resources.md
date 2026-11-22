@@ -2,8 +2,8 @@
 ⭐ = the main resource · 💲 = paid · everything else is free.
 
 ## The core stack
-1. ⭐ **[Kevin Zhou's olympiad handouts](https://knzhou.github.io/#handouts)**: complete, free, problem-rich (mechanics, E&M, thermo, waves, relativity, modern). The best single resource.
-2. ⭐ **[Jaan Kalda's study guides](https://www.ioc.ee/~kalda/ipho/)**: compact "idea lists" (kinematics, mechanics, E&M, thermodynamics, experimental) with IPhO-level problems.
+1. ⭐ **[Kevin Zhou's olympiad handouts](https://knzhou.github.io/#handouts)**: complete, free, problem-rich. The best single resource. Map to this repo: P1–P2 → 01 & 07 · M1–M8 → 02 · T1–T3 → 03 · E1–E8 → 04 · W1–W3 → 05 · R1–R3, X1–X3 → 06. Start with his Syllabus/FAQ to pick an order.
+2. ⭐ **[Jaan Kalda's study guides](https://www.ioc.ee/~kalda/ipho/)**: compact "idea lists" (kinematics, mechanics, E&M, thermodynamics, wave optics, experimental) with IPhO-level problems.
 3. ⭐ **Past IPhO problems with official solutions and marking schemes** (below).
 
 ## Textbooks (💲, pick per module)
