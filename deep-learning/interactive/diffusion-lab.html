@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diffusion & Flow Lab</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  canvas { aspect-ratio: 1 / 1; }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a><span class="note">Module 10 · Generative models</span></header>
+  <h1>Diffusion & Flow Lab</h1>
+  <p class="lead">A 2D toy where the "trained network" is perfect: the data is a mixture of Gaussians, so the noisy score ∇log p<sub>t</sub> and the flow-matching velocity have exact formulas. That isolates the <i>sampler</i>: compare DDPM, DDIM and flow matching at different step counts, and see what classifier-free guidance does.</p>
+
+  <div class="row" style="margin-bottom:10px">
+    <b>Data</b>
+    <div class="seg" id="shapes"><button data-s="ring" class="active">8 Gaussians</button><button data-s="moons">Two moons</button><button data-s="spiral">Spiral</button></div>
+  </div>
+
+  <h2>1 · Forward process: data → noise</h2>
+  <div class="grid two">
+    <canvas id="fwd" width="640" height="640" aria-label="forward diffusion samples"></canvas>
+    <div class="controls">
+      <label class="ctl">Timestep t = <span class="val" id="tv"></span> / 1000<input type="range" id="t" min="0" max="1000" value="0"></label>
+      <label class="ctl">Noise schedule <select id="sched"><option value="linear">linear β (DDPM: 1e-4 → 0.02)</option><option value="cosine">cosine (Nichol & Dhariwal)</option></select></label>
+      <div class="card">
+        <div class="stat"><span>ᾱ<sub>t</sub> (signal fraction of variance)</span><b id="abar"></b></div>
+        <div class="stat"><span>signal scale √ᾱ<sub>t</sub></span><b id="sa"></b></div>
+        <div class="stat"><span>noise scale √(1−ᾱ<sub>t</sub>)</span><b id="sn"></b></div>
+        <div class="stat"><span>SNR = ᾱ/(1−ᾱ)</span><b id="snr"></b></div>
+      </div>
+      <label class="ctl" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="arrows" checked> show the score field −ε̂/√(1−ᾱ) at this t</label>
+      <p class="note">Closed form, no simulation needed: x<sub>t</sub> = √ᾱ<sub>t</sub>·x<sub>0</sub> + √(1−ᾱ<sub>t</sub>)·ε. Arrows point toward higher density of the <i>noisy</i> distribution p<sub>t</sub>. At large t they all point to the origin; at small t they point to the nearest data cluster.</p>
+    </div>
+  </div>
+
+  <h2>2 · Reverse: noise → samples</h2>
+  <div class="grid two">
+    <canvas id="rev" width="640" height="640" aria-label="reverse sampling"></canvas>
+    <div class="controls">
+      <div class="seg" id="samplers">
+        <button data-m="ddpm" class="active">DDPM (stochastic)</button>
+        <button data-m="ddim">DDIM (deterministic ODE)</button>
+        <button data-m="fm">Flow matching (Euler)</button>
+      </div>
+      <label class="ctl">Sampling steps N = <span class="val" id="Nv"></span><input type="range" id="N" min="1" max="200" value="50"></label>
+      <label class="ctl">Class-conditional guidance: class
+        <select id="cls"><option value="-1">none (unconditional)</option><option value="0">class A (blue)</option><option value="1">class B (orange)</option></select></label>
+      <label class="ctl">Guidance scale w = <span class="val" id="wv"></span><input type="range" id="w" min="0" max="6" step="0.1" value="1"></label>
+      <div class="row"><button id="go" class="primary">▶ Sample 600 points</button><button id="clear">Clear</button></div>
+      <div class="card" id="rstats"><span class="note">Press Sample.</span></div>
+      <div class="callout" id="rinsight">DDPM adds fresh noise each step, so it needs many steps. DDIM and flow matching follow a deterministic ODE; flow matching's paths are straighter, so few Euler steps already land close to the data.</div>
+    </div>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive · Guidance uses ε̂ = ε̂<sub>uncond</sub> + w(ε̂<sub>cond</sub> − ε̂<sub>uncond</sub>): w = 0 is unconditional, w = 1 is the plain conditional model, w &gt; 1 over-emphasizes the class.</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const T = 1000;
+// ---------- data: mixture of isotropic Gaussians ----------
+let COMP = []; // {m:[x,y], s, w, c}
+function makeData(kind) {
+  const C = [];
+  if (kind === "ring") for (let i = 0; i < 8; i++) { const a = (i / 8) * 2 * Math.PI; C.push({ m: [2 * Math.cos(a), 2 * Math.sin(a)], s: 0.12, c: i < 4 ? 0 : 1 }); }
+  if (kind === "moons") for (let i = 0; i < 14; i++) { const a = Math.PI * i / 13;
+    C.push({ m: [Math.cos(a) * 1.6 - 0.8, Math.sin(a) * 1.6 - 0.4], s: 0.1, c: 0 });
+    C.push({ m: [0.8 - Math.cos(a) * 1.6, 0.4 - Math.sin(a) * 1.6], s: 0.1, c: 1 }); }
+  if (kind === "spiral") for (let i = 0; i < 36; i++) { const u = i / 35, a = 3 * Math.PI * u + 0.6, r = 0.35 + 2.1 * u; C.push({ m: [r * Math.cos(a), r * Math.sin(a)], s: 0.09, c: i < 18 ? 0 : 1 }); }
+  C.forEach((c) => c.w = 1 / C.length);
+  return C;
+}
+// ---------- schedule ----------
+let ABAR = [];
+function schedule(kind) {
+  const ab = [1];
+  if (kind === "linear") { let p = 1; for (let t = 1; t <= T; t++) { const b = 1e-4 + (0.02 - 1e-4) * (t - 1) / (T - 1); p *= 1 - b; ab.push(p); } }
+  else { const f = (t) => Math.cos(((t / T + 0.008) / 1.008) * Math.PI / 2) ** 2; for (let t = 1; t <= T; t++) ab.push(Math.max(f(t) / f(0), 1e-5)); }
+  return ab;
+}
+// ---------- gaussian helpers ----------
+let seed = 1; function urand() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+function randn() { const u = Math.max(urand(), 1e-12), v = urand(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+function sampleData(n) { const out = []; for (let i = 0; i < n; i++) { const k = Math.floor(urand() * COMP.length), c = COMP[k]; out.push([c.m[0] + c.s * randn(), c.m[1] + c.s * randn()]); } return out; }
+// posterior responsibilities over components for x ~ sum_k w_k N(a*m_k, v_k I)
+function resp(x, a, varOf, cls) {
+  const lw = []; let mx = -Infinity;
+  COMP.forEach((c, k) => { if (cls >= 0 && c.c !== cls) { lw.push(-Infinity); return; } const v = varOf(c), dx = x[0] - a * c.m[0], dy = x[1] - a * c.m[1]; const l = Math.log(c.w) - (dx * dx + dy * dy) / (2 * v) - Math.log(v); lw.push(l); if (l > mx) mx = l; });
+  let s = 0; const r = lw.map((l) => { const e = Math.exp(l - mx); s += e; return e; }); return r.map((e) => e / s);
+}
+// DDPM: eps-hat for x at alpha-bar ab (exact for the GMM)
+function epsHat(x, ab, cls) {
+  const a = Math.sqrt(ab), b2 = 1 - ab; const varOf = (c) => ab * c.s * c.s + b2;
+  const r = resp(x, a, varOf, cls); let sx = 0, sy = 0;
+  COMP.forEach((c, k) => { if (!r[k]) return; const v = varOf(c); sx += r[k] * (a * c.m[0] - x[0]) / v; sy += r[k] * (a * c.m[1] - x[1]) / v; });
+  const sd = Math.sqrt(b2); return [-sd * sx, -sd * sy]; // eps = -sqrt(1-ab) * score
+}
+// Flow matching (x_t = (1-t) x0 + t x1, x0 ~ N(0,I)): exact velocity E[x1 - x0 | x_t]
+function velocity(x, t, cls) {
+  const varOf = (c) => t * t * c.s * c.s + (1 - t) * (1 - t);
+  const r = resp(x, t, varOf, cls); let vx = 0, vy = 0;
+  COMP.forEach((c, k) => { if (!r[k]) return; const V = varOf(c), g = (t * c.s * c.s - (1 - t)) / V;
+    vx += r[k] * (c.m[0] + g * (x[0] - t * c.m[0])); vy += r[k] * (c.m[1] + g * (x[1] - t * c.m[1])); });
+  return [vx, vy];
+}
+const guide = (fu, fc, w) => [fu[0] + w * (fc[0] - fu[0]), fu[1] + w * (fc[1] - fu[1])];
+// data log-likelihood for quality score
+function logpData(x) { let mx = -Infinity; const l = COMP.map((c) => { const dx = x[0] - c.m[0], dy = x[1] - c.m[1], v = c.s * c.s; const q = Math.log(c.w) - (dx * dx + dy * dy) / (2 * v) - Math.log(2 * Math.PI * v); if (q > mx) mx = q; return q; }); return mx + Math.log(l.reduce((s, q) => s + Math.exp(q - mx), 0)); }
+
+// ---------- drawing ----------
+const R = 3.4; // world half-width
+function setup(cv) { const ctx = cv.getContext("2d"), W = cv.width; ctx.fillStyle = css("--surface"); ctx.fillRect(0, 0, W, W); ctx.strokeStyle = css("--border"); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(W / 2, 0); ctx.lineTo(W / 2, W); ctx.moveTo(0, W / 2); ctx.lineTo(W, W / 2); ctx.stroke(); return ctx; }
+const P = (cv, x) => [(x[0] / R + 1) * cv.width / 2, (1 - x[1] / R) * cv.width / 2];
+function dots(cv, ctx, pts, color, r = 2.2, alpha = 0.85) { ctx.fillStyle = color; ctx.globalAlpha = alpha; for (const x of pts) { const [u, v] = P(cv, x); ctx.beginPath(); ctx.arc(u, v, r, 0, 7); ctx.fill(); } ctx.globalAlpha = 1; }
+function ghost(cv, ctx) { // faint target clusters
+  for (const c of COMP) { const [u, v] = P(cv, c.m); ctx.fillStyle = c.c === 0 ? css("--c1") : css("--c2"); ctx.globalAlpha = 0.13; ctx.beginPath(); ctx.arc(u, v, Math.max(4, 2.5 * c.s / R * cv.width / 2), 0, 7); ctx.fill(); } ctx.globalAlpha = 1;
+}
+// ---------- part 1 ----------
+let base = [], noise = [];
+function regen() { seed = 12345; base = sampleData(500); noise = base.map(() => [randn(), randn()]); }
+function fwd() {
+  ABAR = schedule($("sched").value); const t = +$("t").value, ab = ABAR[t], a = Math.sqrt(ab), b = Math.sqrt(1 - ab);
+  $("tv").textContent = t; $("abar").textContent = ab.toPrecision(3); $("sa").textContent = a.toFixed(3); $("sn").textContent = b.toFixed(3); $("snr").textContent = (1 - ab) < 1e-12 ? "∞" : (ab / (1 - ab)).toPrecision(3);
+  const cv = $("fwd"), ctx = setup(cv); ghost(cv, ctx);
+  dots(cv, ctx, base.map((x, i) => [a * x[0] + b * noise[i][0], a * x[1] + b * noise[i][1]]), css("--text"), 2, 0.7);
+  if ($("arrows").checked && t > 0) {
+    ctx.strokeStyle = css("--c3"); ctx.lineWidth = 1.5;
+    for (let gx = -3; gx <= 3; gx += 0.5) for (let gy = -3; gy <= 3; gy += 0.5) {
+      const e = epsHat([gx, gy], ab, -1), sc = [-e[0] / b, -e[1] / b]; const n = Math.hypot(sc[0], sc[1]) || 1, L = 0.32 * Math.min(1, n / 2);
+      const [u0, v0] = P(cv, [gx, gy]), [u1, v1] = P(cv, [gx + L * sc[0] / n, gy + L * sc[1] / n]);
+      ctx.beginPath(); ctx.moveTo(u0, v0); ctx.lineTo(u1, v1); ctx.stroke(); ctx.beginPath(); ctx.arc(u1, v1, 1.8, 0, 7); ctx.fillStyle = css("--c3"); ctx.fill();
+    }
+  }
+}
+// ---------- part 2 ----------
+let method = "ddpm", anim = null, last = null;
+function runSampler() {
+  if (anim) cancelAnimationFrame(anim);
+  ABAR = schedule($("sched").value);
+  const N = +$("N").value, cls = +$("cls").value, w = +$("w").value; seed = 999 + Math.floor(Math.random() * 1e6);
+  const n = 600; let xs = Array.from({ length: n }, () => [randn(), randn()]);
+  const traj = xs.slice(0, 40).map((x) => [x.slice()]);
+  let k = 0; let nfe = 0;
+  const ts = Array.from({ length: N + 1 }, (_, i) => Math.round(T - (T * i) / N)); // T ... 0
+  function eps(x, ab) { if (cls < 0) return epsHat(x, ab, -1); const u = epsHat(x, ab, -1), c = epsHat(x, ab, cls); return guide(u, c, w); }
+  function vel(x, t) { if (cls < 0) return velocity(x, t, -1); const u = velocity(x, t, -1), c = velocity(x, t, cls); return guide(u, c, w); }
+  function stepAll() {
+    if (method === "fm") {
+      const t0 = k / N, dt = 1 / N;
+      xs = xs.map((x) => { const v = vel(x, t0); return [x[0] + dt * v[0], x[1] + dt * v[1]]; });
+    } else {
+      const t = ts[k], tp = ts[k + 1], ab = ABAR[t], abp = ABAR[tp]; const eta = method === "ddpm" ? 1 : 0;
+      xs = xs.map((x) => {
+        const e = eps(x, ab); const sa = Math.sqrt(ab), sb = Math.sqrt(1 - ab);
+        let x0 = [(x[0] - sb * e[0]) / sa, (x[1] - sb * e[1]) / sa];
+        x0 = x0.map((v) => Math.max(-6, Math.min(6, v)));
+        const sig = eta * Math.sqrt((1 - abp) / (1 - ab)) * Math.sqrt(Math.max(0, 1 - ab / abp));
+        const dir = Math.sqrt(Math.max(0, 1 - abp - sig * sig));
+        return [Math.sqrt(abp) * x0[0] + dir * e[0] + sig * randn(), Math.sqrt(abp) * x0[1] + dir * e[1] + sig * randn()];
+      });
+    }
+    nfe += cls < 0 ? 1 : 2; k++;
+    xs.slice(0, 40).forEach((x, i) => traj[i].push(x.slice()));
+  }
+  const perFrame = Math.max(1, Math.ceil(N / 60));
+  function frame() {
+    for (let j = 0; j < perFrame && k < N; j++) stepAll();
+    drawRev(xs, traj, k, N);
+    if (k < N) anim = requestAnimationFrame(frame); else { anim = null; last = { xs, traj, N }; stats(xs, N, nfe, cls); }
+  }
+  frame();
+}
+function drawRev(xs, traj, k, N) {
+  const cv = $("rev"), ctx = setup(cv); ghost(cv, ctx);
+  ctx.strokeStyle = css("--c4"); ctx.globalAlpha = 0.45; ctx.lineWidth = 1.2;
+  for (const tr of traj) { ctx.beginPath(); tr.forEach((x, i) => { const [u, v] = P(cv, x); i ? ctx.lineTo(u, v) : ctx.moveTo(u, v); }); ctx.stroke(); }
+  ctx.globalAlpha = 1; dots(cv, ctx, xs, css("--text"), 2, 0.8);
+  ctx.fillStyle = css("--muted"); ctx.font = "22px system-ui"; ctx.fillText(`step ${k} / ${N}`, 14, 30);
+}
+function stats(xs, N, nfe, cls) {
+  const lp = xs.reduce((s, x) => s + logpData(x), 0) / xs.length;
+  const ref = sampleData(600).reduce((s, x) => s + logpData(x), 0) / 600;
+  // fraction near each class
+  let nearA = 0, nearB = 0, off = 0;
+  for (const x of xs) { let best = Infinity, bc = -1; COMP.forEach((c) => { const d = Math.hypot(x[0] - c.m[0], x[1] - c.m[1]) / c.s; if (d < best) { best = d; bc = c.c; } }); if (best > 3) off++; else if (bc === 0) nearA++; else nearB++; }
+  const pct = (v) => (100 * v / xs.length).toFixed(0) + "%";
+  $("rstats").innerHTML = `
+    <div class="stat"><span>Mean log p<sub>data</sub>(samples) (higher = sharper)</span><b>${lp.toFixed(2)}</b></div>
+    <div class="stat"><span>…for true data samples (the ceiling)</span><b>${ref.toFixed(2)}</b></div>
+    <div class="stat"><span>Off-manifold (&gt; 3σ from every cluster)</span><b class="${off / xs.length > 0.2 ? "bad" : "good"}">${pct(off)}</b></div>
+    <div class="stat"><span>Near class A / class B</span><b>${pct(nearA)} / ${pct(nearB)}</b></div>
+    <div class="stat"><span>Network evaluations (NFE)</span><b>${nfe}</b></div>`;
+  let ins = "";
+  if (method === "ddpm" && N < 30) ins = "Few DDPM steps: each step's injected noise is too big to correct, so samples are blurry/off-manifold. Try DDIM or flow matching at the same N.";
+  else if (method === "fm" && N <= 5) ins = "Flow matching with only a handful of Euler steps: the near-straight paths keep samples close to the data, though curved regions still bend inward. Rectified-flow retraining or distillation straightens them further.";
+  else if (method === "ddim" && N <= 5) ins = "DDIM is deterministic: same noise → same sample. With very few steps the ODE is integrated coarsely, so clusters smear toward each other.";
+  else ins = "With enough steps every sampler matches the data. The differences show up at low N, which is why fast samplers and distillation matter in practice.";
+  if (cls >= 0) ins += ` Guidance w = ${$("w").value}: ${+$("w").value > 1.5 ? "samples crowd onto the class's most typical regions, with less diversity (the classic CFG trade-off)." : "samples follow the class."}`;
+  $("rinsight").textContent = ins;
+}
+// ---------- wiring ----------
+function setShape(s) { COMP = makeData(s); regen(); fwd(); const cv = $("rev"), ctx = setup(cv); ghost(cv, ctx); $("rstats").innerHTML = '<span class="note">Press Sample.</span>'; }
+document.querySelectorAll("#shapes button").forEach((b) => b.onclick = () => { document.querySelectorAll("#shapes button").forEach((x) => x.classList.remove("active")); b.classList.add("active"); setShape(b.dataset.s); });
+document.querySelectorAll("#samplers button").forEach((b) => b.onclick = () => { document.querySelectorAll("#samplers button").forEach((x) => x.classList.remove("active")); b.classList.add("active"); method = b.dataset.m; runSampler(); });
+$("t").oninput = fwd; $("sched").onchange = fwd; $("arrows").onchange = fwd;
+$("N").oninput = () => $("Nv").textContent = $("N").value; $("w").oninput = () => $("wv").textContent = $("w").value;
+$("go").onclick = runSampler; $("clear").onclick = () => { if (anim) cancelAnimationFrame(anim); anim = null; const cv = $("rev"), ctx = setup(cv); ghost(cv, ctx); };
+$("Nv").textContent = $("N").value; $("wv").textContent = $("w").value;
+setShape("ring");
+</script>
+</body>
+</html>
