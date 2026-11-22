@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RC, RL and RLC Circuits</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style> #tr { aspect-ratio: 2 / 1; } #fr { aspect-ratio: 2 / 1; } #sch { aspect-ratio: 3 / 1; } </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Physics Olympiad tools</a></header>
+  <h1>RC, RL and RLC Circuits</h1>
+  <p class="lead">A series circuit with a battery V₀ switched on at t = 0 (or a pre-charged capacitor discharging). Watch the transient, then switch to AC and see the resonance curve. Sketch the curve first, then check (module 04).</p>
+  <div class="grid two">
+    <div>
+      <svg id="sch" class="plot" viewBox="0 0 600 200" aria-label="Circuit schematic"></svg>
+      <canvas id="tr" width="900" height="450" style="margin-top:10px" aria-label="Transient response"></canvas>
+      <div class="legend" style="margin-top:6px"><span><i style="background:var(--c1)"></i>current I(t) (scaled to its max)</span><span><i style="background:var(--c2)"></i>capacitor voltage V<sub>C</sub>/V₀</span><span><i style="background:var(--muted)"></i>time-constant markers</span></div>
+    </div>
+    <div class="controls">
+      <div class="row" id="kinds"><button data-k="RC">RC</button><button data-k="RL">RL</button><button data-k="RLC" class="active">RLC</button></div>
+      <div class="row" id="modes"><button data-m="charge" class="active">Switch on battery</button><button data-m="discharge">Discharge / release</button></div>
+      <label class="ctl" id="lR">R = <span class="val" id="Rv"></span> Ω<input type="range" id="R" min="0" max="3" step="0.01" value="1.3"></label>
+      <label class="ctl" id="lL">L = <span class="val" id="Lv"></span> mH<input type="range" id="L" min="0" max="3" step="0.01" value="2"></label>
+      <label class="ctl" id="lC">C = <span class="val" id="Cv"></span> µF<input type="range" id="C" min="0" max="3" step="0.01" value="1"></label>
+      <p class="note" style="margin:0">Sliders are logarithmic: each covers 1 to 1000.</p>
+      <div class="card" id="stats"></div>
+    </div>
+  </div>
+  <h2>AC: driven at angular frequency ω</h2>
+  <canvas id="fr" width="900" height="450" aria-label="Frequency response"></canvas>
+  <div class="legend" style="margin-top:6px"><span><i style="background:var(--c1)"></i>current amplitude |I|/(V₀/R)</span><span><i style="background:var(--c4)"></i>phase of I relative to V (−90° … +90°)</span><span><i style="background:var(--c3)"></i>half-power band</span></div>
+  <h2>Key results</h2>
+  <div class="card"><ul style="margin:0;padding-left:20px">
+    <li><b>RC:</b> τ = RC. Charging V<sub>C</sub> = V₀(1 − e<sup>−t/τ</sup>), I = (V₀/R)e<sup>−t/τ</sup>. Half the battery's energy always ends up as heat in R, whatever R is.</li>
+    <li><b>RL:</b> τ = L/R. I = (V₀/R)(1 − e<sup>−t/τ</sup>). The inductor resists <i>changes</i> in current.</li>
+    <li><b>RLC:</b> Lq̈ + Rq̇ + q/C = V₀, the same ODE as the damped oscillator with γ = R/(2L), ω₀ = 1/√(LC). Under-damped if R &lt; 2√(L/C).</li>
+    <li><b>AC:</b> Z = R + i(ωL − 1/(ωC)). The current peaks at ω₀ (exactly, unlike the displacement of a mechanical oscillator) and Q = ω₀L/R = ω₀/Δω.</li>
+  </ul></div>
+  <footer class="foot">Part of the Self-Study repo · physics-olympiad/interactive · RK4 integration</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+let kind = "RLC", mode = "charge";
+const P = () => ({ R: Math.pow(10, +$("R").value), L: Math.pow(10, +$("L").value) * 1e-3, C: Math.pow(10, +$("C").value) * 1e-6 });
+const fmtT = (t) => (t >= 1 ? t.toFixed(2) + " s" : t >= 1e-3 ? (t * 1e3).toFixed(2) + " ms" : (t * 1e6).toFixed(1) + " µs");
+const fmtW = (w) => (w >= 1e3 ? (w / 1e3).toFixed(2) + "k" : w.toFixed(1)) + " rad/s";
+
+function schematic() {
+  const s = $("sch"), stroke = col("--text"), m = col("--muted");
+  const res = (x) => `<polyline fill="none" stroke="${stroke}" stroke-width="2" points="${x},40 ${x + 6},28 ${x + 18},52 ${x + 30},28 ${x + 42},52 ${x + 54},28 ${x + 60},40"/><text x="${x + 30}" y="20" text-anchor="middle" fill="${m}" font-size="15">R</text>`;
+  const ind = (x) => `<path fill="none" stroke="${stroke}" stroke-width="2" d="M${x},40 ${[0, 1, 2, 3].map((i) => `a8,10 0 0 1 15,0`).join(" ")}"/><text x="${x + 30}" y="20" text-anchor="middle" fill="${m}" font-size="15">L</text>`;
+  const cap = (x) => `<line x1="${x}" y1="40" x2="${x + 26}" y2="40" stroke="${stroke}" stroke-width="2"/><line x1="${x + 26}" y1="24" x2="${x + 26}" y2="56" stroke="${stroke}" stroke-width="3"/><line x1="${x + 34}" y1="24" x2="${x + 34}" y2="56" stroke="${stroke}" stroke-width="3"/><line x1="${x + 34}" y1="40" x2="${x + 60}" y2="40" stroke="${stroke}" stroke-width="2"/><text x="${x + 30}" y="18" text-anchor="middle" fill="${m}" font-size="15">C</text>`;
+  const wire = (x1, x2) => `<line x1="${x1}" y1="40" x2="${x2}" y2="40" stroke="${stroke}" stroke-width="2"/>`;
+  const parts = kind === "RC" ? [res, cap] : kind === "RL" ? [res, ind] : [res, ind, cap];
+  let x = 140, g = `<line x1="60" y1="40" x2="60" y2="160" stroke="${stroke}" stroke-width="2"/>${wire(60, 140)}`;
+  parts.forEach((f, i) => { g += f(x); x += 60; g += wire(x, x + (i === parts.length - 1 ? 540 - x : 50)); x += 50; });
+  g += `<line x1="540" y1="40" x2="540" y2="160" stroke="${stroke}" stroke-width="2"/><line x1="60" y1="160" x2="260" y2="160" stroke="${stroke}" stroke-width="2"/><line x1="340" y1="160" x2="540" y2="160" stroke="${stroke}" stroke-width="2"/>`;
+  const on = mode === "charge";
+  g += `<line x1="260" y1="144" x2="260" y2="176" stroke="${stroke}" stroke-width="3"/><line x1="272" y1="152" x2="272" y2="168" stroke="${stroke}" stroke-width="3"/><text x="266" y="196" text-anchor="middle" fill="${m}" font-size="14">${on ? "V₀" : "shorted"}</text>`;
+  g += on ? `<line x1="272" y1="160" x2="340" y2="160" stroke="${stroke}" stroke-width="2"/>` : `<line x1="260" y1="160" x2="260" y2="160"/><path d="M240,160 C240,120 360,120 340,160" fill="none" stroke="${col("--c2")}" stroke-width="2" stroke-dasharray="4 3"/>`;
+  s.innerHTML = g;
+}
+function simulate(p) {
+  const hasL = kind !== "RC", hasC = kind !== "RL", L = hasL ? p.L : 0, R = p.R, C = p.C, V0 = 1;
+  let T, info = [], marks = [];
+  if (kind === "RC") { const tau = R * C; T = 6 * tau; marks = [tau]; info.push(["τ = RC", fmtT(tau)]); }
+  else if (kind === "RL") { const tau = L / R; T = 6 * tau; marks = [tau]; info.push(["τ = L/R", fmtT(tau)]); }
+  else {
+    const g = R / (2 * L), w0 = 1 / Math.sqrt(L * C);
+    info.push(["γ = R/2L", g.toFixed(1) + " s⁻¹"], ["ω₀ = 1/√(LC)", fmtW(w0)], ["Critical R = 2√(L/C)", (2 * Math.sqrt(L / C)).toFixed(1) + " Ω"]);
+    if (g < w0) { const wd = Math.sqrt(w0 * w0 - g * g); info.push(["Regime", "under-damped"], ["ω_d", fmtW(wd)], ["Q = ω₀L/R", (w0 * L / R).toFixed(2)]); T = Math.min(5 / g, 14 * 2 * Math.PI / wd); marks = [1 / g]; }
+    else { const s = g - Math.sqrt(Math.max(0, g * g - w0 * w0)); info.push(["Regime", g === w0 ? "critical" : "over-damped"], ["Slow decay time 1/s", fmtT(1 / s)]); T = 6 / s; marks = [1 / s]; }
+  }
+  // state: q (charge), I. Charging from q=0,I=0 with source V0. Discharge: RC/RLC q=CV0, no source; RL: I=V0/R, no source.
+  let q = 0, I = 0, Vs = V0;
+  if (mode === "discharge") { Vs = 0; if (hasC) q = C * V0; else I = V0 / R; }
+  const N = 1500, dt = T / N, out = [];
+  const f = (q, I) => {
+    if (!hasL) { const Ii = (Vs - q / C) / R; return [Ii, 0, Ii]; }
+    const vc = hasC ? q / C : 0; return [I, (Vs - R * I - vc) / L, I];
+  };
+  for (let i = 0; i <= N; i++) {
+    const cur = hasL ? I : (Vs - q / C) / R;
+    out.push([i * dt, cur, hasC ? q / C / V0 : NaN]);
+    const k1 = f(q, I), k2 = f(q + dt / 2 * k1[0], I + dt / 2 * k1[1]), k3 = f(q + dt / 2 * k2[0], I + dt / 2 * k2[1]), k4 = f(q + dt * k3[0], I + dt * k3[1]);
+    q += dt / 6 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]); I += dt / 6 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
+  }
+  return { out, T, info, marks };
+}
+function fit(c, r) { const d = devicePixelRatio || 1, w = c.clientWidth; c.width = w * d; c.height = (w / r) * d; const x = c.getContext("2d"); x.setTransform(d, 0, 0, d, 0, 0); return x; }
+function drawTr(sim) {
+  const c = $("tr"), ctx = fit(c, 2), W = c.clientWidth, H = W / 2, pad = 30;
+  ctx.fillStyle = col("--surface"); ctx.fillRect(0, 0, W, H);
+  const Imax = Math.max(...sim.out.map((o) => Math.abs(o[1]))) || 1, vmax = Math.max(1, ...sim.out.map((o) => (isNaN(o[2]) ? 0 : Math.abs(o[2]))));
+  const lo = Math.min(0, ...sim.out.map((o) => o[1] / Imax), ...sim.out.map((o) => (isNaN(o[2]) ? 0 : o[2] / vmax)));
+  const X = (t) => pad + (t / sim.T) * (W - 2 * pad), Y = (v) => H - pad - ((v - lo) / (1 - lo)) * (H - 2 * pad);
+  ctx.strokeStyle = col("--border"); ctx.beginPath(); ctx.moveTo(pad, Y(0)); ctx.lineTo(W - pad, Y(0)); ctx.moveTo(pad, pad); ctx.lineTo(pad, H - pad); ctx.stroke();
+  ctx.setLineDash([4, 4]); ctx.strokeStyle = col("--muted"); ctx.fillStyle = col("--muted"); ctx.font = "12px system-ui";
+  sim.marks.forEach((m) => [1, 2, 3].forEach((k) => { if (k * m < sim.T) { ctx.beginPath(); ctx.moveTo(X(k * m), pad); ctx.lineTo(X(k * m), H - pad); ctx.stroke(); ctx.fillText(k + "τ", X(k * m) + 3, pad + 10); } }));
+  ctx.setLineDash([]);
+  ctx.fillText("t → " + fmtT(sim.T), W - pad - 80, H - pad + 18); ctx.fillText("1", 12, Y(1) + 4); ctx.fillText("0", 12, Y(0) + 4);
+  const line = (k, sc, color) => { ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath(); let first = true; sim.out.forEach((o) => { if (isNaN(o[k])) return; const p = [X(o[0]), Y(o[k] / sc)]; first ? ctx.moveTo(...p) : ctx.lineTo(...p); first = false; }); ctx.stroke(); };
+  line(1, Imax, col("--c1")); line(2, vmax, col("--c2"));
+}
+function drawFr(p) {
+  const c = $("fr"), ctx = fit(c, 2), W = c.clientWidth, H = W / 2, pad = 34;
+  ctx.fillStyle = col("--surface"); ctx.fillRect(0, 0, W, H);
+  const L = kind === "RC" ? 0 : p.L, C = kind === "RL" ? Infinity : p.C, R = p.R;
+  const w0 = kind === "RLC" ? 1 / Math.sqrt(L * C) : kind === "RC" ? 1 / (R * C) : R / L;
+  const a = Math.log10(w0) - 2, b = Math.log10(w0) + 2;
+  const Z = (w) => { const x = w * L - (isFinite(C) ? 1 / (w * C) : 0); return [Math.hypot(R, x), Math.atan2(-x, R)]; };
+  const X = (lw) => pad + ((lw - a) / (b - a)) * (W - 2 * pad), Y = (v) => H - pad - v * (H - 2 * pad);
+  ctx.strokeStyle = col("--border"); ctx.beginPath(); ctx.moveTo(pad, H - pad); ctx.lineTo(W - pad, H - pad); ctx.moveTo(pad, pad); ctx.lineTo(pad, H - pad); ctx.stroke();
+  ctx.fillStyle = col("--muted"); ctx.font = "12px system-ui";
+  for (let e = Math.ceil(a); e <= Math.floor(b); e++) { ctx.fillText("10" + String(e).split("").map((d) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[d] || "⁻").join(""), X(e) - 10, H - pad + 16); }
+  ctx.fillText("ω (rad/s, log scale)", W - pad - 120, H - pad - 6);
+  if (kind === "RLC") {
+    const Q = w0 * L / R, dw = w0 / Q, lo = (-dw + Math.sqrt(dw * dw + 4 * w0 * w0)) / 2, hi = lo + dw;
+    ctx.fillStyle = col("--c3"); ctx.globalAlpha = 0.15; ctx.fillRect(X(Math.log10(lo)), pad, X(Math.log10(hi)) - X(Math.log10(lo)), H - 2 * pad); ctx.globalAlpha = 1;
+  }
+  const curve = (f, color) => { ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath(); for (let i = 0; i <= 400; i++) { const lw = a + (i / 400) * (b - a); const y = f(Math.pow(10, lw)); i ? ctx.lineTo(X(lw), Y(y)) : ctx.moveTo(X(lw), Y(y)); } ctx.stroke(); };
+  curve((w) => R / Z(w)[0], col("--c1"));
+  curve((w) => 0.5 + Z(w)[1] / Math.PI, col("--c4"));
+  ctx.setLineDash([3, 3]); ctx.strokeStyle = col("--muted"); ctx.beginPath(); ctx.moveTo(X(Math.log10(w0)), pad); ctx.lineTo(X(Math.log10(w0)), H - pad); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = col("--muted"); ctx.fillText(kind === "RLC" ? "ω₀" : kind === "RC" ? "1/RC" : "R/L", X(Math.log10(w0)) + 4, pad + 12);
+}
+function update() {
+  const p = P(); schematic();
+  $("lL").style.display = kind === "RC" ? "none" : ""; $("lC").style.display = kind === "RL" ? "none" : "";
+  $("Rv").textContent = p.R.toFixed(p.R < 10 ? 2 : 0); $("Lv").textContent = (p.L * 1e3).toFixed(p.L < 0.01 ? 2 : 0); $("Cv").textContent = (p.C * 1e6).toFixed(p.C < 1e-5 ? 2 : 0);
+  const sim = simulate(p); drawTr(sim); drawFr(p);
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  $("stats").innerHTML = sim.info.map((r) => row(...r)).join("") + (kind !== "RL" ? row("Energy in C at the end", mode === "charge" ? "½CV₀²" : "0") : "");
+}
+document.querySelectorAll("#kinds button").forEach((b) => b.addEventListener("click", () => { kind = b.dataset.k; document.querySelectorAll("#kinds button").forEach((x) => x.classList.toggle("active", x === b)); update(); }));
+document.querySelectorAll("#modes button").forEach((b) => b.addEventListener("click", () => { mode = b.dataset.m; document.querySelectorAll("#modes button").forEach((x) => x.classList.toggle("active", x === b)); update(); }));
+["R", "L", "C"].forEach((id) => $(id).addEventListener("input", update));
+window.addEventListener("resize", update);
+const mq = matchMedia("(prefers-color-scheme: dark)"); if (mq.addEventListener) mq.addEventListener("change", update);
+update();
+</script>
+</body>
+</html>
