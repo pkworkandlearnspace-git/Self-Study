@@ -28,6 +28,8 @@
 Order: 01 → 02 → (03 & 04 interleaved) → 05 → 06 → 07. Start doing **virtual contests in week 2**.
 
 ## Interactive tools → [`interactive/`](interactive/index.html)
+- **Binary search on the answer:** step through lo/hi/mid with the greedy check drawn for each guess.
+- **Constraints → algorithm quiz:** 28 auto-graded questions with explanations.
 - **Graph search visualizer:** draw walls/weights on a grid. Step through BFS, DFS, Dijkstra, and A*.
 - **Segment tree visualizer:** watch the build, point update, and range query visit exactly O(log n) nodes.
 - **DP table animator:** LCS, edit distance, 0/1 knapsack filled cell by cell, with traceback.

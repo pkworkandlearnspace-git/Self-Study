@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Constraints → Algorithm Quiz</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .q { font-size: 18px; font-weight: 600; margin: 6px 0 14px; }
+  .opts { display: grid; gap: 8px; }
+  .opts button { text-align: left; padding: 10px 14px; font-size: 15px; }
+  .opts button.right { border-color: var(--good); background: color-mix(in srgb, var(--good) 15%, var(--surface)); }
+  .opts button.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 15%, var(--surface)); }
+  .why { margin-top: 12px; }
+  .pbar { height: 6px; background: var(--surface-2); border-radius: 99px; overflow: hidden; margin: 10px 0 14px; }
+  .pbar > div { height: 100%; background: var(--accent); transition: width .3s; }
+  .tagline { font-size: 12px; color: var(--accent); text-transform: uppercase; letter-spacing: .06em; }
+</style>
+</head>
+<body>
+<div class="wrap" style="max-width:760px">
+  <header class="top"><a class="back" href="index.html">← Informatics Olympiad tools</a><span class="note" id="score"></span></header>
+  <h1>Constraints → Algorithm Quiz</h1>
+  <p class="lead">At IOI the first minutes of every task go to reading the limits and inferring the complexity you need. Pick the best answer; every question explains itself (modules 02–07). Keys <b>1–4</b> answer, <b>Enter</b> moves on.</p>
+  <div class="row"><label class="ctl">Topic <select id="topic"></select></label><button id="restart">Restart</button></div>
+  <div class="pbar"><div id="pb"></div></div>
+  <div class="card" id="box"></div>
+  <footer class="foot">Part of the Self-Study repo · informatics-olympiad/interactive</footer>
+</div>
+<script>
+const Q = [
+  // [topic, question, [options], correctIndex, explanation]
+  ["Complexity", "n ≤ 2·10⁵, time limit 1 s. Which complexity is too slow?", ["O(n log n)", "O(n log² n)", "O(n²)", "O(n√n)"], 2, "n² = 4·10¹⁰ operations, roughly 400× too many. n log² n ≈ 6·10⁷ and n√n ≈ 9·10⁷ fit."],
+  ["Complexity", "n ≤ 20. What is the intended complexity most likely to be?", ["O(n³)", "O(2ⁿ · n)", "O(n!)", "O(n log n)"], 1, "2²⁰ · 20 ≈ 2·10⁷. n ≤ 20 is the classic signal for subsets or bitmask DP. n! would be 2.4·10¹⁸."],
+  ["Complexity", "n ≤ 40, choose a subset with sum exactly X.", ["Bitmask over all subsets", "Meet in the middle", "Greedy by value", "Segment tree"], 1, "2⁴⁰ ≈ 10¹² is too much, but 2 × 2²⁰ subset sums plus sort and binary search is about 2·10⁷."],
+  ["Complexity", "n ≤ 500, and the answer depends on all pairs (l, r) with a split point between them.", ["O(n³) interval DP", "O(2ⁿ)", "O(n)", "O(n log n) with a segment tree"], 0, "500³ = 1.25·10⁸, fine with a small constant. 'dp[l][r] = min over k' is interval DP."],
+  ["Complexity", "n, q ≤ 10⁵ offline range queries 'number of distinct values in [l, r]'. Which approach fits?", ["O(nq) brute force", "Mo's algorithm, O((n + q)√n)", "Floyd–Warshall", "Bitmask DP"], 1, "nq = 10¹⁰ is too slow. Mo's gives about 2·10⁵ × 316 ≈ 6·10⁷. (A Fenwick tree with offline sorting by r also works, in O((n + q) log n).)"],
+  ["Complexity", "N ≤ 10¹⁸. Compute the N-th Fibonacci number mod 10⁹+7.", ["Loop to N", "Matrix exponentiation", "Memoized recursion", "Sieve"], 1, "Any O(N) method is hopeless. A 2×2 matrix power gives O(log N) ≈ 60 multiplications."],
+  ["Techniques", "Minimize the maximum load when splitting an array into k contiguous parts.", ["Binary search on the answer + greedy check", "Dijkstra", "KMP", "Two-pass DFS"], 0, "Feasibility of limit x is monotone in x, and a greedy O(n) check decides it. Total O(n log(sum))."],
+  ["Techniques", "Count subarrays with sum exactly K; values may be negative.", ["Two pointers", "Prefix sums + hash map", "Sort + binary search", "Sliding-window deque"], 1, "Negative values break the monotonicity two pointers needs. Count pairs pre[j] − pre[i] = K with a map: O(n)."],
+  ["Techniques", "q ≤ 10⁵ updates 'add v to a[l..r]', with all queries asked only after every update.", ["Segment tree with lazy propagation", "Difference array", "Sparse table", "DSU"], 1, "Offline, with no queries in between: d[l] += v, d[r+1] −= v, then a single prefix sum. O(n + q), and it's a 3-line solution."],
+  ["Techniques", "Choose the maximum number of non-overlapping intervals.", ["Sort by start, greedy", "Sort by end, greedy", "Sort by length, greedy", "Always DP over 2ⁿ"], 1, "Earliest end first. The exchange argument: swapping the first interval of an optimal solution for the earliest-ending one never hurts."],
+  ["Data structures", "Point updates and range-sum queries, n, q ≤ 2·10⁵. Shortest correct code?", ["Fenwick tree", "Sparse table", "Prefix sums only", "Sqrt decomposition"], 0, "A Fenwick tree does both in O(log n) with about 6 lines. A sparse table is static, and prefix sums can't handle updates."],
+  ["Data structures", "Static array, 10⁶ range-minimum queries.", ["Segment tree, O(log n) each", "Sparse table, O(1) each", "Fenwick tree for min", "Brute force"], 1, "min is idempotent, so two overlapping power-of-two blocks answer a query. That's O(n log n) build and O(1) per query."],
+  ["Data structures", "Range add and range sum, both online.", ["Plain Fenwick", "Segment tree with lazy propagation (or two Fenwicks)", "Sparse table", "Difference array"], 1, "Updates and queries interleave, so you need lazy propagation, or the two-BIT trick, in O(log n) each."],
+  ["Data structures", "Maintain connected components while edges are only added.", ["DSU", "BFS after every edge", "Segment tree", "Floyd–Warshall"], 0, "Union-find with path compression and union by size: amortized α(n) per operation."],
+  ["Data structures", "For every i, find the nearest j > i with a[j] > a[i].", ["Monotonic stack, O(n)", "Nested loops", "Binary search on a sorted copy", "Heap"], 0, "Keep a stack of indices with decreasing values. Each index is pushed and popped once."],
+  ["Graphs", "Shortest path, unweighted grid 1000 × 1000.", ["BFS", "Dijkstra", "Bellman–Ford", "Floyd–Warshall"], 0, "Unweighted means BFS in O(V + E) ≈ 4·10⁶. Dijkstra works too but adds a log factor for nothing."],
+  ["Graphs", "Edge weights are only 0 or 1.", ["0-1 BFS with a deque", "Plain BFS", "Floyd–Warshall", "Kruskal"], 0, "Push 0-edges to the front and 1-edges to the back of the deque: O(V + E)."],
+  ["Graphs", "Directed graph with some negative edges; detect a negative cycle.", ["Dijkstra", "Bellman–Ford", "Prim", "Topological sort"], 1, "Dijkstra's greedy finalization is wrong with negative edges. If Bellman–Ford still relaxes an edge in round n, there is a negative cycle."],
+  ["Graphs", "Tree, n, q ≤ 2·10⁵, queries 'distance between u and v'.", ["BFS per query", "LCA with binary lifting", "Floyd–Warshall", "DSU"], 1, "dist = depth[u] + depth[v] − 2·depth[lca]. O(n log n) preprocessing, O(log n) per query."],
+  ["Graphs", "Order tasks so that every prerequisite comes first, and report if impossible.", ["Kahn's topological sort", "MST", "Dijkstra", "Binary lifting"], 0, "Repeatedly remove indegree-0 vertices. If any vertices are left over, there is a cycle."],
+  ["DP", "0/1 knapsack with a 1D dp array. Which loop direction for the weight?", ["Increasing w", "Decreasing w", "Either", "Random"], 1, "Going down ensures dp[w − wt] is still the value from before this item, so each item is used at most once. Going up gives the unbounded knapsack."],
+  ["DP", "Longest increasing subsequence, n ≤ 2·10⁵.", ["O(n²) DP", "Patience sorting with lower_bound, O(n log n)", "Bitmask DP", "Interval DP"], 1, "d[len] = the smallest tail of an increasing subsequence of that length. For each x, replace the first d[i] ≥ x."],
+  ["DP", "Count integers in [1, 10¹⁸] whose digit sum is divisible by 7.", ["Digit DP", "Loop over all integers", "Sieve", "Two pointers"], 0, "State (position, tight, sum mod 7): about 19 × 2 × 7 states, each with 10 transitions."],
+  ["DP", "dp[i] = min over j < i of (dp[j] + b[j]·a[i]), with the slopes b[j] monotone. n ≤ 2·10⁵.", ["Convex hull trick", "Bitmask DP", "KMP", "Plain O(n²)"], 0, "Each j gives a line y = b[j]·x + dp[j], so you are querying the lower envelope. CHT runs in O(n) or O(n log n)."],
+  ["Strings", "Find all occurrences of pattern P in text T, |T| ≤ 10⁶.", ["Naive O(|T|·|P|)", "KMP / Z-function", "Sorting", "DSU"], 1, "Prefix function on P + '#' + T, or the Z-function: linear time."],
+  ["Strings", "Compare 10⁵ pairs of substrings for equality.", ["Polynomial hashing", "Compare char by char", "Suffix automaton only", "Sorting"], 0, "Precompute prefix hashes, then each comparison is O(1). Use a large modulus (or two) to avoid anti-hash collisions."],
+  ["Math", "nCr mod 10⁹+7 for 10⁵ queries with n ≤ 10⁶.", ["Pascal's triangle", "Factorials + inverse factorials", "Recompute each time", "Lucas only"], 1, "Precompute fact and inv_fact (one Fermat inverse, then go backwards). Each query is fact[n]·inv[r]·inv[n−r]."],
+  ["IOI strategy", "Task: subtask 1 (n ≤ 10, 9 pts), subtask 2 (tree is a line, 21 pts), full (n ≤ 2·10⁵, 70 pts). 40 min left, no idea for full. Best plan?", ["Keep thinking about the full solution", "Code brute force for st1, then the line case", "Give up the task", "Submit random output"], 1, "Banked points don't disappear, and the subtasks often lead to the full idea. Your best submission per subtask counts."],
+];
+const topics = ["All", ...new Set(Q.map((q) => q[0]))];
+const $ = (id) => document.getElementById(id);
+topics.forEach((t) => { const o = document.createElement("option"); o.textContent = t; $("topic").appendChild(o); });
+let order = [], idx = 0, right = 0, answered = false, wrongList = [];
+
+function shuffle(x) { for (let i = x.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [x[i], x[j]] = [x[j], x[i]]; } return x; }
+function start() {
+  const t = $("topic").value;
+  order = shuffle(Q.map((_, i) => i).filter((i) => t === "All" || Q[i][0] === t));
+  idx = 0; right = 0; wrongList = []; show();
+}
+function show() {
+  $("pb").style.width = (100 * idx / order.length) + "%";
+  $("score").textContent = `Score ${right}/${idx}`;
+  if (idx >= order.length) {
+    const pct = Math.round(100 * right / order.length);
+    $("box").innerHTML = `<div class="tagline">Finished</div><div class="big ${pct >= 80 ? "good" : pct >= 50 ? "warn" : "bad"}">${right}/${order.length}</div>
+      <p>${pct >= 80 ? "Strong: you can read constraints fluently. Revisit only the ones you missed." : "Re-read module 02's constraints table and the modules linked below, then retry."}</p>
+      ${wrongList.length ? "<b>Review:</b><ul>" + wrongList.map((i) => `<li>${Q[i][1]} → <b>${Q[i][2][Q[i][3]]}</b></li>`).join("") + "</ul>" : ""}
+      <div class="row"><button class="primary" id="again">Try again</button>${wrongList.length ? '<button id="retry">Retry only missed</button>' : ""}</div>`;
+    $("again").onclick = start;
+    if (wrongList.length) $("retry").onclick = () => { order = shuffle(wrongList.slice()); idx = 0; right = 0; wrongList = []; show(); };
+    return;
+  }
+  const [topic, q, opts] = Q[order[idx]];
+  answered = false;
+  $("box").innerHTML = `<div class="tagline">${topic} · ${idx + 1} of ${order.length}</div><div class="q">${q}</div>
+    <div class="opts">${opts.map((o, i) => `<button data-i="${i}"><span class="note">${i + 1}.</span> ${o}</button>`).join("")}</div>
+    <div class="why" id="why"></div>`;
+  $("box").querySelectorAll(".opts button").forEach((b) => b.addEventListener("click", () => answer(+b.dataset.i)));
+}
+function answer(i) {
+  if (answered) return; answered = true;
+  const [, , , c, why] = Q[order[idx]];
+  const btns = $("box").querySelectorAll(".opts button");
+  btns.forEach((b, j) => { b.disabled = true; b.style.opacity = 1; if (j === c) b.classList.add("right"); else if (j === i) b.classList.add("wrong"); });
+  if (i === c) right++; else wrongList.push(order[idx]);
+  $("why").innerHTML = `<div class="callout"><b class="${i === c ? "good" : "bad"}">${i === c ? "Correct." : "Not quite."}</b> ${why}</div><div class="row" style="margin-top:10px"><button class="primary" id="next">Next →</button></div>`;
+  $("next").onclick = () => { idx++; show(); };
+  $("next").focus();
+  $("score").textContent = `Score ${right}/${idx + 1}`;
+}
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "SELECT") return;
+  if (!answered && /^[1-4]$/.test(e.key) && idx < order.length) answer(+e.key - 1);
+  else if (answered && e.key === "Enter" && document.activeElement.id !== "next") { idx++; show(); }
+});
+$("topic").addEventListener("change", start);
+$("restart").addEventListener("click", start);
+start();
+</script>
+</body>
+</html>

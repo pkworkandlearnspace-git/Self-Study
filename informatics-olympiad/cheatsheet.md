@@ -2,7 +2,7 @@
 One-page recap. If a line feels unfamiliar, open the module (→ NN).
 
 ## Constraints → complexity (≈10⁸ ops/s) (→ 02)
-n ≤ 12: n! · n ≤ 25: 2ⁿ·n · n ≤ 500: n³ · n ≤ 5000: n² · n ≤ 10⁶: n log n · bigger: n, log n, O(1)
+n ≤ 12: n! · n ≤ 25: 2ⁿ·n · n ≈ 40: 2^(n/2) (meet in the middle) · n ≤ 500: n³ · n ≤ 5000: n² · n ≤ 10⁵: n√n · n ≤ 10⁶: n log n · bigger: n, log n, O(1)
 
 ## Snippets (→ 01–06)
 ```cpp
