@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Speaking Answer Upgrader</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .modes { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .q { font-size: 18px; font-weight: 600; margin: 6px 0 12px; }
+  .opts { display: grid; gap: 8px; }
+  .opts button { text-align: left; line-height: 1.5; padding: 10px 12px; }
+  .opts button.ok { background: var(--good); border-color: var(--good); color: #fff; }
+  .opts button.no { background: var(--bad); border-color: var(--bad); color: #fff; }
+  .fb { margin-top: 12px; font-size: 15px; }
+  .slot { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-top: 10px; }
+  .slot .lab { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); font-weight: 700; }
+  .slot .ch { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .slot .ch button { text-align: left; font-size: 14px; }
+  .answer { margin-top: 14px; padding: 12px 14px; border-radius: 10px; background: var(--accent-soft); line-height: 1.6; min-height: 3em; }
+  .answer span { border-bottom: 2px solid transparent; }
+  .answer .o { border-color: var(--c1); } .answer .r { border-color: var(--c2); } .answer .e { border-color: var(--c3); } .answer .x { border-color: var(--c4); }
+</style>
+</head>
+<body>
+<div class="wrap" style="max-width:820px">
+  <header class="top"><a class="back" href="index.html">← IELTS tools</a><a class="back" href="../06-speaking.md">Module 06 · Speaking →</a></header>
+  <h1>Speaking Answer Upgrader</h1>
+  <p class="lead">Two drills for Parts 1 and 3. <b>Spot the band-7 answer</b> among three, then <b>build</b> a Part 3 answer from the opinion → reason → example → other side frame. Then say it out loud in your own words.</p>
+  <div class="modes" id="modes">
+    <button data-m="spot" class="active">🔍 Spot the band-7 answer</button>
+    <button data-m="build">🧱 Build a Part 3 answer</button>
+    <span class="note" style="margin-left:auto" id="score">0 / 0</span>
+  </div>
+  <div class="card" id="panel"></div>
+  <footer class="foot">Part of the Self-Study repo · ielts/interactive · original practice items, not official test questions</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const shuffle = (a) => { a = [...a]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+let right = 0, total = 0;
+const bump = (ok) => { total++; if (ok) right++; $("score").textContent = `${right} / ${total}`; };
+
+const SPOT = [
+  { part: "Part 1", q: "Do you prefer studying alone or with other people?", opts: [
+    { t: "Alone.", ok: false, why: "Too short: no reason or detail, so there's nothing for the examiner to assess on fluency or range." },
+    { t: "Mostly alone, to be honest, because I need total silence to concentrate on maths problems. That said, before exams I sometimes get together with a couple of friends to test each other, which keeps me motivated.", ok: true, why: "Answer → reason → detail, a natural contrast (<i>That said</i>), precise collocations (<i>total silence</i>, <i>test each other</i>). Right length for Part 1 (~20 s)." },
+    { t: "Studying is a very important part of life in the modern world. There are many advantages and disadvantages of studying alone and with other people, and in this answer I will explain both of them in detail.", ok: false, why: "Sounds memorised and essay-like, and never answers the question. Part 1 is personal and conversational." },
+  ] },
+  { part: "Part 1", q: "How has your hometown changed in recent years?", opts: [
+    { t: "It's changed quite a lot, actually. A few years ago it was a sleepy little town, but since the new rail line opened it's become much busier, with lots of cafés and apartment blocks popping up near the station.", ok: true, why: "Present perfect for change, a time contrast, idiomatic but natural (<i>sleepy little town</i>, <i>popping up</i>)." },
+    { t: "Yes, it changed. Many changes. Now it is more big and more busy.", ok: false, why: "Grammar errors (<i>more big</i>), wrong tense (<i>it changed</i> → <i>it has changed</i>), and very limited vocabulary." },
+    { t: "My hometown is a city which is located in the north of my country and it has a population of about two million people and it is famous for its food.", ok: false, why: "Fluent but off-topic: it describes the town, not how it has changed. Also chains clauses with <i>and… and…</i>." },
+  ] },
+  { part: "Part 3", q: "Will technology ever replace teachers?", opts: [
+    { t: "No, I don't think so, because teachers are very important.", ok: false, why: "A position, but the reason is circular and there's no development. Part 3 needs extended, abstract reasoning." },
+    { t: "I'd say it's unlikely to replace them completely. Technology is excellent at delivering information and giving instant feedback on routine exercises, but a big part of teaching is motivating students and noticing when someone is struggling, which software still does poorly. Having said that, I can imagine teachers' roles shifting towards coaching, with AI tutors handling more of the drilling.", ok: true, why: "Hedged opinion → reason with contrast → a forward-looking 'other side'. Uses less common vocabulary precisely (<i>drilling</i>, <i>coaching</i>) and complex sentences." },
+    { t: "Technology is a double-edged sword. Every coin has two sides. In a nutshell, at the end of the day, it depends.", ok: false, why: "A pile of idioms with no content. Forced idioms don't raise Lexical Resource; using them naturally and appropriately does." },
+  ] },
+  { part: "Part 3", q: "Why do some people enjoy competing more than others?", opts: [
+    { t: "I think it partly comes down to personality. Some people get a real buzz from measuring themselves against others, whereas others find that pressure stressful. Upbringing probably plays a role too: children who were praised mainly for winning may grow up seeing everything as a contest.", ok: true, why: "Two developed reasons (personality, upbringing) with contrast and hedging (<i>probably</i>, <i>may</i>). Talks about people in general, not only the speaker." },
+    { t: "Because they like it. I like competing too, for example in the physics olympiad. I like physics because it is interesting.", ok: false, why: "Circular reason and drifts into a personal story about a different topic." },
+    { t: "Competition is when people try to win against other people. There are many types of competition such as sports, exams and business.", ok: false, why: "Defines and lists, but never answers <i>why</i>." },
+  ] },
+  { part: "Part 1", q: "Do you enjoy cooking?", opts: [
+    { t: "Not really, I'm afraid. I can make a few basic dishes like fried rice, but I find following recipes a bit tedious. My mum's an amazing cook, so I tend to leave it to her!", ok: true, why: "Honest, natural answer with a reason and personal detail. A negative answer is fine: the examiner assesses language, not your hobbies." },
+    { t: "Yes, I enjoy cooking very much because cooking is enjoyable and I enjoy it.", ok: false, why: "Repetition (enjoy × 3) shows a narrow vocabulary range." },
+    { t: "Cooking, which is an activity that involves the preparation of food using heat, has been practised by humans for thousands of years.", ok: false, why: "Encyclopaedic and impersonal. Doesn't answer whether <i>you</i> enjoy it." },
+  ] },
+];
+
+const BUILD = [
+  { q: "Should children's use of technology be limited?",
+    o: ["I think some limits make sense, especially for younger children.", "Yes, definitely.", "Technology is everywhere nowadays."],
+    r: ["The main reason is that screens can easily crowd out sleep and physical activity, which children need for healthy development.", "Because it is bad.", "Many people have different opinions."],
+    e: ["For example, a lot of my classmates admit they scroll on their phones until after midnight and then struggle to concentrate the next day.", "For example, technology.", "For example, my favourite app is a map app."],
+    x: ["That said, I'd draw a line between passive scrolling and creative uses like coding or making videos, which I think should be encouraged.", "So that's my answer.", "But I don't know."],
+    good: [0, 0, 0, 0] },
+  { q: "Is space exploration worth the cost?",
+    o: ["On balance, I'd argue that it is, although the spending needs to be justified carefully.", "Space is very big.", "No, because it costs money."],
+    r: ["Space programmes tend to produce technologies with uses far beyond space, and they inspire young people to go into science and engineering.", "Because rockets are cool.", "Because the government has money."],
+    e: ["Satellite data, for instance, is now essential for weather forecasting and for monitoring crops and climate change.", "For example, the moon.", "For example, I watched a film about space."],
+    x: ["Having said that, when people at home lack basic healthcare, it's understandable that they question the budget, so governments should show clear returns.", "So, yes.", "Anyway, it's not my problem."],
+    good: [0, 0, 0, 0] },
+  { q: "Do young people today have different goals from their parents' generation?",
+    o: ["To some extent, yes, although the underlying goals, like security and happiness, are probably quite similar.", "Yes, they are different.", "Young people are young."],
+    r: ["What has changed is how people try to reach them: many young people now value flexibility and meaningful work over staying with one employer for life.", "Because times change.", "Because parents are old."],
+    e: ["My parents, for example, both worked for the same company for decades, whereas several of my older cousins have already switched careers twice.", "For example, phones.", "For example, my parents."],
+    x: ["Whether that shift is positive probably depends on the economy: flexibility is great when there are plenty of jobs, but less so in a downturn.", "That's all.", "I don't really know about this."],
+    good: [0, 0, 0, 0] },
+];
+const LABELS = [["o", "1 · Opinion (hedged)"], ["r", "2 · Reason"], ["e", "3 · Example"], ["x", "4 · Other side / future"]];
+
+let mode = "spot";
+function renderSpot() {
+  const it = SPOT[Math.floor(Math.random() * SPOT.length)], opts = shuffle(it.opts);
+  $("panel").innerHTML = `<span class="note">${it.part}</span><div class="q">${it.q}</div><div class="opts" id="opts">${opts.map((o, i) => `<button data-i="${i}">${o.t}</button>`).join("")}</div><div class="fb" id="fb"></div>`;
+  $("opts").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    if ($("opts").dataset.done) return; $("opts").dataset.done = 1;
+    const o = opts[+b.dataset.i]; bump(o.ok);
+    opts.forEach((x, i) => x.ok && $("opts").children[i].classList.add("ok")); if (!o.ok) b.classList.add("no");
+    $("fb").innerHTML = opts.map((x) => `<p style="margin:6px 0"><b class="${x.ok ? "good" : "bad"}">${x.ok ? "✓ Band-7 style" : "✗"}</b> ${x.why}</p>`).join("") + `<div class="row"><button class="primary" id="nx">Next →</button><span class="note">Now answer the question yourself, out loud, in your own words.</span></div>`;
+    $("nx").addEventListener("click", render);
+  }));
+}
+function renderBuild() {
+  const it = BUILD[Math.floor(Math.random() * BUILD.length)];
+  const choice = {}, order = {};
+  LABELS.forEach(([k]) => (order[k] = shuffle(it[k].map((t, i) => ({ t, i })))));
+  $("panel").innerHTML = `<span class="note">Part 3</span><div class="q">${it.q}</div>` +
+    LABELS.map(([k, lab]) => `<div class="slot"><div class="lab">${lab}</div><div class="ch" data-k="${k}">${order[k].map((x) => `<button data-i="${x.i}">${x.t}</button>`).join("")}</div></div>`).join("") +
+    `<div class="answer" id="ans"><span class="note">Pick one sentence in each box to assemble your answer.</span></div>
+     <div class="legend" style="margin-top:6px"><span><i style="background:var(--c1)"></i>opinion</span><span><i style="background:var(--c2)"></i>reason</span><span><i style="background:var(--c3)"></i>example</span><span><i style="background:var(--c4)"></i>other side</span></div>
+     <div class="row" style="margin-top:10px"><button class="primary" id="chk" disabled>Check</button></div><div class="fb" id="fb"></div>`;
+  const draw = () => {
+    const parts = LABELS.filter(([k]) => k in choice).map(([k]) => `<span class="${k}">${it[k][choice[k]]}</span>`);
+    $("ans").innerHTML = parts.length ? parts.join(" ") : `<span class="note">Pick one sentence in each box to assemble your answer.</span>`;
+    $("chk").disabled = Object.keys(choice).length < 4;
+  };
+  $("panel").querySelectorAll(".ch").forEach((row) => row.querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    if ($("panel").dataset.done) return;
+    row.querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === b));
+    choice[row.dataset.k] = +b.dataset.i; draw();
+  })));
+  $("chk").addEventListener("click", () => {
+    if ($("panel").dataset.done) return; $("panel").dataset.done = 1;
+    let n = 0;
+    LABELS.forEach(([k], j) => { const ok = choice[k] === it.good[j]; if (ok) n++; const row = $("panel").querySelector(`.ch[data-k="${k}"]`); row.querySelector(`[data-i="${it.good[j]}"]`).classList.add("ok"); if (!ok) row.querySelector(`[data-i="${choice[k]}"]`).classList.add("no"); });
+    bump(n === 4);
+    const words = LABELS.map(([k], j) => it[k][it.good[j]]).join(" ").split(/\s+/).length;
+    $("fb").innerHTML = `<b class="${n === 4 ? "good" : "warn"}">${n}/4 strong choices.</b> The full band-7 version is about ${words} words, roughly 30–40 seconds of speech. Weak options fail because they are circular (<i>because it is bad</i>), vague (<i>for example, technology</i>), or end the answer early (<i>that's all</i>).<div class="row" style="margin-top:10px"><button class="primary" id="nx">Next →</button><span class="note">Now give your own answer without looking.</span></div>`;
+    $("nx").addEventListener("click", render);
+  });
+}
+function render() { delete $("panel").dataset.done; (mode === "spot" ? renderSpot : renderBuild)(); }
+$("modes").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { $("modes").querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === b)); mode = b.dataset.m; render(); }));
+render();
+
+window.__selftest = () => {
+  const errs = []; SPOT.forEach((s, i) => { if (s.opts.filter((o) => o.ok).length !== 1) errs.push("spot " + i); });
+  mode = "build"; render();
+  const it = BUILD.find((b) => b.q === $("panel").querySelector(".q").textContent);
+  LABELS.forEach(([k], j) => $("panel").querySelector(`.ch[data-k="${k}"] [data-i="${it.good[j]}"]`).click());
+  $("chk").click(); const ok = $("fb").textContent.startsWith("4/4");
+  mode = "spot"; render();
+  return errs.length || !ok ? `FAIL ${errs} build=${ok}` : "ok";
+};
+</script>
+</body>
+</html>
