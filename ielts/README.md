@@ -6,12 +6,12 @@
 ## The test at a glance
 | Skill | Time | Format | Band 7 needs (approx.) |
 |---|---|---|---|
-| **Listening** | ~30 min (+ transfer time on paper) | 4 parts, 40 questions | ~30/40 (7.5 ≈ 32/40) |
+| **Listening** | ~30 min (+ 10 min transfer on paper; a short review on computer) | 4 parts, 40 questions | ~30/40 (7.5 ≈ 32/40) |
 | **Reading (Academic)** | 60 min | 3 long texts, 40 questions | ~30/40 (7.5 ≈ 33/40) |
-| **Writing** | 60 min | Task 1 (≥150 words, data/process/map) + Task 2 (≥250 words, essay). **Task 2 counts double.** | Band 7 on 4 criteria |
+| **Writing** | 60 min | Task 1 (≥150 words, data/process/map) + Task 2 (≥250 words, essay). **Task 2 carries more weight.** | Band 7 on 4 criteria |
 | **Speaking** | 11–14 min | Part 1 interview · Part 2 a 2-min talk · Part 3 discussion | Band 7 on 4 criteria |
 
-**Overall band** = the average of the four, rounded to the nearest half band (x.25 → x.5, x.75 → next whole band).
+**Overall band** = the average of the four, rounded to the nearest half band (x.25 → x.5, x.75 → next whole band). Many universities also set a **minimum per skill**.
 Raw-score conversions vary slightly between tests, so treat the numbers above as targets. Use the [band calculator](interactive/band-calculator.html).
 
 ## The map
