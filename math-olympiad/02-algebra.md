@@ -117,7 +117,7 @@ Square: $a_{n+1}^2=a_n^2+2+\frac{1}{a_n^2}>a_n^2+2$, so $a_{100}^2>1+2\cdot99=19
 
 ## Learn from
 - ⭐ **[Evan Chen: "A Brief Introduction to Olympiad Inequalities"](https://web.evanchen.cc/handouts/Ineq/en.pdf)**, plus his functional equations material on the [handouts page](https://web.evanchen.cc/handouts.html).
-- ⭐ **[Yufei Zhao's olympiad handouts](https://yufeizhao.com/olympiad/)**: inequalities, polynomials, and more.
+- **[Yufei Zhao's olympiad handouts](https://yufeizhao.com/olympiad/)**: inequalities, polynomials, and more.
 - **Secrets in Inequalities**, Pham Kim Hung 💲 · **Functional Equations**, Venkatachala 💲 · **Problems from the Book**, Andreescu & Dospinescu 💲 (advanced).
 - **[AoPS: Intermediate Algebra](https://artofproblemsolving.com/store)** 💲 if you need a gentler ramp.
 
