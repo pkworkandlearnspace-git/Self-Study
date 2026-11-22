@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convolution Explorer</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .gridv { display: grid; gap: 2px; width: max-content; max-width: 100%; touch-action: manipulation; }
+  .gridv div { width: var(--cell, 30px); height: var(--cell, 30px); display: flex; align-items: center; justify-content: center;
+    font: 10px var(--mono); border-radius: 3px; border: 1px solid transparent; user-select: none; }
+  .gridv .pad { border: 1px dashed var(--border); color: var(--muted); }
+  .gridv .win { outline: 2px solid var(--c2); outline-offset: -2px; }
+  .gridv .cur { outline: 3px solid var(--c2); outline-offset: -3px; }
+  .kgrid input { width: 46px; text-align: center; padding: 4px 2px; font-family: var(--mono); font-size: 13px; }
+  .kgrid { display: grid; gap: 4px; width: max-content; }
+  .panes { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
+  .panes > * { min-width: 0; }
+  @media (min-width: 820px) { .panes { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+  .eq { font-family: var(--mono); font-size: 13px; word-break: break-word; }
+  .rf-bar { display: grid; gap: 1px; margin: 4px 0 10px; }
+  .rf-bar span { height: 14px; border-radius: 2px; background: var(--surface-2); }
+  .rf-bar span.on { background: var(--c1); }
+  .rf-bar span.ctr { background: var(--c2); }
+  table.t input { width: 58px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a><span class="note">Module 06 · CNNs</span></header>
+  <h1>Convolution Explorer</h1>
+  <p class="lead">Slide one kernel over an image, one window at a time. Change kernel size, stride, padding, and dilation and watch the output size formula update. Then stack layers to see the receptive field grow, and count parameters.</p>
+
+  <h2>1 · One conv layer, step by step</h2>
+  <div class="panes">
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><b>Input (click pixels to toggle)</b><span class="note" id="inInfo"></span></div>
+      <div class="scroll-x" style="margin-top:8px"><div class="gridv" id="inGrid"></div></div>
+      <div class="row" style="margin-top:10px">
+        <select id="imgPreset" aria-label="Input image">
+          <option value="vedge">Vertical edge</option><option value="hedge">Horizontal edge</option>
+          <option value="cross">Cross</option><option value="diag">Diagonal line</option>
+          <option value="checker">Checkerboard</option><option value="dot">Single dot (impulse)</option><option value="random">Random</option>
+        </select>
+        <label class="ctl" style="display:flex;gap:6px;align-items:center">size n <select id="n"><option>6</option><option>7</option><option selected>8</option><option>9</option><option>10</option></select></label>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><b>Output feature map</b><span class="note" id="outInfo"></span></div>
+      <div class="scroll-x" style="margin-top:8px"><div class="gridv" id="outGrid"></div></div>
+      <div class="callout eq" id="eq" style="margin-top:10px"></div>
+    </div>
+  </div>
+  <div class="grid two" style="margin-top:14px">
+    <div class="card controls">
+      <div class="row">
+        <select id="kPreset" aria-label="Kernel preset">
+          <option value="sobelx">Sobel x (vertical edges)</option><option value="sobely">Sobel y (horizontal edges)</option>
+          <option value="blur">Box blur</option><option value="gauss">Gaussian blur</option><option value="sharpen">Sharpen</option>
+          <option value="lap">Laplacian</option><option value="identity">Identity</option>
+        </select>
+        <label class="ctl" style="display:flex;gap:6px;align-items:center">kernel k <select id="k"><option>1</option><option selected>3</option><option>5</option></select></label>
+      </div>
+      <div class="kgrid" id="kGrid"></div>
+      <label class="ctl">stride s = <span class="val" id="sv"></span><input type="range" id="s" min="1" max="3" value="1"></label>
+      <label class="ctl">padding p = <span class="val" id="pv"></span><input type="range" id="p" min="0" max="3" value="0"></label>
+      <label class="ctl">dilation d = <span class="val" id="dv"></span><input type="range" id="d" min="1" max="3" value="1"></label>
+      <div class="row">
+        <button id="prev">◀ Prev</button><button id="play" class="primary">▶ Play</button><button id="next">Next ▶</button>
+        <button id="samePad" title="Set padding so the output has the same size when s = 1">"same" padding</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="big" id="osize" style="font-size:30px"></div>
+      <div class="eq" id="ofml" style="margin:6px 0 10px"></div>
+      <div class="stat"><span>Window positions</span><b id="npos"></b></div>
+      <div class="stat"><span>Multiply–adds (1 channel)</span><b id="macs"></b></div>
+      <div class="stat"><span>Effective kernel span d(k−1)+1</span><b id="span"></b></div>
+      <p class="note" id="insight" style="margin-top:10px"></p>
+    </div>
+  </div>
+
+  <h2>2 · Receptive field of a stack</h2>
+  <div class="grid two">
+    <div class="card">
+      <div class="scroll-x"><table class="t" id="rfTable"><thead><tr><th>Layer</th><th>k</th><th>s</th><th>d</th><th>jump j</th><th>RF r</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="row" style="margin-top:10px">
+        <button id="addL">+ Add layer</button>
+        <select id="rfPreset" aria-label="Stack preset">
+          <option value="">Presets…</option><option value="vgg">VGG block: 3×3, 3×3, pool</option><option value="two3">Two 3×3 vs one 5×5</option>
+          <option value="resnet">ResNet stem: 7×7/2, pool 3×3/2</option><option value="dil">Dilated 3×3: d = 1, 2, 4, 8</option>
+        </select>
+      </div>
+    </div>
+    <div class="card">
+      <b>Input pixels one output unit can see (1D slice)</b>
+      <div id="rfViz"></div>
+      <p class="note">Recursion, layer by layer: <span class="mono">r ← r + d(k−1)·j</span>, then <span class="mono">j ← j·s</span> (start with r = j = 1). Strides multiply the jump, so downsampling early makes the receptive field grow fast. Two 3×3 convs see 5×5 with 18 weights per channel pair instead of 25, plus an extra nonlinearity: that is the VGG argument.</p>
+    </div>
+  </div>
+
+  <h2>3 · Parameter counter: why convs are cheap</h2>
+  <div class="grid two">
+    <div class="card controls">
+      <div class="row">
+        <label class="ctl">C_in <input type="number" id="cin" value="64" min="1"></label>
+        <label class="ctl">C_out <input type="number" id="cout" value="128" min="1"></label>
+        <label class="ctl">k <input type="number" id="pk" value="3" min="1"></label>
+        <label class="ctl">H = W <input type="number" id="hw" value="32" min="1"></label>
+      </div>
+      <label class="ctl" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="bias" checked> include bias</label>
+    </div>
+    <div class="card" id="pstats"></div>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive · Note: like PyTorch, this computes cross-correlation (the kernel is not flipped).</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const KERNELS = {
+  sobelx: [[-1,0,1],[-2,0,2],[-1,0,1]], sobely: [[-1,-2,-1],[0,0,0],[1,2,1]],
+  blur: [[1/9,1/9,1/9],[1/9,1/9,1/9],[1/9,1/9,1/9]], gauss: [[1/16,2/16,1/16],[2/16,4/16,2/16],[1/16,2/16,1/16]],
+  sharpen: [[0,-1,0],[-1,5,-1],[0,-1,0]], lap: [[0,1,0],[1,-4,1],[0,1,0]], identity: [[0,0,0],[0,1,0],[0,0,0]]
+};
+let img = [], ker = [], pos = 0, timer = null;
+
+function makeImage(kind, n) {
+  const a = [];
+  for (let i = 0; i < n; i++) { a.push([]); for (let j = 0; j < n; j++) {
+    let v = 0; const c = Math.floor(n / 2);
+    if (kind === "vedge") v = j >= c ? 1 : 0;
+    else if (kind === "hedge") v = i >= c ? 1 : 0;
+    else if (kind === "cross") v = (i === c || j === c) ? 1 : 0;
+    else if (kind === "diag") v = i === j ? 1 : 0;
+    else if (kind === "checker") v = (Math.floor(i / 2) + Math.floor(j / 2)) % 2;
+    else if (kind === "dot") v = (i === c && j === c) ? 1 : 0;
+    else v = Math.round(Math.random() * 10) / 10;
+    a[i].push(v);
+  } }
+  return a;
+}
+function resizeKernel(k) {
+  const preset = KERNELS[$("kPreset").value];
+  const out = []; const off = (k - 3) / 2;
+  for (let i = 0; i < k; i++) { out.push([]); for (let j = 0; j < k; j++) {
+    let v;
+    if (k === 3) v = preset[i][j];
+    else if (k === 1) v = 1;
+    else { // 5x5: embed the 3x3 preset in the centre (blur presets: spread uniformly)
+      const ii = i - off, jj = j - off;
+      if ($("kPreset").value === "blur") v = 1 / 25;
+      else v = (ii >= 0 && ii < 3 && jj >= 0 && jj < 3) ? preset[ii][jj] : 0;
+    }
+    out[i].push(v);
+  } }
+  return out;
+}
+const P = () => ({ n: img.length, k: ker.length, s: +$("s").value, p: +$("p").value, d: +$("d").value });
+const outSize = ({ n, k, s, p, d }) => Math.floor((n + 2 * p - d * (k - 1) - 1) / s) + 1;
+function inVal(i, j) { const { n, p } = P(); const a = i - p, b = j - p; return (a >= 0 && a < n && b >= 0 && b < n) ? img[a][b] : 0; }
+function conv() {
+  const pr = P(), m = outSize(pr), out = [];
+  for (let oi = 0; oi < m; oi++) { out.push([]); for (let oj = 0; oj < m; oj++) {
+    let sum = 0;
+    for (let u = 0; u < pr.k; u++) for (let v = 0; v < pr.k; v++) sum += ker[u][v] * inVal(oi * pr.s + u * pr.d, oj * pr.s + v * pr.d);
+    out[oi].push(sum);
+  } }
+  return out;
+}
+function shade(v, lo, hi) {
+  // diverging: negative = c2 (orange), positive = c1 (blue); zero = surface
+  const mx = Math.max(Math.abs(lo), Math.abs(hi), 1e-9); const t = Math.min(1, Math.abs(v) / mx);
+  const c = v >= 0 ? "var(--c1)" : "var(--c2)";
+  return `color-mix(in srgb, ${c} ${Math.round(t * 85)}%, var(--surface-2))`;
+}
+const fmt = (v) => { const r = Math.round(v * 100) / 100; return Object.is(r, -0) ? "0" : String(r); };
+
+function render() {
+  const pr = P(), m = outSize(pr), N = pr.n + 2 * pr.p;
+  $("sv").textContent = pr.s; $("pv").textContent = pr.p; $("dv").textContent = pr.d;
+  const cell = window.innerWidth < 520 ? (N > 11 ? 22 : 26) : 30;
+  const ig = $("inGrid"); ig.style.setProperty("--cell", cell + "px"); ig.style.gridTemplateColumns = `repeat(${N}, ${cell}px)`; ig.innerHTML = "";
+  if (m < 1) {
+    $("osize").innerHTML = `<span class="bad">invalid</span>`;
+    $("ofml").textContent = "Kernel span is larger than the padded input.";
+    $("outGrid").innerHTML = ""; $("eq").textContent = "Increase padding or decrease k / dilation.";
+  }
+  const total = Math.max(m, 0) ** 2; if (pos >= total) pos = 0;
+  const oi = m > 0 ? Math.floor(pos / m) : 0, oj = m > 0 ? pos % m : 0;
+  const win = new Set(); const terms = [];
+  if (m > 0) for (let u = 0; u < pr.k; u++) for (let v = 0; v < pr.k; v++) {
+    const a = oi * pr.s + u * pr.d, b = oj * pr.s + v * pr.d; win.add(a * N + b);
+    const x = inVal(a, b); if (ker[u][v] !== 0 && x !== 0) terms.push(`${fmt(ker[u][v])}·${fmt(x)}`);
+  }
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    const el = document.createElement("div"); const isPad = i < pr.p || j < pr.p || i >= pr.n + pr.p || j >= pr.n + pr.p;
+    const v = inVal(i, j);
+    if (isPad) { el.className = "pad"; el.textContent = "0"; }
+    else { el.style.background = `color-mix(in srgb, var(--text) ${Math.round(v * 80)}%, var(--surface-2))`; el.style.color = v > 0.5 ? "var(--surface)" : "var(--muted)"; el.textContent = fmt(v);
+      el.style.cursor = "pointer"; el.onclick = () => { img[i - pr.p][j - pr.p] = img[i - pr.p][j - pr.p] > 0.5 ? 0 : 1; render(); }; }
+    if (win.has(i * N + j)) el.classList.add("win");
+    ig.appendChild(el);
+  }
+  $("inInfo").textContent = `${pr.n}×${pr.n}` + (pr.p ? ` + padding ${pr.p} → ${N}×${N}` : "");
+  if (m < 1) return;
+  const out = conv(); const flat = out.flat(); const lo = Math.min(...flat), hi = Math.max(...flat);
+  const og = $("outGrid"); og.style.setProperty("--cell", (cell + 4) + "px"); og.style.gridTemplateColumns = `repeat(${m}, ${cell + 4}px)`; og.innerHTML = "";
+  for (let i = 0; i < m; i++) for (let j = 0; j < m; j++) {
+    const el = document.createElement("div"); el.style.background = shade(out[i][j], lo, hi); el.textContent = fmt(out[i][j]);
+    if (i === oi && j === oj) el.classList.add("cur");
+    el.style.cursor = "pointer"; el.onclick = () => { pos = i * m + j; render(); };
+    og.appendChild(el);
+  }
+  $("outInfo").textContent = `${m}×${m} · blue +, orange −`;
+  $("eq").innerHTML = `out[${oi}][${oj}] = ${terms.length ? terms.join(" + ") : "0 (window sees only zeros)"} = <b>${fmt(out[oi][oj])}</b>`;
+  $("osize").textContent = `${m} × ${m}`;
+  $("ofml").textContent = `⌊(n + 2p − d(k−1) − 1)/s⌋ + 1 = ⌊(${pr.n} + ${2 * pr.p} − ${pr.d * (pr.k - 1)} − 1)/${pr.s}⌋ + 1 = ${m}`;
+  $("npos").textContent = m * m; $("macs").textContent = m * m * pr.k * pr.k; $("span").textContent = pr.d * (pr.k - 1) + 1;
+  const left = (pr.n + 2 * pr.p - pr.d * (pr.k - 1) - 1) % pr.s;
+  let ins = "";
+  if (pr.s === 1 && m === pr.n) ins = "“Same” padding: p = d(k−1)/2 keeps the spatial size at stride 1.";
+  else if (pr.s > 1) ins = `Stride ${pr.s} roughly divides the size by ${pr.s}.` + (left ? ` The floor drops ${left} row(s)/column(s) at the bottom/right that no window reaches.` : " Every input row is reached.");
+  else ins = `No padding shrinks the map by d(k−1) = ${pr.d * (pr.k - 1)} per layer. Ten such layers would eat ${10 * pr.d * (pr.k - 1)} pixels.`;
+  if ($("kPreset").value === "sobelx" && $("imgPreset").value === "vedge") ins += " Sobel x fires only where brightness changes left→right: an edge detector.";
+  if ($("imgPreset").value === "dot") ins += " An impulse input copies the kernel into the output (flipped for true convolution, unflipped here because DL 'conv' is cross-correlation).";
+  $("insight").textContent = ins;
+}
+function renderKernel() {
+  const k = ker.length, g = $("kGrid"); g.style.gridTemplateColumns = `repeat(${k}, auto)`; g.innerHTML = "";
+  for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) {
+    const inp = document.createElement("input"); inp.type = "number"; inp.step = "0.1"; inp.value = fmt(ker[i][j]); inp.setAttribute("aria-label", `kernel ${i},${j}`);
+    inp.oninput = () => { const v = parseFloat(inp.value); ker[i][j] = isFinite(v) ? v : 0; render(); };
+    g.appendChild(inp);
+  }
+}
+function step(dir) { const m = outSize(P()); if (m < 1) return; pos = (pos + dir + m * m) % (m * m); render(); }
+$("imgPreset").onchange = () => { img = makeImage($("imgPreset").value, +$("n").value); pos = 0; render(); };
+$("n").onchange = $("imgPreset").onchange;
+$("kPreset").onchange = () => { ker = resizeKernel(+$("k").value); renderKernel(); render(); };
+$("k").onchange = $("kPreset").onchange;
+["s", "p", "d"].forEach((id) => $(id).oninput = () => { pos = 0; render(); });
+$("prev").onclick = () => step(-1); $("next").onclick = () => step(1);
+$("play").onclick = () => {
+  if (timer) { clearInterval(timer); timer = null; $("play").textContent = "▶ Play"; return; }
+  $("play").textContent = "❚❚ Pause"; timer = setInterval(() => step(1), 450);
+};
+$("samePad").onclick = () => { $("s").value = 1; const pp = (+$("d").value) * (ker.length - 1) / 2; $("p").value = Math.min(3, Math.floor(pp)); pos = 0; render(); };
+window.addEventListener("resize", render);
+img = makeImage("vedge", 8); ker = resizeKernel(3); renderKernel(); render();
+
+// ---------- Receptive field ----------
+let layers = [{ k: 3, s: 1, d: 1 }, { k: 3, s: 1, d: 1 }, { k: 2, s: 2, d: 1 }];
+const RF_PRESETS = {
+  vgg: [{ k: 3, s: 1, d: 1 }, { k: 3, s: 1, d: 1 }, { k: 2, s: 2, d: 1 }, { k: 3, s: 1, d: 1 }, { k: 3, s: 1, d: 1 }, { k: 2, s: 2, d: 1 }],
+  two3: [{ k: 3, s: 1, d: 1 }, { k: 3, s: 1, d: 1 }],
+  resnet: [{ k: 7, s: 2, d: 1 }, { k: 3, s: 2, d: 1 }, { k: 3, s: 1, d: 1 }, { k: 3, s: 1, d: 1 }],
+  dil: [{ k: 3, s: 1, d: 1 }, { k: 3, s: 1, d: 2 }, { k: 3, s: 1, d: 4 }, { k: 3, s: 1, d: 8 }]
+};
+function rfRender() {
+  const tb = document.querySelector("#rfTable tbody"); tb.innerHTML = ""; let r = 1, j = 1;
+  layers.forEach((L, idx) => {
+    r = r + L.d * (L.k - 1) * j; j = j * L.s;
+    const tr = document.createElement("tr");
+    tr.innerHTML = `<td>${idx + 1}</td><td><input type="number" min="1" max="11" value="${L.k}" data-f="k"></td><td><input type="number" min="1" max="4" value="${L.s}" data-f="s"></td><td><input type="number" min="1" max="16" value="${L.d}" data-f="d"></td><td class="mono">${j}</td><td class="mono"><b>${r}</b></td><td><button aria-label="remove layer">✕</button></td>`;
+    tr.querySelectorAll("input").forEach((inp) => inp.onchange = () => { const v = Math.max(1, parseInt(inp.value) || 1); L[inp.dataset.f] = v; rfRender(); });
+    tr.querySelector("button").onclick = () => { layers.splice(idx, 1); rfRender(); };
+    tb.appendChild(tr);
+  });
+  const W = Math.min(Math.max(r + 8, 21), 121); const bar = document.createElement("div"); bar.className = "rf-bar"; bar.style.gridTemplateColumns = `repeat(${W}, 1fr)`;
+  const c = Math.floor(W / 2), half = Math.floor(r / 2);
+  for (let i = 0; i < W; i++) { const s = document.createElement("span"); if (i === c) s.className = "ctr"; else if (Math.abs(i - c) <= half) s.className = "on"; bar.appendChild(s); }
+  $("rfViz").innerHTML = `<div class="big" style="font-size:30px">${r} × ${r}</div><div class="note">after ${layers.length} layer(s); output stride (jump) = ${j}</div>`;
+  $("rfViz").appendChild(bar);
+  if (r + 8 > 121) $("rfViz").insertAdjacentHTML("beforeend", `<p class="note">(bar truncated at 121 pixels)</p>`);
+}
+$("addL").onclick = () => { layers.push({ k: 3, s: 1, d: 1 }); rfRender(); };
+$("rfPreset").onchange = () => { const v = $("rfPreset").value; if (v) layers = RF_PRESETS[v].map((x) => ({ ...x })); $("rfPreset").value = ""; rfRender(); };
+rfRender();
+
+// ---------- Params ----------
+const nf = (x) => x.toLocaleString("en-US");
+function pRender() {
+  const ci = Math.max(1, +$("cin").value || 1), co = Math.max(1, +$("cout").value || 1), k = Math.max(1, +$("pk").value || 1), hw = Math.max(1, +$("hw").value || 1), b = $("bias").checked ? 1 : 0;
+  const conv = ci * co * k * k + b * co;
+  const dense = (ci * hw * hw) * (co * hw * hw) + b * co * hw * hw;
+  const dw = ci * k * k + b * ci + ci * co + b * co;
+  const flops = 2 * ci * co * k * k * hw * hw; // same padding, stride 1
+  $("pstats").innerHTML = `
+    <div class="stat"><span>Conv2d(${ci}, ${co}, ${k}) params<br><span class="note">C_in·C_out·k² + C_out</span></span><b>${nf(conv)}</b></div>
+    <div class="stat"><span>Dense layer mapping the same ${ci}×${hw}×${hw} → ${co}×${hw}×${hw}</span><b class="bad">${nf(dense)}</b></div>
+    <div class="stat"><span>Ratio dense / conv</span><b>${nf(Math.round(dense / conv))}×</b></div>
+    <div class="stat"><span>Depthwise-separable (k×k depthwise + 1×1 pointwise)</span><b class="good">${nf(dw)}</b></div>
+    <div class="stat"><span>Conv FLOPs at ${hw}×${hw} ("same", stride 1) ≈ 2·C_in·C_out·k²·H·W</span><b>${nf(flops)}</b></div>
+    <p class="note" style="margin:10px 0 0">Weight sharing: the conv's parameter count does not depend on H×W at all. Its <i>compute</i> does. The dense layer would need a separate weight for every (input pixel, output pixel) pair.</p>`;
+}
+["cin", "cout", "pk", "hw", "bias"].forEach((id) => $(id).oninput = pRender);
+pRender();
+</script>
+</body>
+</html>

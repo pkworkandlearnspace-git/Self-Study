@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Transformer Calculator</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .cfg { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .cfg input, .cfg select { width: 100%; }
+  .barrow { display: grid; grid-template-columns: 110px 1fr 90px; gap: 8px; align-items: center; font-size: 14px; margin: 4px 0; }
+  .barrow .track { height: 14px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+  .barrow .fill { height: 100%; }
+  h3 { margin-top: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a><span class="note">Modules 08–09 · Transformers & LLMs</span></header>
+  <h1>Transformer Calculator</h1>
+  <p class="lead">Type in a decoder-only transformer config (or load a real one) and get its parameter count, training compute, Chinchilla-optimal data, training memory, KV-cache size, and a bandwidth-bound decoding speed estimate. Every number shows its formula.</p>
+
+  <div class="card">
+    <div class="row" style="margin-bottom:10px">
+      <b>Preset</b>
+      <select id="preset">
+        <option value="gpt2">GPT-2 small (124M)</option>
+        <option value="gpt2xl">GPT-2 XL (1.5B)</option>
+        <option value="llama3_8b">Llama 3 8B (GQA, SwiGLU)</option>
+        <option value="llama3_70b">Llama 3 70B</option>
+        <option value="tiny">nanoGPT Shakespeare (char)</option>
+      </select>
+      <span class="note">Configs from the published model cards / config.json files.</span>
+    </div>
+    <div class="cfg">
+      <label class="ctl">layers L<input type="number" id="L" min="1"></label>
+      <label class="ctl">width d_model<input type="number" id="d" min="8"></label>
+      <label class="ctl">heads h<input type="number" id="h" min="1"></label>
+      <label class="ctl">KV heads (GQA)<input type="number" id="hkv" min="1"></label>
+      <label class="ctl">MLP hidden d_ff<input type="number" id="ff" min="1"></label>
+      <label class="ctl">MLP type<select id="mlp"><option value="gelu">GELU (2 matrices)</option><option value="swiglu">SwiGLU (3 matrices)</option></select></label>
+      <label class="ctl">vocab V<input type="number" id="V" min="1"></label>
+      <label class="ctl">context T<input type="number" id="T" min="1"></label>
+      <label class="ctl">positions<select id="pos"><option value="learned">learned (T·d params)</option><option value="rope">RoPE (0 params)</option></select></label>
+      <label class="ctl">embeddings<select id="tied"><option value="1">tied (head = embedding)</option><option value="0">untied</option></select></label>
+      <label class="ctl">biases + LN β<select id="bias"><option value="1">yes (GPT-2)</option><option value="0">no (Llama, RMSNorm)</option></select></label>
+      <label class="ctl">weight dtype<select id="bytes"><option value="2">bf16 / fp16 (2 B)</option><option value="1">int8 (1 B)</option><option value="0.5">int4 (0.5 B)</option><option value="4">fp32 (4 B)</option></select></label>
+    </div>
+  </div>
+
+  <div class="grid two" style="margin-top:14px">
+    <div class="card">
+      <h3>Parameters</h3>
+      <div class="big" id="ptotal"></div>
+      <div class="note" id="pnote" style="margin-bottom:10px"></div>
+      <div id="pbars"></div>
+      <div class="stat"><span>Rule of thumb 12·L·d² (attention 4d² + MLP 8d² per layer)</span><b id="p12"></b></div>
+      <div class="stat"><span>Head dim d/h</span><b id="hd"></b></div>
+    </div>
+    <div class="card">
+      <h3>Training compute & data</h3>
+      <label class="ctl">Training tokens D (billions) = <span class="val" id="Dv"></span><input type="range" id="D" min="0" max="8" step="0.01" value="1"></label>
+      <div class="row"><button id="chin">Set D = 20 N (Chinchilla)</button></div>
+      <div class="stat"><span>Chinchilla-optimal D ≈ 20 N</span><b id="dopt"></b></div>
+      <div class="stat"><span>Tokens per parameter D/N</span><b id="tpp"></b></div>
+      <div class="stat"><span>Training FLOPs C ≈ 6 N D</span><b id="C"></b></div>
+      <div class="stat"><span>+ attention scores, 6·L·T·d per token (Kaplan)</span><b id="Catt"></b></div>
+      <label class="ctl" style="margin-top:8px">GPU: <select id="gpu"><option value="312e12|2.0e12|80">A100 80GB (312 TFLOP/s bf16, 2.0 TB/s)</option><option value="989e12|3.35e12|80" selected>H100 SXM (989 TFLOP/s bf16 dense, 3.35 TB/s)</option><option value="165e12|1.0e12|24">RTX 4090 (≈165 TFLOP/s bf16, 1.0 TB/s)</option></select></label>
+      <label class="ctl">GPUs × MFU<span class="row" style="margin-top:4px"><input type="number" id="ngpu" value="8" min="1" style="width:90px"> <input type="number" id="mfu" value="40" min="1" max="100" style="width:80px"> %</span></label>
+      <div class="stat"><span>Wall-clock time</span><b id="time"></b></div>
+    </div>
+  </div>
+
+  <div class="grid two" style="margin-top:14px">
+    <div class="card">
+      <h3>Training memory (per model replica, no sharding)</h3>
+      <div id="mbars"></div>
+      <p class="note">Mixed-precision AdamW ≈ 16 bytes/param: bf16 weights (2) + bf16 grads (2) + fp32 master weights (4) + Adam m and v (4 + 4). Activations come on top and scale with batch × T; activation checkpointing trades them for recompute. FSDP/ZeRO-3 divides the 16 bytes across GPUs.</p>
+    </div>
+    <div class="card">
+      <h3>Inference: KV cache & decoding speed</h3>
+      <label class="ctl">Batch size B = <span class="val" id="Bv"></span><input type="range" id="B" min="1" max="64" value="1"></label>
+      <div class="stat"><span>KV cache per token = 2·L·h_kv·(d/h)·bytes</span><b id="kvtok"></b></div>
+      <div class="stat"><span>KV cache at full context × B</span><b id="kvall"></b></div>
+      <div class="stat"><span>Weights in memory</span><b id="wmem"></b></div>
+      <div class="stat"><span>Decode FLOPs per token ≈ 2N</span><b id="dflop"></b></div>
+      <div class="stat"><span>Bandwidth-bound speed ≈ BW / bytes read per step (1 GPU)</span><b id="tps"></b></div>
+      <div class="callout" id="kvnote" style="margin-top:8px"></div>
+    </div>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive · Estimates ignore small terms (norm weights, rotary tables) where noted, and real throughput is lower than these bounds.</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const PRESETS = {
+  gpt2:      { L: 12, d: 768,  h: 12, hkv: 12, ff: 3072,  mlp: "gelu",   V: 50257,  T: 1024, pos: "learned", tied: "1", bias: "1", D: 10 },
+  gpt2xl:    { L: 48, d: 1600, h: 25, hkv: 25, ff: 6400,  mlp: "gelu",   V: 50257,  T: 1024, pos: "learned", tied: "1", bias: "1", D: 30 },
+  llama3_8b: { L: 32, d: 4096, h: 32, hkv: 8,  ff: 14336, mlp: "swiglu", V: 128256, T: 8192, pos: "rope",    tied: "0", bias: "0", D: 15000 },
+  llama3_70b:{ L: 80, d: 8192, h: 64, hkv: 8,  ff: 28672, mlp: "swiglu", V: 128256, T: 8192, pos: "rope",    tied: "0", bias: "0", D: 15000 },
+  tiny:      { L: 6,  d: 384,  h: 6,  hkv: 6,  ff: 1536,  mlp: "gelu",   V: 65,     T: 256,  pos: "learned", tied: "1", bias: "1", D: 0.0015 }
+};
+const KEYS = ["L", "d", "h", "hkv", "ff", "mlp", "V", "T", "pos", "tied", "bias"];
+function load(name) { const p = PRESETS[name]; KEYS.forEach((k) => $(k).value = p[k]); $("D").value = Math.log10(p.D * 1e9) - 6; update(); }
+const si = (x, unit = "") => { const a = Math.abs(x); const u = [[1e15, "P"], [1e12, "T"], [1e9, "B"], [1e6, "M"], [1e3, "K"]]; for (const [v, s] of u) if (a >= v) return (x / v).toPrecision(3) + " " + s + unit; return x.toPrecision(3) + " " + unit; };
+const bytes = (x) => { const u = [[2 ** 40, "TiB"], [2 ** 30, "GiB"], [2 ** 20, "MiB"], [2 ** 10, "KiB"]]; for (const [v, s] of u) if (x >= v) return (x / v).toPrecision(3) + " " + s; return x.toFixed(0) + " B"; };
+const flops = (x) => x.toExponential(2).replace("e+", " × 10^") + " FLOP";
+const dur = (s) => s < 120 ? s.toFixed(0) + " s" : s < 7200 ? (s / 60).toFixed(1) + " min" : s < 172800 ? (s / 3600).toFixed(1) + " h" : s < 3.15e7 * 2 ? (s / 86400).toFixed(1) + " days" : (s / 3.15e7).toFixed(1) + " years";
+function bars(el, items) {
+  const tot = items.reduce((a, b) => a + b[1], 0);
+  el.innerHTML = items.map(([n, v, c, label]) => `<div class="barrow"><span>${n}</span><div class="track"><div class="fill" style="width:${(100 * v / tot).toFixed(1)}%;background:var(${c})"></div></div><b class="mono" style="font-size:13px">${label}</b></div>`).join("");
+}
+function update() {
+  const g = (k) => +$(k).value;
+  const L = g("L"), d = g("d"), h = g("h"), hkv = Math.min(g("hkv"), h), ff = g("ff"), V = g("V"), T = g("T");
+  const swi = $("mlp").value === "swiglu", learned = $("pos").value === "learned", tied = $("tied").value === "1", bias = $("bias").value === "1", B8 = +$("bytes").value;
+  const hd = d / h, kvd = hkv * hd;
+  const attnW = d * d + 2 * d * kvd + d * d;            // Wq, Wk, Wv, Wo
+  const mlpW = (swi ? 3 : 2) * d * ff;
+  const normW = (bias ? 4 : 2) * d;                       // 2 norms per layer (γ, and β if LayerNorm)
+  const biasW = bias ? (d + 2 * kvd) + d + ff + d : 0;    // qkv bias, out bias, fc bias, proj bias
+  const perLayer = attnW + mlpW + normW + biasW;
+  const emb = V * d, posW = learned ? T * d : 0, head = tied ? 0 : V * d, fnorm = (bias ? 2 : 1) * d;
+  const N = L * perLayer + emb + posW + head + fnorm;
+  const Nnonemb = L * perLayer;
+  $("ptotal").textContent = si(N) + " params"; $("ptotal").title = N.toLocaleString("en-US");
+  $("pnote").textContent = N.toLocaleString("en-US") + " exactly (non-embedding: " + si(Nnonemb) + ")";
+  bars($("pbars"), [["attention", L * attnW, "--c1", si(L * attnW)], ["MLP", L * mlpW, "--c2", si(L * mlpW)], ["embeddings", emb + posW + head, "--c3", si(emb + posW + head)], ["norms+biases", L * (normW + biasW) + fnorm, "--c4", si(L * (normW + biasW) + fnorm)]]);
+  $("p12").textContent = si(12 * L * d * d); $("hd").textContent = Number.isInteger(hd) ? hd : hd.toFixed(2) + " ⚠ not an integer";
+  // compute
+  const D = 10 ** (+$("D").value + 6); $("Dv").textContent = si(D) + " tokens";
+  $("dopt").textContent = si(20 * N) + " tokens"; $("tpp").textContent = (D / N).toFixed(1);
+  const C = 6 * N * D, Catt = 6 * L * T * d * D; $("C").textContent = flops(C); $("Catt").textContent = "+" + flops(Catt) + ` (${(100 * Catt / C).toFixed(1)}%)`;
+  const [peak, bw, gmem] = $("gpu").value.split("|").map(Number); const ng = Math.max(1, g("ngpu")), mfu = Math.min(100, Math.max(1, g("mfu"))) / 100;
+  $("time").textContent = dur((C + Catt) / (peak * ng * mfu));
+  // memory
+  bars($("mbars"), [["weights bf16", 2 * N, "--c1", bytes(2 * N)], ["grads bf16", 2 * N, "--c2", bytes(2 * N)], ["fp32 master", 4 * N, "--c3", bytes(4 * N)], ["Adam m, v", 8 * N, "--c4", bytes(8 * N)]]);
+  $("mbars").insertAdjacentHTML("beforeend", `<div class="stat"><span>Total ≈ 16 bytes × N</span><b>${bytes(16 * N)} (${Math.ceil(16 * N / (gmem * 2 ** 30))}+ × ${gmem} GB GPUs)</b></div>`);
+  // inference
+  const Bt = g("B"); $("Bv").textContent = Bt;
+  const kvTok = 2 * L * kvd * 2;                           // K and V, bf16 cache
+  const kvAll = kvTok * T * Bt, wbytes = N * B8;
+  $("kvtok").textContent = bytes(kvTok); $("kvall").textContent = bytes(kvAll); $("wmem").textContent = bytes(wbytes);
+  $("dflop").textContent = flops(2 * N);
+  const stepBytes = wbytes + kvAll;                         // read all weights + full caches once per decode step
+  const tps = bw / stepBytes;
+  $("tps").textContent = `${tps.toFixed(1)} steps/s → ${(tps * Bt).toFixed(0)} tok/s total`;
+  const ai = (2 * N * Bt) / stepBytes; // FLOPs per byte
+  const ridge = peak / bw;
+  let note = `Arithmetic intensity ≈ ${ai.toFixed(1)} FLOP/byte vs the GPU's ridge point ≈ ${ridge.toFixed(0)}: decoding is <b>${ai < ridge ? "memory-bandwidth bound" : "compute bound"}</b>. `;
+  note += hkv < h ? `GQA shares each K/V head among ${h / hkv} query heads, so the cache is ${h / hkv}× smaller than full multi-head attention.` : "With h_kv = h (plain multi-head attention) the cache is as large as it gets. Try h_kv = h/4 to see grouped-query attention's saving.";
+  if (kvAll > wbytes) note += " The KV cache is now bigger than the weights.";
+  $("kvnote").innerHTML = note;
+}
+KEYS.concat(["D", "gpu", "ngpu", "mfu", "B", "bytes"]).forEach((k) => { $(k).oninput = update; $(k).onchange = update; });
+$("preset").onchange = () => load($("preset").value);
+$("chin").onclick = () => { const N = +$("ptotal").title.replace(/,/g, ""); $("D").value = Math.min(8, Math.log10(20 * N) - 6); update(); };
+load("gpt2");
+</script>
+</body>
+</html>

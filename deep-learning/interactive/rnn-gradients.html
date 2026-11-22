@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RNN Gradient Flow</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  canvas { aspect-ratio: 16 / 9; }
+  svg.plot { aspect-ratio: 16 / 7; }
+  svg text { font: 12px system-ui, sans-serif; fill: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a><span class="note">Module 07 · Sequences & RNNs</span></header>
+  <h1>RNN Gradient Flow</h1>
+  <p class="lead">Backprop through time multiplies one Jacobian per step. Watch the gradient that reaches step <i>k</i> from a loss at step <i>T</i> shrink or blow up, and see why the LSTM's additive cell state (and attention's direct links) fix it.</p>
+
+  <h2>1 · How much gradient survives T steps?</h2>
+  <div class="grid two">
+    <div>
+      <canvas id="cv" width="960" height="540" aria-label="log gradient magnitude vs time step"></canvas>
+      <div class="legend" style="margin-top:6px"><span><i style="background:var(--c1)"></i>vanilla RNN |∂h_T/∂h_k|</span><span><i style="background:var(--c3)"></i>LSTM cell path |∂c_T/∂c_k| = ∏ f</span><span><i style="background:var(--c2)"></i>hidden state h_t (right axis)</span></div>
+    </div>
+    <div class="controls">
+      <label class="ctl">Sequence length T = <span class="val" id="Tv"></span><input type="range" id="T" min="5" max="120" value="50"></label>
+      <label class="ctl">Recurrent weight w = <span class="val" id="wv"></span><input type="range" id="w" min="0.1" max="3" step="0.05" value="0.9"></label>
+      <label class="ctl">Input amplitude a = <span class="val" id="av"></span><input type="range" id="a" min="0" max="2" step="0.05" value="0.5"></label>
+      <label class="ctl">Activation
+        <select id="act"><option value="tanh">tanh (h = tanh(w·h + x))</option><option value="lin">linear (h = w·h + x)</option></select></label>
+      <label class="ctl">LSTM forget gate f = <span class="val" id="fv"></span><input type="range" id="f" min="0.5" max="1" step="0.005" value="0.98"></label>
+      <div class="row"><button id="reseed">New random inputs</button>
+        <button data-p="vanish">Preset: vanishing</button><button data-p="explode">Preset: exploding</button><button data-p="sat">Preset: saturation</button></div>
+      <div class="card" id="stats"></div>
+      <div class="callout" id="insight"></div>
+    </div>
+  </div>
+
+  <h2>2 · Path length: RNN chain vs attention</h2>
+  <div class="grid two">
+    <svg class="plot" id="paths" viewBox="0 0 640 280" aria-label="RNN chain and attention links"></svg>
+    <div class="controls">
+      <label class="ctl">Tokens T = <span class="val" id="Lv"></span><input type="range" id="L" min="4" max="16" value="8"></label>
+      <label class="ctl">Show links into token <span class="val" id="qv"></span><input type="range" id="q" min="1" max="16" value="8"></label>
+      <table class="t">
+        <thead><tr><th></th><th>RNN</th><th>Self-attention</th></tr></thead>
+        <tbody id="ptab"></tbody>
+      </table>
+      <p class="note">Information from token 1 must pass through every intermediate state to reach token T in an RNN (T−1 multiplications, all sequential). Attention connects every pair directly in one layer, and all positions are computed in parallel. The price: T² scores per layer.</p>
+    </div>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+let seed = 7;
+function rng() { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }
+let noise = []; function reseed() { noise = Array.from({ length: 121 }, () => rng() * 2 - 1); }
+reseed();
+
+function simulate() {
+  const T = +$("T").value, w = +$("w").value, a = +$("a").value, f = +$("f").value, lin = $("act").value === "lin";
+  const h = [0], pre = [0];
+  for (let t = 1; t <= T; t++) { const z = w * h[t - 1] + a * noise[t]; pre.push(z); h.push(lin ? z : Math.tanh(z)); }
+  // g[k] = |dh_T / dh_k| = prod_{t=k+1..T} |w * phi'(z_t)|
+  const lg = new Array(T + 1).fill(0), lf = new Array(T + 1).fill(0);
+  for (let k = T - 1; k >= 0; k--) {
+    const d = lin ? 1 : 1 - Math.tanh(pre[k + 1]) ** 2;
+    lg[k] = lg[k + 1] + Math.log10(Math.max(Math.abs(w * d), 1e-300));
+    lf[k] = lf[k + 1] + Math.log10(f);
+  }
+  return { T, w, f, lin, h, lg, lf };
+}
+function draw(S) {
+  const cv = $("cv"), ctx = cv.getContext("2d"), W = cv.width, H = cv.height, m = { l: 70, r: 60, t: 20, b: 64 };
+  ctx.clearRect(0, 0, W, H); ctx.fillStyle = css("--surface"); ctx.fillRect(0, 0, W, H);
+  let ymin = Math.min(-2, ...S.lg, ...S.lf), ymax = Math.max(1, ...S.lg, ...S.lf);
+  ymin = Math.max(ymin, -40); ymax = Math.min(ymax, 40);
+  const X = (k) => m.l + (k / S.T) * (W - m.l - m.r), Y = (v) => m.t + (1 - (Math.max(ymin, Math.min(ymax, v)) - ymin) / (ymax - ymin)) * (H - m.t - m.b);
+  ctx.font = "20px system-ui"; ctx.fillStyle = css("--muted"); ctx.strokeStyle = css("--border"); ctx.lineWidth = 1;
+  const step = Math.max(1, Math.ceil((ymax - ymin) / 8));
+  for (let v = Math.ceil(ymin); v <= ymax; v += step) {
+    ctx.beginPath(); ctx.moveTo(m.l, Y(v)); ctx.lineTo(W - m.r, Y(v)); ctx.stroke();
+    ctx.fillText(v === 0 ? "1" : "1e" + v, 8, Y(v) + 6);
+  }
+  ctx.fillText("step k (loss at k = T)", W / 2 - 90, H - 10);
+  const kstep = Math.max(1, Math.round(S.T / 6));
+  for (let k = 0; k <= S.T; k += kstep) ctx.fillText(k, X(k) - 6, H - 38);
+  // h trace on right axis [-1,1] (or clipped)
+  const hm = S.lin ? Math.max(1, ...S.h.map(Math.abs)) : 1;
+  ctx.strokeStyle = css("--c2"); ctx.globalAlpha = 0.55; ctx.lineWidth = 2; ctx.beginPath();
+  S.h.forEach((v, k) => { const y = m.t + (1 - (v / hm + 1) / 2) * (H - m.t - m.b); k ? ctx.lineTo(X(k), y) : ctx.moveTo(X(k), y); }); ctx.stroke(); ctx.globalAlpha = 1;
+  ctx.fillStyle = css("--c2"); ctx.fillText("+" + (S.lin ? hm.toPrecision(2) : "1"), W - m.r + 6, m.t + 14); ctx.fillText("−" + (S.lin ? hm.toPrecision(2) : "1"), W - m.r + 6, H - m.b);
+  const line = (arr, c) => { ctx.strokeStyle = c; ctx.lineWidth = 4; ctx.beginPath(); arr.forEach((v, k) => k ? ctx.lineTo(X(k), Y(v)) : ctx.moveTo(X(k), Y(v))); ctx.stroke(); };
+  line(S.lf, css("--c3")); line(S.lg, css("--c1"));
+}
+const e10 = (v) => (v < -300 ? "≈ 0" : v > 300 ? "∞" : Math.abs(v) < 3 ? (10 ** v).toPrecision(3) : (10 ** (v - Math.floor(v))).toFixed(1) + "e" + Math.floor(v));
+function update() {
+  ["T", "w", "a", "f"].forEach((id) => $(id + "v").textContent = $(id).value);
+  const S = simulate(); draw(S);
+  const g0 = S.lg[0], f0 = S.lf[0];
+  const mean = S.lg[0] / S.T; // average log10 factor per step (negative => shrinking)
+  $("stats").innerHTML = `
+    <div class="stat"><span>Vanilla RNN gradient at k = 0</span><b class="${g0 < -3 ? "bad" : g0 > 3 ? "warn" : "good"}">${e10(g0)}</b></div>
+    <div class="stat"><span>Average factor per step |w·φ'(z)|</span><b>${(() => { const fac = 10 ** mean; return !isFinite(fac) ? "∞" : fac < 1e-3 ? "<0.001" : fac.toFixed(3); })()}</b></div>
+    <div class="stat"><span>LSTM cell path f^T</span><b class="${f0 < -3 ? "bad" : "good"}">${e10(f0)}</b></div>
+    <div class="stat"><span>Steps until the RNN gradient falls below 1e-3</span><b>${(() => { for (let k = S.T; k >= 0; k--) if (S.lg[k] < -3) return S.T - k; return "never in T"; })()}</b></div>`;
+  let ins;
+  if (S.lin && S.w > 1.02) ins = `Linear RNN with w > 1: the gradient grows like w^T = ${e10(S.T * Math.log10(S.w))}. That is an <b>exploding</b> gradient. Clip the gradient norm (torch.nn.utils.clip_grad_norm_) to survive it.`;
+  else if (!S.lin && S.w > 1.3) ins = "Large w drives tanh into saturation (orange trace pinned near ±1). There tanh' ≈ 0, so even w > 1 gives a <b>vanishing</b> gradient. With matrices, explosion happens when the largest singular value times tanh' exceeds 1 along the trajectory.";
+  else if (g0 < -3) ins = `Each step multiplies by about ${(10 ** mean).toFixed(2)} < 1, so after ${S.T} steps almost nothing reaches the start: <b>vanishing</b> gradient. The network cannot learn dependencies this long.`;
+  else ins = "The gradient survives here. Try a longer T or a smaller w.";
+  ins += ` The LSTM cell path multiplies only by the forget gate: f = ${S.f} keeps ${e10(f0)} after ${S.T} steps. Initializing the forget-gate bias to 1–2 (so f ≈ 0.73–0.88 at start) is a standard trick for this reason.`;
+  $("insight").innerHTML = ins;
+}
+["T", "w", "a", "f"].forEach((id) => $(id).oninput = update); $("act").onchange = update;
+$("reseed").onclick = () => { reseed(); update(); };
+document.querySelectorAll("[data-p]").forEach((b) => b.onclick = () => {
+  const p = { vanish: { w: 0.7, act: "tanh", a: 0.5, T: 60 }, explode: { w: 1.15, act: "lin", a: 0.3, T: 60 }, sat: { w: 2.5, act: "tanh", a: 0.5, T: 60 } }[b.dataset.p];
+  $("w").value = p.w; $("act").value = p.act; $("a").value = p.a; $("T").value = p.T; update();
+});
+window.addEventListener("resize", update);
+matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", update);
+update();
+
+// ---------- Part 2 ----------
+const NS = "http://www.w3.org/2000/svg";
+function paths() {
+  const L = +$("L").value; $("q").max = L; if (+$("q").value > L) $("q").value = L; const q = +$("q").value;
+  $("Lv").textContent = L; $("qv").textContent = q;
+  const svg = $("paths"); svg.innerHTML = "";
+  const mk = (tag, at, txt) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt != null) e.textContent = txt; svg.appendChild(e); return e; };
+  const x = (i) => 40 + (i - 1) * (560 / (L - 1));
+  mk("text", { x: 8, y: 22 }, "RNN: information flows step by step");
+  for (let i = 1; i < L; i++) mk("line", { x1: x(i) + 9, y1: 70, x2: x(i + 1) - 9, y2: 70, stroke: i < q ? "var(--c1)" : "var(--border)", "stroke-width": i < q ? 3 : 2 });
+  for (let i = 1; i <= L; i++) { mk("circle", { cx: x(i), cy: 70, r: 9, fill: i === q ? "var(--c2)" : i < q ? "var(--c1)" : "var(--surface-2)", stroke: "var(--border)" }); mk("text", { x: x(i) - 4, y: 98 }, i); }
+  mk("text", { x: 8, y: 140 }, "Self-attention (causal): direct links into the chosen token");
+  for (let i = 1; i < q; i++) { const mx = (x(i) + x(q)) / 2, h = 15 + (x(q) - x(i)) * 0.22; mk("path", { d: `M ${x(i)} 240 Q ${mx} ${240 - h * 1.4} ${x(q)} 240`, fill: "none", stroke: "var(--c3)", "stroke-width": 2, opacity: 0.8 }); }
+  for (let i = 1; i <= L; i++) { mk("circle", { cx: x(i), cy: 240, r: 9, fill: i === q ? "var(--c2)" : i < q ? "var(--c3)" : "var(--surface-2)", stroke: "var(--border)" }); mk("text", { x: x(i) - 4, y: 270 }, i); }
+  $("ptab").innerHTML = `
+    <tr><td>Path length token 1 → ${q}</td><td class="mono">${q - 1}</td><td class="mono">1</td></tr>
+    <tr><td>Sequential ops per layer</td><td class="mono">O(T) = ${L}</td><td class="mono">O(1)</td></tr>
+    <tr><td>Work per layer (d = width)</td><td class="mono">O(T·d²)</td><td class="mono">O(T²·d) = ${L * L}·d</td></tr>`;
+}
+$("L").oninput = paths; $("q").oninput = paths; paths();
+</script>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gridworld RL</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .gw { display: grid; gap: 3px; width: 100%; max-width: 480px; aspect-ratio: 1 / 1; margin: 0 auto; touch-action: manipulation; }
+  .gw div { position: relative; border-radius: 6px; display: flex; align-items: center; justify-content: center; font: 12px var(--mono); cursor: pointer; user-select: none; border: 1px solid var(--border); overflow: hidden; }
+  .gw .wall { background: var(--text) !important; }
+  .gw .arrow { position: absolute; top: 3px; left: 0; right: 0; text-align: center; font-size: 16px; color: var(--text); opacity: .85; }
+  .gw .val { position: absolute; bottom: 3px; left: 0; right: 0; text-align: center; font-size: 11px; }
+  .gw .agent { outline: 3px solid var(--c4); outline-offset: -3px; }
+  .gw .lbl { font-size: 18px; font-weight: 700; }
+  .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+  canvas { aspect-ratio: 2 / 1; max-width: 720px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a><span class="note">Module 11 · Reinforcement learning</span></header>
+  <h1>Gridworld RL</h1>
+  <p class="lead">One MDP, two ways to solve it. <b>Value iteration</b> knows the transition model and sweeps the Bellman optimality equation. <b>Q-learning</b> doesn't: it learns from sampled transitions with ε-greedy exploration. Edit the world, then compare.</p>
+
+  <div class="grid two">
+    <div>
+      <div class="gw" id="grid" aria-label="gridworld"></div>
+      <div class="legend" style="justify-content:center;margin-top:8px"><span>Click a cell to cycle: empty → wall → pit (−1) → goal (+1) → start</span></div>
+    </div>
+    <div class="controls">
+      <div class="seg"><button data-mode="vi" class="active">Value iteration (model-based)</button><button data-mode="ql">Q-learning (model-free)</button></div>
+      <label class="ctl">Discount γ = <span class="val" id="gv"></span><input type="range" id="g" min="0.5" max="0.99" step="0.01" value="0.9"></label>
+      <label class="ctl">Slip probability (moves sideways instead) = <span class="val" id="pv"></span><input type="range" id="p" min="0" max="0.6" step="0.05" value="0.2"></label>
+      <label class="ctl">Reward per step = <span class="val" id="rv"></span><input type="range" id="r" min="-0.5" max="0.1" step="0.01" value="-0.04"></label>
+      <div id="viCtl" class="controls">
+        <div class="row"><button id="sweep" class="primary">One Bellman sweep</button><button id="conv">Run to convergence</button><button id="viReset">Reset V = 0</button></div>
+      </div>
+      <div id="qlCtl" class="controls" hidden>
+        <label class="ctl">Learning rate α = <span class="val" id="av"></span><input type="range" id="a" min="0.01" max="1" step="0.01" value="0.2"></label>
+        <label class="ctl">Exploration ε = <span class="val" id="ev"></span><input type="range" id="e" min="0" max="1" step="0.01" value="0.2"></label>
+        <div class="row"><button id="ep1" class="primary">▶ Watch 1 episode</button><button id="ep100">+100 episodes</button><button id="ep1000">+1000</button><button id="qReset">Reset Q = 0</button></div>
+      </div>
+      <div class="card" id="stats"></div>
+      <div class="callout" id="insight"></div>
+    </div>
+  </div>
+  <h2>Learning curve</h2>
+  <canvas id="curve" width="900" height="450" aria-label="learning curve"></canvas>
+  <p class="note" id="curveNote"></p>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive · Bellman optimality: V(s) = max<sub>a</sub> Σ<sub>s'</sub> P(s'|s,a)[r + γV(s')]. Q-learning: Q(s,a) ← Q(s,a) + α[r + γ max<sub>a'</sub> Q(s',a') − Q(s,a)].</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const N = 6, ACT = [[-1, 0], [0, 1], [1, 0], [0, -1]], ARW = ["↑", "→", "↓", "←"];
+// cell types: 0 empty, 1 wall, 2 pit, 3 goal
+let cell = [], start = [5, 0], mode = "vi", V = [], Q = [], viIters = 0, deltas = [], returns = [], episodes = 0, agent = null, busy = false;
+function defaultWorld() {
+  cell = Array.from({ length: N }, () => new Array(N).fill(0));
+  cell[1][1] = 1; cell[2][1] = 1; cell[3][3] = 1; cell[3][4] = 1; cell[1][4] = 1;
+  cell[0][5] = 3; cell[1][5] = 2; cell[4][2] = 2; start = [5, 0];
+}
+const terminal = (i, j) => cell[i][j] >= 2;
+const reward = (i, j) => cell[i][j] === 3 ? 1 : cell[i][j] === 2 ? -1 : 0;
+function move(i, j, a) { const ni = i + ACT[a][0], nj = j + ACT[a][1]; if (ni < 0 || nj < 0 || ni >= N || nj >= N || cell[ni][nj] === 1) return [i, j]; return [ni, nj]; }
+// transition list for (s,a): [[prob, i', j']]
+function trans(i, j, a) { const p = +$("p").value; const side = [(a + 1) % 4, (a + 3) % 4]; return [[1 - p, ...move(i, j, a)], [p / 2, ...move(i, j, side[0])], [p / 2, ...move(i, j, side[1])]].filter((t) => t[0] > 0); }
+const stepR = () => +$("r").value, gam = () => +$("g").value;
+// reward on entering s': step cost + terminal reward
+const R = (ni, nj) => stepR() + reward(ni, nj);
+function resetV() { V = Array.from({ length: N }, () => new Array(N).fill(0)); viIters = 0; deltas = []; }
+function resetQ() { Q = Array.from({ length: N }, () => Array.from({ length: N }, () => [0, 0, 0, 0])); returns = []; episodes = 0; }
+function qsa(i, j, a, Vv) { return trans(i, j, a).reduce((s, [pr, ni, nj]) => s + pr * (R(ni, nj) + (terminal(ni, nj) ? 0 : gam() * Vv[ni][nj])), 0); }
+function sweep() {
+  const nv = V.map((r) => r.slice()); let d = 0;
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    if (cell[i][j] === 1 || terminal(i, j)) { nv[i][j] = 0; continue; }
+    nv[i][j] = Math.max(...[0, 1, 2, 3].map((a) => qsa(i, j, a, V))); d = Math.max(d, Math.abs(nv[i][j] - V[i][j]));
+  }
+  V = nv; viIters++; deltas.push(d); return d;
+}
+function sampleNext(i, j, a) { const ts = trans(i, j, a); let u = Math.random(); for (const [pr, ni, nj] of ts) { if ((u -= pr) <= 0) return [ni, nj]; } const l = ts[ts.length - 1]; return [l[1], l[2]]; }
+const argmax = (arr) => { let b = 0; for (let k = 1; k < arr.length; k++) if (arr[k] > arr[b] + 1e-12) b = k; return b; };
+function greedyEps(i, j) { if (Math.random() < +$("e").value) return Math.floor(Math.random() * 4); const q = Q[i][j], m = Math.max(...q); const best = [0, 1, 2, 3].filter((a) => q[a] >= m - 1e-12); return best[Math.floor(Math.random() * best.length)]; }
+function qStep(s) { const [i, j] = s, a = greedyEps(i, j), [ni, nj] = sampleNext(i, j, a), r = R(ni, nj);
+  const target = r + (terminal(ni, nj) ? 0 : gam() * Math.max(...Q[ni][nj])); Q[i][j][a] += +$("a").value * (target - Q[i][j][a]); return { s2: [ni, nj], r, done: terminal(ni, nj) }; }
+function episode() { let s = start.slice(), G = 0, disc = 1; for (let t = 0; t < 200; t++) { const o = qStep(s); G += disc * o.r; disc *= gam(); s = o.s2; if (o.done) break; } returns.push(G); episodes++; }
+// ---------- render ----------
+function color(v) { const t = Math.max(-1, Math.min(1, v)); const c = t >= 0 ? "var(--c3)" : "var(--c5)"; return `color-mix(in srgb, ${c} ${Math.round(Math.abs(t) * 70)}%, var(--surface))`; }
+function render() {
+  $("gv").textContent = $("g").value; $("pv").textContent = $("p").value; $("rv").textContent = $("r").value; $("av").textContent = $("a").value; $("ev").textContent = $("e").value;
+  const g = $("grid"); g.style.gridTemplateColumns = `repeat(${N}, 1fr)`; g.innerHTML = "";
+  for (let i = 0; i < N; i++) for (let j = 0; j < N; j++) {
+    const d = document.createElement("div"); const t = cell[i][j];
+    const vv = mode === "vi" ? V[i][j] : Math.max(...Q[i][j]);
+    if (t === 1) d.className = "wall";
+    else if (t === 2) { d.style.background = color(-1); d.innerHTML = '<span class="lbl">−1</span>'; }
+    else if (t === 3) { d.style.background = color(1); d.innerHTML = '<span class="lbl">+1</span>'; }
+    else {
+      d.style.background = color(vv);
+      const a = mode === "vi" ? argmax([0, 1, 2, 3].map((a) => qsa(i, j, a, V))) : argmax(Q[i][j]);
+      const known = mode === "vi" ? viIters > 0 : Q[i][j].some((x) => x !== 0);
+      d.innerHTML = `${known ? `<span class="arrow">${ARW[a]}</span>` : ""}<span class="val">${vv.toFixed(2)}</span>${i === start[0] && j === start[1] ? '<span style="position:absolute;top:2px;left:4px;font-size:10px;color:var(--c4)">S</span>' : ""}`;
+    }
+    if (agent && agent[0] === i && agent[1] === j) d.classList.add("agent");
+    d.onclick = () => { if (busy) return;
+      if (i === start[0] && j === start[1] && t === 0) { cell[i][j] = 1; }
+      else if (t === 3) { cell[i][j] = 0; start = [i, j]; }
+      else cell[i][j] = (t + 1) % 4;
+      resetV(); resetQ(); render(); };
+    g.appendChild(d);
+  }
+  stats(); curve();
+}
+function stats() {
+  let html = "", ins = "";
+  if (mode === "vi") {
+    const d = deltas.length ? deltas[deltas.length - 1] : NaN;
+    html = `<div class="stat"><span>Sweeps</span><b>${viIters}</b></div><div class="stat"><span>Bellman residual max|ΔV|</span><b>${isNaN(d) ? "–" : d.toExponential(2)}</b></div><div class="stat"><span>V(start)</span><b>${V[start[0]][start[1]].toFixed(3)}</b></div>`;
+    ins = viIters === 0 ? "Each sweep backs values up one more step from the goal and pit: after k sweeps, V reflects the best k-step plans." :
+      `The residual shrinks by at least a factor γ = ${$("g").value} per sweep (the Bellman operator is a γ-contraction), so convergence is geometric.`;
+    if (+$("p").value >= 0.2) ins += " With slipping, the optimal policy may take a longer path that keeps the pit out of its sideways reach.";
+    if (+$("r").value <= -0.3) ins += " A harsh step cost makes the agent rush, even risking the pit.";
+  } else {
+    const last = returns.slice(-100); const avg = last.length ? last.reduce((a, b) => a + b, 0) / last.length : NaN;
+    html = `<div class="stat"><span>Episodes</span><b>${episodes}</b></div><div class="stat"><span>Avg discounted return (last 100)</span><b>${isNaN(avg) ? "–" : avg.toFixed(3)}</b></div><div class="stat"><span>max<sub>a</sub> Q(start)</span><b>${Math.max(...Q[start[0]][start[1]]).toFixed(3)}</b></div>`;
+    ins = episodes === 0 ? "Q starts at 0 everywhere. The agent explores with ε-greedy and bootstraps from its own estimates (TD learning)." :
+      "Q-learning is off-policy: it learns the greedy policy's values while behaving ε-greedily. With ε > 0 the measured return stays below the greedy optimum, because the agent keeps taking random steps.";
+    if (+$("e").value === 0) ins += " With ε = 0 it may lock onto the first path it finds and never discover a better one: exploration matters.";
+  }
+  $("stats").innerHTML = html; $("insight").textContent = ins;
+}
+function curve() {
+  const cv = $("curve"), ctx = cv.getContext("2d"), W = cv.width, H = cv.height, m = 50;
+  ctx.fillStyle = css("--surface"); ctx.fillRect(0, 0, W, H); ctx.font = "20px system-ui"; ctx.fillStyle = css("--muted"); ctx.strokeStyle = css("--border");
+  let data, label, logy = false;
+  if (mode === "vi") { data = deltas.map((d) => Math.log10(Math.max(d, 1e-12))); label = "log₁₀ Bellman residual vs sweep"; logy = true; }
+  else { data = []; for (let k = 0; k < returns.length; k++) { const w = returns.slice(Math.max(0, k - 49), k + 1); data.push(w.reduce((a, b) => a + b, 0) / w.length); } label = "discounted return (50-episode moving average) vs episode"; }
+  $("curveNote").textContent = label;
+  if (!data.length) { ctx.fillText("No data yet.", W / 2 - 50, H / 2); return; }
+  const lo = Math.min(...data, logy ? -6 : -1), hi = Math.max(...data, logy ? 0 : 1);
+  const X = (k) => m + (k / Math.max(1, data.length - 1)) * (W - m - 20), Y = (v) => 20 + (1 - (v - lo) / (hi - lo || 1)) * (H - 60);
+  for (let q = 0; q <= 4; q++) { const v = lo + (hi - lo) * q / 4; ctx.beginPath(); ctx.moveTo(m, Y(v)); ctx.lineTo(W - 20, Y(v)); ctx.stroke(); ctx.fillText(logy ? "1e" + v.toFixed(0) : v.toFixed(2), 2, Y(v) + 6); }
+  ctx.fillText(data.length, W - 60, H - 10); ctx.fillText("0", m, H - 10);
+  ctx.strokeStyle = css(mode === "vi" ? "--c1" : "--c3"); ctx.lineWidth = 3; ctx.beginPath(); data.forEach((v, k) => k ? ctx.lineTo(X(k), Y(v)) : ctx.moveTo(X(k), Y(v))); ctx.stroke();
+}
+// ---------- wiring ----------
+document.querySelectorAll("[data-mode]").forEach((b) => b.onclick = () => { if (busy) return; document.querySelectorAll("[data-mode]").forEach((x) => x.classList.remove("active")); b.classList.add("active"); mode = b.dataset.mode; $("viCtl").hidden = mode !== "vi"; $("qlCtl").hidden = mode !== "ql"; agent = null; render(); });
+["g", "p", "r"].forEach((id) => $(id).oninput = () => { if (busy) return; resetV(); resetQ(); render(); });
+["a", "e"].forEach((id) => $(id).oninput = render);
+$("sweep").onclick = () => { sweep(); render(); };
+$("conv").onclick = () => { for (let k = 0; k < 1000; k++) if (sweep() < 1e-8) break; render(); };
+$("viReset").onclick = () => { resetV(); render(); };
+$("qReset").onclick = () => { if (busy) return; resetQ(); agent = null; render(); };
+$("ep100").onclick = () => { if (busy) return; for (let k = 0; k < 100; k++) episode(); agent = null; render(); };
+$("ep1000").onclick = () => { if (busy) return; for (let k = 0; k < 1000; k++) episode(); agent = null; render(); };
+$("ep1").onclick = () => {
+  if (busy) return; busy = true; let s = start.slice(), G = 0, disc = 1, t = 0; agent = s;
+  const tick = () => { const o = qStep(s); G += disc * o.r; disc *= gam(); s = o.s2; agent = s; t++; render();
+    if (o.done || t >= 200) { returns.push(G); episodes++; busy = false; setTimeout(() => { agent = null; render(); }, 500); } else setTimeout(tick, 160); };
+  render(); setTimeout(tick, 160);
+};
+defaultWorld(); resetV(); resetQ(); render();
+</script>
+</body>
+</html>

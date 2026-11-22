@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BPE Tokenizer Lab</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  textarea { min-height: 120px; font-family: var(--mono); font-size: 13px; }
+  .toks { display: flex; flex-wrap: wrap; gap: 3px; font: 13px var(--mono); line-height: 1; }
+  .toks span { padding: 4px 3px; border-radius: 4px; white-space: pre; border: 1px solid transparent; }
+  .toks span.new { border-color: var(--text); }
+  .merges { font: 13px var(--mono); max-height: 260px; overflow: auto; }
+  .merges div { padding: 2px 4px; border-bottom: 1px dashed var(--border); }
+  .merges div:first-child { background: var(--accent-soft); }
+  table.t td.mono { font-family: var(--mono); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a><span class="note">Module 09 · LLMs</span></header>
+  <h1>BPE Tokenizer Lab</h1>
+  <p class="lead">Train a byte-pair-encoding tokenizer one merge at a time: count adjacent pairs, merge the most frequent, repeat. Then encode new text with the learned merges and see where LLM quirks come from.</p>
+
+  <h2>1 · Train</h2>
+  <div class="grid two">
+    <div class="card controls">
+      <label class="ctl">Training corpus<textarea id="corpus"></textarea></label>
+      <div class="row">
+        <button id="step" class="primary">Merge 1</button><button id="step10">Merge 10</button><button id="step50">Merge 50</button><button id="reset">Reset</button>
+        <select id="sample" aria-label="Sample corpus"><option value="en">English text</option><option value="code">Python code</option><option value="mixed">English + Thai + numbers</option></select>
+      </div>
+      <p class="note">Pre-tokenization (as in GPT-2): text is split into words with their leading space attached (shown as <b>·</b>), and merges never cross word boundaries. Characters are the starting alphabet here; real byte-level BPE starts from the 256 byte values so any string can be encoded.</p>
+    </div>
+    <div class="card">
+      <div class="stat"><span>Merges learned</span><b id="nm">0</b></div>
+      <div class="stat"><span>Vocabulary size (alphabet + merges)</span><b id="vs"></b></div>
+      <div class="stat"><span>Corpus length in tokens</span><b id="nt"></b></div>
+      <div class="stat"><span>Characters per token (compression)</span><b id="cpt"></b></div>
+      <div class="stat"><span>Next merge (most frequent pair)</span><b id="next"></b></div>
+      <h3>Merge list (newest first)</h3>
+      <div class="merges" id="merges"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between"><b>Corpus as tokens</b><span class="note">framed = created by the last merge</span></div><div class="toks" id="ctoks" style="margin-top:8px"></div></div>
+
+  <h2>2 · Encode new text with the learned merges</h2>
+  <div class="grid two">
+    <div class="card controls">
+      <label class="ctl">Text to encode<input type="text" id="enc" value=" the strawberry costs 12345 baht" style="width:100%"></label>
+      <div class="row">
+        <button data-t=" the strawberry costs 12345 baht">strawberry & numbers</button>
+        <button data-t=" Hello hello HELLO">capitalization</button>
+        <button data-t=" สวัสดีครับ">Thai</button>
+        <button data-t="the theory of the thermos">"the" inside words</button>
+      </div>
+      <div class="toks" id="etoks"></div>
+      <div class="stat"><span>Characters → tokens</span><b id="ecount"></b></div>
+    </div>
+    <div class="card note" id="quirks"></div>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive · Encoding applies merges by rank (earliest learned first), like GPT-2's tokenizer.</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const SAMPLES = {
+  en: "the cat sat on the mat. the dog sat on the log. then the cat and the dog ran to the other mat. there they sat together, and the other animals watched them. the weather was warm and the cats were happy. these are the things that happen when the cat meets the dog. the teacher said that the students learned the lesson. they learned that learning takes time, and that the time spent training is the time spent thinking. the trainer trained the model, and the model learned the patterns in the data. the patterns were simple: the most frequent pairs of letters became new tokens, then the most frequent pairs of tokens became longer tokens. in the end the tokenizer learned whole words like the, and, that, learn, and train.",
+  code: "def train(model, data):\n    for x, y in data:\n        loss = model(x, y)\n        loss.backward()\n    return model\n\ndef test(model, data):\n    for x, y in data:\n        pred = model(x)\n    return pred",
+  mixed: "the price is 1999 baht. the train leaves at 1230. สวัสดีครับ ผมชื่อ the model reads 2024 and 2025 and 12345 as pieces. ภาษาไทย uses more tokens per word."
+};
+const SP = "·";
+let words = new Map(), merges = [], alphabet = new Set(), lastNew = null;
+
+function pretokenize(text) { return (text.match(/ ?[\p{L}\p{M}]+| ?\p{N}| ?[^\s\p{L}\p{M}\p{N}]+|\s+/gu) || []); } // GPT-2-like; digits split 1 per token
+function init() {
+  words = new Map(); merges = []; alphabet = new Set(); lastNew = null;
+  for (const w of pretokenize($("corpus").value)) {
+    const key = w.replace(/ /g, SP);
+    if (!words.has(key)) words.set(key, { syms: Array.from(key), n: 0 });
+    words.get(key).n++;
+    Array.from(key).forEach((c) => alphabet.add(c));
+  }
+  render();
+}
+function pairCounts() {
+  const c = new Map();
+  for (const { syms, n } of words.values()) for (let i = 0; i + 1 < syms.length; i++) { const k = syms[i] + "\u0000" + syms[i + 1]; c.set(k, (c.get(k) || 0) + n); }
+  let best = null, bc = 0;
+  for (const [k, v] of c) if (v > bc) { best = k; bc = v; } // ties: first seen
+  return { best, bc };
+}
+function mergeOnce() {
+  const { best, bc } = pairCounts(); if (!best || bc < 2) return false;
+  const [a, b] = best.split("\u0000"); const ab = a + b; merges.push([a, b, bc]); lastNew = ab;
+  for (const w of words.values()) { const s = w.syms, out = []; for (let i = 0; i < s.length; i++) { if (i + 1 < s.length && s[i] === a && s[i + 1] === b) { out.push(ab); i++; } else out.push(s[i]); } w.syms = out; }
+  return true;
+}
+function hue(tok) { let h = 0; for (const ch of tok) h = (h * 31 + ch.codePointAt(0)) % 360; return h; }
+function chip(tok, isNew) { const s = document.createElement("span"); s.textContent = tok; s.style.background = `hsl(${hue(tok)} 70% 50% / .22)`; if (isNew) s.className = "new"; s.title = tok; return s; }
+function encode(text) {
+  const rank = new Map(merges.map(([a, b], i) => [a + "\u0000" + b, i])); const out = [];
+  for (const w of pretokenize(text)) {
+    let s = Array.from(w.replace(/ /g, SP));
+    while (s.length > 1) {
+      let bi = -1, br = Infinity;
+      for (let i = 0; i + 1 < s.length; i++) { const r = rank.get(s[i] + "\u0000" + s[i + 1]); if (r !== undefined && r < br) { br = r; bi = i; } }
+      if (bi < 0) break;
+      const [a, b] = merges[br]; const t = [];
+      for (let i = 0; i < s.length; i++) { if (i + 1 < s.length && s[i] === a && s[i + 1] === b) { t.push(a + b); i++; } else t.push(s[i]); }
+      s = t;
+    }
+    out.push(...s);
+  }
+  return out;
+}
+function render() {
+  let nt = 0, nc = 0; const ct = $("ctoks"); ct.innerHTML = "";
+  const seq = pretokenize($("corpus").value);
+  for (const w of words.values()) { nt += w.syms.length * w.n; nc += w.syms.join("").length * w.n; }
+  let shown = 0;
+  for (const w of seq) { const key = w.replace(/ /g, SP); const e = words.get(key); if (!e) continue; for (const t of e.syms) { if (shown++ > 600) break; ct.appendChild(chip(t, t === lastNew)); } }
+  $("nm").textContent = merges.length; $("vs").textContent = alphabet.size + merges.length; $("nt").textContent = nt; $("cpt").textContent = (nc / Math.max(1, nt)).toFixed(2);
+  const { best, bc } = pairCounts(); $("next").textContent = best && bc >= 2 ? `"${best.split("\u0000").join('" + "')}" ×${bc}` : "none (all pairs unique)";
+  $("merges").innerHTML = merges.slice().reverse().map(([a, b, c], i) => `<div>${merges.length - i}. "${a}" + "${b}" → "${a + b}" <span class="note">(×${c})</span></div>`).join("") || '<div class="note">No merges yet. Press “Merge 1”.</div>';
+  renderEnc();
+}
+function renderEnc() {
+  const text = $("enc").value, toks = encode(text), box = $("etoks"); box.innerHTML = "";
+  toks.forEach((t) => box.appendChild(chip(t, false)));
+  $("ecount").textContent = `${Array.from(text).length} → ${toks.length}`;
+  const digits = toks.filter((t) => /\p{N}/u.test(t));
+  const straw = toks.filter((t) => /r/.test(t) && t.length > 1);
+  $("quirks").innerHTML = `<b>Where the quirks come from</b><ul style="padding-left:18px;margin:8px 0 0">
+    <li><b>Letter counting:</b> the model sees ${toks.length} token IDs here, not ${Array.from(text).length} letters. "How many r's in strawberry?" asks about characters hidden inside tokens${straw.length ? ` like <code>${straw.slice(0, 3).join("</code>, <code>")}</code>` : ""}.</li>
+    <li><b>Numbers:</b> this pre-tokenizer splits digits one per token (as Llama 1–2 did). GPT-2 instead merged arbitrary digit chunks, so "12345" could be "123"+"45" and arithmetic became inconsistent. GPT-4-era tokenizers cap number chunks at 3 digits.</li>
+    <li><b>Capitalization and spaces:</b> " hello", "hello", " Hello" and "HELLO" are different tokens with unrelated IDs. The leading space is part of the token.</li>
+    <li><b>Other languages:</b> text that is rare in the training corpus (try the Thai button) stays near character level, so it costs more tokens (more money, less context) for the same meaning.</li></ul>`;
+}
+$("step").onclick = () => { mergeOnce(); render(); };
+$("step10").onclick = () => { for (let i = 0; i < 10; i++) if (!mergeOnce()) break; render(); };
+$("step50").onclick = () => { for (let i = 0; i < 50; i++) if (!mergeOnce()) break; render(); };
+$("reset").onclick = init;
+$("sample").onchange = () => { $("corpus").value = SAMPLES[$("sample").value]; init(); };
+let deb; $("corpus").oninput = () => { clearTimeout(deb); deb = setTimeout(init, 300); };
+$("enc").oninput = renderEnc;
+document.querySelectorAll("[data-t]").forEach((b) => b.onclick = () => { $("enc").value = b.dataset.t; renderEnc(); });
+$("corpus").value = SAMPLES.en; init();
+</script>
+</body>
+</html>
