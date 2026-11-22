@@ -3,7 +3,7 @@
 
 ## The core stack
 1. ⭐ **[USACO Guide](https://usaco.guide/)**: a structured curriculum from Bronze to Platinum, with problems per topic. Use it as the spine of modules 01–07.
-2. ⭐ **[CSES Problem Set](https://cses.fi/problemset/)** (300+ classic problems) + **[Competitive Programmer's Handbook](https://cses.fi/book/book.pdf)** (free PDF, Laaksonen).
+2. ⭐ **[CSES Problem Set](https://cses.fi/problemset/)** (400 classic problems since the [May 2025 update](https://cses.fi/blog/text/3613), which also added model solutions via each task's *Analysis* link) + **[Competitive Programmer's Handbook](https://cses.fi/book/book.pdf)** (free PDF, Laaksonen).
 3. ⭐ **[AtCoder Educational DP Contest](https://atcoder.jp/contests/dp)**: for module 05.
 4. ⭐ **Past IOI and olympiad tasks on [oj.uz](https://oj.uz/)**: subtask-judged practice.
 
