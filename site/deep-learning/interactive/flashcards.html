@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deep Learning Flashcards</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+<div class="wrap" style="max-width:760px">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a></header>
+  <h1>Deep Learning Flashcards</h1>
+  <p class="lead">Core facts from modules 01–12. These pair with <code>cheatsheet.md</code>. Explain each answer in your own words before flipping.</p>
+  <div id="fc"></div>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive</footer>
+</div>
+<script>
+window.FLASHCARDS = { id: "deep-learning", cards: [
+  { deck: "01 Math", q: "∇_w ‖Xw − y‖²", a: "2Xᵀ(Xw − y)." },
+  { deck: "01 Math", q: "Why is minimizing MSE the same as maximum likelihood?", a: "With Gaussian noise y = f(x) + ε, the negative log-likelihood is (constant) + ‖y − f(x)‖²/(2σ²)." },
+  { deck: "01 Math", q: "KL divergence in terms of entropies, and its sign", a: "D_KL(p‖q) = H(p, q) − H(p) ≥ 0 (by Jensen). It's asymmetric." },
+  { deck: "01 Math", q: "Gradient descent stability on a quadratic", a: "η < 2/λ_max(H). The condition number λ_max/λ_min sets how slow convergence is." },
+  { deck: "01 Math", q: "L2 weight decay is equivalent to…", a: "MAP estimation with a zero-mean Gaussian prior on the weights." },
+  { deck: "03 ML", q: "Train loss high, val loss high → ? · Train low, val high → ?", a: "Underfitting (high bias): use a bigger model / train longer. Overfitting (high variance): more data, regularization, augmentation." },
+  { deck: "03 ML", q: "Data leakage example", a: "Fitting the normalization (mean/std) on all the data before splitting, or using future information in time-series features." },
+  { deck: "04 Backprop", q: "Gradient of softmax + cross-entropy w.r.t. the logits", a: "ŷ − y (predicted probabilities minus the one-hot target)." },
+  { deck: "04 Backprop", q: "Y = XWᵀ. What are ∂L/∂W and ∂L/∂X?", a: "∂L/∂W = (∂L/∂Y)ᵀ X, ∂L/∂X = (∂L/∂Y) W. Check by shapes." },
+  { deck: "04 Backprop", q: "Why do gradients accumulate (+=) in backprop?", a: "A value used in several places gets a gradient contribution from each use (the multivariable chain rule)." },
+  { deck: "04 Backprop", q: "Why is reverse-mode autodiff used for training?", a: "One backward pass gives the gradient w.r.t. ALL parameters of one scalar loss at ~2–3× the forward cost." },
+  { deck: "04 Backprop", q: "Why do deep sigmoid nets train slowly?", a: "σ'(x) ≤ 0.25 and saturates, so products of small derivatives vanish through the layers." },
+  { deck: "04 Backprop", q: "He vs Xavier initialization", a: "He: Var(w) = 2/n_in (ReLU). Xavier/Glorot: 1/n_in, or 2/(n_in + n_out) (tanh). Both keep the activation variance stable." },
+  { deck: "05 Training", q: "Expected initial loss for C balanced classes", a: "≈ ln C (the model is uniform at the start). E.g. 2.30 for 10 classes." },
+  { deck: "05 Training", q: "First debugging step when a model won't train", a: "Overfit a single small batch to ~0 loss. If you can't, there's a bug." },
+  { deck: "05 Training", q: "Adam vs AdamW", a: "AdamW applies weight decay directly to the weights (decoupled), not through the adaptive gradient, so the regularization works as intended." },
+  { deck: "05 Training", q: "BatchNorm vs LayerNorm: what's normalized?", a: "BN: each feature across the batch (with running stats at eval). LN: across the features of each example (batch-independent, used in transformers)." },
+  { deck: "05 Training", q: "Why warmup the learning rate?", a: "Early on, the Adam statistics and activations are unstable. A small LR first prevents divergence, especially in transformers." },
+  { deck: "05 Training", q: "What do model.eval() and torch.no_grad() each do?", a: "eval(): switches dropout/BatchNorm to inference behavior. no_grad(): disables graph building, saving memory and compute." },
+  { deck: "05 Training", q: "Why bf16 over fp16 for mixed precision?", a: "bf16 has the same exponent range as fp32, so it doesn't need loss scaling to avoid overflow/underflow." },
+  { deck: "06 CNN", q: "Conv output size", a: "⌊(n + 2p − k)/s⌋ + 1." },
+  { deck: "06 CNN", q: "Parameters of Conv2d(C_in, C_out, k)", a: "C_in · C_out · k² + C_out." },
+  { deck: "06 CNN", q: "Why do residual connections help?", a: "y = x + F(x) gives the gradient an identity path, and each block only learns a correction, so very deep nets become trainable." },
+  { deck: "06 CNN", q: "How does ViT tokenize an image?", a: "Split it into fixed patches (e.g. 16×16), flatten, linearly project each to a token, add position embeddings (+ a CLS token)." },
+  { deck: "07 Seq", q: "Why do vanilla RNN gradients vanish or explode?", a: "BPTT multiplies by the recurrent Jacobian T times, so the norm scales like λᵀ." },
+  { deck: "07 Seq", q: "What problem did attention (Bahdanau) solve in seq2seq?", a: "The fixed-length bottleneck: the decoder can look at all encoder states, weighted by relevance." },
+  { deck: "08 Transformer", q: "Scaled dot-product attention", a: "softmax(QKᵀ/√d_k + M) V." },
+  { deck: "08 Transformer", q: "Why divide by √d_k?", a: "q·k of unit-variance vectors has variance d_k. Scaling keeps the softmax out of saturation (where the gradients vanish)." },
+  { deck: "08 Transformer", q: "Pre-norm transformer block", a: "x = x + Attn(LN(x)); x = x + MLP(LN(x)). The MLP is d → 4d → d." },
+  { deck: "08 Transformer", q: "Attention compute and memory in sequence length T", a: "O(T²·d) compute, O(T²) memory for the scores. FlashAttention avoids storing T×T in HBM." },
+  { deck: "08 Transformer", q: "RoPE in one sentence", a: "Rotate the q and k feature pairs by a position-dependent angle, so q·k depends only on the relative position." },
+  { deck: "08 Transformer", q: "Parameter count of a decoder-only transformer", a: "≈ 12·L·d² (4d² attention + 8d² MLP per layer) + V·d embeddings." },
+  { deck: "09 LLM", q: "Training compute rule of thumb", a: "C ≈ 6·N·D FLOPs (N params, D tokens). Chinchilla-optimal D ≈ 20N." },
+  { deck: "09 LLM", q: "The LLM post-training pipeline", a: "Pretrain → SFT (instructions) → preference tuning (RLHF with PPO, or DPO) → RL with verifiable rewards for reasoning (e.g. GRPO)." },
+  { deck: "09 LLM", q: "LoRA", a: "Freeze W and learn a low-rank update BA (rank r ≪ d). That's ~0.1–1% of the trainable params. QLoRA = LoRA on a 4-bit base." },
+  { deck: "09 LLM", q: "What does the KV cache do?", a: "It stores past keys/values so each new token costs O(T), not a full recompute. Decoding becomes memory-bandwidth-bound." },
+  { deck: "09 LLM", q: "RAG vs fine-tuning", a: "RAG: inject knowledge (retrieved documents in the context). Fine-tuning: change behavior, style, or format." },
+  { deck: "09 LLM", q: "Perplexity", a: "exp(average cross-entropy per token, in nats)." },
+  { deck: "10 GenAI", q: "ELBO", a: "log p(x) ≥ E_q[log p(x|z)] − D_KL(q(z|x) ‖ p(z)), i.e. reconstruction − KL." },
+  { deck: "10 GenAI", q: "Reparameterization trick", a: "z = μ + σ ⊙ ε, ε ~ N(0, I). The randomness moves into ε, so gradients flow through μ and σ." },
+  { deck: "10 GenAI", q: "DDPM forward process (closed form) and training loss", a: "x_t = √ᾱ_t x₀ + √(1−ᾱ_t) ε. Loss = ‖ε − ε_θ(x_t, t)‖²." },
+  { deck: "10 GenAI", q: "Classifier-free guidance", a: "ε̂ = ε_uncond + w (ε_cond − ε_uncond), with w > 1 for stronger prompt adherence." },
+  { deck: "10 GenAI", q: "Flow matching target (linear path)", a: "x_t = (1−t)x₀ + t x₁ (x₀ noise, x₁ data). Regress v_θ(x_t, t) onto x₁ − x₀." },
+  { deck: "10 GenAI", q: "GAN failure mode where the generator outputs only a few kinds of samples", a: "Mode collapse." },
+  { deck: "11 RL", q: "Bellman optimality equation for Q*", a: "Q*(s, a) = E[r + γ max_a' Q*(s', a')]." },
+  { deck: "11 RL", q: "The two tricks DQN adds to Q-learning", a: "An experience replay buffer + a slowly updated target network." },
+  { deck: "11 RL", q: "Policy gradient theorem (with advantage)", a: "∇J = E[∇ log π_θ(a|s) · A(s, a)]. A baseline V(s) reduces variance without bias." },
+  { deck: "11 RL", q: "PPO's clipped objective", a: "E[min(r_t A_t, clip(r_t, 1−ε, 1+ε) A_t)], with r_t = π_θ/π_old. It stops overly large policy updates." },
+  { deck: "11 RL", q: "GRPO in one sentence", a: "PPO-like, but with no value network: the advantages are rewards normalized within a group of sampled answers to the same prompt." },
+]};
+</script>
+<script src="../../_shared/flashcards.js"></script>
+</body>
+</html>

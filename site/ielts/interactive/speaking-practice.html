@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IELTS Speaking Practice</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .timer { font-family: var(--mono); font-size: 48px; font-weight: 700; line-height: 1; }
+  .phase { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+  .cue { font-size: 17px; }
+  .cue ul { margin: 8px 0 0; padding-left: 20px; }
+  ol.q li { margin: 6px 0; font-size: 16px; }
+  audio { width: 100%; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← IELTS tools</a></header>
+  <h1>Speaking Practice</h1>
+  <p class="lead">Answer <b>out loud</b>. That's the only way speaking improves. Pick a part, get random questions, use the timer, and record yourself to listen back for hesitations, repeated words, and grammar slips (module 06).</p>
+  <div class="row" id="parts" style="margin-bottom:12px">
+    <button data-p="1" class="active">Part 1 · interview</button><button data-p="2">Part 2 · cue card</button><button data-p="3">Part 3 · discussion</button><button data-p="full">Full mock (1 → 2 → 3)</button>
+    <button id="next">🎲 New questions</button>
+  </div>
+  <div class="grid two">
+    <div class="card" id="qbox"></div>
+    <div class="controls">
+      <div class="card">
+        <div class="phase" id="phase">Ready</div>
+        <div class="timer" id="clock">0:00</div>
+        <div class="fc-bar" style="margin-top:10px"><div id="tbar" style="width:0%;background:var(--accent)"></div></div>
+        <div class="row" style="margin-top:12px"><button class="primary" id="go">Start timer</button><button id="stop">Stop</button></div>
+        <p class="note" id="tip" style="margin:10px 0 0"></p>
+      </div>
+      <div class="card">
+        <b>Record yourself</b>
+        <div class="row" style="margin-top:8px"><button id="rec">● Record</button><span class="note" id="recstat">Microphone permission needed. Recordings stay in this tab only.</span></div>
+        <div id="clips"></div>
+      </div>
+      <div class="card"><b>Answer frame</b><div class="note" id="frame" style="margin-top:6px"></div></div>
+    </div>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · ielts/interactive · questions are original practice items, not official test questions</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const pick = (a, k = 1) => { const c = [...a].sort(() => Math.random() - 0.5); return k === 1 ? c[0] : c.slice(0, k); };
+const P1 = {
+  "Studies": ["What subject do you enjoy studying most? Why?", "Is there a subject you found difficult at school?", "Do you prefer studying alone or with other people?", "What would you like to study in the future?"],
+  "Hometown": ["Where is your hometown?", "What do you like most about living there?", "How has your hometown changed in recent years?", "Would you like to live there in the future?"],
+  "Free time": ["What do you usually do in your free time?", "Do you prefer spending free time indoors or outdoors?", "Has the way you spend your free time changed since you were a child?"],
+  "Technology": ["How often do you use your phone each day?", "What app do you find most useful?", "Do you think you spend too much time online?"],
+  "Reading": ["Do you enjoy reading? What kinds of things?", "Do you prefer printed books or e-books?", "Did you read a lot when you were younger?"],
+  "Music": ["What kind of music do you like?", "Have you ever learned to play an instrument?", "Do you listen to music while studying?"],
+  "Food": ["What's your favourite food?", "Do you enjoy cooking?", "Is there any food you disliked as a child but like now?"],
+  "Science": ["Were you interested in science as a child?", "Which scientific discovery do you think is most important?", "Do you watch science programmes or videos?"],
+  "Weather": ["What kind of weather do you like best?", "Does the weather affect your mood?", "What's the weather usually like in your country?"],
+  "Sleep": ["How many hours do you usually sleep?", "Do you ever take naps during the day?", "What do you do if you can't fall asleep?"],
+};
+const CARDS = [
+  { t: "Describe a teacher who has influenced you.", b: ["who this person is", "what subject they taught", "what they did that was special", "and explain how they influenced you"], p3: ["What qualities make a good teacher?", "Will technology ever replace teachers? Why or why not?", "Should teachers be paid more than other professionals?", "How has the role of teachers changed compared with the past?"] },
+  { t: "Describe a time when you solved a difficult problem.", b: ["what the problem was", "when and where it happened", "how you solved it", "and explain how you felt afterwards"], p3: ["Is problem-solving a skill that schools teach well?", "Do people solve problems better alone or in groups?", "What kinds of problems will society face in the future?"] },
+  { t: "Describe a piece of technology you find useful.", b: ["what it is", "how long you have used it", "what you use it for", "and explain why it is useful to you"], p3: ["Has technology made people's lives better or worse?", "Should children's use of technology be limited?", "How might technology change education in the next 20 years?"] },
+  { t: "Describe a competition you took part in.", b: ["what the competition was", "how you prepared for it", "what happened on the day", "and explain what you learned from it"], p3: ["Is competition good for young people?", "Why do some people enjoy competing more than others?", "Should schools give prizes to the best students?"] },
+  { t: "Describe a place you would like to visit.", b: ["where it is", "how you know about it", "what you would do there", "and explain why you want to go there"], p3: ["Why do people enjoy travelling to other countries?", "What are the effects of tourism on local communities?", "Will people travel more or less in the future?"] },
+  { t: "Describe a book or article that taught you something interesting.", b: ["what it was", "when you read it", "what it was about", "and explain what you learned from it"], p3: ["Do young people read less than in the past?", "Is reading online as valuable as reading printed books?", "Should governments fund public libraries?"] },
+  { t: "Describe a skill you would like to learn.", b: ["what the skill is", "why you want to learn it", "how you would learn it", "and explain how it would help you"], p3: ["Which skills are most important for young people today?", "Is it better to learn skills from a teacher or by yourself?", "Do adults find it harder to learn new skills than children?"] },
+  { t: "Describe a time you helped someone.", b: ["who you helped", "what the situation was", "how you helped", "and explain how you felt about it"], p3: ["Are people less willing to help strangers than in the past?", "Should volunteering be compulsory for students?", "Who should be responsible for helping people in need: governments or individuals?"] },
+  { t: "Describe an important decision you made.", b: ["what the decision was", "when you made it", "how you made it", "and explain why it was important"], p3: ["Should parents make important decisions for their teenage children?", "Do people make better decisions when they have more choices?", "How do people usually make big financial decisions?"] },
+  { t: "Describe a scientific discovery or invention you find impressive.", b: ["what it is", "who discovered or invented it", "how it works or what it does", "and explain why you find it impressive"], p3: ["Should governments spend more money on scientific research?", "Is space exploration worth the cost?", "How can schools encourage more students to study science?"] },
+  { t: "Describe a goal you hope to achieve in the next five years.", b: ["what the goal is", "why it matters to you", "what you are doing to achieve it", "and explain how you will feel if you achieve it"], p3: ["Is it important to set long-term goals?", "Do young people today have different goals from their parents' generation?", "Is success mainly the result of hard work or luck?"] },
+  { t: "Describe a time you were very busy.", b: ["when it was", "why you were busy", "how you managed your time", "and explain how you felt during that time"], p3: ["Why are people busier today than in the past?", "Is it possible to have a good work–life balance?", "How can students manage stress before exams?"] },
+];
+const FRAMES = {
+  "1": "<b>Answer → reason → example.</b> 2–3 sentences, natural tone. E.g. \"I'd say physics, mainly because… For example, last year I…\"",
+  "2": "<b>Scene → story → feelings → reflection.</b> Jot 4–5 keywords in the prep minute. Keep talking for the full 2 minutes, and add a comparison or a hypothetical if you run short.",
+  "3": "<b>Opinion → reason → example → other side / future.</b> Talk about people and society in general. Hedge: \"To some extent…\", \"It depends on…\"",
+};
+let part = "1", card = null, plan = [], step = 0, timer = null, left = 0, total = 0;
+
+function render() {
+  let h = "";
+  if (part === "1" || part === "full") {
+    const topics = pick(Object.keys(P1), 2);
+    h += `<b>Part 1</b>` + topics.map((t) => `<p class="note" style="margin:10px 0 2px">Topic: ${t}</p><ol class="q">${pick(P1[t], 3).map((q) => `<li>${q}</li>`).join("")}</ol>`).join("");
+  }
+  if (part === "2" || part === "3" || part === "full") card = pick(CARDS);
+  if (part === "2" || part === "full") h += `${part === "full" ? "<hr style='border:0;border-top:1px solid var(--border);margin:14px 0'>" : ""}<b>Part 2: cue card</b><div class="cue card" style="margin-top:8px;background:var(--surface-2)"><b>${card.t}</b><br><span class="note">You should say:</span><ul>${card.b.map((x) => `<li>${x}</li>`).join("")}</ul></div>`;
+  if (part === "3" || part === "full") h += `${part === "full" ? "<hr style='border:0;border-top:1px solid var(--border);margin:14px 0'>" : ""}<b>Part 3: discussion</b>${part === "3" ? `<p class="note" style="margin:6px 0">Linked to: "${card.t}"</p>` : ""}<ol class="q">${card.p3.map((q) => `<li>${q}</li>`).join("")}</ol>`;
+  $("qbox").innerHTML = h;
+  $("frame").innerHTML = part === "full" ? Object.values(FRAMES).join("<br><br>") : FRAMES[part];
+  plan = { "1": [["Part 1: answer each question (~20–30 s each)", 300]], "2": [["Preparation: jot keywords", 60], ["Talk: keep going for 2 minutes", 120]], "3": [["Part 3: discuss (~45–60 s per answer)", 300]],
+    full: [["Part 1: interview", 300], ["Part 2: preparation", 60], ["Part 2: talk", 120], ["Part 3: discussion", 300]] }[part];
+  resetTimer();
+}
+const fmt = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+let actx;
+function beep(f = 880, d = 0.18) { try { actx = actx || new (window.AudioContext || window.webkitAudioContext)(); const o = actx.createOscillator(), g = actx.createGain(); o.frequency.value = f; g.gain.value = 0.12; o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + d); } catch (e) {} }
+function resetTimer() { clearInterval(timer); timer = null; step = 0; left = total = plan[0][1]; $("phase").textContent = plan[0][0]; $("clock").textContent = fmt(left); $("tbar").style.width = "0%"; $("go").textContent = "Start timer"; $("tip").textContent = part === "2" ? "Prep 1:00 → beep → talk 2:00 → beep. The examiner may stop you at 2:00." : ""; }
+function tick() {
+  left--; $("clock").textContent = fmt(Math.max(0, left)); $("tbar").style.width = ((total - left) / total) * 100 + "%";
+  if (left <= 0) {
+    beep(); step++;
+    if (step < plan.length) { left = total = plan[step][1]; $("phase").textContent = plan[step][0]; $("tbar").style.width = "0%"; }
+    else { clearInterval(timer); timer = null; $("phase").textContent = "Done: now listen to your recording"; $("go").textContent = "Start timer"; setTimeout(() => beep(660, 0.3), 250); }
+  }
+}
+$("go").addEventListener("click", () => { if (timer) { clearInterval(timer); timer = null; $("go").textContent = "Resume"; } else { if (step >= plan.length) resetTimer(); beep(1046, 0.08); timer = setInterval(tick, 1000); $("go").textContent = "Pause"; } });
+$("stop").addEventListener("click", resetTimer);
+document.querySelectorAll("#parts [data-p]").forEach((b) => b.addEventListener("click", () => { document.querySelectorAll("#parts [data-p]").forEach((x) => x.classList.remove("active")); b.classList.add("active"); part = b.dataset.p; render(); }));
+$("next").addEventListener("click", render);
+
+// recording
+let mr = null, chunks = [], n = 0;
+$("rec").addEventListener("click", async () => {
+  if (mr && mr.state === "recording") { mr.stop(); return; }
+  if (!navigator.mediaDevices || !window.MediaRecorder) { $("recstat").textContent = "Recording isn't supported in this browser. Use your phone's voice recorder instead."; return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mr = new MediaRecorder(stream); chunks = [];
+    mr.ondataavailable = (e) => chunks.push(e.data);
+    mr.onstop = () => {
+      stream.getTracks().forEach((t) => t.stop());
+      const url = URL.createObjectURL(new Blob(chunks, { type: mr.mimeType || "audio/webm" }));
+      const div = document.createElement("div"); div.style.marginTop = "10px";
+      div.innerHTML = `<span class="note">Take ${++n} · ${new Date().toLocaleTimeString()} · <a href="${url}" download="speaking-take-${n}.webm">download</a></span><audio controls src="${url}"></audio>`;
+      $("clips").prepend(div); $("rec").textContent = "● Record"; $("recstat").textContent = "Listen for: long pauses, repeated words, tense errors, unclear words.";
+    };
+    mr.start(); $("rec").textContent = "■ Stop recording"; $("recstat").innerHTML = '<span class="bad">● recording…</span>';
+  } catch (e) { $("recstat").textContent = "Microphone blocked or unavailable (" + e.name + "). Allow it in the browser, or use your phone's recorder."; }
+});
+render();
+</script>
+</body>
+</html>

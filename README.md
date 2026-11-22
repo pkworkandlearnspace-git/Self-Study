@@ -15,6 +15,8 @@ Each topic has one folder containing a **roadmap**, short **modules** you can sk
 | 🗣️ **IELTS Academic** | target band 7.0–7.5 | [`ielts/`](ielts/README.md) | band calculator, writing timer, speaking practice, flashcards |
 | 🧠 **Deep Learning** | beginner → research | [`deep-learning/`](deep-learning/README.md) | optimizer landscape, NN playground, attention, flashcards |
 
+**📖 Read everything as a website (private, offline):** download the repo, then open **[`site/index.html`](site/index.html)** in a browser. It has every module, a search box, progress tracking and all the interactive tools. Nothing is published online. To rebuild it after editing the Markdown: `cd site-src && npm install && npm run build`.
+
 **Open the interactive tools:** download/clone the repo and open **[`index.html`](index.html)** in a browser. It links every tool, and everything works offline. (GitHub shows `.html` files as source code. To use them online, turn on GitHub Pages for this repo.)
 
 ---
@@ -47,6 +49,8 @@ Fill in the **Key dates** table at the top of each topic's `progress.md` first. 
 ## Repo layout
 ```
 Self-Study/
+├── site/                     ← the offline website (open site/index.html) — generated, don't edit
+├── site-src/                 ← website generator: npm install && npm run build
 ├── index.html                ← hub for all interactive tools (open in a browser)
 ├── _shared/                  ← shared style + flashcard engine for the interactive pages
 ├── _template/                ← copy this to start a new topic

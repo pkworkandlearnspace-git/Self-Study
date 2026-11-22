@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DP Table Animator</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  table.dp { border-collapse: collapse; font-family: var(--mono); font-size: 13px; }
+  table.dp td, table.dp th { min-width: 34px; height: 30px; text-align: center; border: 1px solid var(--border); padding: 0 4px; transition: background .15s; }
+  table.dp th { background: var(--surface-2); color: var(--muted); font-weight: 500; }
+  table.dp td.empty { color: transparent; }
+  table.dp td.cur { background: var(--c2); color: #fff; font-weight: 700; }
+  table.dp td.dep { background: var(--accent-soft); outline: 2px solid var(--accent); outline-offset: -2px; }
+  table.dp td.path { background: var(--c3); color: #fff; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Informatics Olympiad tools</a></header>
+  <h1>DP Table Animator</h1>
+  <p class="lead">Watch a DP table fill in dependency order. The <span style="color:var(--c2)"><b>orange</b></span> cell is being computed, the <span style="color:var(--accent)"><b>outlined</b></span> cells are the ones it reads, and the <span class="good"><b>green</b></span> cells are the traceback that rebuilds the answer (module 05).</p>
+  <div class="row" id="modes" style="margin-bottom:12px">
+    <button data-m="lcs" class="active">Longest common subsequence</button><button data-m="edit">Edit distance</button><button data-m="knap">0/1 Knapsack</button>
+  </div>
+  <div class="grid two">
+    <div class="card scroll-x" id="tablewrap"></div>
+    <div class="controls">
+      <div id="inputs"></div>
+      <label class="ctl">Speed <input type="range" id="speed" min="1" max="30" value="8"></label>
+      <div class="row"><button class="primary" id="play">▶ Play</button><button id="step">Step</button><button id="fill">Fill instantly</button><button id="reset">Reset</button></div>
+      <div class="card"><b style="font-size:14px">Recurrence</b><div class="mono" id="rec" style="font-size:13px;margin-top:6px;white-space:pre-wrap"></div></div>
+      <div class="callout" id="now">Press Play or Step.</div>
+      <div class="card" id="result"></div>
+    </div>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · informatics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+let mode = "lcs", M, order, idx, playing = false, acc = 0;
+const REC = {
+  lcs: "dp[i][j] = 0                      if i=0 or j=0\n        = dp[i-1][j-1] + 1        if A[i]=B[j]\n        = max(dp[i-1][j], dp[i][j-1])  otherwise",
+  edit: "dp[i][0] = i,  dp[0][j] = j\ndp[i][j] = dp[i-1][j-1]               if A[i]=B[j]\n        = 1 + min(dp[i-1][j],     // delete\n                  dp[i][j-1],     // insert\n                  dp[i-1][j-1])   // replace",
+  knap: "dp[i][w] = dp[i-1][w]                       (skip item i)\n        = max(…, dp[i-1][w-wt[i]] + val[i])  if wt[i] ≤ w (take)\nAnswer: dp[n][W]. 1D version: iterate w downward.",
+};
+function inputsHTML() {
+  if (mode === "knap") return `<label class="ctl">Weights (comma separated)<input type="text" id="w" value="2,3,4,5"></label><label class="ctl">Values<input type="text" id="v" value="3,4,5,6"></label><label class="ctl">Capacity W<input type="number" id="cap" value="8" min="1" max="20"></label>`;
+  return `<label class="ctl">String A<input type="text" id="sa" value="${mode === "lcs" ? "ABCBDAB" : "kitten"}" maxlength="12"></label><label class="ctl">String B<input type="text" id="sb" value="${mode === "lcs" ? "BDCABA" : "sitting"}" maxlength="12"></label>`;
+}
+function setup() {
+  playing = false; $("play").textContent = "▶ Play"; $("rec").textContent = REC[mode]; $("now").textContent = "Press Play or Step."; $("result").innerHTML = "";
+  if (mode === "knap") {
+    const wt = $("w").value.split(",").map(Number).filter((x) => x > 0).slice(0, 8), va = $("v").value.split(",").map(Number).slice(0, wt.length);
+    const W = Math.max(1, Math.min(20, +$("cap").value));
+    M = { kind: "knap", wt, va, W, rows: wt.length + 1, cols: W + 1, dp: [], dep: {} };
+  } else {
+    const A = $("sa").value.slice(0, 12), B = $("sb").value.slice(0, 12);
+    M = { kind: mode, A, B, rows: A.length + 1, cols: B.length + 1, dp: [], dep: {} };
+  }
+  M.dp = Array.from({ length: M.rows }, () => Array(M.cols).fill(null));
+  order = []; for (let i = 0; i < M.rows; i++) for (let j = 0; j < M.cols; j++) order.push([i, j]);
+  idx = 0; render(null);
+}
+function compute(i, j) {
+  const d = M.dp; let deps = [], why = "";
+  if (M.kind === "lcs") {
+    if (i === 0 || j === 0) { d[i][j] = 0; why = "base case"; }
+    else if (M.A[i - 1] === M.B[j - 1]) { d[i][j] = d[i - 1][j - 1] + 1; deps = [[i - 1, j - 1]]; why = `A[${i}] = B[${j}] = '${M.A[i - 1]}' → diagonal + 1`; }
+    else { d[i][j] = Math.max(d[i - 1][j], d[i][j - 1]); deps = [[i - 1, j], [i, j - 1]]; why = `'${M.A[i - 1]}' ≠ '${M.B[j - 1]}' → max(up, left)`; }
+  } else if (M.kind === "edit") {
+    if (i === 0) { d[i][j] = j; why = "base: insert j chars"; }
+    else if (j === 0) { d[i][j] = i; why = "base: delete i chars"; }
+    else if (M.A[i - 1] === M.B[j - 1]) { d[i][j] = d[i - 1][j - 1]; deps = [[i - 1, j - 1]]; why = `'${M.A[i - 1]}' matches → copy diagonal`; }
+    else { d[i][j] = 1 + Math.min(d[i - 1][j], d[i][j - 1], d[i - 1][j - 1]); deps = [[i - 1, j], [i, j - 1], [i - 1, j - 1]]; why = `mismatch → 1 + min(delete, insert, replace)`; }
+  } else {
+    if (i === 0) { d[i][j] = 0; why = "no items → 0"; }
+    else {
+      const w = M.wt[i - 1], v = M.va[i - 1]; d[i][j] = d[i - 1][j]; deps = [[i - 1, j]]; why = `skip item ${i} → ${d[i - 1][j]}`;
+      if (w <= j && d[i - 1][j - w] + v > d[i][j]) { d[i][j] = d[i - 1][j - w] + v; deps.push([i - 1, j - w]); why = `take item ${i} (wt ${w}, val ${v}): ${d[i - 1][j - w]} + ${v} = ${d[i][j]}`; }
+      else if (w <= j) { deps.push([i - 1, j - w]); why += ` (taking gives ${d[i - 1][j - w] + v})`; }
+    }
+  }
+  return { deps, why };
+}
+function traceback() {
+  const path = [], d = M.dp; let i = M.rows - 1, j = M.cols - 1, out = [];
+  if (M.kind === "lcs") {
+    while (i > 0 && j > 0) { path.push([i, j]); if (M.A[i - 1] === M.B[j - 1]) { out.push(M.A[i - 1]); i--; j--; } else if (d[i - 1][j] >= d[i][j - 1]) i--; else j--; }
+    return { path, text: `LCS length <b>${d[M.rows - 1][M.cols - 1]}</b>: "<b>${out.reverse().join("")}</b>"` };
+  }
+  if (M.kind === "edit") {
+    while (i > 0 || j > 0) {
+      path.push([i, j]);
+      if (i > 0 && j > 0 && M.A[i - 1] === M.B[j - 1] && d[i][j] === d[i - 1][j - 1]) { out.push(`keep '${M.A[i - 1]}'`); i--; j--; }
+      else if (i > 0 && j > 0 && d[i][j] === d[i - 1][j - 1] + 1) { out.push(`replace '${M.A[i - 1]}'→'${M.B[j - 1]}'`); i--; j--; }
+      else if (i > 0 && d[i][j] === d[i - 1][j] + 1) { out.push(`delete '${M.A[i - 1]}'`); i--; }
+      else { out.push(`insert '${M.B[j - 1]}'`); j--; }
+    }
+    path.push([0, 0]);
+    return { path, text: `Edit distance <b>${d[M.rows - 1][M.cols - 1]}</b><br><span class="note">${out.reverse().join(" · ")}</span>` };
+  }
+  const items = [];
+  while (i > 0) { path.push([i, j]); if (d[i][j] !== d[i - 1][j]) { items.push(i); j -= M.wt[i - 1]; } i--; }
+  path.push([0, j]);
+  return { path, text: `Best value <b>${d[M.rows - 1][M.cols - 1]}</b> using items <b>{${items.reverse().join(", ")}}</b>` };
+}
+function render(cur, deps = [], path = []) {
+  const P = new Set(path.map(([a, b]) => a + "," + b)), D = new Set(deps.map(([a, b]) => a + "," + b));
+  let h = `<table class="dp"><tr><th></th>`;
+  for (let j = 0; j < M.cols; j++) h += `<th>${M.kind === "knap" ? "w=" + j : j === 0 ? "∅" : M.B[j - 1]}</th>`;
+  h += "</tr>";
+  for (let i = 0; i < M.rows; i++) {
+    h += `<tr><th>${M.kind === "knap" ? (i === 0 ? "∅" : `#${i} (${M.wt[i - 1]},${M.va[i - 1]})`) : i === 0 ? "∅" : M.A[i - 1]}</th>`;
+    for (let j = 0; j < M.cols; j++) {
+      const k = i + "," + j, v = M.dp[i][j];
+      const cls = cur && cur[0] === i && cur[1] === j ? "cur" : P.has(k) ? "path" : D.has(k) ? "dep" : v === null ? "empty" : "";
+      h += `<td class="${cls}">${v === null ? "·" : v}</td>`;
+    }
+    h += "</tr>";
+  }
+  $("tablewrap").innerHTML = h + "</table>";
+}
+function step() {
+  if (idx >= order.length) return false;
+  const [i, j] = order[idx++], { deps, why } = compute(i, j);
+  render([i, j], deps); $("now").innerHTML = `dp[${i}][${j}] = <b>${M.dp[i][j]}</b> — ${why}`;
+  if (idx === order.length) finish();
+  return true;
+}
+function finish() { const tb = traceback(); render(null, [], tb.path); $("result").innerHTML = tb.text + `<p class="note" style="margin:6px 0 0">Table: ${M.rows} × ${M.cols} = ${M.rows * M.cols} states, O(1) each.</p>`; playing = false; $("play").textContent = "▶ Play"; }
+function loop() { if (playing) { acc += +$("speed").value / 30; while (acc >= 1) { acc -= 1; if (!step()) break; } } requestAnimationFrame(loop); }
+function bindInputs() { $("inputs").innerHTML = inputsHTML(); $("inputs").querySelectorAll("input").forEach((x) => x.addEventListener("change", setup)); }
+document.querySelectorAll("#modes button").forEach((b) => b.addEventListener("click", () => { document.querySelectorAll("#modes button").forEach((x) => x.classList.remove("active")); b.classList.add("active"); mode = b.dataset.m; bindInputs(); setup(); }));
+$("play").addEventListener("click", () => { if (idx >= order.length) setup(); playing = !playing; $("play").textContent = playing ? "⏸ Pause" : "▶ Play"; });
+$("step").addEventListener("click", () => { playing = false; $("play").textContent = "▶ Play"; step(); });
+$("fill").addEventListener("click", () => { while (idx < order.length) { const [i, j] = order[idx++]; compute(i, j); } finish(); });
+$("reset").addEventListener("click", setup);
+bindInputs(); setup(); loop();
+</script>
+</body>
+</html>

@@ -12,7 +12,7 @@
 
 ## Core ideas
 - **Waves:** $y = A\sin(kx - \omega t)$, $v = \omega/k = f\lambda$. The wave equation. String speed $v = \sqrt{T/\mu}$, sound speed. Standing waves and harmonics. Beats.
-- **Superposition:** phase difference $\Delta\phi = \frac{2\pi}{\lambda}\Delta(\text{path}) + $ reflection phase. Constructive at $\Delta\phi = 2\pi m$.
+- **Superposition:** phase difference $\Delta\phi = \frac{2\pi}{\lambda}\Delta(\text{path})$ + reflection phase. Constructive at $\Delta\phi = 2\pi m$.
 - **Interference:** double slit, thin films (π phase shift on reflection off a higher-n medium), Newton's rings, Michelson interferometer.
 - **Diffraction:** single slit minima at $a\sin\theta = m\lambda$, diffraction grating maxima at $d\sin\theta = m\lambda$. Intensity = (single-slit envelope) × (multi-slit interference). Rayleigh criterion.
 - **Geometric optics:** Fermat's principle, Snell's law, total internal reflection, the thin lens/mirror equation $\frac1f = \frac1{d_o}+\frac1{d_i}$, magnification, optical instruments (telescope, microscope), prisms and dispersion.

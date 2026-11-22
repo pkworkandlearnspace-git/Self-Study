@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Triangle Centers Explorer</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg.plot { aspect-ratio: 4 / 3; }
+  .pt { cursor: grab; }
+  .pt:active { cursor: grabbing; }
+  svg text { font: 13px system-ui, sans-serif; fill: var(--text); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+  .toggles label { display: flex; gap: 8px; align-items: center; font-size: 14px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Math Olympiad tools</a></header>
+  <h1>Triangle Centers Explorer</h1>
+  <p class="lead">Drag the vertices <b>A</b>, <b>B</b>, <b>C</b>. The facts in the panel stay true for <i>every</i> triangle. That's what you prove in olympiad geometry (module 05).</p>
+
+  <div class="grid two">
+    <svg class="plot" id="svg" viewBox="0 0 600 450" aria-label="Interactive triangle"></svg>
+    <div class="controls">
+      <div class="card toggles">
+        <b style="display:block;margin-bottom:8px">Show</b>
+        <label><input type="checkbox" data-k="circ" checked> <span style="color:var(--c1)">●</span> Circumcenter O + circumcircle</label>
+        <label><input type="checkbox" data-k="inc" checked> <span style="color:var(--c3)">●</span> Incenter I + incircle</label>
+        <label><input type="checkbox" data-k="cen" checked> <span style="color:var(--c2)">●</span> Centroid G + medians</label>
+        <label><input type="checkbox" data-k="ort" checked> <span style="color:var(--c5)">●</span> Orthocenter H + altitudes</label>
+        <label><input type="checkbox" data-k="eul" checked> <span style="color:var(--c4)">●</span> Euler line</label>
+        <label><input type="checkbox" data-k="nine"> <span style="color:var(--c6)">●</span> Nine-point circle</label>
+      </div>
+      <div class="card" id="stats"></div>
+      <div class="row">
+        <button data-preset="eq">Equilateral</button>
+        <button data-preset="right">Right</button>
+        <button data-preset="obtuse">Obtuse</button>
+        <button data-preset="iso">Isosceles</button>
+      </div>
+    </div>
+  </div>
+
+  <h2>Things to notice, then prove</h2>
+  <div class="card">
+    <ol style="margin:0;padding-left:20px">
+      <li><b>OG : GH = 1 : 2</b> always. O, G, H are collinear (the Euler line). <i>Hint: the homothety at G with ratio −½ maps the triangle to its medial triangle.</i></li>
+      <li><b>Euler's theorem</b> OI² = R(R − 2r), so R ≥ 2r. When is it equal? (Try equilateral.)</li>
+      <li>The <b>nine-point circle</b> passes through the 3 side midpoints and the 3 feet of the altitudes. Its center is the midpoint of OH and its radius is R/2.</li>
+      <li>In a <b>right</b> triangle, H sits on the right-angle vertex and O on the hypotenuse midpoint. In an <b>obtuse</b> one, O and H leave the triangle.</li>
+      <li>In an <b>equilateral</b> triangle, all centers coincide and the Euler line is undefined.</li>
+    </ol>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · math-olympiad/interactive</footer>
+</div>
+
+<script>
+const svg = document.getElementById("svg");
+const NS = "http://www.w3.org/2000/svg";
+let P = { A: [180, 90], B: [90, 370], C: [500, 360] };
+const show = { circ: true, inc: true, cen: true, ort: true, eul: true, nine: false };
+
+const sub = (p, q) => [p[0] - q[0], p[1] - q[1]];
+const add = (p, q) => [p[0] + q[0], p[1] + q[1]];
+const mul = (p, k) => [p[0] * k, p[1] * k];
+const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
+const mid = (p, q) => mul(add(p, q), 0.5);
+
+function centers(A, B, C) {
+  const a = dist(B, C), b = dist(C, A), c = dist(A, B);
+  const d = 2 * (A[0] * (B[1] - C[1]) + B[0] * (C[1] - A[1]) + C[0] * (A[1] - B[1]));
+  const s2 = (p) => p[0] * p[0] + p[1] * p[1];
+  const O = [
+    (s2(A) * (B[1] - C[1]) + s2(B) * (C[1] - A[1]) + s2(C) * (A[1] - B[1])) / d,
+    (s2(A) * (C[0] - B[0]) + s2(B) * (A[0] - C[0]) + s2(C) * (B[0] - A[0])) / d,
+  ];
+  const G = mul(add(add(A, B), C), 1 / 3);
+  const H = sub(add(add(A, B), C), mul(O, 2));
+  const per = a + b + c;
+  const I = [(a * A[0] + b * B[0] + c * C[0]) / per, (a * A[1] + b * B[1] + c * C[1]) / per];
+  const area = Math.abs(d) / 4;
+  const R = dist(O, A), r = (2 * area) / per;
+  const N = mid(O, H);
+  return { a, b, c, O, G, H, I, R, r, N, area, degenerate: Math.abs(d) < 1e-6 };
+}
+
+function foot(P0, Q, R0) { // foot of perpendicular from P0 onto line QR0
+  const v = sub(R0, Q), t = ((P0[0] - Q[0]) * v[0] + (P0[1] - Q[1]) * v[1]) / (v[0] * v[0] + v[1] * v[1]);
+  return add(Q, mul(v, t));
+}
+function angle(at, p, q) {
+  const u = sub(p, at), v = sub(q, at);
+  return (Math.acos((u[0] * v[0] + u[1] * v[1]) / (Math.hypot(...u) * Math.hypot(...v))) * 180) / Math.PI;
+}
+
+function el(tag, attrs, parent = svg) {
+  const e = document.createElementNS(NS, tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  parent.appendChild(e);
+  return e;
+}
+const cv = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+function line(p, q, color, opts = {}) {
+  el("line", { x1: p[0], y1: p[1], x2: q[0], y2: q[1], stroke: color, "stroke-width": opts.w || 1.4, "stroke-dasharray": opts.dash || "", opacity: opts.op || 1 });
+}
+function dot(p, color, label, r = 4.5) {
+  el("circle", { cx: p[0], cy: p[1], r, fill: color });
+  if (label) { const t = el("text", { x: p[0] + 8, y: p[1] - 8 }); t.textContent = label; }
+}
+function circle(c, r, color, dash) {
+  el("circle", { cx: c[0], cy: c[1], r, fill: "none", stroke: color, "stroke-width": 1.4, "stroke-dasharray": dash || "" });
+}
+
+function draw() {
+  svg.innerHTML = "";
+  const { A, B, C } = P;
+  const k = centers(A, B, C);
+  const text = cv("--text"), muted = cv("--muted");
+  const c1 = cv("--c1"), c2 = cv("--c2"), c3 = cv("--c3"), c4 = cv("--c4"), c5 = cv("--c5"), c6 = cv("--c6");
+
+  if (!k.degenerate) {
+    if (show.circ) circle(k.O, k.R, c1);
+    if (show.inc) circle(k.I, k.r, c3);
+    if (show.nine) {
+      circle(k.N, k.R / 2, c6, "5 4");
+      [mid(A, B), mid(B, C), mid(C, A), foot(A, B, C), foot(B, C, A), foot(C, A, B)].forEach((p) => dot(p, c6, "", 3));
+    }
+    if (show.cen) { line(A, mid(B, C), c2, { op: 0.6 }); line(B, mid(C, A), c2, { op: 0.6 }); line(C, mid(A, B), c2, { op: 0.6 }); }
+    if (show.ort) {
+      const fa = foot(A, B, C), fb = foot(B, C, A), fc = foot(C, A, B);
+      line(A, fa, c5, { dash: "4 3", op: 0.8 }); line(B, fb, c5, { dash: "4 3", op: 0.8 }); line(C, fc, c5, { dash: "4 3", op: 0.8 });
+      // extend sides if feet fall outside (obtuse)
+      line(B, fa, muted, { op: 0.35 }); line(C, fb, muted, { op: 0.35 }); line(A, fc, muted, { op: 0.35 });
+    }
+    if (show.eul && dist(k.O, k.H) > 1) {
+      const dir = sub(k.H, k.O), L = 2000 / Math.hypot(...dir);
+      line(add(k.O, mul(dir, -L)), add(k.O, mul(dir, L)), c4, { w: 1.6, op: 0.85 });
+    }
+  }
+  el("polygon", { points: [A, B, C].map((p) => p.join(",")).join(" "), fill: "none", stroke: text, "stroke-width": 2 });
+  if (!k.degenerate) {
+    if (show.circ) dot(k.O, c1, "O");
+    if (show.inc) dot(k.I, c3, "I");
+    if (show.cen) dot(k.G, c2, "G");
+    if (show.ort) dot(k.H, c5, "H");
+    if (show.nine) dot(k.N, c6, "N");
+  }
+  for (const name of ["A", "B", "C"]) {
+    const p = P[name];
+    const g = el("g", { class: "pt", "data-name": name });
+    el("circle", { cx: p[0], cy: p[1], r: 16, fill: "transparent" }, g);
+    el("circle", { cx: p[0], cy: p[1], r: 7, fill: text }, g);
+    const t = el("text", { x: p[0] + 10, y: p[1] + (name === "A" ? -10 : 20) }, g); t.textContent = name;
+  }
+  stats(k);
+}
+
+function stats(k) {
+  const { A, B, C } = P;
+  const el2 = document.getElementById("stats");
+  if (k.degenerate) { el2.innerHTML = "<b>Degenerate triangle</b>: the points are collinear."; return; }
+  const OG = dist(k.O, k.G), GH = dist(k.G, k.H), OI2 = dist(k.O, k.I) ** 2;
+  const angs = [angle(A, B, C), angle(B, C, A), angle(C, A, B)];
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  el2.innerHTML =
+    row("Angles A, B, C", angs.map((x) => x.toFixed(1) + "°").join(", ")) +
+    row("Circumradius R", (k.R / 50).toFixed(3)) +
+    row("Inradius r", (k.r / 50).toFixed(3)) +
+    row("OG : GH", OG > 0.5 ? "1 : " + (GH / OG).toFixed(3) : "— (O = G)") +
+    row("OI²  vs  R(R − 2r)", (OI2 / 2500).toFixed(3) + "  vs  " + ((k.R * (k.R - 2 * k.r)) / 2500).toFixed(3)) +
+    row("R / r  (≥ 2)", (k.R / k.r).toFixed(3)) +
+    row("|N·midAB| / R,  |N·footA| / R", (dist(k.N, mid(A, B)) / k.R).toFixed(3) + ",  " + (dist(k.N, foot(A, B, C)) / k.R).toFixed(3)) +
+    `<p class="note" style="margin:8px 0 0">Units: 50 px = 1.</p>`;
+}
+
+let drag = null;
+function svgPoint(e) {
+  const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
+  const q = pt.matrixTransform(svg.getScreenCTM().inverse());
+  return [Math.max(10, Math.min(590, q.x)), Math.max(10, Math.min(440, q.y))];
+}
+svg.addEventListener("pointerdown", (e) => {
+  const g = e.target.closest(".pt"); if (!g) return;
+  drag = g.getAttribute("data-name"); svg.setPointerCapture(e.pointerId);
+});
+svg.addEventListener("pointermove", (e) => { if (drag) { P[drag] = svgPoint(e); draw(); } });
+svg.addEventListener("pointerup", () => { drag = null; });
+
+document.querySelectorAll("[data-k]").forEach((cb) => cb.addEventListener("change", () => { show[cb.dataset.k] = cb.checked; draw(); }));
+const presets = {
+  eq: { A: [300, 70], B: [127, 370], C: [473, 370] },
+  right: { A: [140, 90], B: [140, 380], C: [480, 380] },
+  obtuse: { A: [230, 290], B: [80, 380], C: [540, 380] },
+  iso: { A: [300, 60], B: [190, 390], C: [410, 390] },
+};
+document.querySelectorAll("[data-preset]").forEach((b) => b.addEventListener("click", () => { P = JSON.parse(JSON.stringify(presets[b.dataset.preset])); draw(); }));
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+draw();
+</script>
+</body>
+</html>

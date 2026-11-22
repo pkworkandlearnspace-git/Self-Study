@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linear Fit & Uncertainty</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style> svg.plot { aspect-ratio: 1.5 / 1; } svg text { font: 12px system-ui, sans-serif; fill: var(--muted); } textarea { min-height: 200px; font-family: var(--mono); font-size: 14px; } </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Physics Olympiad tools</a></header>
+  <h1>Linear Fit & Uncertainty</h1>
+  <p class="lead">The core skill of the IPhO experimental exam: <b>linearize</b>, fit a straight line, and report the slope and intercept <b>with uncertainties</b> (module 07). Paste your data, pick transforms so theory predicts a line, and read off the result.</p>
+  <div class="grid two">
+    <div>
+      <svg class="plot" id="plot" viewBox="0 0 600 400" aria-label="Data and fit"></svg>
+      <svg class="plot" id="resid" viewBox="0 0 600 160" style="aspect-ratio:3.75/1;margin-top:10px" aria-label="Residuals"></svg>
+      <p class="note">Bottom: residuals. A good fit has residuals scattered randomly around 0. A curve in them means the model is wrong.</p>
+    </div>
+    <div class="controls">
+      <label class="ctl">Data: one point per line, as <code>x  y  [σy]</code> (spaces or commas)
+        <textarea id="data" spellcheck="false"></textarea></label>
+      <div class="row">
+        <label class="ctl">plot X =<select id="tx"><option value="x">x</option><option value="x2">x²</option><option value="sqrt">√x</option><option value="inv">1/x</option><option value="ln">ln x</option></select></label>
+        <label class="ctl">plot Y =<select id="ty"><option value="x">y</option><option value="x2">y²</option><option value="sqrt">√y</option><option value="inv">1/y</option><option value="ln">ln y</option></select></label>
+      </div>
+      <div class="row"><span class="note">Presets:</span><button data-p="pend">Pendulum → g</button><button data-p="decay">Exponential decay</button><button data-p="power">Power law</button></div>
+      <div class="card" id="out"></div>
+      <div class="callout" id="hint"></div>
+    </div>
+  </div>
+  <h2>Formulas used</h2>
+  <div class="card note">
+    Unweighted least squares: Δ = NΣX² − (ΣX)², slope m = (NΣXY − ΣXΣY)/Δ, intercept b = (ΣY − mΣX)/N.
+    The scatter s² = Σ(Y − mX − b)²/(N − 2) gives σ<sub>m</sub> = s√(N/Δ) and σ<sub>b</sub> = s√(ΣX²/Δ).
+    If σy is given for <i>every</i> point, a weighted fit is used with w = 1/σ<sub>Y</sub>² (σ<sub>Y</sub> propagated through the Y transform).
+  </div>
+  <footer class="foot">Part of the Self-Study repo · physics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const presets = {
+  pend: { tx: "x", ty: "x2", data: "# L (m)   T (s)   σT\n0.20 0.90 0.01\n0.30 1.10 0.01\n0.40 1.27 0.01\n0.50 1.42 0.01\n0.60 1.55 0.01\n0.70 1.68 0.01\n0.80 1.79 0.01\n0.90 1.91 0.01\n1.00 2.01 0.01",
+    hint: (m, sm) => `Theory: T² = (4π²/g)·L, so the slope = 4π²/g.<br><b>g = 4π²/m = ${(4 * Math.PI ** 2 / m).toFixed(3)} ± ${(4 * Math.PI ** 2 / m ** 2 * sm).toFixed(3)} m/s²</b> (Δg/g = Δm/m).` },
+  decay: { tx: "x", ty: "ln", data: "# t (s)   counts\n0 1000\n10 740\n20 552\n30 405\n40 301\n50 222\n60 165\n70 122\n80 90",
+    hint: (m, sm) => `Theory: N = N₀e^(−λt), so ln N = ln N₀ − λt and slope = −λ.<br><b>λ = ${(-m).toFixed(4)} ± ${sm.toFixed(4)} s⁻¹, half-life = ln2/λ = ${(Math.LN2 / -m).toFixed(1)} s</b>.` },
+  power: { tx: "ln", ty: "ln", data: "# r   F\n1 9.8\n2 2.6\n3 1.1\n4 0.62\n5 0.40\n6 0.27",
+    hint: (m, sm) => `Theory: F = k·rⁿ, so ln F = ln k + n ln r and slope = n.<br><b>n = ${m.toFixed(3)} ± ${sm.toFixed(3)}</b>. Is it consistent with −2?` },
+};
+let current = "pend";
+const T = {
+  x: { f: (v) => v, d: (v) => 1 }, x2: { f: (v) => v * v, d: (v) => 2 * Math.abs(v) }, sqrt: { f: Math.sqrt, d: (v) => 0.5 / Math.sqrt(v) },
+  inv: { f: (v) => 1 / v, d: (v) => 1 / (v * v) }, ln: { f: Math.log, d: (v) => 1 / Math.abs(v) },
+};
+const label = { x: "", x2: "²", sqrt: "√", inv: "1/", ln: "ln " };
+const NS = "http://www.w3.org/2000/svg";
+function mk(svg, tag, at, txt) { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt != null) e.textContent = txt; svg.appendChild(e); return e; }
+const cssv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+function parse() {
+  return $("data").value.split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#"))
+    .map((l) => l.split(/[\s,;]+/).map(Number)).filter((r) => r.length >= 2 && r.every((v) => isFinite(v)));
+}
+function fit(P) {
+  const allSig = P.every((p) => p[2] > 0);
+  const w = P.map((p) => (allSig ? 1 / (p[2] * p[2]) : 1));
+  const S = w.reduce((a, b) => a + b, 0), Sx = P.reduce((a, p, i) => a + w[i] * p[0], 0), Sy = P.reduce((a, p, i) => a + w[i] * p[1], 0);
+  const Sxx = P.reduce((a, p, i) => a + w[i] * p[0] * p[0], 0), Sxy = P.reduce((a, p, i) => a + w[i] * p[0] * p[1], 0);
+  const D = S * Sxx - Sx * Sx, m = (S * Sxy - Sx * Sy) / D, b = (Sxx * Sy - Sx * Sxy) / D;
+  const N = P.length, res = P.map((p) => p[1] - (m * p[0] + b));
+  let sm, sb;
+  if (allSig) { sm = Math.sqrt(S / D); sb = Math.sqrt(Sxx / D); }
+  else { const s2 = res.reduce((a, r) => a + r * r, 0) / Math.max(1, N - 2); sm = Math.sqrt(s2 * N / D); sb = Math.sqrt(s2 * Sxx / D); }
+  const ym = Sy / S, ssTot = P.reduce((a, p, i) => a + w[i] * (p[1] - ym) ** 2, 0), ssRes = P.reduce((a, p, i) => a + w[i] * res[i] ** 2, 0);
+  const chi2 = allSig ? ssRes / Math.max(1, N - 2) : null;
+  return { m, b, sm, sb, r2: 1 - ssRes / ssTot, res, weighted: allSig, chi2 };
+}
+const fmt = (v, s) => { if (!isFinite(v)) return "—"; if (!(s > 0)) return v.toPrecision(4); const e = Math.floor(Math.log10(s)) - 1; const r = (x) => (Math.round(x / 10 ** e) * 10 ** e).toFixed(Math.max(0, -e)); return `${r(v)} ± ${r(s)}`; };
+
+function update() {
+  const raw = parse(), tx = T[$("tx").value], ty = T[$("ty").value];
+  const P = raw.map((r) => [tx.f(r[0]), ty.f(r[1]), r[2] > 0 ? r[2] * ty.d(r[1]) : 0]).filter((p) => isFinite(p[0]) && isFinite(p[1]));
+  const plot = $("plot"), rs = $("resid"); plot.innerHTML = ""; rs.innerHTML = "";
+  if (P.length < 3) { $("out").innerHTML = "Need at least 3 valid points."; $("hint").innerHTML = ""; return; }
+  const F = fit(P);
+  const xs = P.map((p) => p[0]), ys = P.flatMap((p) => [p[1] - p[2], p[1] + p[2]]);
+  let x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys, F.m * x0 + F.b, F.m * x1 + F.b), y1 = Math.max(...ys, F.m * x0 + F.b, F.m * x1 + F.b);
+  const px = (x1 - x0) * 0.08 || 1, py = (y1 - y0) * 0.1 || 1; x0 -= px; x1 += px; y0 -= py; y1 += py;
+  const L = 56, R = 16, Tp = 14, B = 40, W = 600, H = 400;
+  const X = (x) => L + ((x - x0) / (x1 - x0)) * (W - L - R), Y = (y) => H - B - ((y - y0) / (y1 - y0)) * (H - B - Tp);
+  const border = cssv("--border"), text = cssv("--muted"), c1 = cssv("--c1"), c2 = cssv("--c2");
+  mk(plot, "rect", { x: L, y: Tp, width: W - L - R, height: H - B - Tp, fill: "none", stroke: border });
+  for (let i = 0; i <= 4; i++) {
+    const xv = x0 + ((x1 - x0) * i) / 4, yv = y0 + ((y1 - y0) * i) / 4;
+    mk(plot, "text", { x: X(xv), y: H - B + 16, "text-anchor": "middle" }, +xv.toPrecision(3));
+    mk(plot, "text", { x: L - 6, y: Y(yv) + 4, "text-anchor": "end" }, +yv.toPrecision(3));
+  }
+  mk(plot, "text", { x: (W + L) / 2, y: H - 6, "text-anchor": "middle" }, `X = ${label[$("tx").value]}x`);
+  mk(plot, "text", { x: 14, y: H / 2, transform: `rotate(-90 14 ${H / 2})`, "text-anchor": "middle" }, `Y = ${label[$("ty").value]}y`);
+  mk(plot, "line", { x1: X(x0), y1: Y(F.m * x0 + F.b), x2: X(x1), y2: Y(F.m * x1 + F.b), stroke: c2, "stroke-width": 2 });
+  P.forEach((p) => {
+    if (p[2] > 0) mk(plot, "line", { x1: X(p[0]), x2: X(p[0]), y1: Y(p[1] - p[2]), y2: Y(p[1] + p[2]), stroke: c1, "stroke-width": 1.5 });
+    mk(plot, "circle", { cx: X(p[0]), cy: Y(p[1]), r: 4, fill: c1 });
+  });
+  // residuals
+  const rmax = Math.max(...F.res.map(Math.abs), ...P.map((p) => p[2])) * 1.2 || 1, RH = 160;
+  const RY = (r) => RH / 2 - (r / rmax) * (RH / 2 - 10);
+  mk(rs, "line", { x1: L, x2: W - R, y1: RH / 2, y2: RH / 2, stroke: border });
+  P.forEach((p, i) => {
+    if (p[2] > 0) mk(rs, "line", { x1: X(p[0]), x2: X(p[0]), y1: RY(F.res[i] - p[2]), y2: RY(F.res[i] + p[2]), stroke: c1 });
+    mk(rs, "circle", { cx: X(p[0]), cy: RY(F.res[i]), r: 3.5, fill: c1 });
+  });
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  $("out").innerHTML = row("Points used", P.length) + row("Fit type", F.weighted ? "weighted (σy given)" : "unweighted") +
+    row("Slope m", fmt(F.m, F.sm)) + row("Intercept b", fmt(F.b, F.sb)) + row("R²", F.r2.toFixed(5)) +
+    (F.chi2 != null ? row("χ²/dof", F.chi2.toFixed(2) + (F.chi2 > 3 ? " (errors underestimated?)" : F.chi2 < 0.3 ? " (errors overestimated?)" : " ✓")) : "");
+  $("hint").innerHTML = presets[current] && presets[current].tx === $("tx").value && presets[current].ty === $("ty").value ? presets[current].hint(F.m, F.sm) : "Choose transforms so that your theory predicts Y = mX + b, then interpret m and b physically.";
+}
+function load(k) { current = k; const p = presets[k]; $("data").value = p.data; $("tx").value = p.tx; $("ty").value = p.ty; update(); }
+document.querySelectorAll("[data-p]").forEach((b) => b.addEventListener("click", () => load(b.dataset.p)));
+["data", "tx", "ty"].forEach((id) => $(id).addEventListener("input", update));
+load("pend");
+</script>
+</body>
+</html>
