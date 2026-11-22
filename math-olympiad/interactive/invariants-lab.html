@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Invariant &amp; Pigeonhole Lab</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .nums { display: flex; flex-wrap: wrap; gap: 8px; min-height: 52px; }
+  .nums button { min-width: 48px; font-family: var(--mono); font-size: 18px; padding: 8px 10px; }
+  .nums button.sel { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 6px 0 14px; }
+  section.panel { display: none; }
+  section.panel.on { display: block; }
+  svg.plot { max-width: 460px; margin: 0 auto; aspect-ratio: 1 / 1; }
+  svg text { font: 12px system-ui, sans-serif; fill: var(--muted); }
+  .board { display: grid; gap: 0; max-width: 420px; margin: 0 auto; border: 2px solid var(--border); border-radius: 6px; overflow: hidden; touch-action: manipulation; }
+  .board div { aspect-ratio: 1 / 1; position: relative; cursor: pointer; }
+  .board div.dark { background: color-mix(in srgb, var(--text) 55%, var(--surface)); }
+  .board div.light { background: var(--surface-2); }
+  .board div.gone { background: repeating-linear-gradient(45deg, var(--bg), var(--bg) 4px, var(--border) 4px, var(--border) 6px); cursor: default; }
+  .board div.cov::after { content: ""; position: absolute; inset: 3px; border-radius: 4px; background: var(--c2); opacity: .9; }
+  .board div.pick { outline: 3px solid var(--accent); outline-offset: -3px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Math Olympiad tools</a><span class="note">Module 01 · Problem solving</span></header>
+  <h1>Invariant &amp; Pigeonhole Lab</h1>
+  <p class="lead">Three classic problems you can play with. In each, try to reach the goal first, then watch the quantity in the side panel. When the goal is impossible, that quantity is the proof.</p>
+
+  <div class="tabs" role="tablist">
+    <button class="active" data-p="erase">1 · Erase &amp; replace</button>
+    <button data-p="pig">2 · Points in a square</button>
+    <button data-p="domino">3 · Mutilated chessboard</button>
+  </div>
+
+  <!-- 1. Erase and replace -->
+  <section class="panel on" id="p-erase">
+    <div class="grid two">
+      <div class="card">
+        <p style="margin-top:0">Click two numbers. They are replaced by <b id="ruleName">|a − b|</b>. Keep going until one number is left. <b>Goal: finish with 0.</b></p>
+        <div class="nums" id="nums"></div>
+        <p class="note" id="eraseMsg" style="margin-bottom:0"></p>
+      </div>
+      <div class="controls">
+        <label class="ctl">Start with 1, 2, …, N. N = <span class="val" id="Nv"></span><input type="range" id="N" min="2" max="14" value="10"></label>
+        <label class="ctl">Rule
+          <select id="rule">
+            <option value="diff">a, b → |a − b|</option>
+            <option value="sum">a, b → a + b</option>
+            <option value="ab1">a, b → a + b + ab</option>
+          </select>
+        </label>
+        <div class="card" id="eraseStats"></div>
+        <div class="row"><button id="eraseReset">Restart</button><button id="eraseUndo">Undo</button></div>
+        <div class="callout" id="eraseHint"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Pigeonhole -->
+  <section class="panel" id="p-pig">
+    <div class="grid two">
+      <div class="card">
+        <svg class="plot" id="sq" viewBox="-20 -20 440 440" aria-label="Unit square with draggable points"></svg>
+        <p class="note" style="text-align:center;margin-bottom:0">Drag the points. Try to keep <b>every pair</b> farther apart than the dashed limit.</p>
+      </div>
+      <div class="controls">
+        <label class="ctl">Grid k × k = <span class="val" id="kv"></span> boxes, so k² + 1 = <span class="val" id="np"></span> points<input type="range" id="k" min="1" max="4" value="2"></label>
+        <label style="display:flex;gap:8px;align-items:center;font-size:14px"><input type="checkbox" id="showBoxes" checked> Show the boxes (the proof)</label>
+        <div class="card" id="pigStats"></div>
+        <div class="row"><button id="spread">Spread them out</button><button id="randomize">Random</button></div>
+        <div class="callout">Split the unit square into k² boxes of side 1/k. With k² + 1 points, some box holds two of them, and two points in one box are at most the box's diagonal √2/k apart.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. Dominoes -->
+  <section class="panel" id="p-domino">
+    <div class="grid two">
+      <div class="card">
+        <div class="board" id="board"></div>
+        <p class="note" style="text-align:center;margin-bottom:0">Click a square, then a neighbouring square, to place a domino. Click a domino to remove it.</p>
+      </div>
+      <div class="controls">
+        <label class="ctl">Board
+          <select id="variant">
+            <option value="opp">8×8, opposite corners removed</option>
+            <option value="adj">8×8, two adjacent corners removed</option>
+            <option value="two">8×8, one dark + one light square removed (random)</option>
+          </select>
+        </label>
+        <div class="card" id="domStats"></div>
+        <div class="row"><button id="domReset">Clear dominoes</button></div>
+        <div class="callout" id="domHint"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">Part of the Self-Study repo · math-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const cv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+
+/* tabs */
+document.querySelectorAll(".tabs button").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("active", x === b));
+  document.querySelectorAll("section.panel").forEach((s) => s.classList.toggle("on", s.id === "p-" + b.dataset.p));
+  if (b.dataset.p === "pig") drawSq();
+}));
+
+/* ---------- 1. erase & replace ---------- */
+const RULES = {
+  diff: { name: "|a − b|", f: (a, b) => Math.abs(a - b), inv: (xs) => ({ label: "sum mod 2", v: xs.reduce((s, x) => s + x, 0) % 2 }),
+    hint: (v0) => `|a − b| ≡ a + b (mod 2), so the <b>parity of the sum</b> never changes. It started ${v0 ? "odd" : "even"}, so the last number is ${v0 ? "odd: 0 is impossible" : "even: 0 may be reachable, try it"}.` },
+  sum: { name: "a + b", f: (a, b) => a + b, inv: (xs) => ({ label: "sum", v: xs.reduce((s, x) => s + x, 0) }),
+    hint: (v0) => `The sum itself is invariant, so the last number is always ${v0}. 0 is impossible.` },
+  ab1: { name: "a + b + ab", f: (a, b) => a + b + a * b, inv: (xs) => ({ label: "∏(x + 1)", v: xs.reduce((s, x) => s * (x + 1), 1) }),
+    hint: (v0) => `a + b + ab + 1 = (a + 1)(b + 1), so the product of (x + 1) is invariant. The last number is always ${v0} − 1 = ${v0 - 1}, whatever order you choose.` },
+};
+let xs = [], hist = [], selIdx = null, inv0 = null;
+function eraseReset() {
+  const N = +$("N").value; $("Nv").textContent = N;
+  xs = Array.from({ length: N }, (_, i) => i + 1); hist = []; selIdx = null;
+  const r = RULES[$("rule").value]; $("ruleName").textContent = r.name;
+  inv0 = r.inv(xs).v; eraseDraw();
+}
+function eraseDraw() {
+  const r = RULES[$("rule").value];
+  $("nums").innerHTML = "";
+  xs.forEach((x, i) => {
+    const b = document.createElement("button"); b.textContent = x;
+    if (i === selIdx) b.classList.add("sel");
+    b.addEventListener("click", () => {
+      if (selIdx === null) { selIdx = i; eraseDraw(); return; }
+      if (selIdx === i) { selIdx = null; eraseDraw(); return; }
+      hist.push(xs.slice());
+      const a = xs[selIdx], c = xs[i], y = r.f(a, c);
+      xs = xs.filter((_, k) => k !== selIdx && k !== i); xs.push(y); selIdx = null; eraseDraw();
+    });
+    $("nums").appendChild(b);
+  });
+  const iv = r.inv(xs);
+  $("eraseStats").innerHTML = row("numbers left", xs.length) + row("moves made", hist.length) + row(iv.label + " now", iv.v) + row(iv.label + " at start", inv0);
+  $("eraseMsg").innerHTML = xs.length === 1 ? (xs[0] === 0 ? `<b class="good">You reached 0!</b>` : `<b>Finished with ${xs[0]}.</b> Restart and try a different order.`) : "";
+  $("eraseHint").innerHTML = hist.length >= 2 || xs.length === 1 ? r.hint(inv0) : "Play a few moves first. Is anything staying the same?";
+}
+$("N").addEventListener("input", eraseReset); $("rule").addEventListener("change", eraseReset);
+$("eraseReset").addEventListener("click", eraseReset);
+$("eraseUndo").addEventListener("click", () => { if (hist.length) { xs = hist.pop(); selIdx = null; eraseDraw(); } });
+eraseReset();
+
+/* ---------- 2. pigeonhole in the unit square ---------- */
+const S = 400; let pts = [], drag = null;
+function kval() { return +$("k").value; }
+function randomPts() { const n = kval() ** 2 + 1; pts = Array.from({ length: n }, () => [Math.random(), Math.random()]); }
+function spreadPts() {
+  // a good-but-not-perfect spread: a (k+1)×(k+1) grid has too many points, so take the k×k box corners + centre trick
+  const k = kval(), n = k * k + 1, g = [];
+  if (k === 2) { pts = [[0, 0], [1, 0], [0, 1], [1, 1], [0.5, 0.5]]; return; } // tight case: distance exactly √2/2
+  const m = Math.ceil(Math.sqrt(n));
+  for (let i = 0; i < m && g.length < n; i++) for (let j = 0; j < m && g.length < n; j++) g.push([m === 1 ? 0.5 : i / (m - 1), m === 1 ? 0.5 : j / (m - 1)]);
+  pts = g;
+}
+function minPair() {
+  let best = [Infinity, -1, -1];
+  for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+    const d = Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]); if (d < best[0]) best = [d, i, j];
+  }
+  return best;
+}
+function drawSq() {
+  const k = kval(), svg = $("sq"); svg.innerHTML = "";
+  $("kv").textContent = k * k; $("np").textContent = k * k + 1;
+  const mk = (tag, at, txt) => { const e = document.createElementNS(NS, tag); for (const a in at) e.setAttribute(a, at[a]); if (txt) e.textContent = txt; svg.appendChild(e); return e; };
+  mk("rect", { x: 0, y: 0, width: S, height: S, fill: "none", stroke: cv("--text"), "stroke-width": 2 });
+  const lim = Math.SQRT2 / k;
+  // which boxes are crowded
+  const boxOf = (p) => [Math.min(k - 1, Math.floor(p[0] * k)), Math.min(k - 1, Math.floor(p[1] * k))];
+  const cnt = {}; pts.forEach((p) => { const b = boxOf(p).join(","); cnt[b] = (cnt[b] || 0) + 1; });
+  if ($("showBoxes").checked) {
+    for (let i = 0; i < k; i++) for (let j = 0; j < k; j++) {
+      const c = cnt[i + "," + j] || 0;
+      mk("rect", { x: (i * S) / k, y: (j * S) / k, width: S / k, height: S / k, fill: c >= 2 ? cv("--accent-soft") : "none", stroke: cv("--border"), "stroke-dasharray": "4 4" });
+      if (c >= 2) mk("line", { x1: (i * S) / k, y1: (j * S) / k, x2: ((i + 1) * S) / k, y2: ((j + 1) * S) / k, stroke: cv("--accent"), "stroke-dasharray": "6 4", opacity: 0.7 });
+    }
+  }
+  const [d, a, b] = minPair();
+  if (a >= 0) mk("line", { x1: pts[a][0] * S, y1: pts[a][1] * S, x2: pts[b][0] * S, y2: pts[b][1] * S, stroke: d <= lim + 1e-9 ? cv("--bad") : cv("--good"), "stroke-width": 3 });
+  pts.forEach((p, i) => {
+    const c = mk("circle", { cx: p[0] * S, cy: p[1] * S, r: 11, fill: i === a || i === b ? cv("--c2") : cv("--accent"), stroke: cv("--surface"), "stroke-width": 2, style: "cursor:grab" });
+    c.addEventListener("pointerdown", (e) => { drag = i; svg.setPointerCapture(e.pointerId); });
+  });
+  mk("text", { x: 0, y: S + 16 }, "0"); mk("text", { x: S - 8, y: S + 16 }, "1");
+  $("pigStats").innerHTML = row("closest pair distance", d.toFixed(4)) + row("limit √2 / k", lim.toFixed(4)) +
+    row("closest pair ≤ limit?", d <= lim + 1e-9 ? `<span class="bad">yes (always!)</span>` : `<span class="good">no?!</span>`) +
+    row("boxes with ≥ 2 points", Object.values(cnt).filter((c) => c >= 2).length);
+}
+$("sq").addEventListener("pointermove", (e) => {
+  if (drag === null) return;
+  const r = $("sq").getBoundingClientRect(), sc = 440 / r.width;
+  const x = ((e.clientX - r.left) * sc - 20) / S, y = ((e.clientY - r.top) * sc - 20) / S;
+  pts[drag] = [Math.max(0, Math.min(1, x)), Math.max(0, Math.min(1, y))]; drawSq();
+});
+["pointerup", "pointercancel"].forEach((ev) => $("sq").addEventListener(ev, () => (drag = null)));
+$("k").addEventListener("input", () => { randomPts(); drawSq(); });
+$("showBoxes").addEventListener("change", drawSq);
+$("spread").addEventListener("click", () => { spreadPts(); drawSq(); });
+$("randomize").addEventListener("click", () => { randomPts(); drawSq(); });
+randomPts(); drawSq();
+
+/* ---------- 3. mutilated chessboard ---------- */
+const n = 8; let gone = new Set(), cover = new Map(), pick = null, nextId = 1;
+const dark = (r, c) => (r + c) % 2 === 1;
+function domReset(newBoard) {
+  cover = new Map(); pick = null;
+  if (newBoard) {
+    const v = $("variant").value;
+    if (v === "opp") gone = new Set(["0,0", "7,7"]);
+    else if (v === "adj") gone = new Set(["0,0", "0,7"]);
+    else {
+      const all = []; for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) all.push([r, c]);
+      const d = all.filter(([r, c]) => dark(r, c)), l = all.filter(([r, c]) => !dark(r, c));
+      const a = d[Math.floor(Math.random() * d.length)], b = l[Math.floor(Math.random() * l.length)];
+      gone = new Set([a.join(","), b.join(",")]);
+    }
+  }
+  domDraw();
+}
+function domDraw() {
+  const B = $("board"); B.style.gridTemplateColumns = `repeat(${n}, 1fr)`; B.innerHTML = "";
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) {
+    const key = r + "," + c, el = document.createElement("div");
+    el.className = gone.has(key) ? "gone" : (dark(r, c) ? "dark" : "light") + (cover.has(key) ? " cov" : "") + (pick === key ? " pick" : "");
+    el.title = dark(r, c) ? "dark" : "light";
+    el.addEventListener("click", () => clickCell(r, c));
+    B.appendChild(el);
+  }
+  let freeD = 0, freeL = 0;
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) { const k = r + "," + c; if (gone.has(k) || cover.has(k)) continue; dark(r, c) ? freeD++ : freeL++; }
+  const dominoes = cover.size / 2;
+  $("domStats").innerHTML = row("dominoes placed", dominoes) + row("uncovered dark", freeD) + row("uncovered light", freeL) + row("dark − light (invariant!)", freeD - freeL);
+  const v = $("variant").value;
+  $("domHint").innerHTML = freeD + freeL === 0 ? `<b class="good">Tiled!</b> Gomory's theorem: removing one dark and one light square <i>always</i> leaves a tileable board.`
+    : v === "opp" ? "Every domino covers one dark and one light square, so <b>dark − light never changes</b>. It is not 0 here, so you can never finish."
+    : v === "adj" ? "Adjacent corners have different colours, so dark − light = 0: the colouring doesn't forbid it. Can you finish?"
+    : "One dark and one light square are gone, so the colour count is balanced. (Gomory: it's always tileable.)";
+}
+function clickCell(r, c) {
+  const key = r + "," + c;
+  if (gone.has(key)) return;
+  if (cover.has(key)) { const id = cover.get(key); for (const [k, v] of [...cover]) if (v === id) cover.delete(k); pick = null; domDraw(); return; }
+  if (pick === null) { pick = key; domDraw(); return; }
+  const [pr, pc] = pick.split(",").map(Number);
+  if (Math.abs(pr - r) + Math.abs(pc - c) === 1) { const id = nextId++; cover.set(pick, id); cover.set(key, id); pick = null; }
+  else pick = key;
+  domDraw();
+}
+$("variant").addEventListener("change", () => domReset(true));
+$("domReset").addEventListener("click", () => domReset(false));
+domReset(true);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", drawSq);
+</script>
+</body>
+</html>
