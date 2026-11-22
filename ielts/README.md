@@ -28,10 +28,16 @@ Raw-score conversions vary slightly between tests, so treat the numbers above as
 Writing and Speaking are where most strong students lose marks. **Give them ~60% of your time.**
 
 ## Interactive tools → [`interactive/`](interactive/index.html)
-- **Band calculator:** raw Listening/Reading scores → bands, and overall band rounding.
-- **Writing practice:** timed Task 1/Task 2 with a live word count, a prompt bank, and a band-7 self-check.
-- **Speaking practice:** random Part 1/2/3 questions, a 1-min prep + 2-min talk timer, and recording yourself (if your browser allows the microphone).
-- **Flashcards:** academic collocations, linking language, Task 1 trend vocabulary.
+| Module | Tool | What it trains |
+|---|---|---|
+| 01 | [Band calculator](interactive/band-calculator.html) | raw → band, rounding visualizer + drill, per-skill minimums |
+| 02 | [Listening drills](interactive/listening-drills.html) | numbers & spelling dictation, distractors, word limits |
+| 03 | [Reading lab](interactive/reading-lab.html) | T/F/NG, Y/N/NG, matching headings, with the evidence highlighted |
+| 04 | [Task 1 trend lab](interactive/task1-trend-lab.html) | drag a chart → trend language; spot valid overviews |
+| 05 | [Essay builder](interactive/essay-builder.html) | essay type, thesis that answers every part, paragraph order |
+| 04–05 | [Writing practice](interactive/writing-practice.html) | timed Task 1/Task 2, word count, band-7 self-check |
+| 06 | [Speaking practice](interactive/speaking-practice.html) · [Answer upgrader](interactive/answer-upgrader.html) | timed Parts 1–3 with recording and a Part 2 stage guide · spotting/building band-7 answers |
+| 07 | [Grammar error hunter](interactive/error-hunter.html) · [Flashcards](interactive/flashcards.html) | band-6 errors by category · collocations, rules, spaced repetition |
 
 ## 10-week plan
 | Weeks | Focus |

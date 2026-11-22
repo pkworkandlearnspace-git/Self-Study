@@ -10,13 +10,17 @@
 ## Target
 Overall **7.0–7.5**, no skill below **6.5** (check your universities' exact requirements).
 
+| University | Overall needed | Per-skill minimum | Accepts One Skill Retake? |
+|---|---|---|---|
+| | | | |
+
 ## Mock test log
 | Date | Source | L raw → band | R raw → band | W (est.) | S (est.) | Overall | Weakest |
 |---|---|---|---|---|---|---|---|
 | | diagnostic | | | | | | |
 
 ## Error log (Listening/Reading)
-| Date | Skill | Question type | Cause (spelling / distractor / paraphrase / time / vocab) |
+| Date | Skill | Question type | Cause (spelling / word limit / distractor / paraphrase / qualifier / time / vocab) |
 |---|---|---|---|
 | | | | |
 
