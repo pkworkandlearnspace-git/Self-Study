@@ -31,8 +31,8 @@ Order: 01 → 02 → (03 & 04 interleaved) → 05 → 06 → 07. Start doing **v
 - **Binary search on the answer:** step through lo/hi/mid with the greedy check drawn for each guess.
 - **Constraints → algorithm quiz:** 28 auto-graded questions with explanations.
 - **Graph search visualizer:** draw walls/weights on a grid. Step through BFS, DFS, Dijkstra, and A*.
+- **LCA by binary lifting:** pick two nodes and watch both phases of the jump-table walk.
 - **Segment tree visualizer:** watch the build, point update, and range query visit exactly O(log n) nodes.
-- **Fenwick tree & union-find visualizers:** lowbit ranges and query/update paths; a DSU forest with the optimizations toggled on and off.
 - **Fenwick tree & union-find visualizers:** lowbit ranges and query/update paths; a DSU forest with the optimizations toggled on and off.
 - **DP table animator:** LCS, edit distance, 0/1 knapsack filled cell by cell, with traceback.
 - **Flashcards:** complexities, patterns, and "constraints → algorithm" recall.

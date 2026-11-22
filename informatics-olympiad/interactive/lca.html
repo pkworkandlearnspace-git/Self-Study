@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LCA Binary Lifting</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg.plot { aspect-ratio: 1.6 / 1; }
+  svg text { font: 14px var(--mono); }
+  svg .nd { cursor: pointer; }
+  .uptab td, .uptab th { font-family: var(--mono); text-align: center; padding: 3px 6px; white-space: nowrap; }
+  .uptab td.hl { background: var(--accent-soft); color: var(--accent); font-weight: 700; }
+  .phase { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Informatics Olympiad tools</a></header>
+  <h1>LCA by Binary Lifting</h1>
+  <p class="lead"><code>up[j][v]</code> is the 2<sup>j</sup>-th ancestor of v. Tap a node to set <b>u</b> and another to set <b>v</b>, then step through the two phases: <b>(1)</b> lift the deeper one to the same depth, <b>(2)</b> jump both while their ancestors differ (module 04).</p>
+  <div class="grid two">
+    <div>
+      <svg class="plot" id="svg" viewBox="0 0 900 560" aria-label="Rooted tree"></svg>
+      <div class="legend" style="margin-top:8px"><span><i style="background:var(--c1)"></i>u</span><span><i style="background:var(--c2)"></i>v</span><span><i style="background:var(--c3)"></i>LCA</span><span><i style="background:var(--warn)"></i>last jump</span></div>
+    </div>
+    <div class="controls">
+      <div class="row">
+        <button class="primary" id="step">Step ▶</button>
+        <button id="run">Run to end</button>
+        <button id="restart">Restart query</button>
+        <button id="newtree">New tree</button>
+      </div>
+      <label class="ctl">Tree size: <span class="val" id="nv">22</span><input type="range" id="n" min="6" max="40" value="22"></label>
+      <div class="card"><div class="phase" id="phase"></div><div id="msg" style="margin-top:4px"></div></div>
+      <div class="card scroll-x"><b style="font-size:14px">Jump table row for the current u / v</b><table class="t uptab" id="tab"></table></div>
+    </div>
+  </div>
+  <pre class="card mono scroll-x" style="margin-top:14px;font-size:13px">if (dep[u] &lt; dep[v]) swap(u, v);
+for (j = LOG-1; j >= 0; j--) if (dep[u] - (1&lt;&lt;j) >= dep[v]) u = up[j][u];      // phase 1
+if (u == v) return u;
+for (j = LOG-1; j >= 0; j--) if (up[j][u] != up[j][v]) u = up[j][u], v = up[j][v];  // phase 2
+return up[0][u];</pre>
+  <footer class="foot">Part of the Self-Study repo · informatics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const cssv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const NS = "http://www.w3.org/2000/svg";
+const LOG = 6;
+let n, par, dep, up, kids, pos, U0, V0, cu, cv, j, phase, lastJump, ans, msg, pickNext;
+
+function newTree() {
+  n = +$("n").value; $("nv").textContent = n;
+  par = [0]; dep = [0];
+  // bias towards deep trees so lifting is interesting
+  for (let i = 1; i < n; i++) { const lo = Math.max(0, i - 4); const p = lo + Math.floor(Math.random() * (i - lo)); par.push(p); dep.push(dep[p] + 1); }
+  up = Array.from({ length: LOG }, () => Array(n).fill(0));
+  for (let v = 0; v < n; v++) up[0][v] = par[v];
+  for (let k = 1; k < LOG; k++) for (let v = 0; v < n; v++) up[k][v] = up[k - 1][up[k - 1][v]];
+  kids = Array.from({ length: n }, () => []); for (let v = 1; v < n; v++) kids[par[v]].push(v);
+  layout();
+  // default query: two deep vertices in different branches
+  const byDepth = [...Array(n).keys()].sort((a, b) => dep[b] - dep[a]);
+  U0 = byDepth[0]; V0 = byDepth.filter((x) => x !== U0).sort((a, b) => dep[naiveLca(U0, a)] - dep[naiveLca(U0, b)] || dep[b] - dep[a])[0] ?? 0;
+  pickNext = "u"; restart();
+}
+function naiveLca(a, b) { const s = new Set(); for (let x = a; ; x = par[x]) { s.add(x); if (!x) break; } let y = b; while (!s.has(y)) y = par[y]; return y; }
+function layout() {
+  pos = {}; let cursor = 0; const maxD = Math.max(...dep);
+  const place = (v) => { if (!kids[v].length) { pos[v] = [cursor++, dep[v]]; return; } kids[v].forEach(place); const xs = kids[v].map((c) => pos[c][0]); pos[v] = [(Math.min(...xs) + Math.max(...xs)) / 2, dep[v]]; };
+  place(0);
+  const W = 900, H = 560, sx = (W - 60) / Math.max(1, cursor - 1), sy = (H - 70) / Math.max(1, maxD);
+  for (const v in pos) pos[v] = [30 + pos[v][0] * sx, 34 + pos[v][1] * sy];
+}
+function restart() {
+  cu = U0; cv = V0; lastJump = null; ans = null;
+  if (dep[cu] < dep[cv]) { [cu, cv] = [cv, cu]; msg = `Swap so that u is the deeper one (depth ${dep[cu]} ≥ ${dep[cv]}).`; } else msg = `u = ${cu} (depth ${dep[cu]}), v = ${cv} (depth ${dep[cv]}). Difference = ${dep[cu] - dep[cv]} = ${(dep[cu] - dep[cv]).toString(2)}₂.`;
+  phase = 1; j = LOG - 1; draw();
+}
+function step() {
+  if (phase === 3) return;
+  if (phase === 1) {
+    while (j >= 0 && !(dep[cu] - (1 << j) >= dep[cv])) j--;
+    if (j >= 0) { lastJump = [cu, up[j][cu]]; msg = `Phase 1, j = ${j}: dep[u] − 2^${j} = ${dep[cu] - (1 << j)} ≥ ${dep[cv]}, so u jumps ${1 << j} levels: ${cu} → ${up[j][cu]}.`; cu = up[j][cu]; j--; draw(); return; }
+    if (cu === cv) { ans = cu; phase = 3; lastJump = null; msg = `Same depth and u = v, so v was an ancestor of u. LCA = ${ans}.`; draw(); return; }
+    phase = 2; j = LOG - 1; lastJump = null; msg = `Same depth now (${dep[cu]}), but u ≠ v. Phase 2: jump both while their 2^j-th ancestors differ.`; draw(); return;
+  }
+  if (phase === 2) {
+    while (j >= 0 && up[j][cu] === up[j][cv]) j--;
+    if (j >= 0) { lastJump = [cu, up[j][cu], cv, up[j][cv]]; msg = `j = ${j}: up[${j}][${cu}] = ${up[j][cu]} ≠ up[${j}][${cv}] = ${up[j][cv]}, so both jump ${1 << j} levels.`; cu = up[j][cu]; cv = up[j][cv]; j--; draw(); return; }
+    ans = up[0][cu]; phase = 3; lastJump = null;
+    msg = `No more j with different ancestors, so u and v are children of the LCA. LCA = up[0][${cu}] = ${ans}. ${ans === naiveLca(U0, V0) ? "✓" : "✗"}`; draw();
+  }
+}
+function draw() {
+  const svg = $("svg"); svg.innerHTML = "";
+  const mk = (tag, at, txt, parent = svg) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt != null) e.textContent = txt; parent.appendChild(e); return e; };
+  for (let v = 1; v < n; v++) mk("line", { x1: pos[v][0], y1: pos[v][1], x2: pos[par[v]][0], y2: pos[par[v]][1], stroke: cssv("--border"), "stroke-width": 2 });
+  if (lastJump) for (let k = 0; k < lastJump.length; k += 2) {
+    const [a, b] = [pos[lastJump[k]], pos[lastJump[k + 1]]]; const mx = (a[0] + b[0]) / 2 + 40, my = (a[1] + b[1]) / 2;
+    mk("path", { d: `M${a[0]},${a[1]} Q${mx},${my} ${b[0]},${b[1]}`, fill: "none", stroke: cssv("--warn"), "stroke-width": 4, "stroke-dasharray": "8 5" });
+  }
+  const R = Math.max(11, Math.min(17, 340 / n + 6));
+  for (let v = 0; v < n; v++) {
+    let fill = cssv("--surface"), txt = cssv("--text");
+    if (v === ans) fill = cssv("--c3");
+    else if (v === cu) fill = cssv("--c1");
+    else if (v === cv) fill = cssv("--c2");
+    if (fill !== cssv("--surface")) txt = "#fff";
+    const g = mk("g", { class: "nd", tabindex: 0, role: "button", "aria-label": "node " + v });
+    mk("circle", { cx: pos[v][0], cy: pos[v][1], r: R, fill, stroke: v === U0 || v === V0 ? cssv("--text") : cssv("--border"), "stroke-width": v === U0 || v === V0 ? 2.5 : 1.5 }, null, g);
+    mk("text", { x: pos[v][0], y: pos[v][1] + 5, "text-anchor": "middle", style: `fill:${txt};font-weight:700;font-size:${R > 14 ? 14 : 11}px` }, v, g);
+    const pick = () => { if (pickNext === "u") { U0 = v; pickNext = "v"; } else { V0 = v; pickNext = "u"; } restart(); };
+    g.addEventListener("click", pick); g.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+  }
+  for (let d = 0; d <= Math.max(...dep); d++) { const y = 34 + d * ((560 - 70) / Math.max(1, Math.max(...dep))); mk("text", { x: 4, y: y + 4, style: `fill:${cssv("--muted")};font-size:11px` }, "d" + d); }
+  $("phase").textContent = phase === 3 ? "Done" : phase === 1 ? "Phase 1 · equalize depths" : "Phase 2 · jump both";
+  $("msg").textContent = msg + (phase !== 3 ? `  (Tap nodes to choose a new query; next tap sets ${pickNext}.)` : "");
+  const row = (x, label) => `<tr><th>${label} = ${x}</th>${[...Array(LOG).keys()].map((k) => `<td class="${phase !== 3 && k === j + 1 && lastJump ? "hl" : ""}">${(1 << k) > dep[x] ? "·" : up[k][x]}</td>`).join("")}</tr>`;
+  $("tab").innerHTML = `<tr><th></th>${[...Array(LOG).keys()].map((k) => `<th>2^${k}</th>`).join("")}</tr>` + row(cu, "u") + row(cv, "v") + `<tr><td colspan="${LOG + 1}" class="note" style="text-align:left">· = jump past the root (the code returns the root there)</td></tr>`;
+  $("step").disabled = phase === 3;
+}
+$("step").addEventListener("click", step);
+$("run").addEventListener("click", () => { let g = 0; while (phase !== 3 && g++ < 50) step(); });
+$("restart").addEventListener("click", restart);
+$("newtree").addEventListener("click", newTree);
+$("n").addEventListener("input", newTree);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+newTree();
+</script>
+</body>
+</html>
