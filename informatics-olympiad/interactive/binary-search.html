@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Binary Search on the Answer</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg.plot { aspect-ratio: 3 / 1; }
+  svg.line { aspect-ratio: 8 / 1; }
+  svg text { font: 15px var(--mono); fill: var(--text); }
+  .log { font: 13px/1.5 var(--mono); max-height: 220px; overflow-y: auto; margin: 0; padding-left: 30px; }
+  .log li.cur { font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Informatics Olympiad tools</a></header>
+  <h1>Binary Search on the Answer</h1>
+  <p class="lead">Split the array into <b>k</b> contiguous parts so that the <b>largest part sum</b> is as small as possible (module 02, worked example 1). Each step guesses a limit x and runs the greedy O(n) check. Its result tells us which half of the range to throw away.</p>
+
+  <div class="grid two">
+    <div>
+      <svg class="plot" id="bars" viewBox="0 0 900 300" aria-label="Array split into parts by the greedy check"></svg>
+      <div class="note" style="margin:6px 0 10px" id="caption"></div>
+      <svg class="plot line" id="line" viewBox="0 0 900 112" aria-label="Search range for the answer"></svg>
+      <div class="legend" style="margin-top:8px"><span><i style="background:var(--bad)"></i>lo: known infeasible</span><span><i style="background:var(--good)"></i>hi: known feasible</span><span><i style="background:var(--accent)"></i>mid: the guess being checked</span></div>
+    </div>
+    <div class="controls">
+      <label class="ctl">Array (comma-separated positive integers)<input type="text" id="arr" value="7, 2, 5, 10, 8, 3, 9, 4" style="width:100%"></label>
+      <label class="ctl">k parts: <span class="val" id="kv">3</span><input type="range" id="k" min="1" max="8" value="3"></label>
+      <div class="row">
+        <button class="primary" id="step">Step ▶</button>
+        <button id="run">Run to end</button>
+        <button id="reset">Reset</button>
+        <button id="rand">Random array</button>
+      </div>
+      <div class="card" id="stats"></div>
+      <div class="card"><b style="font-size:14px">Log</b><ol class="log" id="log"></ol></div>
+    </div>
+  </div>
+
+  <h2>The code being animated</h2>
+  <pre class="card mono scroll-x" style="font-size:13px">bool ok(ll x) {                        // can we use ≤ k parts, each sum ≤ x?
+  int parts = 1; ll cur = 0;
+  for (ll v : a) {
+    if (v > x) return false;           // one element alone is too big
+    if (cur + v > x) { parts++; cur = 0; }   // greedy: start a new part
+    cur += v;
+  }
+  return parts &lt;= k;
+}
+ll lo = max(a) - 1, hi = sum(a);       // ok(lo) = false, ok(hi) = true
+while (hi - lo > 1) { ll m = lo + (hi - lo) / 2; (ok(m) ? hi : lo) = m; }
+// answer = hi</pre>
+  <div class="callout" style="margin-top:12px">Why it works: if a limit x is feasible, every larger limit is feasible too. The predicate looks like <code>F F F … F T T T</code>, and binary search finds the first <code>T</code> in ⌈log₂(range)⌉ checks.</div>
+  <footer class="foot">Part of the Self-Study repo · informatics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const cssv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const NS = "http://www.w3.org/2000/svg";
+let a = [], k = 3, lo, hi, lo0, hi0, mid = null, lastSplit = null, lastOk = null, steps = 0, done = false, history = [];
+
+function greedy(x) {
+  const parts = []; let cur = [], sum = 0;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] > x) return { ok: false, parts: null, bad: i };
+    if (sum + a[i] > x) { parts.push(cur); cur = []; sum = 0; }
+    cur.push(i); sum += a[i];
+  }
+  parts.push(cur);
+  return { ok: parts.length <= k, parts };
+}
+function parse() {
+  const v = $("arr").value.split(/[\s,]+/).map(Number).filter((x) => Number.isFinite(x) && x > 0).map(Math.floor).slice(0, 24);
+  a = v.length ? v : [1];
+  $("k").max = a.length; if (+$("k").value > a.length) $("k").value = a.length;
+  k = +$("k").value; $("kv").textContent = k;
+}
+function reset() {
+  parse();
+  lo = lo0 = Math.max(...a) - 1; hi = hi0 = a.reduce((s, x) => s + x, 0);
+  mid = null; lastSplit = null; lastOk = null; steps = 0; done = hi - lo <= 1; history = [];
+  draw();
+}
+function step() {
+  if (done) return;
+  mid = lo + Math.floor((hi - lo) / 2);
+  const g = greedy(mid); lastSplit = g; lastOk = g.ok; steps++;
+  const parts = g.parts ? g.parts.length : "–";
+  history.push(`x=${mid}: ${g.ok ? "feasible" : "infeasible"} (${g.parts ? parts + " part" + (parts === 1 ? "" : "s") : "a[" + g.bad + "]=" + a[g.bad] + " > x"}) → ${g.ok ? "hi" : "lo"}=${mid}`);
+  if (g.ok) hi = mid; else lo = mid;
+  if (hi - lo <= 1) { done = true; const f = greedy(hi); lastSplit = f; lastOk = true; mid = hi; }
+  draw();
+}
+function draw() {
+  const svg = $("bars"); svg.innerHTML = "";
+  const mk = (p, tag, at, txt) => { const e = document.createElementNS(NS, tag); for (const q in at) e.setAttribute(q, at[q]); if (txt != null) e.textContent = txt; p.appendChild(e); return e; };
+  const W = 900, H = 300, n = a.length, bw = (W - 20) / n, maxv = Math.max(...a);
+  const colors = ["--c1", "--c2", "--c3", "--c4", "--c6", "--c5"].map(cssv);
+  const partOf = {}, sums = [];
+  if (lastSplit && lastSplit.parts) lastSplit.parts.forEach((p, j) => { p.forEach((i) => (partOf[i] = j)); sums.push(p.reduce((s, i) => s + a[i], 0)); });
+  for (let i = 0; i < n; i++) {
+    const h = (a[i] / maxv) * (H - 90), x = 10 + i * bw, y = H - 40 - h;
+    const col = partOf[i] != null ? colors[partOf[i] % colors.length] : (lastSplit && lastSplit.bad === i ? cssv("--bad") : cssv("--border"));
+    mk(svg, "rect", { x: x + 3, y, width: bw - 6, height: h, rx: 4, fill: col });
+    mk(svg, "text", { x: x + bw / 2, y: y - 6, "text-anchor": "middle" }, a[i]);
+    mk(svg, "text", { x: x + bw / 2, y: H - 24, "text-anchor": "middle", style: "fill:" + cssv("--muted") + ";font-size:11px" }, i);
+  }
+  if (lastSplit && lastSplit.parts) lastSplit.parts.forEach((p, j) => {
+    const x1 = 10 + p[0] * bw + 3, x2 = 10 + (p[p.length - 1] + 1) * bw - 3;
+    mk(svg, "line", { x1, x2, y1: H - 10, y2: H - 10, stroke: colors[j % colors.length], "stroke-width": 4, "stroke-linecap": "round" });
+    mk(svg, "text", { x: (x1 + x2) / 2, y: 16, "text-anchor": "middle", style: "font-weight:700;fill:" + colors[j % colors.length] }, "Σ=" + sums[j]);
+  });
+  // number line
+  const L = $("line"); L.innerHTML = "";
+  const X = (v) => 30 + ((v - lo0) / Math.max(1, hi0 - lo0)) * (W - 60);
+  mk(L, "line", { x1: X(lo0), x2: X(hi0), y1: 56, y2: 56, stroke: cssv("--border"), "stroke-width": 6, "stroke-linecap": "round" });
+  mk(L, "rect", { x: X(lo0) - 3, y: 50, width: Math.max(0, X(lo) - X(lo0)) + 3, height: 12, fill: cssv("--bad"), opacity: 0.35, rx: 3 });
+  mk(L, "rect", { x: X(hi), y: 50, width: Math.max(0, X(hi0) - X(hi)) + 3, height: 12, fill: cssv("--good"), opacity: 0.35, rx: 3 });
+  const tick = (v, c, label, y) => { mk(L, "line", { x1: X(v), x2: X(v), y1: 40, y2: 72, stroke: c, "stroke-width": 3 }); mk(L, "text", { x: X(v), y, "text-anchor": "middle", style: "font-weight:700;fill:" + c }, label + "=" + v); };
+  tick(lo, cssv("--bad"), "lo", 30); tick(hi, cssv("--good"), "hi", 30);
+  if (mid != null && !done) tick(mid, cssv("--accent"), "mid", 96);
+  // text
+  const total = Math.ceil(Math.log2(Math.max(2, hi0 - lo0)));
+  $("caption").innerHTML = mid == null ? "Press <b>Step</b> to test the first guess." :
+    done ? `<b class="good">Done.</b> The smallest feasible maximum is <b>${hi}</b>. The split shown is the greedy split for x = ${hi}.` :
+    lastOk ? `x = ${mid} is <b class="good">feasible</b>: greedy used ${lastSplit.parts.length} ≤ ${k} parts. So every x ≥ ${mid} works, and hi moves down.` :
+    lastSplit.parts ? `x = ${mid} is <b class="bad">infeasible</b>: greedy needs ${lastSplit.parts.length} > ${k} parts. So every x ≤ ${mid} fails, and lo moves up.` :
+    `x = ${mid} is <b class="bad">infeasible</b>: a[${lastSplit.bad}] = ${a[lastSplit.bad]} doesn't fit in any part.`;
+  $("stats").innerHTML = `<div class="stat"><span>Range (lo, hi]</span><b>(${lo}, ${hi}]</b></div><div class="stat"><span>Checks so far</span><b>${steps}</b></div><div class="stat"><span>Worst case ⌈log₂(hi₀ − lo₀)⌉</span><b>${total}</b></div><div class="stat"><span>Linear scan would check</span><b>${hi0 - lo0} values</b></div>`;
+  $("log").innerHTML = history.map((h, i) => `<li class="${i === history.length - 1 ? "cur" : ""}">${h}</li>`).join("");
+  $("step").disabled = done;
+}
+$("step").addEventListener("click", step);
+$("run").addEventListener("click", () => { let g = 0; while (!done && g++ < 100) step(); });
+$("reset").addEventListener("click", reset);
+$("k").addEventListener("input", reset);
+$("arr").addEventListener("change", reset);
+$("rand").addEventListener("click", () => { const n = 6 + Math.floor(Math.random() * 7); $("arr").value = Array.from({ length: n }, () => 1 + Math.floor(Math.random() * 15)).join(", "); reset(); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+reset();
+</script>
+</body>
+</html>

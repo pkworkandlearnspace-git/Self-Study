@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LIS in O(n log n)</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .cells { display: flex; gap: 6px; flex-wrap: wrap; }
+  .cell { min-width: 44px; padding: 8px 6px; text-align: center; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); font: 600 16px var(--mono); position: relative; transition: background .2s, transform .2s; }
+  .cell small { display: block; font: 11px var(--mono); color: var(--muted); }
+  .cell.cur { background: var(--accent); color: #fff; border-color: var(--accent); transform: translateY(-3px); }
+  .cell.cur small { color: #fff; }
+  .cell.done { background: var(--surface-2); }
+  .cell.inlis { background: var(--c3); color: #fff; border-color: var(--c3); }
+  .cell.inlis small { color: #fff; }
+  .cell.rep { background: var(--warn); color: #fff; border-color: var(--warn); }
+  .cell.app { background: var(--c3); color: #fff; border-color: var(--c3); }
+  .cell.rep small, .cell.app small { color: #fff; }
+  .lab { font-size: 13px; color: var(--muted); margin: 14px 0 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Informatics Olympiad tools</a></header>
+  <h1>Longest Increasing Subsequence in O(n log n)</h1>
+  <p class="lead"><code>d[k]</code> = the smallest tail of any increasing subsequence of length k+1. <code>d</code> is always sorted, so each new element either <b>extends</b> it or <b>replaces</b> the first entry ≥ it, which is one <code>lower_bound</code> per element (module 05, worked example 2).</p>
+  <div class="card">
+    <div class="lab">Input array a</div>
+    <div class="cells" id="arr"></div>
+    <div class="lab">Tails array d (always sorted)</div>
+    <div class="cells" id="d"></div>
+    <div class="callout" id="msg" style="margin-top:14px"></div>
+  </div>
+  <div class="grid two" style="margin-top:14px">
+    <div class="controls">
+      <label class="ctl">Array (comma-separated integers)<input type="text" id="in" value="3, 1, 4, 1, 5, 9, 2, 6, 5, 3, 5, 8" style="width:100%"></label>
+      <label class="ctl">Mode <select id="mode"><option value="strict">strictly increasing (lower_bound)</option><option value="nondec">non-decreasing (upper_bound)</option></select></label>
+      <div class="row"><button class="primary" id="step">Step ▶</button><button id="run">Run to end</button><button id="reset">Reset</button><button id="rand">Random</button></div>
+    </div>
+    <div class="card" id="stats"></div>
+  </div>
+  <pre class="card mono scroll-x" style="margin-top:14px;font-size:13px">vector&lt;int&gt; d, pos, prv(n);          // pos[k] = index in a of the tail d[k]
+for (int i = 0; i &lt; n; i++) {
+  int k = lower_bound(d.begin(), d.end(), a[i]) - d.begin();
+  if (k == (int)d.size()) { d.push_back(a[i]); pos.push_back(i); }
+  else { d[k] = a[i]; pos[k] = i; }
+  prv[i] = k ? pos[k-1] : -1;          // predecessor, for reconstruction
+}
+// reconstruct: start at pos.back() and follow prv</pre>
+  <footer class="foot">Part of the Self-Study repo · informatics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+let a = [], i = 0, d = [], pos = [], prv = [], last = null, lisSet = new Set(), compares = 0;
+function lb(x, upper) { let lo = 0, hi = d.length; while (lo < hi) { const m = (lo + hi) >> 1; compares++; if (upper ? d[m] <= x : d[m] < x) lo = m + 1; else hi = m; } return lo; }
+function reset() {
+  a = $("in").value.split(/[\s,]+/).map(Number).filter(Number.isFinite).slice(0, 30);
+  if (!a.length) a = [1];
+  i = 0; d = []; pos = []; prv = []; last = null; lisSet = new Set(); compares = 0; render();
+}
+function step() {
+  if (i >= a.length) return;
+  const upper = $("mode").value === "nondec";
+  const x = a[i], k = lb(x, upper);
+  if (k === d.length) { d.push(x); pos.push(i); last = { k, kind: "app", x }; }
+  else { last = { k, kind: "rep", x, old: d[k] }; d[k] = x; pos[k] = i; }
+  prv[i] = k ? pos[k - 1] : -1; i++;
+  if (i === a.length) { lisSet = new Set(); for (let j = pos[pos.length - 1]; j !== -1; j = prv[j]) lisSet.add(j); }
+  render();
+}
+function render() {
+  $("arr").innerHTML = a.map((x, j) => `<div class="cell ${lisSet.has(j) ? "inlis" : j === i - 1 ? "cur" : j < i ? "done" : ""}">${x}<small>${j}</small></div>`).join("");
+  $("d").innerHTML = d.length ? d.map((x, k) => `<div class="cell ${last && last.k === k ? last.kind : ""}">${x}<small>len ${k + 1}</small></div>`).join("") : `<span class="note">empty</span>`;
+  const rel = $("mode").value === "nondec" ? "&gt;" : "≥";
+  $("msg").innerHTML = !last ? "Press <b>Step</b> to process a[0]." :
+    i === a.length ? `<b>Done.</b> LIS length = <b>${d.length}</b>. One optimal subsequence (green, rebuilt from the predecessor links): <b>${[...lisSet].sort((x, y) => x - y).map((j) => a[j]).join(", ")}</b>. Note that d = [${d.join(", ")}] itself need not be a subsequence of a.` :
+    last.kind === "app" ? `a[${i - 1}] = ${last.x} is bigger than every tail, so it <b>extends</b> the longest subsequence: d now has length ${d.length}.` :
+    `a[${i - 1}] = ${last.x}: the first tail ${rel} ${last.x} is d[${last.k}] = ${last.old}. <b>Replace</b> it. A length-${last.k + 1} subsequence can now end with the smaller value ${last.x}, which leaves more room to extend it later.`;
+  $("stats").innerHTML = `<div class="stat"><span>Processed</span><b>${i} / ${a.length}</b></div><div class="stat"><span>Current LIS length</span><b>${d.length}</b></div><div class="stat"><span>Comparisons (binary search)</span><b>${compares}</b></div><div class="stat"><span>O(n²) DP would use about</span><b>${(a.length * (a.length - 1)) / 2}</b></div>`;
+  $("step").disabled = i >= a.length;
+}
+$("step").addEventListener("click", step);
+$("run").addEventListener("click", () => { while (i < a.length) step(); });
+$("reset").addEventListener("click", reset);
+$("mode").addEventListener("change", reset);
+$("in").addEventListener("change", reset);
+$("rand").addEventListener("click", () => { $("in").value = Array.from({ length: 14 }, () => Math.floor(Math.random() * 20)).join(", "); reset(); });
+reset();
+</script>
+</body>
+</html>

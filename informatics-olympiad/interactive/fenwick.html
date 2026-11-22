@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fenwick Tree Visualizer</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg.plot { aspect-ratio: 1000 / 430; }
+  svg text { font: 15px var(--mono); fill: var(--text); }
+  svg .node { cursor: pointer; }
+  .bits { font: 14px/1.7 var(--mono); }
+  .bits b.low { color: var(--c2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Informatics Olympiad tools</a></header>
+  <h1>Fenwick Tree (BIT) Visualizer</h1>
+  <p class="lead">Node <code>i</code> stores the sum of <code>(i − lowbit(i), i]</code>, where <code>lowbit(i) = i &amp; −i</code>. A prefix query <b>removes</b> the lowest bit at each step, and an update <b>adds</b> it. Both take O(log n) steps (module 03).</p>
+  <svg class="plot" id="svg" viewBox="0 0 1000 430" aria-label="Fenwick tree ranges"></svg>
+  <div class="legend" style="margin:8px 0 14px"><span><i style="background:var(--c3)"></i>visited by sum(r)</span><span><i style="background:var(--bad)"></i>visited by sum(l−1) (subtracted)</span><span><i style="background:var(--c4)"></i>visited by add(i)</span><span>Tip: tap a node bar to run add(i, +1) on it</span></div>
+  <div class="grid two">
+    <div class="controls">
+      <div class="row">
+        <label class="ctl">l<input type="number" id="l" value="3" min="1" max="16" style="width:70px"></label>
+        <label class="ctl">r<input type="number" id="r" value="13" min="1" max="16" style="width:70px"></label>
+        <button class="primary" id="q">Range sum = sum(r) − sum(l−1)</button>
+      </div>
+      <div class="row">
+        <label class="ctl">i<input type="number" id="i" value="5" min="1" max="16" style="width:70px"></label>
+        <label class="ctl">delta<input type="number" id="v" value="3" style="width:80px"></label>
+        <button id="u">add(i, delta)</button>
+        <button id="rand">Random array</button>
+      </div>
+      <div class="card bits" id="trace"></div>
+    </div>
+    <div>
+      <div class="card" id="stats"></div>
+      <pre class="card mono scroll-x" style="margin-top:12px;font-size:13px">void add(int i, ll v) {      // 1-indexed
+  for (; i &lt;= n; i += i &amp; -i) bit[i] += v;
+}
+ll sum(int i) {              // a[1] + … + a[i]
+  ll s = 0;
+  for (; i > 0; i -= i &amp; -i) s += bit[i];
+  return s;
+}</pre>
+    </div>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · informatics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const cssv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const NS = "http://www.w3.org/2000/svg";
+const N = 16;
+let a = Array(N + 1).fill(0), bit = Array(N + 1).fill(0), mark = {};
+const low = (i) => i & -i;
+const bin = (i) => i.toString(2).padStart(5, "0");
+const binHi = (i) => { const b = bin(i), p = b.length - 1 - Math.log2(low(i)); return i ? b.slice(0, p) + `<b class="low">${b[p]}</b>` + b.slice(p + 1) : b; };
+function rebuild() { bit.fill(0); for (let i = 1; i <= N; i++) for (let j = i; j <= N; j += low(j)) bit[j] += a[i]; }
+function randomize() { for (let i = 1; i <= N; i++) a[i] = Math.floor(Math.random() * 10); rebuild(); mark = {}; draw(); $("trace").innerHTML = "Pick an operation."; $("stats").innerHTML = ""; }
+function draw() {
+  const svg = $("svg"); svg.innerHTML = "";
+  const mk = (tag, at, txt) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt != null) e.textContent = txt; svg.appendChild(e); return e; };
+  const W = 1000, cw = (W - 40) / N, x0 = 20, levelH = 62, base = 334;
+  const fills = { q: cssv("--c3"), s: cssv("--bad"), u: cssv("--c4") };
+  // array row
+  for (let i = 1; i <= N; i++) {
+    const x = x0 + (i - 1) * cw;
+    mk("rect", { x: x + 2, y: base + 20, width: cw - 4, height: 34, rx: 5, fill: cssv("--surface-2"), stroke: cssv("--border") });
+    mk("text", { x: x + cw / 2, y: base + 42, "text-anchor": "middle" }, a[i]);
+    mk("text", { x: x + cw / 2, y: base + 74, "text-anchor": "middle", style: "fill:" + cssv("--muted") + ";font-size:11px" }, i);
+  }
+  mk("text", { x: 20, y: base + 10, style: "fill:" + cssv("--muted") + ";font-size:12px" }, "array a[1..16]");
+  // nodes as bars by level (log2 lowbit)
+  for (let i = 1; i <= N; i++) {
+    const lv = Math.log2(low(i)), y = base - 20 - lv * levelH - 36;
+    const xs = x0 + (i - low(i)) * cw, w = low(i) * cw;
+    const m = mark[i];
+    const g = document.createElementNS(NS, "g"); g.setAttribute("class", "node"); svg.appendChild(g);
+    const r = document.createElementNS(NS, "rect");
+    Object.entries({ x: xs + 2, y, width: w - 4, height: 36, rx: 6, fill: m ? fills[m] : cssv("--surface"), stroke: m ? "none" : cssv("--border") }).forEach(([k, v]) => r.setAttribute(k, v));
+    g.appendChild(r);
+    const t = document.createElementNS(NS, "text");
+    Object.entries({ x: xs + w - 8, y: y + 23, "text-anchor": "end" }).forEach(([k, v]) => t.setAttribute(k, v));
+    t.textContent = `bit[${i}]=${bit[i]}`; if (m) t.setAttribute("style", "fill:#fff;font-weight:700");
+    if (low(i) === 1) { t.textContent = bit[i]; t.setAttribute("x", xs + w / 2); t.setAttribute("text-anchor", "middle"); }
+    g.appendChild(t);
+    const title = document.createElementNS(NS, "title"); title.textContent = `bit[${i}] = a[${i - low(i) + 1}..${i}]  (i = ${bin(i)}₂, lowbit ${low(i)})`; g.appendChild(title);
+    g.addEventListener("click", () => { $("i").value = i; $("v").value = 1; doAdd(); });
+  }
+  for (let lv = 0; lv <= 4; lv++) mk("text", { x: W - 6, y: base - 20 - lv * levelH - 42, "text-anchor": "end", style: "fill:" + cssv("--muted") + ";font-size:11px" }, `lowbit ${1 << lv}`);
+}
+function doQuery() {
+  let l = Math.max(1, Math.min(N, +$("l").value)), r = Math.max(l, Math.min(N, +$("r").value));
+  mark = {}; const rows = [];
+  let s1 = 0, p1 = [];
+  for (let i = r; i > 0; i -= low(i)) { mark[i] = "q"; s1 += bit[i]; p1.push(i); }
+  let s2 = 0, p2 = [];
+  for (let i = l - 1; i > 0; i -= low(i)) { s2 += bit[i]; p2.push(i); mark[i] = mark[i] ? "q" : "s"; }
+  // nodes in both paths cancel; show them as green-only (shared)
+  rows.push(`<b>sum(${r})</b>: ` + p1.map((i) => `${i} (${binHi(i)})`).join(" → ") + " → 0 &nbsp;= " + s1);
+  rows.push(`<b>sum(${l - 1})</b>: ` + (p2.length ? p2.map((i) => `${i} (${binHi(i)})`).join(" → ") + " → 0" : "0") + " &nbsp;= " + s2);
+  const brute = a.slice(l, r + 1).reduce((x, y) => x + y, 0);
+  draw();
+  $("trace").innerHTML = rows.join("<br>") + `<br>Orange bit = lowbit, which gets removed at each step.`;
+  $("stats").innerHTML = `<div class="stat"><span>a[${l}..${r}]</span><b>${s1 - s2} ${s1 - s2 === brute ? "✓" : "✗"}</b></div><div class="stat"><span>Nodes read</span><b>${p1.length + p2.length}</b></div><div class="stat"><span>Bound: popcount(r) + popcount(l−1)</span><b>≤ 2⌈log₂ n⌉ = ${2 * Math.ceil(Math.log2(N))}</b></div><div class="stat"><span>Brute force reads</span><b>${r - l + 1}</b></div>`;
+}
+function doAdd() {
+  const i0 = Math.max(1, Math.min(N, +$("i").value)), v = +$("v").value || 0;
+  a[i0] += v; mark = {}; const path = [];
+  for (let i = i0; i <= N; i += low(i)) { bit[i] += v; mark[i] = "u"; path.push(i); }
+  draw();
+  $("trace").innerHTML = `<b>add(${i0}, ${v})</b>: ` + path.map((i) => `${i} (${binHi(i)})`).join(" → ") + ` → ${path[path.length - 1] + low(path[path.length - 1])} &gt; n, stop<br>Each step adds the lowbit, and every node visited covers index ${i0}.`;
+  $("stats").innerHTML = `<div class="stat"><span>Nodes updated</span><b>${path.length}</b></div><div class="stat"><span>Bound</span><b>≤ ⌊log₂ n⌋ + 1 = ${Math.floor(Math.log2(N)) + 1}</b></div>`;
+}
+$("q").addEventListener("click", doQuery);
+$("u").addEventListener("click", doAdd);
+$("rand").addEventListener("click", randomize);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+randomize(); doQuery();
+</script>
+</body>
+</html>
