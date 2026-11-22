@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generalization Lab</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  #fit { aspect-ratio: 4 / 3; } #curve { aspect-ratio: 2.4 / 1; }
+  #dist { aspect-ratio: 2.4 / 1; } #roc, #pr { aspect-ratio: 1 / 1; }
+  .cm { display: grid; grid-template-columns: auto 1fr 1fr; gap: 4px; font-size: 14px; text-align: center; }
+  .cm div { padding: 8px 4px; border-radius: 6px; background: var(--surface-2); }
+  .cm .h { background: transparent; color: var(--muted); font-size: 12px; }
+  .cm .tp, .cm .tn { background: color-mix(in srgb, var(--good) 18%, transparent); }
+  .cm .fp, .cm .fn { background: color-mix(in srgb, var(--bad) 16%, transparent); }
+  .cm b { display: block; font-family: var(--mono); font-size: 18px; }
+  .two-plots { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .tabs { display: flex; gap: 6px; margin: 6px 0 14px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a><span class="note">Module 03 · ML fundamentals</span></header>
+  <h1>Generalization Lab</h1>
+  <p class="lead">Two experiments every model inherits. <b>Part 1:</b> fit polynomials and watch under- and overfitting appear in the train/validation gap. <b>Part 2:</b> move a decision threshold and see why accuracy lies on imbalanced data.</p>
+  <div class="tabs"><button class="active" data-tab="bv">Part 1 · Bias–variance</button><button data-tab="th">Part 2 · Thresholds, precision/recall, ROC</button></div>
+
+  <section id="tab-bv">
+    <div class="grid two">
+      <div>
+        <canvas id="fit" width="800" height="600" aria-label="Polynomial fit"></canvas>
+        <div class="legend" style="margin-top:6px"><span><i style="background:var(--c1)"></i>train points</span><span><i style="background:var(--c2)"></i>validation points</span><span><i style="background:var(--muted)"></i>true function sin(πx)</span><span><i style="background:var(--c3)"></i>model</span></div>
+        <canvas id="curve" width="800" height="330" style="margin-top:10px" aria-label="Error versus degree"></canvas>
+        <div class="legend" style="margin-top:6px"><span><i style="background:var(--c1)"></i>train MSE</span><span><i style="background:var(--c2)"></i>validation MSE</span><span>x-axis: polynomial degree (log y)</span></div>
+      </div>
+      <div class="controls">
+        <label class="ctl">Polynomial degree = <span class="val" id="degv"></span><input type="range" id="deg" min="0" max="15" value="3"></label>
+        <label class="ctl">Ridge λ (L2) = <span class="val" id="lamv"></span><input type="range" id="lam" min="-8" max="1" step="0.25" value="-8"></label>
+        <label class="ctl">Training points N = <span class="val" id="nv"></span><input type="range" id="n" min="5" max="200" value="15"></label>
+        <label class="ctl">Noise σ = <span class="val" id="sv"></span><input type="range" id="sig" min="0" max="0.8" step="0.02" value="0.25"></label>
+        <label><input type="checkbox" id="ens"> Show 25 fits on fresh training sets (variance)</label>
+        <div class="row"><button class="primary" id="resample">New data</button></div>
+        <div class="card" id="bvstats"></div>
+        <div class="callout" id="bvmsg"></div>
+      </div>
+    </div>
+    <h3>Try this</h3>
+    <div class="card"><ol style="margin:0;padding-left:20px">
+      <li>Degree 0 and 1: both errors high and close together → <b>underfitting (high bias)</b>.</li>
+      <li>Degree 12–15 with N = 15: train error near 0, validation error explodes → <b>overfitting (high variance)</b>. Tick "Show 25 fits" to see the variance directly.</li>
+      <li>Keep degree 15 and raise <b>N</b> to 200. More data tames a big model.</li>
+      <li>Keep degree 15, N = 15, and raise <b>λ</b>. Regularization shrinks the wiggles. Too much λ underfits again.</li>
+      <li>Set noise σ = 0. Now even degree 15 generalizes well: overfitting is fitting the <i>noise</i>.</li>
+    </ol></div>
+  </section>
+
+  <section id="tab-th" hidden>
+    <div class="grid two">
+      <div>
+        <canvas id="dist" width="800" height="330" aria-label="Score distributions with threshold"></canvas>
+        <div class="legend" style="margin-top:6px"><span><i style="background:var(--c3)"></i>positives (class 1)</span><span><i style="background:var(--c2)"></i>negatives (class 0)</span><span>height ∝ count, so prevalence shows</span></div>
+        <div class="two-plots" style="margin-top:10px">
+          <div><canvas id="roc" width="400" height="400" aria-label="ROC curve"></canvas><div class="note" style="text-align:center">ROC: TPR vs FPR</div></div>
+          <div><canvas id="pr" width="400" height="400" aria-label="Precision-recall curve"></canvas><div class="note" style="text-align:center">Precision vs recall</div></div>
+        </div>
+      </div>
+      <div class="controls">
+        <label class="ctl">Threshold t (predict 1 if score ≥ t) = <span class="val" id="tv"></span><input type="range" id="t" min="-3" max="5" step="0.01" value="1"></label>
+        <label class="ctl">Prevalence (share of positives) = <span class="val" id="piv"></span><input type="range" id="pi" min="0" max="3" step="1" value="0"></label>
+        <label class="ctl">Separation d′ (how good the model is) = <span class="val" id="dv"></span><input type="range" id="d" min="0" max="4" step="0.05" value="2"></label>
+        <div class="cm" id="cm"></div>
+        <div class="card" id="thstats"></div>
+        <div class="callout" id="thmsg"></div>
+      </div>
+    </div>
+    <h3>Try this</h3>
+    <div class="card"><ol style="margin:0;padding-left:20px">
+      <li>Prevalence 1%: push the threshold far right. Accuracy hits ~99% while recall is ~0, the same as "always predict 0".</li>
+      <li>Change prevalence only. The ROC curve and AUC <b>don't move</b> (they condition on the true class), but precision and the PR curve change a lot. On rare positives, look at precision/recall.</li>
+      <li>Set d′ = 0 (a useless model): the ROC is the diagonal and AUC = 0.5.</li>
+      <li>Find the threshold that maximizes F1. Is it the same as the one that maximizes accuracy?</li>
+    </ol></div>
+  </section>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive · pairs with <code>03-ml-fundamentals.md</code></footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function fit(c, r) { const d = devicePixelRatio || 1, w = c.clientWidth; c.width = w * d; c.height = (w / r) * d; const x = c.getContext("2d"); x.setTransform(d, 0, 0, d, 0, 0); return x; }
+document.querySelectorAll("[data-tab]").forEach((b) => b.onclick = () => {
+  document.querySelectorAll("[data-tab]").forEach((x) => x.classList.toggle("active", x === b));
+  $("tab-bv").hidden = b.dataset.tab !== "bv"; $("tab-th").hidden = b.dataset.tab !== "th"; resize();
+});
+
+// ---------- Part 1: polynomial regression with a Legendre basis (well conditioned on [-1, 1]) ----------
+let seed = 7;
+const rand = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+const gauss = () => Math.sqrt(-2 * Math.log(rand() + 1e-12)) * Math.cos(2 * Math.PI * rand());
+const truth = (x) => Math.sin(Math.PI * x);
+function legendre(x, D) { const P = [1, x]; for (let n = 1; n < D; n++) P.push(((2 * n + 1) * x * P[n] - n * P[n - 1]) / (n + 1)); return P.slice(0, D + 1); }
+function solve(A, b) { // Gaussian elimination with partial pivoting
+  const n = b.length, M = A.map((r, i) => [...r, b[i]]);
+  for (let c = 0; c < n; c++) {
+    let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(M[r][c]) > Math.abs(M[p][c])) p = r;
+    [M[c], M[p]] = [M[p], M[c]];
+    for (let r = c + 1; r < n; r++) { const f = M[r][c] / M[c][c]; for (let k = c; k <= n; k++) M[r][k] -= f * M[c][k]; }
+  }
+  const x = new Array(n).fill(0);
+  for (let r = n - 1; r >= 0; r--) { let s = M[r][n]; for (let k = r + 1; k < n; k++) s -= M[r][k] * x[k]; x[r] = s / M[r][r]; }
+  return x;
+}
+function ridge(xs, ys, D, lam) {
+  const Phi = xs.map((x) => legendre(x, D)), p = D + 1;
+  const A = Array.from({ length: p }, (_, i) => Array.from({ length: p }, (_, j) => Phi.reduce((s, r) => s + r[i] * r[j], 0) + (i === j ? lam + 1e-10 : 0)));
+  const b = Array.from({ length: p }, (_, i) => Phi.reduce((s, r, k) => s + r[i] * ys[k], 0));
+  return solve(A, b);
+}
+const predict = (w, x) => legendre(x, w.length - 1).reduce((s, v, i) => s + v * w[i], 0);
+const mse = (w, xs, ys) => xs.reduce((s, x, i) => s + (predict(w, x) - ys[i]) ** 2, 0) / xs.length;
+let train = [], val = [];
+function sample(n, sig) { const xs = [], ys = []; for (let i = 0; i < n; i++) { const x = rand() * 2 - 1; xs.push(x); ys.push(truth(x) + sig * gauss()); } return { xs, ys }; }
+function newData() { const sig = +$("sig").value; train = sample(+$("n").value, sig); val = sample(200, sig); }
+const lam = () => (+$("lam").value <= -8 ? 0 : Math.pow(10, +$("lam").value));
+let fctx, cctx, dctx, rctx, pctx;
+function drawBV() {
+  const D = +$("deg").value, L = lam(), sig = +$("sig").value;
+  $("degv").textContent = D; $("lamv").textContent = L ? L.toExponential(1) : "0"; $("nv").textContent = $("n").value; $("sv").textContent = sig.toFixed(2);
+  const c = $("fit"), W = c.clientWidth, H = W * 0.75, X = (x) => ((x + 1) / 2) * W, Y = (y) => H / 2 - (y / 2.2) * (H / 2);
+  fctx.fillStyle = col("--surface"); fctx.fillRect(0, 0, W, H);
+  fctx.strokeStyle = col("--border"); fctx.lineWidth = 1; fctx.beginPath(); fctx.moveTo(0, Y(0)); fctx.lineTo(W, Y(0)); fctx.stroke();
+  const curve = (f, color, w, alpha = 1) => { fctx.globalAlpha = alpha; fctx.strokeStyle = color; fctx.lineWidth = w; fctx.beginPath(); for (let i = 0; i <= 300; i++) { const x = -1 + (2 * i) / 300, y = Math.max(-5, Math.min(5, f(x))); i ? fctx.lineTo(X(x), Y(y)) : fctx.moveTo(X(x), Y(y)); } fctx.stroke(); fctx.globalAlpha = 1; };
+  if ($("ens").checked) { const keep = seed; for (let e = 0; e < 25; e++) { const s = sample(+$("n").value, sig); const w = ridge(s.xs, s.ys, D, L); curve((x) => predict(w, x), col("--c4"), 1, 0.35); } seed = keep; }
+  curve(truth, col("--muted"), 2);
+  const w = ridge(train.xs, train.ys, D, L);
+  curve((x) => predict(w, x), col("--c3"), 3);
+  const dot = (x, y, color, r) => { fctx.fillStyle = color; fctx.beginPath(); fctx.arc(X(x), Y(y), r, 0, 7); fctx.fill(); };
+  val.xs.forEach((x, i) => dot(x, val.ys[i], col("--c2"), 2.2)); train.xs.forEach((x, i) => dot(x, train.ys[i], col("--c1"), 4.5));
+  // error vs degree
+  const tr = [], va = [];
+  for (let d = 0; d <= 15; d++) { const wd = ridge(train.xs, train.ys, d, L); tr.push(mse(wd, train.xs, train.ys)); va.push(mse(wd, val.xs, val.ys)); }
+  const cv = $("curve"), CW = cv.clientWidth, CH = CW / 2.4; cctx.fillStyle = col("--surface"); cctx.fillRect(0, 0, CW, CH);
+  const lo = Math.log10(1e-4), hi = Math.log10(10), px = (d) => 30 + (d / 15) * (CW - 45), py = (v) => CH - 22 - ((Math.log10(Math.max(1e-4, Math.min(10, v))) - lo) / (hi - lo)) * (CH - 34);
+  cctx.fillStyle = col("--muted"); cctx.font = "11px system-ui";
+  for (let d = 0; d <= 15; d += 3) cctx.fillText(d, px(d) - 3, CH - 6);
+  [1e-3, 1e-1, 10].forEach((v) => cctx.fillText(v >= 1 ? v : v.toExponential(0), 0, py(v) + 4));
+  if (sig > 0) { cctx.strokeStyle = col("--border"); cctx.setLineDash([4, 4]); cctx.beginPath(); cctx.moveTo(px(0), py(sig * sig)); cctx.lineTo(px(15), py(sig * sig)); cctx.stroke(); cctx.setLineDash([]); cctx.fillText("noise floor σ²", px(11.5), py(sig * sig) - 4); }
+  [[tr, "--c1"], [va, "--c2"]].forEach(([arr, cc]) => { cctx.strokeStyle = col(cc); cctx.lineWidth = 2; cctx.beginPath(); arr.forEach((v, d) => (d ? cctx.lineTo(px(d), py(v)) : cctx.moveTo(px(d), py(v)))); cctx.stroke(); });
+  cctx.strokeStyle = col("--c3"); cctx.lineWidth = 1.5; cctx.beginPath(); cctx.moveTo(px(D), 6); cctx.lineTo(px(D), CH - 22); cctx.stroke();
+  const best = va.indexOf(Math.min(...va));
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`, e4 = (v) => (Math.abs(v) >= 1000 ? v.toExponential(2) : v.toFixed(4));
+  $("bvstats").innerHTML = row("parameters (degree + 1)", D + 1) + row("train MSE", e4(tr[D])) + row("validation MSE", e4(va[D])) + row("gap (val − train)", e4(va[D] - tr[D])) + row("best degree on validation", best) + row("irreducible noise σ²", (sig * sig).toFixed(4));
+  let m;
+  if (D + 1 >= +$("n").value && !L) m = "<b>As many parameters as data points:</b> the polynomial can pass through every training point (train MSE ≈ 0), noise included.";
+  else if (tr[D] > 2.5 * sig * sig + 0.02 && va[D] < 1.6 * tr[D] + 0.01) m = "<b>Underfitting (high bias):</b> train error is far above the noise floor and validation is about the same. Use a more flexible model or less regularization.";
+  else if (va[D] > 1.6 * tr[D] + 0.02) m = "<b>Overfitting (high variance):</b> train error is low but validation is much higher. More data, regularization (λ), or a simpler model.";
+  else m = "<b>Good fit:</b> both errors are near the noise floor σ². You can't beat σ² on average, whatever the model.";
+  $("bvmsg").innerHTML = m;
+}
+
+// ---------- Part 2: two Gaussian score distributions ----------
+function erf(x) { const s = Math.sign(x); x = Math.abs(x); const t = 1 / (1 + 0.3275911 * x); const y = 1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return s * y; }
+const Phi = (z) => 0.5 * (1 + erf(z / Math.SQRT2));
+const pdf = (z) => Math.exp(-z * z / 2) / Math.sqrt(2 * Math.PI);
+const prev = () => [0.01, 0.05, 0.2, 0.5][Math.round(+$("pi").value)];
+function metrics(t, pi, d) {
+  const N = 10000, P = N * pi, Ng = N - P;
+  const tpr = 1 - Phi(t - d), fpr = 1 - Phi(t);
+  const TP = P * tpr, FN = P - TP, FP = Ng * fpr, TN = Ng - FP;
+  const prec = TP + FP > 0 ? TP / (TP + FP) : 1, rec = tpr, f1 = prec + rec > 0 ? (2 * prec * rec) / (prec + rec) : 0, acc = (TP + TN) / N;
+  return { TP, FN, FP, TN, tpr, fpr, prec, rec, f1, acc, N };
+}
+function axes(ctx, W, label) { ctx.fillStyle = col("--surface"); ctx.fillRect(0, 0, W, W); ctx.strokeStyle = col("--border"); ctx.strokeRect(24, 6, W - 30, W - 30); ctx.fillStyle = col("--muted"); ctx.font = "11px system-ui"; ctx.fillText("0", 12, W - 22); ctx.fillText("1", 12, 14); ctx.fillText(label, 28, W - 8); }
+function drawTH() {
+  const t = +$("t").value, pi = prev(), d = +$("d").value, m = metrics(t, pi, d);
+  $("tv").textContent = t.toFixed(2); $("piv").textContent = (pi * 100) + "%"; $("dv").textContent = d.toFixed(2);
+  // distributions (counts, so prevalence is visible; positives drawn at least visible via min scale)
+  const c = $("dist"), W = c.clientWidth, H = W / 2.4, lo = -4, hi = 6, X = (x) => ((x - lo) / (hi - lo)) * W;
+  dctx.fillStyle = col("--surface"); dctx.fillRect(0, 0, W, H);
+  const maxY = Math.max(1 - pi, pi) * pdf(0), Y = (v) => H - 18 - (v / maxY) * (H - 30);
+  const area = (mu, w, color, side) => {
+    dctx.fillStyle = color; dctx.globalAlpha = 0.18; dctx.beginPath(); dctx.moveTo(X(lo), Y(0));
+    for (let i = 0; i <= 300; i++) { const x = lo + ((hi - lo) * i) / 300; dctx.lineTo(X(x), Y(w * pdf(x - mu))); } dctx.lineTo(X(hi), Y(0)); dctx.fill();
+    dctx.globalAlpha = 0.45; dctx.beginPath(); dctx.moveTo(X(t), Y(0)); for (let i = 0; i <= 200; i++) { const x = t + ((hi - t) * i) / 200; dctx.lineTo(X(x), Y(w * pdf(x - mu))); } dctx.lineTo(X(hi), Y(0)); dctx.fill();
+    dctx.globalAlpha = 1; dctx.strokeStyle = color; dctx.lineWidth = 2; dctx.beginPath(); for (let i = 0; i <= 300; i++) { const x = lo + ((hi - lo) * i) / 300; i ? dctx.lineTo(X(x), Y(w * pdf(x - mu))) : dctx.moveTo(X(x), Y(w * pdf(x - mu))); } dctx.stroke();
+  };
+  area(0, 1 - pi, col("--c2")); area(d, pi, col("--c3"));
+  dctx.strokeStyle = col("--text"); dctx.lineWidth = 2; dctx.setLineDash([6, 4]); dctx.beginPath(); dctx.moveTo(X(t), 4); dctx.lineTo(X(t), H - 18); dctx.stroke(); dctx.setLineDash([]);
+  dctx.fillStyle = col("--muted"); dctx.font = "12px system-ui"; dctx.textAlign = "right"; dctx.fillText("predict 0 ←", X(t) - 6, 16); dctx.textAlign = "left"; dctx.fillText("→ predict 1", X(t) + 6, 16); dctx.fillText("model score", W - 80, H - 4);
+  // ROC + PR
+  const S = $("roc").clientWidth, sx = (v) => 24 + v * (S - 30), sy = (v) => S - 24 - v * (S - 30);
+  axes(rctx, S, "FPR →"); rctx.strokeStyle = col("--border"); rctx.setLineDash([4, 4]); rctx.beginPath(); rctx.moveTo(sx(0), sy(0)); rctx.lineTo(sx(1), sy(1)); rctx.stroke(); rctx.setLineDash([]);
+  axes(pctx, S, "recall →");
+  rctx.strokeStyle = col("--accent"); pctx.strokeStyle = col("--accent"); rctx.lineWidth = pctx.lineWidth = 2; rctx.beginPath(); pctx.beginPath();
+  for (let i = 0; i <= 300; i++) { const tt = 8 - (12 * i) / 300, q = metrics(tt, pi, d); i ? rctx.lineTo(sx(q.fpr), sy(q.tpr)) : rctx.moveTo(sx(q.fpr), sy(q.tpr)); const pr = q.TP + q.FP < 1e-9 ? 1 : q.prec; i ? pctx.lineTo(sx(q.rec), sy(pr)) : pctx.moveTo(sx(q.rec), sy(pr)); }
+  rctx.stroke(); pctx.stroke();
+  pctx.strokeStyle = col("--border"); pctx.setLineDash([4, 4]); pctx.beginPath(); pctx.moveTo(sx(0), sy(pi)); pctx.lineTo(sx(1), sy(pi)); pctx.stroke(); pctx.setLineDash([]); pctx.fillStyle = col("--muted"); pctx.fillText("random = prevalence", sx(0.35), sy(pi) - 4);
+  [[rctx, sx(m.fpr), sy(m.tpr)], [pctx, sx(m.rec), sy(m.prec)]].forEach(([cx, x, y]) => { cx.fillStyle = col("--c5"); cx.beginPath(); cx.arc(x, y, 6, 0, 7); cx.fill(); });
+  const r = (v) => Math.round(v).toLocaleString();
+  $("cm").innerHTML = `<div class="h"></div><div class="h">predicted 1</div><div class="h">predicted 0</div>
+    <div class="h" style="writing-mode:horizontal-tb">actual 1</div><div class="tp">TP<b>${r(m.TP)}</b></div><div class="fn">FN<b>${r(m.FN)}</b></div>
+    <div class="h">actual 0</div><div class="fp">FP<b>${r(m.FP)}</b></div><div class="tn">TN<b>${r(m.TN)}</b></div>`;
+  const auc = Phi(d / Math.SQRT2), row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`, p3 = (v) => (v * 100).toFixed(1) + "%";
+  $("thstats").innerHTML = row("accuracy (TP+TN)/N", p3(m.acc)) + row("baseline: always predict 0", p3(1 - pi)) + row("precision TP/(TP+FP)", m.TP + m.FP < 0.5 ? "— (no positives predicted)" : p3(m.prec)) +
+    row("recall = TPR TP/(TP+FN)", p3(m.rec)) + row("FPR FP/(FP+TN)", p3(m.fpr)) + row("F1 (harmonic mean of P, R)", m.f1.toFixed(3)) + row("ROC-AUC = Φ(d′/√2)", auc.toFixed(3));
+  let msg;
+  if (m.acc >= 1 - pi - 0.002 && m.rec < 0.3) msg = `<b class="warn">Accuracy trap.</b> ${p3(m.acc)} accuracy, but you only catch ${p3(m.rec)} of positives. "Always predict 0" scores ${p3(1 - pi)}.`;
+  else if (m.prec < 0.3 && m.rec > 0.7) msg = "<b>High recall, low precision.</b> You catch most positives, but most alarms are false. On rare classes, even a small FPR swamps the few true positives.";
+  else msg = "Moving t right trades recall for precision. ROC-AUC is the probability that a random positive scores higher than a random negative, so it ignores both the threshold and the prevalence.";
+  $("thmsg").innerHTML = msg;
+}
+function resize() { fctx = fit($("fit"), 4 / 3); cctx = fit($("curve"), 2.4); dctx = fit($("dist"), 2.4); rctx = fit($("roc"), 1); pctx = fit($("pr"), 1); drawBV(); drawTH(); }
+["deg", "lam", "ens"].forEach((id) => $(id).addEventListener("input", drawBV));
+["n", "sig"].forEach((id) => $(id).addEventListener("input", () => { newData(); drawBV(); }));
+$("resample").onclick = () => { newData(); drawBV(); };
+["t", "pi", "d"].forEach((id) => $(id).addEventListener("input", drawTH));
+window.addEventListener("resize", resize);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", resize);
+newData(); resize();
+</script>
+</body>
+</html>

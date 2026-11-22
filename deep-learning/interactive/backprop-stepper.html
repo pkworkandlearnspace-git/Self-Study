@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Backprop Step-Through</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  #graph { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); width: 100%; height: auto; display: block; }
+  .nd rect { fill: var(--surface-2); stroke: var(--border); stroke-width: 1.5; }
+  .nd.leaf rect { fill: var(--surface); stroke-dasharray: 4 3; }
+  .nd.fwd rect { stroke: var(--c1); stroke-width: 3; fill: var(--accent-soft); }
+  .nd.bwd rect { stroke: var(--c2); stroke-width: 3; }
+  .nd text { fill: var(--text); font: 15px var(--mono); text-anchor: middle; }
+  .nd text.lab { font-weight: 700; font-size: 16px; }
+  .nd text.op { fill: var(--muted); font-size: 13px; font-weight: 400; }
+  .nd text.g { fill: var(--c2); }
+  .nd text.v { fill: var(--c1); }
+  .ed { stroke: var(--border); stroke-width: 2; fill: none; marker-end: url(#arr); }
+  .ed.fwd { stroke: var(--c1); stroke-width: 3; }
+  .ed.bwd { stroke: var(--c2); stroke-width: 3; }
+  .elab { fill: var(--c2); font: 14px var(--mono); text-anchor: middle; paint-order: stroke; stroke: var(--surface); stroke-width: 4px; }
+  #arr path { fill: var(--muted); }
+  .leafin { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+  .leafin label { font-size: 13px; color: var(--muted); }
+  .leafin input { width: 100%; }
+  #explain { min-height: 120px; }
+  #explain .eq { font-family: var(--mono); background: var(--surface-2); border-radius: 6px; padding: 6px 8px; margin: 6px 0; display: block; overflow-x: auto; }
+  .phase { display: inline-block; font-size: 12px; border-radius: 99px; padding: 1px 8px; margin-bottom: 6px; }
+  .phase.f { background: var(--accent-soft); color: var(--c1); }
+  .phase.b { background: color-mix(in srgb, var(--c2) 18%, transparent); color: var(--c2); }
+  progress { width: 100%; accent-color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a><span class="note">Module 04 · Neural nets from scratch</span></header>
+  <h1>Backprop Step-Through</h1>
+  <p class="lead">Watch reverse-mode autodiff one node at a time, the way micrograd does it. The <b style="color:var(--c1)">forward pass</b> computes values left to right. The <b style="color:var(--c2)">backward pass</b> seeds <code>L.grad = 1</code> and sends gradients right to left using only each node's <i>local</i> derivative: <code>parent.grad += local × node.grad</code>.</p>
+
+  <svg id="graph" viewBox="-14 -4 928 388" role="img" aria-label="Computational graph"></svg>
+  <div class="legend" style="margin-top:6px"><span><i style="background:var(--c1)"></i>value (forward)</span><span><i style="background:var(--c2)"></i>g = grad = ∂L/∂node (backward)</span><span>dashed box = leaf (input / parameter)</span></div>
+  <div class="grid two" style="margin-top:12px">
+    <div>
+      <div class="row">
+        <button id="first" title="Reset to start (Home)">⏮</button>
+        <button id="prev" title="Previous step (←)">◀ Back</button>
+        <button id="next" class="primary" title="Next step (→)">Next ▶</button>
+        <button id="last" title="Jump to end (End)">⏭</button>
+        <button id="play">▶ Auto-play</button>
+      </div>
+      <progress id="prog" max="1" value="0" style="margin:8px 0"></progress>
+      <div class="card" id="explain"></div>
+    </div>
+    <div class="controls">
+      <label class="ctl">Graph<select id="preset">
+        <option value="neuron">Neuron + squared error</option>
+        <option value="shared">Shared variable (gradients add)</option>
+        <option value="chain">Deep chain of activations (vanishing)</option>
+        <option value="softmax">2-class softmax + cross-entropy</option>
+      </select></label>
+      <label class="ctl" id="actwrap">Activation φ<select id="act"><option value="tanh">tanh</option><option value="sigmoid">sigmoid</option><option value="relu">ReLU</option></select></label>
+      <div class="card"><b style="font-size:14px">Leaf values</b> <span class="note">(edit to re-run)</span><div class="leafin" id="leaves" style="margin-top:8px"></div></div>
+    </div>
+  </div>
+
+  <h2>Check it, then use it</h2>
+  <div class="grid two">
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><b>Gradient check (central differences, h = 1e-5)</b><button id="gc">Run check</button></div>
+      <div class="scroll-x"><table class="t" id="gctab" style="margin-top:8px"><tr><td class="note">Press <b>Run check</b> to compare backprop with (L(θ+h) − L(θ−h)) / 2h for every leaf.</td></tr></table></div>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><b>One gradient-descent step</b><span class="row"><label class="note">η <input type="number" id="eta" value="0.1" step="0.05" style="width:80px"></label><button id="gd">Step</button></span></div>
+      <p class="note" style="margin:8px 0 0">Updates every <i>trainable</i> leaf: θ ← θ − η · ∂L/∂θ. Inputs and targets stay fixed. Press it a few times and watch L fall.</p>
+      <div id="gdlog" class="mono" style="font-size:13px;margin-top:6px"></div>
+    </div>
+  </div>
+
+  <h2>Try this</h2>
+  <div class="card"><ol style="margin:0;padding-left:20px">
+    <li><b>Neuron:</b> before stepping backward, predict <code>∂L/∂w1</code> by hand. Hint: it is <code>2(h−y) · φ′(n) · x1</code>. Then check.</li>
+    <li><b>Neuron:</b> by default <code>x2 = 0</code>. Why is <code>∂L/∂w2</code> exactly 0? (∂m2/∂w2 = x2: a weight on a zero input gets no gradient.) Set x2 = 1 and look again.</li>
+    <li><b>Neuron with ReLU:</b> make <code>n</code> negative (e.g. b = −10). Every upstream gradient becomes 0: a <i>dead ReLU</i>.</li>
+    <li><b>Shared variable:</b> <code>a</code> feeds two nodes, so its gradient is the <i>sum</i> of two paths. Forgetting the <code>+=</code> is the classic micrograd bug.</li>
+    <li><b>Deep chain with sigmoid:</b> each layer multiplies the gradient by σ′ ≤ 0.25, so after 4 layers it is ≤ 0.004× smaller. Switch to tanh, then ReLU, and compare <code>∂L/∂x</code>.</li>
+    <li><b>Softmax + CE:</b> confirm that <code>∂L/∂z1 = p1 − y1</code> and <code>∂L/∂z2 = p2 − y2</code>, the famous <b>ŷ − y</b>.</li>
+  </ol></div>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive · pairs with <code>04-neural-nets-from-scratch.md</code></footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const sig = (v) => 1 / (1 + Math.exp(-v));
+const ACT = {
+  tanh: { f: Math.tanh, d: (v, out) => 1 - out * out, name: "tanh", dn: "1 − tanh²(n)" },
+  sigmoid: { f: sig, d: (v, out) => out * (1 - out), name: "σ", dn: "σ(n)(1 − σ(n))" },
+  relu: { f: (v) => Math.max(0, v), d: (v) => (v > 0 ? 1 : 0), name: "ReLU", dn: "1 if n > 0 else 0" },
+};
+// op definitions: f(inputs) and local derivative w.r.t. input i
+const OPS = {
+  mul: { sym: "×", f: (a) => a[0] * a[1], d: (a, i) => a[1 - i], dtxt: (n, i) => `∂(${n.in[0]}·${n.in[1]})/∂${n.in[i]} = ${n.in[1 - i]}` },
+  add: { sym: "+", f: (a) => a.reduce((s, x) => s + x, 0), d: () => 1, dtxt: () => "∂(sum)/∂input = 1 (addition copies the gradient)" },
+  sub: { sym: "−", f: (a) => a[0] - a[1], d: (a, i) => (i ? -1 : 1), dtxt: (n, i) => (i ? "∂(a − b)/∂b = −1" : "∂(a − b)/∂a = 1") },
+  sq: { sym: "( )²", f: (a) => a[0] * a[0], d: (a) => 2 * a[0], dtxt: (n) => `∂(${n.in[0]}²)/∂${n.in[0]} = 2·${n.in[0]}` },
+  exp: { sym: "exp", f: (a) => Math.exp(a[0]), d: (a) => Math.exp(a[0]), dtxt: () => "∂eᵘ/∂u = eᵘ" },
+  div: { sym: "÷", f: (a) => a[0] / a[1], d: (a, i) => (i ? -a[0] / (a[1] * a[1]) : 1 / a[1]), dtxt: (n, i) => (i ? "∂(a/b)/∂b = −a/b²" : "∂(a/b)/∂a = 1/b") },
+  neglog: { sym: "−log", f: (a) => -Math.log(a[0]), d: (a) => -1 / a[0], dtxt: () => "∂(−log p)/∂p = −1/p" },
+  act: { sym: "φ", f: (a) => ACT[$("act").value].f(a[0]), d: (a, i, out) => ACT[$("act").value].d(a[0], out), dtxt: () => `φ′(n) = ${ACT[$("act").value].dn}` },
+};
+const PRESETS = {
+  neuron: {
+    note: "One neuron h = φ(w1·x1 + w2·x2 + b) and loss L = (h − y)². The default numbers are from Karpathy's micrograd lecture (tanh gives h ≈ 0.7071).",
+    act: true,
+    nodes: [
+      { id: "x1", v: 2, x: 50, y: 40, train: false }, { id: "w1", v: -3, x: 50, y: 120, train: true },
+      { id: "x2", v: 0, x: 50, y: 210, train: false }, { id: "w2", v: 1, x: 50, y: 290, train: true },
+      { id: "m1", op: "mul", in: ["x1", "w1"], x: 200, y: 80 }, { id: "m2", op: "mul", in: ["x2", "w2"], x: 200, y: 250 },
+      { id: "s", op: "add", in: ["m1", "m2"], x: 340, y: 165 }, { id: "b", v: 6.8813735870195432, x: 340, y: 300, train: true },
+      { id: "n", op: "add", in: ["s", "b"], x: 470, y: 200 }, { id: "h", op: "act", in: ["n"], x: 590, y: 200 },
+      { id: "y", v: 1, x: 590, y: 320, train: false }, { id: "d", op: "sub", in: ["h", "y"], x: 715, y: 240 },
+      { id: "L", op: "sq", in: ["d"], x: 840, y: 240 },
+    ],
+  },
+  shared: {
+    note: "L = a·b + a. The leaf a reaches L along two paths, so ∂L/∂a = b + 1. Backprop must add (+=) the contributions.",
+    nodes: [
+      { id: "a", v: 3, x: 90, y: 110, train: true }, { id: "b", v: -2, x: 90, y: 280, train: true },
+      { id: "e", op: "mul", in: ["a", "b"], x: 380, y: 230 }, { id: "L", op: "add", in: ["e", "a"], x: 700, y: 170 },
+    ],
+  },
+  chain: {
+    note: "L = φ(φ(φ(φ(w·x)))). Each φ multiplies the backward signal by φ′. For sigmoid φ′ ≤ 0.25, so gradients shrink geometrically with depth.",
+    act: true,
+    nodes: [
+      { id: "x", v: 1, x: 50, y: 80, train: false }, { id: "w", v: 1.5, x: 50, y: 280, train: true },
+      { id: "z", op: "mul", in: ["x", "w"], x: 170, y: 180 },
+      { id: "a1", op: "act", in: ["z"], x: 300, y: 180 }, { id: "a2", op: "act", in: ["a1"], x: 440, y: 180 },
+      { id: "a3", op: "act", in: ["a2"], x: 580, y: 180 }, { id: "L", op: "act", in: ["a3"], x: 730, y: 180 },
+    ],
+  },
+  softmax: {
+    note: "Two logits, softmax p1 = e^z1 / (e^z1 + e^z2), then L = −log p1 (true class = 1). The result: ∂L/∂z = p − y, with y = (1, 0).",
+    nodes: [
+      { id: "z1", v: 2, x: 50, y: 90, train: true }, { id: "z2", v: 0.5, x: 50, y: 290, train: true },
+      { id: "e1", op: "exp", in: ["z1"], x: 190, y: 90 }, { id: "e2", op: "exp", in: ["z2"], x: 190, y: 290 },
+      { id: "S", op: "add", in: ["e1", "e2"], x: 360, y: 290 }, { id: "p1", op: "div", in: ["e1", "S"], x: 540, y: 170 },
+      { id: "L", op: "neglog", in: ["p1"], x: 760, y: 170 },
+    ],
+  },
+};
+
+let P, nodes, byId, order, steps, k = 0, timer = null;
+const fmt = (v) => (v === undefined || v === null ? "·" : Math.abs(v) < 1e-4 && v !== 0 ? v.toExponential(2) : (+v.toFixed(4)).toString());
+
+function load(name) {
+  P = PRESETS[name];
+  nodes = P.nodes.map((n) => ({ ...n, in: n.in || [] }));
+  byId = Object.fromEntries(nodes.map((n) => [n.id, n]));
+  // topological order (presets are listed so inputs come before uses, but compute it anyway)
+  order = []; const seen = new Set();
+  const visit = (n) => { if (seen.has(n.id)) return; seen.add(n.id); n.in.forEach((p) => visit(byId[p])); order.push(n); };
+  nodes.forEach(visit);
+  const ops = order.filter((n) => n.op);
+  steps = [{ kind: "start" }, ...ops.map((n) => ({ kind: "fwd", n })), { kind: "seed" }, ...ops.slice().reverse().map((n) => ({ kind: "bwd", n }))];
+  $("actwrap").style.display = P.act ? "" : "none";
+  $("leaves").innerHTML = nodes.filter((n) => !n.op).map((n) =>
+    `<label>${n.id}${n.train ? "" : " <span title='fixed input'>(fixed)</span>"}<input type="number" step="0.1" data-leaf="${n.id}" value="${+n.v.toFixed(4)}"></label>`).join("");
+  document.querySelectorAll("[data-leaf]").forEach((el) => el.addEventListener("input", () => { const v = parseFloat(el.value); if (isFinite(v)) { byId[el.dataset.leaf].v = v; render(); } }));
+  k = 0; $("gctab").innerHTML = `<tr><td class="note">Press <b>Run check</b> to compare backprop with (L(θ+h) − L(θ−h)) / 2h for every leaf.</td></tr>`; $("gdlog").textContent = "";
+  render();
+}
+
+// full forward + backward of the whole graph (used by checks and GD)
+function forwardAll(vals) {
+  const out = {};
+  order.forEach((n) => { out[n.id] = n.op ? OPS[n.op].f(n.in.map((p) => out[p])) : vals[n.id]; });
+  return out;
+}
+function leafVals() { return Object.fromEntries(nodes.filter((n) => !n.op).map((n) => [n.id, n.v])); }
+function backwardAll(val) {
+  const g = Object.fromEntries(nodes.map((n) => [n.id, 0])); g.L = 1;
+  order.slice().reverse().forEach((n) => { if (!n.op) return; const a = n.in.map((p) => val[p]); n.in.forEach((p, i) => { g[p] += OPS[n.op].d(a, i, val[n.id]) * g[n.id]; }); });
+  return g;
+}
+
+// state after step k (recomputed from scratch, so Back works trivially)
+function stateAt(k) {
+  const val = {}, grad = {}, full = forwardAll(leafVals());
+  nodes.forEach((n) => { if (!n.op) val[n.id] = n.v; });
+  let info = null;
+  for (let i = 1; i <= k; i++) {
+    const s = steps[i];
+    if (s.kind === "fwd") { val[s.n.id] = full[s.n.id]; info = s; }
+    else if (s.kind === "seed") { nodes.forEach((n) => (grad[n.id] = 0)); grad.L = 1; info = s; }
+    else if (s.kind === "bwd") {
+      const n = s.n, a = n.in.map((p) => full[p]), contrib = [];
+      n.in.forEach((p, i2) => { const loc = OPS[n.op].d(a, i2, full[n.id]); const c = loc * grad[n.id]; grad[p] += c; contrib.push({ p, loc, c, i: i2 }); });
+      info = { ...s, contrib };
+    }
+  }
+  if (k === 0) info = steps[0];
+  return { val, grad, info, full };
+}
+
+function explain(st) {
+  const s = st.info, E = $("explain");
+  if (s.kind === "start") { E.innerHTML = `<span class="phase f">ready</span><div>${P.note}</div><p class="note">Press <b>Next ▶</b> (or the → key) to run the forward pass one node at a time.</p>`; return; }
+  if (s.kind === "fwd") {
+    const n = s.n, args = n.in.map((p) => `${p} = ${fmt(st.full[p])}`).join(", ");
+    const opname = n.op === "act" ? ACT[$("act").value].name : OPS[n.op].sym;
+    E.innerHTML = `<span class="phase f">forward ${steps.indexOf(s)} / ${steps.findIndex((x) => x.kind === "seed") - 1}</span><div>Compute <b>${n.id}</b> = ${opname}(${n.in.join(", ")})</div><span class="eq">${args}<br>→ ${n.id} = ${fmt(st.full[n.id])}</span><p class="note">Every value is cached: the backward pass needs these numbers for the local derivatives.</p>`;
+    return;
+  }
+  if (s.kind === "seed") { E.innerHTML = `<span class="phase b">backward · seed</span><div>Forward pass done: <b>L = ${fmt(st.full.L)}</b>. Start the backward pass with</div><span class="eq">∂L/∂L = 1</span><p class="note">All other grads start at 0 and are <i>accumulated</i>.</p>`; return; }
+  const n = s.n;
+  const lines = s.contrib.map((c) => `${c.p}.grad += ${fmt(c.loc)} × ${fmt(st.grad[n.id])} = ${fmt(c.c)}   (now ${fmt(st.grad[c.p])})`).join("<br>");
+  const local = s.contrib.map((c) => OPS[n.op].dtxt(n, c.i)).filter((v, i, arr) => arr.indexOf(v) === i).join("<br>");
+  E.innerHTML = `<span class="phase b">backward</span><div>Node <b>${n.id}</b> has grad ${fmt(st.grad[n.id])}. Send it to its inputs:</div><span class="eq">local: ${local}</span><span class="eq">${lines}</span><p class="note">Rule: <code>input.grad += local derivative × output.grad</code>. That's the chain rule, one edge at a time.</p>`;
+}
+
+function render() {
+  const st = stateAt(k), s = st.info, svg = $("graph");
+  const W = 104, H = 72;
+  let html = `<defs><marker id="arr" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z"/></marker></defs>`;
+  const edgeLabels = [];
+  nodes.forEach((n) => n.in.forEach((pid) => {
+    const p = byId[pid];
+    const x1 = p.x + W / 2, y1 = p.y, x2 = n.x - W / 2, y2 = n.y;
+    let cls = "ed";
+    if (s.kind === "fwd" && s.n === n) cls += " fwd";
+    if (s.kind === "bwd" && s.n === n) { cls += " bwd"; const c = s.contrib.find((c) => c.p === pid); if (c) edgeLabels.push(`<text class="elab" x="${(x1 + x2) / 2}" y="${(y1 + y2) / 2 - 10}">+${fmt(c.c)}</text>`); }
+    html += `<path class="${cls}" d="M${x1},${y1} C${(x1 + x2) / 2},${y1} ${(x1 + x2) / 2},${y2} ${x2},${y2}"/>`;
+  }));
+  nodes.forEach((n) => {
+    let cls = "nd" + (n.op ? "" : " leaf");
+    if (s.kind === "fwd" && s.n === n) cls += " fwd";
+    if (s.kind === "bwd" && (s.n === n || s.contrib.some((c) => c.p === n.id))) cls += " bwd";
+    if (s.kind === "seed" && n.id === "L") cls += " bwd";
+    const opname = n.op ? (n.op === "act" ? ACT[$("act").value].name : OPS[n.op].sym) : (n.train ? "param" : "input");
+    html += `<g class="${cls}" transform="translate(${n.x - W / 2},${n.y - H / 2})"><rect width="${W}" height="${H}" rx="9"/>
+      <text class="lab" x="${W / 2}" y="20">${n.id} <tspan class="op" dx="2">${opname}</tspan></text>
+      <text class="v" x="${W / 2}" y="42">${fmt(st.val[n.id])}</text>
+      <text class="g" x="${W / 2}" y="62">${st.grad[n.id] === undefined ? "g ·" : "g " + fmt(st.grad[n.id])}</text></g>`;
+  });
+  html += edgeLabels.join("");
+  svg.innerHTML = html;
+  explain(st);
+  $("prog").max = steps.length - 1; $("prog").value = k;
+  $("prev").disabled = k === 0; $("first").disabled = k === 0; $("next").disabled = k === steps.length - 1; $("last").disabled = k === steps.length - 1;
+}
+
+function go(n) { k = Math.max(0, Math.min(steps.length - 1, n)); render(); }
+$("next").onclick = () => go(k + 1); $("prev").onclick = () => go(k - 1);
+$("first").onclick = () => go(0); $("last").onclick = () => go(steps.length - 1);
+$("play").onclick = () => {
+  if (timer) { clearInterval(timer); timer = null; $("play").textContent = "▶ Auto-play"; return; }
+  if (k === steps.length - 1) go(0);
+  $("play").textContent = "⏸ Pause";
+  timer = setInterval(() => { if (k >= steps.length - 1) { clearInterval(timer); timer = null; $("play").textContent = "▶ Auto-play"; return; } go(k + 1); }, 900);
+};
+document.addEventListener("keydown", (e) => {
+  if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+  if (e.key === "ArrowRight") go(k + 1); else if (e.key === "ArrowLeft") go(k - 1); else if (e.key === "Home") go(0); else if (e.key === "End") go(steps.length - 1);
+});
+$("preset").onchange = () => load($("preset").value);
+$("act").onchange = render;
+
+$("gc").onclick = () => {
+  const base = leafVals(), g = backwardAll(forwardAll(base)), h = 1e-5;
+  let rows = `<tr><th>leaf</th><th>backprop</th><th>numerical</th><th>rel. error</th></tr>`;
+  Object.keys(base).forEach((id) => {
+    const p = { ...base, [id]: base[id] + h }, m = { ...base, [id]: base[id] - h };
+    const num = (forwardAll(p).L - forwardAll(m).L) / (2 * h), an = g[id];
+    const rel = Math.abs(an - num) / Math.max(1e-12, Math.abs(an) + Math.abs(num));
+    const ok = rel < 1e-6 || Math.abs(an - num) < 1e-9;
+    rows += `<tr><td class="mono">${id}</td><td class="mono">${fmt(an)}</td><td class="mono">${fmt(num)}</td><td class="mono ${ok ? "good" : "warn"}">${Math.abs(an - num) < 1e-12 ? "0" : rel.toExponential(1)} ${ok ? "✓" : "⚠"}</td></tr>`;
+  });
+  $("gctab").innerHTML = rows + `<tr><td colspan="4" class="note">Relative error below ~1e-6 means the analytic gradient is right. (ReLU exactly at 0 is a kink, so the check can disagree there.)</td></tr>`;
+};
+$("gd").onclick = () => {
+  const eta = parseFloat($("eta").value) || 0.1, base = leafVals(), val = forwardAll(base), g = backwardAll(val);
+  nodes.filter((n) => !n.op && n.train).forEach((n) => { n.v -= eta * g[n.id]; const el = document.querySelector(`[data-leaf="${n.id}"]`); if (el) el.value = +n.v.toFixed(4); });
+  const L2 = forwardAll(leafVals()).L;
+  const line = document.createElement("div"); line.innerHTML = `L: ${fmt(val.L)} → <b class="${L2 < val.L ? "good" : "bad"}">${fmt(L2)}</b>`;
+  $("gdlog").prepend(line); while ($("gdlog").children.length > 6) $("gdlog").lastChild.remove();
+  render();
+};
+load("neuron");
+</script>
+</body>
+</html>

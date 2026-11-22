@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Matrix as a Map</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  #cv { aspect-ratio: 1 / 1; cursor: grab; }
+  .mat { display: inline-grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px 10px; border-left: 2px solid var(--text); border-right: 2px solid var(--text); border-radius: 6px; }
+  .mat input { width: 76px; text-align: center; font-family: var(--mono); }
+  .presets { display: flex; flex-wrap: wrap; gap: 6px; }
+  .presets button { font-size: 13px; padding: 5px 10px; }
+  .stage { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+  .stage span.on { color: var(--accent); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a><span class="note">Module 01 · Math for DL</span></header>
+  <h1>Matrix as a Map</h1>
+  <p class="lead">A 2×2 matrix is a machine that moves every point of the plane. Its columns are where the basis vectors land. <b>Drag the tips</b> of <span style="color:var(--c1)">A·e₁</span> and <span style="color:var(--c2)">A·e₂</span>, or type the entries. The unit circle becomes an ellipse whose axes are the <b>singular values</b>.</p>
+  <div class="grid two">
+    <div>
+      <canvas id="cv" width="640" height="640" aria-label="Plane transformed by the matrix"></canvas>
+      <div class="legend" style="margin-top:6px"><span><i style="background:var(--c1)"></i>A·e₁ (column 1)</span><span><i style="background:var(--c2)"></i>A·e₂ (column 2)</span><span><i style="background:var(--c3)"></i>eigenvector lines</span><span><i style="background:var(--c4)"></i>SVD axes σ₁u₁, σ₂u₂</span></div>
+    </div>
+    <div class="controls">
+      <div><div class="note" style="margin-bottom:4px">Matrix A</div>
+        <div class="mat"><input type="number" step="0.1" id="a"><input type="number" step="0.1" id="b"><input type="number" step="0.1" id="c"><input type="number" step="0.1" id="d"></div></div>
+      <div class="presets" id="presets"></div>
+      <div class="row">
+        <label><input type="checkbox" id="showEig" checked> eigenvectors</label>
+        <label><input type="checkbox" id="showSvd" checked> SVD axes</label>
+        <label><input type="checkbox" id="showGrid" checked> grid</label>
+      </div>
+      <label class="ctl">SVD as three steps: A = U · Σ · Vᵀ <span class="val" id="tv"></span><input type="range" id="t" min="0" max="3" step="0.01" value="3"></label>
+      <div class="stage"><span id="s0">identity</span><span id="s1">rotate Vᵀ</span><span id="s2">scale Σ</span><span id="s3">rotate U = A</span></div>
+      <div class="card" id="stats"></div>
+      <div class="callout" id="insight"></div>
+    </div>
+  </div>
+  <h2>Questions to answer with the tool</h2>
+  <div class="card"><ol style="margin:0;padding-left:20px">
+    <li>Pick <b>Rank 1</b>. What happens to the circle? Why does det = 0 mean "not invertible"?</li>
+    <li>Pick <b>Rotation</b>. Why are there no (real) eigenvector lines? What are the singular values?</li>
+    <li>Pick <b>Symmetric</b>. Check that eigenvectors are perpendicular and match the SVD axes (true for symmetric positive-definite matrices).</li>
+    <li>Pick <b>Shear</b>. Only one eigen-direction survives, but the SVD still gives two perpendicular axes. SVD always exists, eigendecomposition doesn't.</li>
+    <li>Pick <b>Ill-conditioned</b>. κ = σ₁/σ₂ is large: the map squashes one direction almost flat. This is the shape of the loss valley that makes plain gradient descent zig-zag (see the <a href="gradient-descent.html">optimizer landscape</a>).</li>
+    <li>Make det negative (e.g. <b>Reflection</b>). The orientation flips: e₁ → e₂ turns clockwise instead of counter-clockwise.</li>
+  </ol></div>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive · pairs with <code>01-math-for-dl.md</code></footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const cv = $("cv"), ctx = cv.getContext("2d");
+const PRESETS = {
+  Identity: [1, 0, 0, 1], Scale: [2, 0, 0, 0.5], Rotation: [0.866, -0.5, 0.5, 0.866], Shear: [1, 1, 0, 1],
+  Symmetric: [2, 1, 1, 2], "Rank 1": [1, 2, 0.5, 1], Reflection: [1, 0, 0, -1], "Ill-conditioned": [1, 0.95, 0.95, 1], Random: null,
+};
+let A = [1.5, 0.5, 0.3, 1];
+const R = 3.2; // world half-width
+function fit() { const d = devicePixelRatio || 1, w = cv.clientWidth; cv.width = w * d; cv.height = w * d; ctx.setTransform(d, 0, 0, d, 0, 0); }
+const S = () => cv.clientWidth;
+const toPx = (x, y) => [S() / 2 + (x / R) * (S() / 2), S() / 2 - (y / R) * (S() / 2)];
+const toW = (px, py) => [((px - S() / 2) / (S() / 2)) * R, (-(py - S() / 2) / (S() / 2)) * R];
+const mul = (M, v) => [M[0] * v[0] + M[1] * v[1], M[2] * v[0] + M[3] * v[1]];
+const rot = (t) => [Math.cos(t), -Math.sin(t), Math.sin(t), Math.cos(t)];
+const mm = (P, Q) => [P[0] * Q[0] + P[1] * Q[2], P[0] * Q[1] + P[1] * Q[3], P[2] * Q[0] + P[3] * Q[2], P[2] * Q[1] + P[3] * Q[3]];
+
+// Closed-form 2x2 SVD with U, V pure rotations: A = R(phi) · diag(s1, s2) · R(theta); s2 < 0 means a reflection.
+function svd([a, b, c, d]) {
+  const E = (a + d) / 2, F = (a - d) / 2, G = (c + b) / 2, H = (c - b) / 2;
+  const Q = Math.hypot(E, H), Rr = Math.hypot(F, G);
+  const a1 = Math.atan2(G, F), a2 = Math.atan2(H, E);
+  return { s1: Q + Rr, s2: Q - Rr, th: (a2 - a1) / 2, ph: (a2 + a1) / 2 };
+}
+function eig([a, b, c, d]) {
+  const tr = a + d, det = a * d - b * c, disc = (tr * tr) / 4 - det;
+  if (disc < -1e-12) return { complex: true, re: tr / 2, im: Math.sqrt(-disc) };
+  const r = Math.sqrt(Math.max(0, disc)), ls = [tr / 2 + r, tr / 2 - r], vecs = [];
+  for (const l of ls) {
+    let v = Math.abs(b) > 1e-9 ? [b, l - a] : Math.abs(c) > 1e-9 ? [l - d, c] : null;
+    if (!v) { v = Math.abs(a - l) < 1e-9 ? [1, 0] : [0, 1]; }
+    const n = Math.hypot(...v); vecs.push([v[0] / n, v[1] / n]);
+  }
+  return { complex: false, ls, vecs };
+}
+// the matrix shown at slider position t in [0,3]
+function Mt(t) {
+  const { s1, s2, th, ph } = svd(A);
+  const k1 = Math.min(1, Math.max(0, t)), k2 = Math.min(1, Math.max(0, t - 1)), k3 = Math.min(1, Math.max(0, t - 2));
+  const Vt = rot(th * k1), Sg = [1 + (s1 - 1) * k2, 0, 0, 1 + (s2 - 1) * k2], U = rot(ph * k3);
+  return mm(U, mm(Sg, Vt));
+}
+function arrow(from, to, color, w = 3) {
+  const [x1, y1] = toPx(...from), [x2, y2] = toPx(...to), ang = Math.atan2(y2 - y1, x2 - x1);
+  ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = w; ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x2, y2); ctx.lineTo(x2 - 12 * Math.cos(ang - 0.4), y2 - 12 * Math.sin(ang - 0.4)); ctx.lineTo(x2 - 12 * Math.cos(ang + 0.4), y2 - 12 * Math.sin(ang + 0.4)); ctx.fill();
+}
+function line(p, q, color, w = 1, dash = []) { const a = toPx(...p), b = toPx(...q); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash); ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke(); ctx.setLineDash([]); }
+
+function draw() {
+  const t = +$("t").value, M = Mt(t), W = S();
+  ctx.fillStyle = col("--surface"); ctx.fillRect(0, 0, W, W);
+  // original grid (faint) and axes
+  for (let i = -6; i <= 6; i++) { line([i, -6], [i, 6], col("--surface-2"), 1); line([-6, i], [6, i], col("--surface-2"), 1); }
+  line([-6, 0], [6, 0], col("--border"), 1.5); line([0, -6], [0, 6], col("--border"), 1.5);
+  // transformed grid
+  if ($("showGrid").checked) for (let i = -6; i <= 6; i++) {
+    const c = i === 0 ? col("--muted") : col("--border");
+    line(mul(M, [i, -6]), mul(M, [i, 6]), c, i === 0 ? 1.5 : 1); line(mul(M, [-6, i]), mul(M, [6, i]), c, i === 0 ? 1.5 : 1);
+  }
+  // unit square image (shows det as signed area)
+  const sq = [[0, 0], [1, 0], [1, 1], [0, 1]].map((p) => toPx(...mul(M, p)));
+  const det = M[0] * M[3] - M[1] * M[2];
+  ctx.fillStyle = det >= 0 ? "rgba(47,111,222,0.14)" : "rgba(194,65,45,0.16)";
+  ctx.beginPath(); sq.forEach((p, i) => (i ? ctx.lineTo(...p) : ctx.moveTo(...p))); ctx.closePath(); ctx.fill();
+  // unit circle and its image
+  ctx.strokeStyle = col("--muted"); ctx.setLineDash([4, 4]); ctx.lineWidth = 1; ctx.beginPath();
+  for (let k = 0; k <= 120; k++) { const a = (k / 120) * 2 * Math.PI, p = toPx(Math.cos(a), Math.sin(a)); k ? ctx.lineTo(...p) : ctx.moveTo(...p); } ctx.stroke(); ctx.setLineDash([]);
+  ctx.strokeStyle = col("--text"); ctx.lineWidth = 2; ctx.beginPath();
+  for (let k = 0; k <= 160; k++) { const a = (k / 160) * 2 * Math.PI, p = toPx(...mul(M, [Math.cos(a), Math.sin(a)])); k ? ctx.lineTo(...p) : ctx.moveTo(...p); } ctx.stroke();
+  const full = t >= 2.999;
+  if (full && $("showEig").checked) {
+    const e = eig(A);
+    if (!e.complex) e.vecs.forEach((v, i) => { line([-6 * v[0], -6 * v[1]], [6 * v[0], 6 * v[1]], col("--c3"), 2, [8, 5]); const p = toPx(...mul(A, v)); ctx.fillStyle = col("--c3"); ctx.beginPath(); ctx.arc(p[0], p[1], 5, 0, 7); ctx.fill(); ctx.font = "13px system-ui"; ctx.fillText("λ" + (i ? "₂" : "₁") + "v", p[0] + 7, p[1] - 7); });
+  }
+  if (full && $("showSvd").checked) {
+    const { s1, s2, ph } = svd(A);
+    const u1 = [Math.cos(ph), Math.sin(ph)], u2 = [-Math.sin(ph), Math.cos(ph)];
+    arrow([0, 0], [s1 * u1[0], s1 * u1[1]], col("--c4"), 2); arrow([0, 0], [s2 * u2[0], s2 * u2[1]], col("--c4"), 2);
+  }
+  arrow([0, 0], mul(M, [1, 0]), col("--c1")); arrow([0, 0], mul(M, [0, 1]), col("--c2"));
+  const h1 = toPx(...mul(M, [1, 0])), h2 = toPx(...mul(M, [0, 1]));
+  [h1, h2].forEach((h, i) => { ctx.strokeStyle = col(i ? "--c2" : "--c1"); ctx.lineWidth = 2; ctx.fillStyle = col("--surface"); ctx.beginPath(); ctx.arc(h[0], h[1], 8, 0, 7); ctx.fill(); ctx.stroke(); });
+  stats();
+}
+const f = (v) => (Math.abs(v) < 5e-4 ? "0" : (+v.toFixed(3)).toString());
+function stats() {
+  const [a, b, c, d] = A, det = a * d - b * c, e = eig(A), s = svd(A), s1 = Math.abs(s.s1), s2 = Math.abs(s.s2);
+  const smax = Math.max(s1, s2), smin = Math.min(s1, s2), rank = smax < 1e-6 ? 0 : smin < 1e-6 * smax + 1e-9 ? 1 : 2;
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  $("stats").innerHTML =
+    row("det A (signed area of the square)", f(det)) + row("trace A = λ₁ + λ₂", f(a + d)) + row("rank", rank) +
+    row("eigenvalues λ", e.complex ? `${f(e.re)} ± ${f(e.im)}i` : `${f(e.ls[0])}, ${f(e.ls[1])}`) +
+    row("singular values σ₁ ≥ σ₂ ≥ 0", `${f(smax)}, ${f(smin)}`) +
+    row("condition number κ = σ₁/σ₂", smin < 1e-9 ? "∞" : f(smax / smin)) +
+    row("check: |det| = σ₁σ₂", `${f(Math.abs(det))} = ${f(smax * smin)}`);
+  let msg;
+  if (rank < 2) msg = "<b>Singular.</b> The plane collapses onto a line (or a point). Information is lost, so no inverse exists. Rank = number of nonzero singular values.";
+  else if (e.complex) msg = "<b>Complex eigenvalues.</b> The map rotates every direction, so no real vector keeps its direction. SVD still works: it always exists.";
+  else if (Math.abs(b - c) < 1e-9) msg = "<b>Symmetric.</b> Eigenvalues are real and eigenvectors perpendicular (spectral theorem). If all λ ≥ 0, the SVD axes are the eigenvectors and σ = λ.";
+  else if (det < 0) msg = "<b>Orientation flips</b> (det < 0). In the SVD step view, one scale passes through zero to become negative.";
+  else msg = "Eigenvectors are directions that only stretch (A v = λv). Singular vectors are the perpendicular directions that land on the ellipse's axes. They agree only for symmetric positive matrices.";
+  $("insight").innerHTML = msg;
+  const t = +$("t").value; $("tv").textContent = t >= 2.999 ? "(full A)" : `(step ${t.toFixed(2)} / 3)`;
+  ["s0", "s1", "s2", "s3"].forEach((id, i) => $(id).classList.toggle("on", Math.round(t) === i));
+}
+function syncInputs() { ["a", "b", "c", "d"].forEach((id, i) => ($(id).value = +A[i].toFixed(3))); }
+["a", "b", "c", "d"].forEach((id, i) => $(id).addEventListener("input", () => { const v = parseFloat($(id).value); if (isFinite(v)) { A[i] = v; draw(); } }));
+Object.keys(PRESETS).forEach((name) => {
+  const btn = document.createElement("button"); btn.textContent = name;
+  btn.onclick = () => { A = PRESETS[name] ? [...PRESETS[name]] : Array.from({ length: 4 }, () => +(Math.random() * 4 - 2).toFixed(2)); $("t").value = 3; syncInputs(); draw(); };
+  $("presets").appendChild(btn);
+});
+["showEig", "showSvd", "showGrid", "t"].forEach((id) => $(id).addEventListener("input", draw));
+// dragging column tips
+let drag = null;
+cv.addEventListener("pointerdown", (e) => {
+  const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  $("t").value = 3;
+  const h1 = toPx(A[0], A[2]), h2 = toPx(A[1], A[3]);
+  const d1 = Math.hypot(x - h1[0], y - h1[1]), d2 = Math.hypot(x - h2[0], y - h2[1]);
+  if (Math.min(d1, d2) < 28) { drag = d1 <= d2 ? 0 : 1; cv.setPointerCapture(e.pointerId); cv.style.cursor = "grabbing"; }
+});
+cv.addEventListener("pointermove", (e) => {
+  if (drag === null) return;
+  const r = cv.getBoundingClientRect(); let [x, y] = toW(e.clientX - r.left, e.clientY - r.top);
+  x = Math.round(x * 20) / 20; y = Math.round(y * 20) / 20;
+  if (drag === 0) { A[0] = x; A[2] = y; } else { A[1] = x; A[3] = y; }
+  syncInputs(); draw();
+});
+const end = () => { drag = null; cv.style.cursor = "grab"; };
+cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end);
+window.addEventListener("resize", () => { fit(); draw(); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+fit(); syncInputs(); draw();
+</script>
+</body>
+</html>

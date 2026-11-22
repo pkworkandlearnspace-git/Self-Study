@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Broadcasting Lab</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .shapes { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: end; }
+  .shapes input { width: 100%; font-family: var(--mono); }
+  table.align { border-collapse: separate; border-spacing: 4px; font-family: var(--mono); font-size: 15px; }
+  table.align td, table.align th { text-align: center; min-width: 46px; padding: 6px 8px; border-radius: 6px; }
+  table.align th { color: var(--muted); font-weight: 400; font-size: 12px; text-align: right; }
+  td.eq { background: var(--surface-2); }
+  td.st { background: var(--accent-soft); color: var(--accent); }
+  td.pad { color: var(--muted); border: 1px dashed var(--border); }
+  td.bad { background: color-mix(in srgb, var(--bad) 18%, transparent); color: var(--bad); font-weight: 700; }
+  td.res { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good); font-weight: 700; }
+  .cells { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+  .cells svg { max-width: 100%; height: auto; }
+  .q { font-family: var(--mono); font-size: 17px; margin: 4px 0 10px; }
+  .fb { margin-top: 10px; font-size: 14px; }
+  .pill { display: inline-block; font-size: 12px; border-radius: 99px; padding: 1px 8px; background: var(--surface-2); color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a><span class="note">Module 02 · Python & NumPy</span></header>
+  <h1>Broadcasting Lab</h1>
+  <p class="lead">Silent shape bugs are the most common bug in DL code. Type two shapes and see NumPy's rule in action: <b>align from the right; each pair of dims must be equal or one of them 1; size-1 dims stretch; missing dims count as 1.</b> PyTorch uses the same rule. Then drill it in the quiz.</p>
+
+  <div class="grid two">
+    <div class="card">
+      <div class="shapes">
+        <label class="ctl">Shape of a<input id="sa" type="text" value="32, 1, 5"></label>
+        <label class="ctl">Op<select id="op"><option value="bc">a + b (elementwise)</option><option value="mm">a @ b (matmul)</option></select></label>
+        <label class="ctl">Shape of b<input id="sb" type="text" value="4, 5"></label>
+      </div>
+      <div class="row" style="margin-top:10px;gap:6px" id="examples"></div>
+      <div class="scroll-x" style="margin-top:14px"><table class="align" id="align"></table></div>
+      <div class="callout" id="verdict" style="margin-top:10px"></div>
+    </div>
+    <div class="card">
+      <b>Picture it (last two dims)</b>
+      <p class="note" style="margin:4px 0 8px">Solid cells are real data. Faded cells are virtual copies made by stretching a size-1 axis: no memory is copied.</p>
+      <div class="cells" id="cells"></div>
+    </div>
+  </div>
+
+  <h2>Quiz: predict the shape</h2>
+  <div class="card">
+    <div class="row" style="justify-content:space-between">
+      <span class="pill" id="qkind"></span>
+      <span class="note">Score <b id="score">0 / 0</b> · streak <b id="streak">0</b></span>
+    </div>
+    <div class="q" id="qtext"></div>
+    <div class="row">
+      <input type="text" id="ans" placeholder="e.g. 32, 4, 5  or  error" style="flex:1;min-width:180px;font-family:var(--mono)" autocomplete="off">
+      <button class="primary" id="check">Check</button><button id="skip">Next question</button>
+    </div>
+    <div class="fb" id="fb"></div>
+    <p class="note" style="margin:10px 0 0">Type the result shape as numbers separated by commas, <code>()</code> for a scalar, or <code>error</code> if NumPy would raise. Press Enter to check, Enter again for the next question.</p>
+  </div>
+
+  <h2>Cheat sheet</h2>
+  <div class="card scroll-x"><table class="t">
+    <tr><th>Expression</th><th>Shapes</th><th>Result</th><th>Why it matters</th></tr>
+    <tr><td><code>X - X.mean(axis=0)</code></td><td>(N,D) − (D,)</td><td>(N,D)</td><td>centering features</td></tr>
+    <tr><td><code>X / X.sum(axis=1, keepdims=True)</code></td><td>(N,D) / (N,1)</td><td>(N,D)</td><td>row normalization; without keepdims, (N,D)/(N,) fails (or silently misaligns when N = D)</td></tr>
+    <tr><td><code>y_pred - y</code> 🐛</td><td>(N,1) − (N,)</td><td>(N,N)</td><td>the classic silent bug: loss becomes an N×N mean</td></tr>
+    <tr><td><code>((A[:,None,:] - B[None,:,:])**2).sum(-1)</code></td><td>(n,1,d) − (1,m,d)</td><td>(n,m)</td><td>pairwise distances, no loop</td></tr>
+    <tr><td><code>Q @ K.transpose(-2,-1)</code> (PyTorch)</td><td>(B,h,T,d) @ (B,h,d,T)</td><td>(B,h,T,T)</td><td>attention scores</td></tr>
+    <tr><td><code>np.einsum('bij,bjk->bik', A, B)</code></td><td>(b,i,j),(b,j,k)</td><td>(b,i,k)</td><td>batched matmul, spelled out</td></tr>
+  </table></div>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive · pairs with <code>02-python-numpy-tools.md</code> · rules from the <a href="https://numpy.org/doc/stable/user/basics.broadcasting.html">NumPy broadcasting docs</a> and <a href="https://numpy.org/doc/stable/reference/generated/numpy.matmul.html">np.matmul</a></footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const parse = (s) => { s = s.trim().replace(/^[\(\[]|[\)\]]$/g, "").trim(); if (!s) return []; const p = s.split(/[\s,x×]+/).filter(Boolean).map(Number); return p.every((n) => Number.isInteger(n) && n >= 0) ? p : null; };
+const show = (sh) => (sh.length === 1 ? `(${sh[0]},)` : `(${sh.join(", ")})`);
+
+// NumPy broadcasting. returns {shape} or {error, col}
+function broadcast(a, b) {
+  const n = Math.max(a.length, b.length), out = [], cols = [];
+  for (let i = 0; i < n; i++) {
+    const x = a[a.length - n + i], y = b[b.length - n + i];
+    const xa = x === undefined ? 1 : x, yb = y === undefined ? 1 : y;
+    let st;
+    if (xa === yb) st = "eq"; else if (xa === 1) st = "sa"; else if (yb === 1) st = "sb"; else st = "bad";
+    cols.push({ x, y, st, r: st === "bad" ? null : Math.max(xa, yb) === 0 || Math.min(xa, yb) === 0 ? 0 : Math.max(xa, yb) });
+    out.push(st === "bad" ? null : (xa === 1 ? yb : xa));
+  }
+  const bad = cols.findIndex((c) => c.st === "bad");
+  return bad >= 0 ? { error: true, cols, n } : { shape: out, cols, n };
+}
+// np.matmul semantics
+function matmul(a, b) {
+  if (!a.length || !b.length) return { error: "matmul does not accept scalars (0-d arrays)" };
+  let A = a.slice(), B = b.slice(), dropA = false, dropB = false;
+  if (A.length === 1) { A = [1, A[0]]; dropA = true; }
+  if (B.length === 1) { B = [B[0], 1]; dropB = true; }
+  const [n, k1] = A.slice(-2), [k2, m] = B.slice(-2);
+  if (k1 !== k2) return { error: `inner dims differ: ${k1} ≠ ${k2} (a's last dim must equal b's second-to-last)` };
+  const bb = broadcast(A.slice(0, -2), B.slice(0, -2));
+  if (bb.error) return { error: "batch dims " + show(A.slice(0, -2)) + " and " + show(B.slice(0, -2)) + " don't broadcast" };
+  const out = [...bb.shape]; if (!dropA) out.push(n); if (!dropB) out.push(m);
+  return { shape: out, batch: bb, n, k: k1, m, dropA, dropB };
+}
+
+function renderCalc() {
+  const a = parse($("sa").value), b = parse($("sb").value), op = $("op").value, T = $("align"), V = $("verdict");
+  if (!a || !b) { T.innerHTML = ""; V.innerHTML = '<span class="bad">Shapes must be non-negative integers, e.g. <code>32, 1, 5</code>.</span>'; drawCells(null); return; }
+  if (op === "bc") {
+    const r = broadcast(a, b);
+    const cell = (v, st, who) => v === undefined ? `<td class="pad">1</td>` : `<td class="${st === "bad" ? "bad" : (st === (who === "a" ? "sa" : "sb") ? "st" : "eq")}">${v}</td>`;
+    T.innerHTML = `<tr><th>a</th>${r.cols.map((c) => cell(c.x, c.st, "a")).join("")}</tr><tr><th>b</th>${r.cols.map((c) => cell(c.y, c.st, "b")).join("")}</tr>` +
+      `<tr><th>result</th>${r.cols.map((c) => c.st === "bad" ? `<td class="bad">✗</td>` : `<td class="res">${c.r}</td>`).join("")}</tr>`;
+    if (r.error) { const c = r.cols.find((c) => c.st === "bad"); V.innerHTML = `<b class="bad">Error.</b> <code>ValueError: operands could not be broadcast together with shapes ${show(a)} ${show(b)}</code><br>Dims ${c.x} and ${c.y} are different and neither is 1.`; }
+    else {
+      const notes = [];
+      r.cols.forEach((c, i) => { if (c.x === undefined) notes.push(`a gets a new leading axis (dim ${i})`); if (c.y === undefined) notes.push(`b gets a new leading axis (dim ${i})`); if (c.st === "sa" && c.x !== undefined) notes.push(`a's size-1 dim ${i} stretches to ${c.r}`); if (c.st === "sb" && c.y !== undefined) notes.push(`b's size-1 dim ${i} stretches to ${c.r}`); });
+      V.innerHTML = `<b class="good">Result shape ${show(r.shape)}</b>${notes.length ? "<br>" + notes.join(" · ") : " · shapes already match"}`;
+      if (a.length === 1 && b.length === 2 && b[1] === 1 && a[0] === b[0] && a[0] > 1) V.innerHTML += `<br><b class="warn">⚠ Probably a bug:</b> (N,) with (N,1) gives an N×N matrix. Reshape one side or use <code>.squeeze()</code>.`;
+      if (b.length === 1 && a.length === 2 && a[1] === 1 && a[0] === b[0] && a[0] > 1) V.innerHTML += `<br><b class="warn">⚠ Probably a bug:</b> (N,1) with (N,) gives an N×N matrix. Reshape one side or use <code>.squeeze()</code>.`;
+    }
+    drawCells(r.error ? null : { a, b, out: r.shape });
+  } else {
+    const r = matmul(a, b);
+    T.innerHTML = "";
+    if (r.error) { V.innerHTML = `<b class="bad">Error.</b> ${r.error}`; drawCells(null); return; }
+    V.innerHTML = `<b class="good">Result shape ${show(r.shape)}</b><br>Matrix part: (${r.n}×${r.k}) @ (${r.k}×${r.m}) → (${r.n}×${r.m})` +
+      (r.batch.shape.length ? ` · batch dims broadcast to ${show(r.batch.shape)}` : "") +
+      (r.dropA ? " · 1-D a was treated as a row vector, then that axis removed" : "") + (r.dropB ? " · 1-D b was treated as a column vector, then that axis removed" : "");
+    drawCells(null, true);
+  }
+}
+
+function grid(rows, cols, realR, realC, color, label) {
+  const s = Math.max(10, Math.min(26, Math.floor(160 / Math.max(rows, cols)))), W = cols * s + 2, H = rows * s + 22;
+  let g = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}"><text x="${W / 2}" y="13" text-anchor="middle" font-size="12" fill="var(--muted)" font-family="var(--mono)">${label}</text>`;
+  for (let i = 0; i < rows; i++) for (let j = 0; j < cols; j++) {
+    const real = i < realR && j < realC;
+    g += `<rect x="${1 + j * s}" y="${19 + i * s}" width="${s - 2}" height="${s - 2}" rx="3" fill="${color}" fill-opacity="${real ? 0.85 : 0.18}" stroke="${color}" stroke-opacity="${real ? 1 : 0.5}" ${real ? "" : 'stroke-dasharray="3 2"'}/>`;
+  }
+  return g + "</svg>";
+}
+function drawCells(d, isMM) {
+  const C = $("cells");
+  if (!d) { C.innerHTML = `<p class="note">${isMM ? "Matmul contracts the inner dimension, so there's nothing to stretch in the last two dims. Only the batch dims broadcast." : "Nothing to draw (shapes don't broadcast)."}</p>`; return; }
+  const last2 = (s) => (s.length >= 2 ? s.slice(-2) : s.length === 1 ? [1, s[0]] : [1, 1]);
+  const [ar, ac] = last2(d.a), [br, bc] = last2(d.b), [orr, oc] = last2(d.out);
+  if (orr > 12 || oc > 12) { C.innerHTML = `<p class="note">The last two dims of the result are ${orr}×${oc}: too big to draw. Try sizes ≤ 12, e.g. <code>3, 1</code> and <code>4</code>.</p>`; return; }
+  C.innerHTML = grid(orr, oc, ar, ac, "var(--c1)", `a ${ar}×${ac}`) + '<span class="big" style="font-size:22px">+</span>' + grid(orr, oc, br, bc, "var(--c2)", `b ${br}×${bc}`) + '<span class="big" style="font-size:22px">=</span>' + grid(orr, oc, orr, oc, "var(--c3)", `out ${orr}×${oc}`);
+}
+
+const EX = [["3, 1", "4", "bc"], ["5,", "5, 1", "bc"], ["8, 1, 6, 1", "7, 1, 5", "bc"], ["3, 4", "3", "bc"], ["3, 4", "4", "bc"], ["16, 10, 3", "3, 7", "mm"], ["2, 1, 4, 3", "5, 3, 6", "mm"], ["4", "4", "mm"]];
+EX.forEach(([a, b, op]) => { const btn = document.createElement("button"); btn.textContent = `${show(parse(a))} ${op === "mm" ? "@" : "+"} ${show(parse(b))}`; btn.style.fontSize = "13px"; btn.style.fontFamily = "var(--mono)"; btn.onclick = () => { $("sa").value = a; $("sb").value = b; $("op").value = op; renderCalc(); }; $("examples").appendChild(btn); });
+["sa", "sb", "op"].forEach((id) => $(id).addEventListener("input", renderCalc));
+
+// ---------- quiz ----------
+const CURATED = [
+  { k: "broadcast", q: "(32, 1, 5) + (4, 5)", f: () => broadcast([32, 1, 5], [4, 5]) },
+  { k: "broadcast", q: "(N,) − (N, 1)   with N = 10", f: () => broadcast([10], [10, 1]), why: "The (10,) becomes (1,10), the (10,1) stretches along axis 1: a 10×10 matrix. The classic silent bug." },
+  { k: "broadcast", q: "(3, 4) + (3,)", f: () => broadcast([3, 4], [3]), why: "Right-aligned, 4 meets 3. To add per-row values use (3, 1)." },
+  { k: "broadcast", q: "(8, 1, 6, 1) * (7, 1, 5)", f: () => broadcast([8, 1, 6, 1], [7, 1, 5]), why: "This is the example from the NumPy docs." },
+  { k: "broadcast", q: "(256, 256, 3) * (3,)", f: () => broadcast([256, 256, 3], [3]), why: "Scaling each RGB channel of an image." },
+  { k: "broadcast", q: "(15, 3, 5) + (15, 1, 5)", f: () => broadcast([15, 3, 5], [15, 1, 5]) },
+  { k: "broadcast", q: "(2, 1) + (8, 4, 3)", f: () => broadcast([2, 1], [8, 4, 3]), why: "Second-to-last dims: 2 vs 4, neither is 1." },
+  { k: "reduce", q: "x.shape = (64, 10).   x.sum(axis=0).shape", a: [10], why: "axis=0 collapses the 64 rows." },
+  { k: "reduce", q: "x.shape = (64, 10).   x.mean(axis=1, keepdims=True).shape", a: [64, 1], why: "keepdims keeps a size-1 axis so the result broadcasts back against x." },
+  { k: "reduce", q: "x.shape = (B, T, C) = (4, 8, 32).   x.max(axis=-1).shape", a: [4, 8] },
+  { k: "reduce", q: "x.shape = (5, 3).   x.T.reshape(-1).shape", a: [15] },
+  { k: "reduce", q: "x.shape = (2, 3, 4).   x[:, None, :, 0].shape", a: [2, 1, 3], why: "None inserts an axis; the integer index 0 removes the last one." },
+  { k: "matmul", q: "(16, 10, 3) @ (3, 7)", f: () => matmul([16, 10, 3], [3, 7]) },
+  { k: "matmul", q: "(B, T, C) @ (C, H)  with B=4, T=8, C=32, H=16", f: () => matmul([4, 8, 32], [32, 16]), why: "A Linear layer applied to every token." },
+  { k: "matmul", q: "(2, 1, 4, 3) @ (5, 3, 6)", f: () => matmul([2, 1, 4, 3], [5, 3, 6]), why: "Batch dims (2,1) and (5,) broadcast to (2,5)." },
+  { k: "matmul", q: "(4,) @ (4,)", f: () => matmul([4], [4]), why: "Two 1-D arrays give their dot product: a 0-d scalar ()." },
+  { k: "matmul", q: "(3, 4) @ (3, 4)", f: () => matmul([3, 4], [3, 4]), why: "Inner dims 4 and 3 differ. You probably wanted a @ b.T." },
+  { k: "matmul", q: "(B, h, T, d) @ (B, h, d, T)   with B=2, h=8, T=10, d=64", f: () => matmul([2, 8, 10, 64], [2, 8, 64, 10]), why: "Attention scores: one T×T matrix per batch element and head." },
+  { k: "einsum", q: "np.einsum('ij,jk->ik', A, B),  A (3,5), B (5,2)", a: [3, 2] },
+  { k: "einsum", q: "np.einsum('bij,bjk->bik', A, B),  A (8,3,5), B (8,5,2)", a: [8, 3, 2] },
+  { k: "einsum", q: "np.einsum('i,i->', a, b),  a (7,), b (7,)", a: [], why: "Repeated index summed, nothing left: a scalar (dot product)." },
+  { k: "einsum", q: "np.einsum('bhtd,bhsd->bhts', Q, K),  Q, K (2,4,10,16)", a: [2, 4, 10, 10] },
+];
+function randomQ() {
+  const r = (lo, hi) => lo + Math.floor(Math.random() * (hi - lo + 1)), pick = (arr) => arr[r(0, arr.length - 1)];
+  const n = r(1, 4), a = Array.from({ length: n }, () => pick([1, 2, 3, 4, 5, 6])), m = r(1, 4);
+  const b = Array.from({ length: m }, (_, i) => { const j = a.length - m + i, ai = a[j]; const roll = Math.random(); return ai === undefined ? pick([1, 2, 3]) : roll < 0.45 ? ai : roll < 0.8 ? 1 : pick([2, 3, 4, 5]); });
+  return { k: "broadcast (random)", q: `${show(a)} + ${show(b)}`, f: () => broadcast(a, b) };
+}
+let deck = [], cur = null, answered = false, right = 0, total = 0, streak = 0;
+function nextQ() {
+  if (!deck.length) deck = CURATED.slice().sort(() => Math.random() - 0.5);
+  cur = Math.random() < 0.25 ? randomQ() : deck.pop();
+  const res = cur.f ? cur.f() : { shape: cur.a };
+  cur.truth = res.error ? "error" : res.shape;
+  $("qkind").textContent = cur.k; $("qtext").textContent = cur.q; $("ans").value = ""; $("fb").innerHTML = ""; answered = false; if (total) $("ans").focus({ preventScroll: true });
+}
+function check() {
+  if (answered) { nextQ(); return; }
+  const raw = $("ans").value.trim().toLowerCase(); if (!raw) return;
+  const isErr = /^err/.test(raw), got = isErr ? "error" : raw === "()" || raw === "scalar" ? [] : parse(raw);
+  if (got === null) { $("fb").innerHTML = '<span class="warn">Type numbers separated by commas, <code>()</code>, or <code>error</code>.</span>'; return; }
+  const truthStr = cur.truth === "error" ? "error" : show(cur.truth), ok = (got === "error" && cur.truth === "error") || (Array.isArray(got) && Array.isArray(cur.truth) && got.join() === cur.truth.join());
+  total++; if (ok) { right++; streak++; } else streak = 0;
+  $("fb").innerHTML = (ok ? `<b class="good">✓ Correct: ${truthStr}</b>` : `<b class="bad">✗ Answer: ${truthStr}</b>`) + (cur.why ? ` · ${cur.why}` : "") + ' <span class="note">(Enter for next)</span>';
+  $("score").textContent = `${right} / ${total}`; $("streak").textContent = streak; answered = true;
+}
+$("check").onclick = check; $("skip").onclick = nextQ;
+$("ans").addEventListener("keydown", (e) => { if (e.key === "Enter") check(); });
+renderCalc(); nextQ();
+</script>
+</body>
+</html>
