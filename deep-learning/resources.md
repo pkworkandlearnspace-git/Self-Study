@@ -30,7 +30,7 @@
 | Course | Module | Notes |
 |---|---|---|
 | [3Blue1Brown: linear algebra & neural nets](https://www.3blue1brown.com/) | 01, 04, 08 | intuition first |
-| [ML Specialization (Andrew Ng)](https://www.coursera.org/specializations/machine-learning-introduction) | 03 | audit free |
+| [ML Specialization (Andrew Ng)](https://www.coursera.org/specializations/machine-learning-introduction) | 03 | free audit / financial aid options vary, check the page |
 | [Stanford CS229: Machine Learning](https://cs229.stanford.edu/) | 03 | math-heavy |
 | [fast.ai: Practical Deep Learning](https://course.fast.ai/) | 05–06 | top-down alternative |
 | [Stanford CS231n: CNNs for Visual Recognition](https://cs231n.stanford.edu/) | 06 | assignments are gold |
