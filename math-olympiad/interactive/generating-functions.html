@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Generating Functions Lab</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg.plot { aspect-ratio: 1 / 1; max-width: 460px; margin: 0 auto; }
+  svg.plot.bars { aspect-ratio: 2 / 1; max-width: none; }
+  svg text { font: 12px system-ui, sans-serif; fill: var(--muted); }
+  .binrow { display: flex; flex-wrap: wrap; gap: 3px; font-family: var(--mono); font-size: 12px; }
+  .binrow span { padding: 3px 6px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-2); }
+  .binrow span.on { background: var(--c4); border-color: var(--c4); color: #fff; }
+  .formula { font-family: var(--mono); font-size: 14px; overflow-wrap: anywhere; }
+  details.card { margin-top: 10px; } details.card summary { cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Math Olympiad tools</a></header>
+  <h1>Generating Functions Lab</h1>
+  <p class="lead">Turn counting into multiplying polynomials, then read off coefficients. Part 1 multiplies factors and plots the coefficients. Part 2 is the <b>roots-of-unity filter</b>, which picks out every m-th coefficient. Modules 02 and 04.</p>
+
+  <h2>1 · Multiply factors, read coefficients</h2>
+  <div class="grid two">
+    <div class="card">
+      <svg class="plot bars" id="bars" viewBox="0 0 640 320" aria-label="Bar chart of coefficients"></svg>
+      <div class="legend" style="margin-top:8px"><span><i style="background:var(--c1)"></i>series A</span><span id="legB"><i style="background:var(--c2)"></i>series B (outline)</span></div>
+      <p class="note" id="hover" style="margin:6px 0 0">Tap or hover a bar to read its coefficient.</p>
+    </div>
+    <div class="controls">
+      <label class="ctl">Example
+        <select id="preset">
+          <option value="dice">Two dice vs Sicherman dice</option>
+          <option value="euler">Euler: distinct parts = odd parts</option>
+          <option value="coins">Change for n cents with 1, 5, 10, 25</option>
+          <option value="comp">Compositions into 1s and 2s (Fibonacci)</option>
+          <option value="sub">Subsets of {1..10} by sum</option>
+          <option value="custom">Custom…</option>
+        </select></label>
+      <label class="ctl">Series A <input type="text" id="fa" spellcheck="false" style="width:100%"></label>
+      <label class="ctl">Series B (optional, to compare) <input type="text" id="fb" spellcheck="false" style="width:100%"></label>
+      <label class="ctl">Show coefficients up to x<sup>N</sup>, N = <span class="val" id="nv"></span><input type="range" id="N" min="8" max="60" value="24"></label>
+      <div class="callout" id="gfnote"></div>
+      <p class="note" style="margin:0">Syntax: factors joined by <code>*</code>. Each factor is a polynomial like <code>(1+x+x^2)^3</code> or <code>(x+2x^3)</code>, or a geometric series <code>1/(1-x^k)</code>.</p>
+    </div>
+  </div>
+  <div class="card scroll-x" id="coefs" style="margin-top:12px"></div>
+
+  <h2>2 · Roots-of-unity filter</h2>
+  <p class="note">To count the subsets of an n-set whose size is ≡ r (mod m), i.e. Σ<sub>k ≡ r</sub> C(n, k), average f(ω<sup>j</sup>)·ω<sup>−jr</sup> over the m-th roots of unity ω<sup>j</sup>, where f(x) = (1 + x)<sup>n</sup>. Every unwanted term cancels because 1 + ω + … + ω<sup>m−1</sup> = 0.</p>
+  <div class="grid two">
+    <div class="card">
+      <svg class="plot" id="roots" viewBox="-230 -230 460 460" aria-label="Roots of unity and the filter terms"></svg>
+      <div class="legend" style="justify-content:center;margin-top:8px">
+        <span><i style="background:var(--muted)"></i>ω<sup>j</sup></span>
+        <span><i style="background:var(--c4)"></i>term f(ω<sup>j</sup>)·ω<sup>−jr</sup> (scaled)</span>
+        <span><i style="background:var(--c2)"></i>their sum (real!)</span>
+      </div>
+    </div>
+    <div class="controls">
+      <label class="ctl">n = <span class="val" id="rnv"></span><input type="range" id="rn" min="1" max="40" value="10"></label>
+      <label class="ctl">modulus m = <span class="val" id="rmv"></span><input type="range" id="rm" min="2" max="8" value="3"></label>
+      <label class="ctl">residue r = <span class="val" id="rrv"></span><input type="range" id="rr" min="0" max="2" value="0"></label>
+      <div class="card" id="rstats"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:12px"><b>Row n of Pascal's triangle</b> (purple = k ≡ r mod m)<div class="binrow" id="binrow" style="margin-top:8px"></div></div>
+
+  <h2>Practice (solutions inside)</h2>
+  <details class="card"><summary><b>1. Find Σ<sub>k</sub> C(n, 3k) in closed form.</b></summary>
+    <p>With ω = e<sup>2πi/3</sup>: the sum is [2<sup>n</sup> + (1+ω)<sup>n</sup> + (1+ω²)<sup>n</sup>]/3. Since 1 + ω = e<sup>iπ/3</sup> and 1 + ω² = e<sup>−iπ/3</sup>, the answer is <b>(2<sup>n</sup> + 2cos(nπ/3))/3</b>. Check n = 10 in Part 2: 2cos(10π/3) = −1, so (1024 − 1)/3 = 341.</p></details>
+  <details class="card"><summary><b>2. How many subsets of {1, 2, …, 2000} have a sum divisible by 5? (A classic; IMO 1995 P6 is the same idea with p-element subsets.)</b></summary>
+    <p>f(x) = ∏<sub>k=1</sub><sup>2000</sup>(1 + x<sup>k</sup>). For a primitive 5th root ζ, the exponents k run through each residue class mod 5 exactly 400 times, so f(ζ) = [(1+1)(1+ζ)(1+ζ²)(1+ζ³)(1+ζ⁴)]<sup>400</sup>. From x⁵ − 1 = ∏(x − ζ<sup>j</sup>) at x = −1: ∏<sub>j=0</sub><sup>4</sup>(1 + ζ<sup>j</sup>) = 2, so f(ζ<sup>j</sup>) = 2<sup>400</sup> for j = 1..4. Answer: <b>(2<sup>2000</sup> + 4·2<sup>400</sup>)/5</b>. Try the small version in Part 1 with <code>(1+x)*(1+x^2)*…</code>: the "Subsets of {1..10}" example, where the count of sum ≡ 0 mod 5 is (2<sup>10</sup> + 4·2<sup>2</sup>)/5 = 208.</p></details>
+  <details class="card"><summary><b>3. Prove: partitions of n into distinct parts = partitions into odd parts.</b></summary>
+    <p>∏(1 + x<sup>k</sup>) = ∏(1 − x<sup>2k</sup>)/(1 − x<sup>k</sup>). Every even-exponent factor in the numerator cancels the matching denominator factor, leaving ∏<sub>k odd</sub> 1/(1 − x<sup>k</sup>). Load the Euler example: the two series coincide bar for bar.</p></details>
+  <details class="card"><summary><b>4. Why do the Sicherman dice (1,2,2,3,3,4) and (1,3,4,5,6,8) give the same sum distribution as two ordinary dice?</b></summary>
+    <p>x + … + x<sup>6</sup> = x(1+x)(1+x+x²)(1−x+x²). Square it and regroup the factors differently: x(1+x)(1+x+x²) = x + 2x² + 2x³ + x⁴ and x(1+x+x²)(1−x+x²)² = x + x³ + x⁴ + x⁵ + x⁶ + x⁸. Both have value 6 at x = 1, so both are genuine dice.</p></details>
+  <footer class="foot">Part of the Self-Study repo · math-olympiad/interactive</footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const cv = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const NS = "http://www.w3.org/2000/svg";
+function mk(svg, tag, at) { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); svg.appendChild(e); return e; }
+
+// ---------- Series parser (BigInt coefficients, truncated at degree N) ----------
+function mulS(a, b, N) { const c = Array(N + 1).fill(0n); for (let i = 0; i <= N; i++) if (a[i]) for (let j = 0; i + j <= N; j++) if (b[j]) c[i + j] += a[i] * b[j]; return c; }
+function parsePoly(str, N) { // "1+x+2x^3-x^2"
+  const out = Array(N + 1).fill(0n), s = str.replace(/\s+/g, "");
+  if (!s) throw new Error("empty factor");
+  const terms = s.match(/[+-]?[^+-]+/g);
+  for (const t of terms) {
+    const m = t.match(/^([+-]?)(\d*)(\*?x(?:\^(\d+))?)?$/);
+    if (!m || (m[2] === "" && !m[3])) throw new Error("can't read term “" + t + "”");
+    const sign = m[1] === "-" ? -1n : 1n, coef = m[2] === "" ? 1n : BigInt(m[2]), e = m[3] ? (m[4] ? +m[4] : 1) : 0;
+    if (e <= N) out[e] += sign * coef;
+  }
+  return out;
+}
+function splitTop(s) { const parts = []; let depth = 0, cur = ""; for (const ch of s) { if (ch === "(") depth++; if (ch === ")") depth--; if (ch === "*" && depth === 0) { parts.push(cur); cur = ""; } else cur += ch; } parts.push(cur); return parts.map((p) => p.trim()).filter(Boolean); }
+function parseSeries(str, N) {
+  let acc = Array(N + 1).fill(0n); acc[0] = 1n;
+  for (const f of splitTop(str)) {
+    let g = f.replace(/\s+/g, ""), m;
+    if ((m = g.match(/^1\/\(1-x(?:\^(\d+))?\)(?:\^(\d+))?$/))) {
+      const k = m[1] ? +m[1] : 1, e = m[2] ? +m[2] : 1, geo = Array(N + 1).fill(0n);
+      if (k < 1) throw new Error("bad geometric factor");
+      for (let i = 0; i <= N; i += k) geo[i] = 1n;
+      for (let t = 0; t < e; t++) acc = mulS(acc, geo, N);
+    } else if ((m = g.match(/^\((.*)\)(?:\^(\d+))?$/))) {
+      const p = parsePoly(m[1], N), e = m[2] ? +m[2] : 1; if (e > 200) throw new Error("exponent too big");
+      for (let t = 0; t < e; t++) acc = mulS(acc, p, N);
+    } else acc = mulS(acc, parsePoly(g, N), N);
+  }
+  return acc;
+}
+
+const presets = {
+  dice: { a: "(x+x^2+x^3+x^4+x^5+x^6)^2", b: "(x+2x^2+2x^3+x^4) * (x+x^3+x^4+x^5+x^6+x^8)", N: 14,
+    note: "Coefficient of x<sup>s</sup> = number of ways to roll sum s. The Sicherman pair (outline) matches standard dice exactly: 1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1." },
+  euler: { a: "(1+x)*(1+x^2)*(1+x^3)*(1+x^4)*(1+x^5)*(1+x^6)*(1+x^7)*(1+x^8)*(1+x^9)*(1+x^10)*(1+x^11)*(1+x^12)*(1+x^13)*(1+x^14)*(1+x^15)*(1+x^16)*(1+x^17)*(1+x^18)*(1+x^19)*(1+x^20)*(1+x^21)*(1+x^22)*(1+x^23)*(1+x^24)",
+    b: "1/(1-x)*1/(1-x^3)*1/(1-x^5)*1/(1-x^7)*1/(1-x^9)*1/(1-x^11)*1/(1-x^13)*1/(1-x^15)*1/(1-x^17)*1/(1-x^19)*1/(1-x^21)*1/(1-x^23)", N: 24,
+    note: "A: distinct parts ∏(1+x<sup>k</sup>). B: odd parts ∏<sub>k odd</sub> 1/(1−x<sup>k</sup>). They agree for every n ≤ 24 (both factor lists cover all parts ≤ 24)." },
+  coins: { a: "1/(1-x)*1/(1-x^5)*1/(1-x^10)*1/(1-x^25)", b: "", N: 60,
+    note: "Ways to make n cents. The coefficient of x<sup>50</sup> is 49 and of x<sup>100</sup> would be 242. Each coin type contributes one geometric series." },
+  comp: { a: "1/(1-x-x^2)", b: "", N: 24, note: "" },
+  sub: { a: "(1+x)*(1+x^2)*(1+x^3)*(1+x^4)*(1+x^5)*(1+x^6)*(1+x^7)*(1+x^8)*(1+x^9)*(1+x^10)", b: "", N: 55,
+    note: "Coefficient of x<sup>s</sup> = number of subsets of {1..10} with sum s. The total is 2<sup>10</sup> = 1024 and the chart is symmetric about 27.5." },
+};
+// 1/(1-x-x^2) isn't a product of our factor types; encode it as Σ over (x+x^2)^j instead via a special-case below.
+function seriesFor(str, N) {
+  if (str.replace(/\s+/g, "") === "1/(1-x-x^2)") { // Fibonacci: compositions of n into 1s and 2s
+    const a = Array(N + 1).fill(0n); a[0] = 1n; for (let i = 1; i <= N; i++) a[i] = a[i - 1] + (i >= 2 ? a[i - 2] : 0n); return a;
+  }
+  return parseSeries(str, N);
+}
+
+let A = [], B = null;
+function updateGF() {
+  const N = +$("N").value; $("nv").textContent = N;
+  let err = "";
+  try { A = seriesFor($("fa").value, N); } catch (e) { err = "Series A: " + e.message; A = Array(N + 1).fill(0n); }
+  B = null; if ($("fb").value.trim()) { try { B = seriesFor($("fb").value, N); } catch (e) { err = "Series B: " + e.message; } }
+  $("legB").style.display = B ? "" : "none";
+  const p = presets[$("preset").value];
+  if (err) $("gfnote").innerHTML = `<span class="bad">${err}</span>`;
+  else if (B) { const same = A.every((v, i) => v === B[i]); $("gfnote").innerHTML = (p && p.note ? p.note + "<br>" : "") + (same ? `<b class="good">A and B agree up to x<sup>${N}</sup>.</b>` : `<b class="warn">A and B differ</b> (first at x<sup>${A.findIndex((v, i) => v !== B[i])}</sup>).`); }
+  else $("gfnote").innerHTML = p && p.note ? p.note : $("preset").value === "comp" ? "Compositions of n into parts 1 and 2: Σ<sub>j</sub>(x + x²)<sup>j</sup> = 1/(1 − x − x²). The coefficients are Fibonacci numbers 1, 1, 2, 3, 5, 8, …" : "Edit the factors and watch the coefficients change.";
+  drawBars(N); drawTable(N);
+}
+function drawBars(N) {
+  const svg = $("bars"); svg.innerHTML = "";
+  const W = 640, H = 320, L = 44, Bm = 26, T = 10, maxV = [...A, ...(B || [])].reduce((m, v) => (v > m ? v : m), 1n);
+  const scale = (v) => (Number(v) / Number(maxV)) * (H - Bm - T), bw = (W - L - 6) / (N + 1);
+  mk(svg, "line", { x1: L, y1: H - Bm, x2: W, y2: H - Bm, stroke: cv("--border") });
+  const lab = mk(svg, "text", { x: L - 6, y: T + 10, "text-anchor": "end" }); lab.textContent = maxV.toString().length > 6 ? Number(maxV).toExponential(1) : maxV.toString();
+  for (let i = 0; i <= N; i++) {
+    const x = L + i * bw, h = Math.max(0, scale(A[i] < 0n ? -A[i] : A[i]));
+    const r = mk(svg, "rect", { x: x + 1, y: H - Bm - h, width: Math.max(1, bw - 2), height: h, fill: A[i] < 0n ? cv("--bad") : cv("--c1"), rx: 2, opacity: 0.85 });
+    if (B) { const hb = Math.max(0, scale(B[i] < 0n ? -B[i] : B[i])); mk(svg, "rect", { x: x + 1, y: H - Bm - hb, width: Math.max(1, bw - 2), height: hb, fill: "none", stroke: cv("--c2"), "stroke-width": 2, rx: 2 }); }
+    const hit = mk(svg, "rect", { x, y: T, width: bw, height: H - Bm - T, fill: "transparent" });
+    const info = () => { $("hover").innerHTML = `[x<sup>${i}</sup>] A = <b class="mono">${A[i]}</b>` + (B ? ` · B = <b class="mono">${B[i]}</b>` : ""); };
+    hit.addEventListener("mouseenter", info); hit.addEventListener("click", info);
+    if (N <= 30 || i % 5 === 0) { const t = mk(svg, "text", { x: x + bw / 2, y: H - 8, "text-anchor": "middle" }); t.textContent = i; }
+  }
+}
+function drawTable(N) {
+  let h = `<table class="t"><tr><th>n</th>` + A.map((_, i) => `<th>${i}</th>`).join("") + `</tr><tr><th>A</th>` + A.map((v) => `<td class="mono">${v}</td>`).join("") + `</tr>`;
+  if (B) h += `<tr><th>B</th>` + B.map((v, i) => `<td class="mono ${v === A[i] ? "" : "bad"}">${v}</td>`).join("") + `</tr>`;
+  $("coefs").innerHTML = h + `</table>`;
+}
+function loadPreset() {
+  const p = presets[$("preset").value]; if (!p) { updateGF(); return; }
+  $("fa").value = p.a; $("fb").value = p.b; $("N").value = p.N; updateGF();
+}
+$("preset").addEventListener("change", loadPreset);
+for (const id of ["fa", "fb"]) $(id).addEventListener("input", () => { $("preset").value = "custom"; updateGF(); });
+$("N").addEventListener("input", updateGF);
+loadPreset();
+
+// ---------- Roots-of-unity filter ----------
+const binom = (n) => { const r = [1n]; for (let k = 1; k <= n; k++) r.push((r[k - 1] * BigInt(n - k + 1)) / BigInt(k)); return r; };
+function updateRU() {
+  const n = +$("rn").value, m = +$("rm").value; $("rr").max = m - 1; const r = Math.min(+$("rr").value, m - 1); $("rr").value = r;
+  $("rnv").textContent = n; $("rmv").textContent = m; $("rrv").textContent = r;
+  const row = binom(n); let exact = 0n; row.forEach((c, k) => { if (k % m === r) exact += c; });
+  $("binrow").innerHTML = row.map((c, k) => `<span class="${k % m === r ? "on" : ""}" title="C(${n},${k})">${c}</span>`).join("");
+  // terms T_j = (1+w^j)^n * w^{-jr}, computed in polar form: 1+e^{iθ} = 2cos(θ/2) e^{iθ/2}
+  const terms = [];
+  for (let j = 0; j < m; j++) {
+    const th = (2 * Math.PI * j) / m, c = 2 * Math.cos(th / 2), mod = Math.pow(Math.abs(c), n), ang = (n * th) / 2 + (c < 0 ? n * Math.PI : 0) - r * th; // th already contains j
+    terms.push([mod * Math.cos(ang), mod * Math.sin(ang)]);
+  }
+  const sum = terms.reduce((s, t) => [s[0] + t[0], s[1] + t[1]], [0, 0]);
+  const fmt = (z) => { if (Math.abs(z) < 5e-4) z = 0; return Math.abs(z) >= 1e6 ? z.toExponential(3) : z.toFixed(3); };
+  const rowS = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  $("rstats").innerHTML =
+    terms.map((t, j) => rowS(`j = ${j}: f(ω<sup>${j}</sup>)·ω<sup>−${j * r}</sup>`, fmt(t[0]) + (Math.abs(t[1]) > 1e-9 * Math.max(1, Math.abs(t[0])) ? (t[1] < 0 ? " − " : " + ") + fmt(Math.abs(t[1])) + "i" : ""))).join("") +
+    rowS("(1/m)·Σ (real part)", fmt(sum[0] / m)) +
+    rowS(`exact Σ C(${n}, k), k ≡ ${r} (mod ${m})`, `<span class="good">${exact}</span>`) +
+    (m === 3 ? rowS("closed form (2ⁿ + 2cos((n−2r)π/3))/3", fmt((Math.pow(2, n) + 2 * Math.cos(((n - 2 * r) * Math.PI) / 3)) / 3)) : "") +
+    (m === 2 ? rowS("closed form 2ⁿ⁻¹", 2 ** (n - 1)) : "") +
+    (m === 4 ? rowS("closed form (2ⁿ + 2<sup>n/2+1</sup>cos((n−2r)π/4))/4", fmt((Math.pow(2, n) + Math.pow(2, n / 2 + 1) * Math.cos(((n - 2 * r) * Math.PI) / 4)) / 4)) : "");
+  // diagram: unit circle with roots; terms drawn as arrows scaled so the largest has length 200 (log-ish for big n)
+  const svg = $("roots"); svg.innerHTML = "";
+  const R = 70; mk(svg, "circle", { cx: 0, cy: 0, r: R, fill: "none", stroke: cv("--border") });
+  mk(svg, "line", { x1: -220, y1: 0, x2: 220, y2: 0, stroke: cv("--border") }); mk(svg, "line", { x1: 0, y1: -220, x2: 0, y2: 220, stroke: cv("--border") });
+  const big = Math.max(...terms.map((t) => Math.hypot(...t)), Math.abs(sum[0])), sc = 200 / big;
+  for (let j = 0; j < m; j++) { const th = (2 * Math.PI * j) / m; mk(svg, "circle", { cx: R * Math.cos(th), cy: -R * Math.sin(th), r: 4, fill: cv("--muted") }); const t = mk(svg, "text", { x: (R + 14) * Math.cos(th) - 6, y: -(R + 14) * Math.sin(th) + 4 }); t.textContent = "ω" + toSup(j); }
+  let cx = 0, cy = 0;
+  terms.forEach((t, j) => { // head-to-tail chain
+    const nx = cx + t[0] * sc, ny = cy - t[1] * sc;
+    mk(svg, "line", { x1: cx, y1: cy, x2: nx, y2: ny, stroke: cv("--c4"), "stroke-width": 2.2, "stroke-linecap": "round" });
+    mk(svg, "circle", { cx: nx, cy: ny, r: 2.5, fill: cv("--c4") }); cx = nx; cy = ny;
+  });
+  mk(svg, "line", { x1: 0, y1: 0, x2: sum[0] * sc, y2: -sum[1] * sc, stroke: cv("--c2"), "stroke-width": 3, opacity: 0.8 });
+  const note = mk(svg, "text", { x: -220, y: 222 }); note.textContent = "terms chained head-to-tail; scale 1 : " + (1 / sc).toPrecision(3);
+}
+const toSup = (j) => String(j).split("").map((d) => "⁰¹²³⁴⁵⁶⁷⁸⁹"[+d]).join("");
+for (const id of ["rn", "rm", "rr"]) $(id).addEventListener("input", updateRU);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { updateGF(); updateRU(); });
+updateRU();
+window.__gf = { seriesFor, terms: () => $("rstats").innerText };
+</script>
+</body>
+</html>

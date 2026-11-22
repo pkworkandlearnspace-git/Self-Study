@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Functional Equations Trainer</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .fe { font-family: var(--mono); font-size: 17px; background: var(--surface-2); border-radius: 8px; padding: 10px 12px; overflow-wrap: anywhere; }
+  .plist { display: flex; flex-wrap: wrap; gap: 6px; }
+  .plist button.done { border-color: var(--good); }
+  .plist button.done::after { content: " ✓"; color: var(--good); }
+  ol.hints li { margin-bottom: 6px; }
+  ol.hints li.hidden { display: none; }
+  .res { font-size: 14px; min-height: 1.5em; }
+  svg.plot { aspect-ratio: 2 / 1; }
+  svg text { font: 11px system-ui, sans-serif; fill: var(--muted); }
+  details.card summary { cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Math Olympiad tools</a></header>
+  <h1>Functional Equations Trainer</h1>
+  <p class="lead">Guess a solution, test it against the equation at random points, then reveal the substitutions one at a time. A guess that passes is only a <i>candidate</i>: the proof must show there are no others. Module 02.</p>
+
+  <div class="plist" id="plist" role="tablist" aria-label="Problems"></div>
+
+  <div class="grid two" style="margin-top:14px">
+    <div class="card">
+      <div class="note" id="meta"></div>
+      <div class="fe" id="eq" style="margin:8px 0"></div>
+      <label class="ctl">Your guess: f(x) =
+        <input type="text" id="guess" spellcheck="false" autocomplete="off" placeholder="e.g. 2*x+3, x^2, 2^x, 0" style="width:100%"></label>
+      <div class="row" style="margin-top:8px">
+        <button class="primary" id="test">Test at 400 random points</button>
+        <button id="hint">Next hint</button>
+        <button id="sol">Show answer</button>
+      </div>
+      <p class="res" id="res"></p>
+      <svg class="plot" id="plot" viewBox="0 0 400 200" aria-label="Plot of your guess"></svg>
+    </div>
+    <div class="controls">
+      <div class="card">
+        <b>Hints (substitutions in order)</b>
+        <ol class="hints" id="hints" style="padding-left:20px;margin:8px 0 0"></ol>
+        <p class="note" id="nohint" style="margin:6px 0 0">Press <i>Next hint</i> to reveal the first step.</p>
+      </div>
+      <div class="card" id="answer" hidden></div>
+      <div class="callout">Syntax: <code>x</code>, numbers, <code>+ − * / ^</code>, brackets, and <code>sqrt abs exp log sin cos floor pi</code>. You may omit <code>*</code> after a number: <code>2x+1</code>.</div>
+    </div>
+  </div>
+
+  <h2>The standard toolkit</h2>
+  <div class="card">
+    <ol style="margin:0;padding-left:20px">
+      <li><b>Plug in special values</b>: x = 0, y = 0, x = y, y = −x, y = 1. Find f(0), f(1), and the parity of f.</li>
+      <li><b>Swap the variables</b> and compare, when the equation is not symmetric.</li>
+      <li><b>Injectivity / surjectivity</b>: if f(a) = f(b) forces a = b, you can cancel f. If one side ranges over all reals as y varies, f is onto.</li>
+      <li><b>Linear systems</b>: replace x by 1 − x, 1/x, … to get a second equation, then eliminate.</li>
+      <li><b>Cauchy</b>: f(x + y) = f(x) + f(y) gives f(x) = cx on ℚ. Over ℝ you need an extra condition (continuity, monotonicity, or bounded on an interval).</li>
+      <li><b>Always verify</b> the final answer in the original equation, and check that you didn't miss a family (like f ≡ 0).</li>
+    </ol>
+  </div>
+  <details class="card" style="margin-top:12px"><summary><b>Common mistakes</b></summary>
+    <ul style="margin:8px 0 0;padding-left:20px">
+      <li>Proving f(x) = x <i>for some x</i> and concluding it for all x (the "pointwise trap"). E.g. f(x)² = x² only gives f(x) = ±x for each x separately; the sign may switch.</li>
+      <li>Using continuity when the problem doesn't give it.</li>
+      <li>Forgetting to check the domain: f: ℤ → ℤ, f: ℝ<sup>+</sup> → ℝ<sup>+</sup> and f: ℝ → ℝ are different problems.</li>
+    </ul>
+  </details>
+  <footer class="foot">Part of the Self-Study repo · math-olympiad/interactive</footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const cv = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+// Each problem: dom = "R" | "Rpos" | "Z"; check(f, x, y) returns [lhs, rhs].
+const P = [
+  { name: "Linear system", src: "warm-up", dom: "R", eq: "f(x) + 2 f(1 − x) = x²  for all real x",
+    check: (f, x) => [f(x) + 2 * f(1 - x), x * x],
+    hints: ["Replace x by 1 − x: f(1 − x) + 2 f(x) = (1 − x)².", "Treat f(x) and f(1 − x) as two unknowns and solve the 2×2 linear system."],
+    answer: "f(x) = (x² − 4x + 2)/3. From 2·(second) − (first): 3 f(x) = 2(1 − x)² − x²." },
+  { name: "Product minus", src: "classic", dom: "R", eq: "f(x) f(y) − f(xy) = x + y  for all real x, y",
+    check: (f, x, y) => [f(x) * f(y) - f(x * y), x + y],
+    hints: ["x = y = 0: f(0)² − f(0) = 0, so f(0) ∈ {0, 1}.", "y = 0: f(x) f(0) − f(0) = x. If f(0) = 0 this says 0 = x for all x: impossible. So f(0) = 1.", "With f(0) = 1, y = 0 gives f(x) − 1 = x."],
+    answer: "f(x) = x + 1 (check: (x+1)(y+1) − (xy+1) = x + y)." },
+  { name: "Cauchy", src: "classic", dom: "R", eq: "f(x + y) = f(x) + f(y),  f continuous",
+    check: (f, x, y) => [f(x + y), f(x) + f(y)],
+    hints: ["x = y = 0 gives f(0) = 0; y = −x gives f(−x) = −f(x).", "Induction: f(nx) = n f(x) for integers n. Put x = m/n to get f(m/n) = (m/n) f(1).", "So f(q) = cq on ℚ with c = f(1). Continuity extends this to ℝ (ℚ is dense)."],
+    answer: "f(x) = cx for any constant c. Without continuity there are wild (non-measurable) solutions built from a Hamel basis." },
+  { name: "Jensen", src: "classic", dom: "R", eq: "f((x + y)/2) = (f(x) + f(y))/2,  f continuous",
+    check: (f, x, y) => [f((x + y) / 2), (f(x) + f(y)) / 2],
+    hints: ["Let g(x) = f(x) − f(0). Then g(0) = 0.", "y = 0: g(x/2) = g(x)/2. So g((x + y)/2) = g(x + y)/2, and the equation becomes Cauchy: g(x + y) = g(x) + g(y)."],
+    answer: "f(x) = ax + b (any a, b)." },
+  { name: "Exponential", src: "classic", dom: "R", eq: "f(x + y) = f(x) f(y),  f continuous, f not identically 0",
+    check: (f, x, y) => [f(x + y), f(x) * f(y)],
+    hints: ["If f(a) = 0 for one a, then f(x) = f(a) f(x − a) = 0 for all x. So f is never 0.", "f(x) = f(x/2)² > 0. Take g = ln f: g(x + y) = g(x) + g(y), Cauchy again."],
+    answer: "f(x) = aˣ for some a > 0 (equivalently e^{cx}). Plus f ≡ 0 if that case is allowed." },
+  { name: "Parallelogram", src: "classic", dom: "R", eq: "f(x + y) + f(x − y) = 2 f(x) + 2 f(y),  f continuous",
+    check: (f, x, y) => [f(x + y) + f(x - y), 2 * f(x) + 2 * f(y)],
+    hints: ["x = y = 0: f(0) = 0. x = 0: f(y) + f(−y) = 2f(y), so f is even.", "Induction on y = nx: f((n+1)x) = 2f(nx) − f((n−1)x) + 2f(x) gives f(nx) = n² f(x). Then f(q) = cq² on ℚ."],
+    answer: "f(x) = cx² for any constant c." },
+  { name: "ISL 2002 A1", src: "IMO Shortlist 2002 A1", dom: "R", eq: "f(f(x) + y) = 2x + f(f(y) − x)  for all real x, y",
+    check: (f, x, y) => [f(f(x) + y), 2 * x + f(f(y) - x)],
+    hints: ["Show f is onto: put y = −f(x): f(0) = 2x + f(f(−f(x)) − x). As x varies, the right side forces f(·) to hit every real value.", "Pick a with f(a) = 0. Put x = a: f(y) = 2a + f(f(y) − a).", "Since f is onto, f(y) ranges over all reals z: f(z − a) = z − 2a, i.e. f(t) = t − a."],
+    answer: "f(x) = x + c for any constant c. Check: both sides equal x + y + 2c." },
+  { name: "IMO 1992 P2", src: "IMO 1992 Problem 2", dom: "R", eq: "f(x² + f(y)) = y + f(x)²  for all real x, y",
+    check: (f, x, y) => [f(x * x + f(y)), y + f(x) ** 2],
+    hints: ["x = 0: f(f(y)) = y + f(0)². So f is a bijection.", "Let t = f(0). Compare x and −x: f(x)² = f(−x)². Use this and injectivity to show t = 0.", "Then f(f(y)) = y and f(x²) = f(x)² ≥ 0, so f(z) ≥ 0 for z ≥ 0. With y ↦ f(y): f(x² + y) = f(y) + f(x)², so f is increasing and additive on ℝ."],
+    answer: "f(x) = x is the only solution." },
+  { name: "IMO 2019 P1", src: "IMO 2019 Problem 1", dom: "Z", eq: "f(2a) + 2 f(b) = f(f(a + b))  for all integers a, b  (f: ℤ → ℤ)",
+    check: (f, x, y) => [f(2 * x) + 2 * f(y), f(f(x + y))],
+    hints: ["a = 0: f(0) + 2f(b) = f(f(b)).", "So f(f(a + b)) = f(0) + 2f(a + b). Compare with the original: f(2a) + 2f(b) = f(0) + 2f(a + b).", "Put a = 1, b ↦ b: f(b + 1) − f(b) = (f(2) − f(0))/2 is constant. So f is linear: f(x) = mx + c. Plug in: m ∈ {0, 2}, and c = 0 if m = 0."],
+    answer: "f ≡ 0, or f(x) = 2x + c for any integer c." },
+];
+
+let cur = 0, shown = 0;
+const solved = new Set();
+function compile(src) {
+  let s = src.trim(); if (!s) throw new Error("type a formula");
+  if (/[^0-9x+\-*/^().,\s a-z]/i.test(s)) throw new Error("unexpected character");
+  const words = s.match(/[a-z]+/gi) || [], ok = ["x", "sqrt", "abs", "exp", "log", "sin", "cos", "floor", "pi", "e"];
+  for (const w of words) if (!ok.includes(w)) throw new Error("unknown name “" + w + "”");
+  s = s.replace(/\^/g, "**").replace(/(\d)\s*(x|\()/g, "$1*$2").replace(/\)\s*(\(|x|\d)/g, ")*$1").replace(/x\s*\(/g, "x*(")
+       .replace(/\bpi\b/g, "PI").replace(/\be\b/g, "E");
+  const fn = new Function("x", "const {sqrt,abs,exp,log,sin,cos,floor,PI,E}=Math; return (" + s + ");");
+  fn(1.234); return fn;
+}
+function rnd(dom) { if (dom === "Z") return Math.floor(Math.random() * 41) - 20; return Math.round((Math.random() * 8 - 4) * 1000) / 1000; }
+
+function runTest() {
+  const p = P[cur], r = $("res");
+  let f; try { f = compile($("guess").value); } catch (e) { r.innerHTML = `<span class="bad">Can't read that: ${e.message}.</span>`; return; }
+  const F = p.dom === "Z" ? (x) => { const v = f(x); return v; } : f;
+  let worst = null;
+  for (let i = 0; i < 400; i++) {
+    const x = rnd(p.dom), y = rnd(p.dom); const [L, R] = p.check(F, x, y);
+    const err = Math.abs(L - R) / Math.max(1, Math.abs(L), Math.abs(R));
+    if (!isFinite(L) || !isFinite(R) || err > 1e-7) { worst = { x, y, L, R }; break; }
+    if (p.dom === "Z" && !Number.isInteger(Math.round(f(x) * 1e9) / 1e9)) { worst = { x, y, L: f(x), R: "an integer", ni: true }; break; }
+  }
+  if (!worst) {
+    r.innerHTML = `<b class="good">Passes all 400 random checks.</b> It's a solution. Now prove there are no others (and compare with the answer: is your family complete?).`;
+    solved.add(cur); renderList();
+  } else if (worst.ni) r.innerHTML = `<b class="bad">Not integer-valued</b>: f(${worst.x}) = ${(+worst.L).toPrecision(6)}.`;
+  else r.innerHTML = `<b class="bad">Fails</b> at x = ${worst.x}, y = ${worst.y}: left side ${(+worst.L).toPrecision(6)}, right side ${(+worst.R).toPrecision(6)}.`;
+  plot(f);
+}
+function plot(f) {
+  const svg = $("plot"); svg.innerHTML = ""; const NS = "http://www.w3.org/2000/svg";
+  const mk = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); svg.appendChild(e); return e; };
+  const xs = [], ys = []; for (let i = 0; i <= 200; i++) { const x = -4 + (8 * i) / 200; let y; try { y = f(x); } catch { y = NaN; } xs.push(x); ys.push(y); }
+  const fin = ys.filter(isFinite); if (!fin.length) return;
+  let lo = Math.min(...fin, -1), hi = Math.max(...fin, 1); if (hi - lo > 200) { lo = Math.max(lo, -100); hi = Math.min(hi, 100); }
+  const X = (x) => ((x + 4) / 8) * 400, Y = (y) => 190 - ((y - lo) / (hi - lo)) * 180;
+  mk("line", { x1: 0, y1: Y(0), x2: 400, y2: Y(0), stroke: cv("--border") }); mk("line", { x1: X(0), y1: 0, x2: X(0), y2: 200, stroke: cv("--border") });
+  let d = ""; ys.forEach((y, i) => { if (isFinite(y) && y >= lo && y <= hi) d += (d && isFinite(ys[i - 1]) ? "L" : "M") + X(xs[i]).toFixed(1) + "," + Y(y).toFixed(1); });
+  mk("path", { d, fill: "none", stroke: cv("--c1"), "stroke-width": 2 });
+  const t = mk("text", { x: 4, y: 12 }); t.textContent = `y ∈ [${lo.toPrecision(3)}, ${hi.toPrecision(3)}], x ∈ [−4, 4]`;
+}
+function renderList() {
+  $("plist").innerHTML = P.map((p, i) => `<button role="tab" data-i="${i}" class="${i === cur ? "active" : ""} ${solved.has(i) ? "done" : ""}">${i + 1}. ${p.name}</button>`).join("");
+  $("plist").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => load(+b.dataset.i)));
+}
+function load(i) {
+  cur = i; shown = 0; const p = P[i];
+  $("meta").textContent = `${p.src} · domain: ${p.dom === "Z" ? "integers" : "reals"}`;
+  $("eq").textContent = p.eq;
+  $("hints").innerHTML = p.hints.map((h) => `<li class="hidden">${h}</li>`).join("");
+  $("nohint").hidden = false; $("answer").hidden = true; $("answer").innerHTML = `<b>Answer.</b> ${p.answer}`;
+  $("res").textContent = ""; $("guess").value = ""; $("plot").innerHTML = ""; $("hint").disabled = false;
+  renderList();
+}
+$("hint").addEventListener("click", () => { const li = $("hints").children; if (shown < li.length) li[shown++].classList.remove("hidden"); $("nohint").hidden = true; if (shown >= li.length) $("hint").disabled = true; });
+$("sol").addEventListener("click", () => { $("answer").hidden = false; });
+$("test").addEventListener("click", runTest);
+$("guess").addEventListener("keydown", (e) => { if (e.key === "Enter") runTest(); });
+load(0);
+window.__fe = { P, compile, set: (i, g) => { load(i); $("guess").value = g; runTest(); return $("res").innerText; } };
+</script>
+</body>
+</html>

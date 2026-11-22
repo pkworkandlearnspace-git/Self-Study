@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inversion Visualizer</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg.plot { aspect-ratio: 4 / 3; }
+  .h { cursor: grab; } .h:active { cursor: grabbing; }
+  svg text { font: 13px system-ui, sans-serif; fill: var(--text); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; pointer-events: none; }
+  .toggles label { display: flex; gap: 8px; align-items: center; font-size: 14px; cursor: pointer; }
+  details.card { margin-top: 10px; }
+  details.card summary { cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Math Olympiad tools</a></header>
+  <h1>Inversion Visualizer</h1>
+  <p class="lead">Inversion in the circle ω with center O and radius k sends each point P ≠ O to the point P′ on ray OP with <b>OP · OP′ = k²</b>. Drag anything. Solid shapes are the originals; the same color dashed is the image. Module 05, core idea 7.</p>
+
+  <div class="grid two">
+    <div>
+      <svg class="plot" id="svg" viewBox="0 0 600 450" aria-label="Inversion diagram with draggable points"></svg>
+      <div class="legend" style="margin-top:8px">
+        <span><i style="background:var(--muted)"></i>ω (drag O or the ring handle)</span>
+        <span><i style="background:var(--c1)"></i>point P → P′</span>
+        <span><i style="background:var(--c2)"></i>line ℓ → ℓ′</span>
+        <span><i style="background:var(--c3)"></i>circle γ → γ′</span>
+      </div>
+    </div>
+    <div class="controls">
+      <div class="card toggles">
+        <b style="display:block;margin-bottom:8px">Show</b>
+        <label><input type="checkbox" data-k="pts" checked> <span>Points P, Q and their images (distance formula)</span></label>
+        <label><input type="checkbox" data-k="line" checked> <span>Line ℓ (drag its two handles)</span></label>
+        <label><input type="checkbox" data-k="circ" checked> <span>Circle γ (drag center and rim)</span></label>
+        <label><input type="checkbox" data-k="samp"> <span>Sample 48 points of ℓ and γ and invert each one</span></label>
+      </div>
+      <div class="row">
+        <button data-preset="start">Reset</button>
+        <button data-preset="thruO">γ through O → line</button>
+        <button data-preset="lineFar">ℓ → circle through O</button>
+        <button data-preset="orth">γ ⟂ ω → itself</button>
+        <button data-preset="inside">Inside ↔ outside</button>
+      </div>
+      <div class="card" id="stats"></div>
+      <div class="callout" id="insight"></div>
+    </div>
+  </div>
+
+  <h2>The four rules (watch each one happen)</h2>
+  <div class="card">
+    <table class="t">
+      <tr><th>Original</th><th>Image</th><th>Preset to try</th></tr>
+      <tr><td>Line through O</td><td>the same line</td><td>drag ℓ through O</td></tr>
+      <tr><td>Line not through O</td><td>circle through O</td><td>ℓ → circle through O</td></tr>
+      <tr><td>Circle through O</td><td>line not through O (parallel to the tangent at O)</td><td>γ through O → line</td></tr>
+      <tr><td>Circle not through O</td><td>circle not through O (but centers do <i>not</i> map to centers)</td><td>Inside ↔ outside</td></tr>
+    </table>
+    <p class="note" style="margin:8px 0 0">Also: points on ω are fixed; inside and outside swap; angles between curves are preserved; a circle orthogonal to ω maps to itself. Distances obey <b>A′B′ = k²·AB / (OA·OB)</b>.</p>
+  </div>
+
+  <h2>When to invert (olympiad heuristics)</h2>
+  <div class="card">
+    <ul style="margin:0;padding-left:20px">
+      <li>Many circles pass through one point → invert there: they all become lines.</li>
+      <li>Tangent circles → after inversion at the tangency point they become parallel lines.</li>
+      <li>A product like PA·PB = const or a "sum of ratios" with lengths from one point → the distance formula turns it into a length statement.</li>
+      <li><b>√(bc) inversion</b>: invert at A with radius √(AB·AC), then reflect in the bisector of ∠A. It swaps B and C, and swaps line BC with the circumcircle.</li>
+    </ul>
+  </div>
+
+  <h2>Practice (solutions inside)</h2>
+  <details class="card"><summary><b>1. Prove the distance formula A′B′ = k²·AB / (OA·OB).</b></summary>
+    <p>OA·OA′ = OB·OB′ = k² gives OA/OB = OB′/OA′, and the angle at O is shared, so triangles OAB and OB′A′ are similar (SAS). Hence A′B′/AB = OB′/OA = k²/(OA·OB).</p></details>
+  <details class="card"><summary><b>2. Ptolemy's inequality: AB·CD + BC·DA ≥ AC·BD, with equality iff ABCD is cyclic (in this order).</b></summary>
+    <p>Invert at A with radius 1. By the formula, B′C′ = BC/(AB·AC), C′D′ = CD/(AC·AD), B′D′ = BD/(AB·AD). The triangle inequality B′C′ + C′D′ ≥ B′D′ becomes, after multiplying by AB·AC·AD, BC·AD + CD·AB ≥ BD·AC. Equality holds iff C′ lies on segment B′D′, i.e. B′, C′, D′ are collinear in that order. That line is the image of a circle through A, B, C, D in that order.</p></details>
+  <details class="card"><summary><b>3. Show a circle orthogonal to ω is mapped to itself.</b></summary>
+    <p>Let a line through O meet the circle γ at X and Y. By power of a point, OX·OY = pow(O, γ) = OT², where T is a point where the tangent from O touches γ. Orthogonality means that at an intersection point T of ω and γ the radii are perpendicular. So OT (a radius of ω) is tangent to γ, and the tangent length from O is OT = k. Hence OX·OY = k², so Y = X′. Every point of γ maps into γ.</p></details>
+  <details class="card"><summary><b>4. (IMO Shortlist 2003 G4) Circles Γ₁, Γ₃ are externally tangent at P, and Γ₂, Γ₄ are externally tangent at the same P. Γ₁∩Γ₂ = A, Γ₂∩Γ₃ = B, Γ₃∩Γ₄ = C, Γ₄∩Γ₁ = D (all ≠ P). Prove AB·BC / (AD·DC) = PB² / PD².</b></summary>
+    <p>Invert at P (any radius r). All four circles pass through P, so they become four lines. Tangent circles at P become parallel lines, so Γ₁′ ∥ Γ₃′ and Γ₂′ ∥ Γ₄′, and A′B′C′D′ is a parallelogram: A′B′ = C′D′ and B′C′ = D′A′. By the distance formula, AB = r²·A′B′/(PA′·PB′), and similarly for the other sides. Then
+    AB·BC / (AD·DC) = [A′B′·B′C′ / (PA′·PB′²·PC′)] · [PA′·PD′²·PC′ / (A′D′·D′C′)] = PD′² / PB′² = PB² / PD²,
+    using PB′ = r²/PB and PD′ = r²/PD in the last step.</p></details>
+  <footer class="foot">Part of the Self-Study repo · math-olympiad/interactive</footer>
+</div>
+
+<script>
+const svg = document.getElementById("svg"), NS = "http://www.w3.org/2000/svg";
+const cv = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const sub = (p, q) => [p[0] - q[0], p[1] - q[1]], add = (p, q) => [p[0] + q[0], p[1] + q[1]], mul = (p, s) => [p[0] * s, p[1] * s];
+const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
+const show = { pts: true, line: true, circ: true, samp: false };
+const U = 50; // 50 px = 1 unit
+const presets = {
+  start: { O: [300, 225], K: [400, 225], P: [360, 160], Q: [450, 300], L1: [110, 380], L2: [520, 330], C: [165, 120], Rh: [165, 75] },
+  thruO: { O: [300, 225], K: [400, 225], P: [360, 160], Q: [450, 300], L1: [110, 400], L2: [520, 400], C: [250, 200], Rh: [300, 225] },
+  lineFar: { O: [300, 225], K: [390, 225], P: [360, 160], Q: [450, 300], L1: [80, 330], L2: [560, 330], C: [130, 110], Rh: [130, 80] },
+  orth: { O: [300, 225], K: [380, 225], P: [360, 160], Q: [450, 300], L1: [110, 420], L2: [520, 420], C: [430, 225], Rh: [430, 327.47] },
+  inside: { O: [300, 225], K: [420, 225], P: [340, 200], Q: [480, 330], L1: [110, 420], L2: [520, 420], C: [340, 240], Rh: [340, 205] },
+};
+let S = JSON.parse(JSON.stringify(presets.start));
+
+function inv(P, O, k) { const v = sub(P, O), d2 = v[0] * v[0] + v[1] * v[1]; if (d2 < 1e-9) return null; return add(O, mul(v, (k * k) / d2)); }
+function foot(P0, A, B) { const v = sub(B, A), t = ((P0[0] - A[0]) * v[0] + (P0[1] - A[1]) * v[1]) / (v[0] * v[0] + v[1] * v[1]); return add(A, mul(v, t)); }
+
+// Image of the line through A, B under inversion (O, k): {type:"line"} or {type:"circle", c, r}
+function imgLine(A, B, O, k) {
+  const F = foot(O, A, B), h = dist(O, F);
+  if (h < 0.5) return { type: "line", p: A, q: B };
+  return { type: "circle", c: add(O, mul(sub(F, O), (k * k) / (2 * h * h))), r: (k * k) / (2 * h) };
+}
+// Image of the circle (C, rho)
+function imgCircle(C, rho, O, k) {
+  const d = dist(O, C), den = d * d - rho * rho;
+  if (Math.abs(den) < 1e-3 * rho * rho) { // passes through O → line perpendicular to OC
+    const u = mul(sub(C, O), 1 / d), X = add(O, mul(u, (k * k) / (2 * d)));
+    return { type: "line", p: X, q: add(X, [-u[1], u[0]]) };
+  }
+  return { type: "circle", c: add(O, mul(sub(C, O), (k * k) / den)), r: (k * k * rho) / Math.abs(den) };
+}
+
+function el(tag, at, parent = svg) { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); parent.appendChild(e); return e; }
+function seg(p, q, col, o = {}) { el("line", { x1: p[0], y1: p[1], x2: q[0], y2: q[1], stroke: col, "stroke-width": o.w || 1.6, "stroke-dasharray": o.dash || "", opacity: o.op ?? 1 }); }
+function longLine(p, q, col, o) { const d = sub(q, p), L = 3000 / Math.hypot(...d); seg(add(p, mul(d, -L)), add(p, mul(d, L)), col, o); }
+function circ(c, r, col, o = {}) { el("circle", { cx: c[0], cy: c[1], r, fill: o.fill || "none", "fill-opacity": o.fop ?? 1, stroke: col, "stroke-width": o.w || 1.6, "stroke-dasharray": o.dash || "", opacity: o.op ?? 1 }); }
+function dot(p, col, label, r = 4) { if (!p) return; el("circle", { cx: p[0], cy: p[1], r, fill: col }); if (label) { const t = el("text", { x: p[0] + 7, y: p[1] - 7 }); t.textContent = label; } }
+function handle(name, p, col, label) {
+  const g = el("g", { class: "h", "data-h": name });
+  el("circle", { cx: p[0], cy: p[1], r: 15, fill: "transparent" }, g);
+  el("circle", { cx: p[0], cy: p[1], r: 6.5, fill: col, stroke: cv("--surface"), "stroke-width": 2 }, g);
+  if (label) { const t = el("text", { x: p[0] + 9, y: p[1] + 16 }, g); t.textContent = label; }
+}
+function drawShape(sh, col, dash) { if (!sh) return; if (sh.type === "line") longLine(sh.p, sh.q, col, { dash }); else circ(sh.c, sh.r, col, { dash }); }
+
+const fmt = (x) => (x / U).toFixed(3);
+let last = {};
+function draw() {
+  svg.innerHTML = "";
+  const { O, K, P, Q, L1, L2, C, Rh } = S, k = dist(O, K), rho = dist(C, Rh);
+  const muted = cv("--muted"), c1 = cv("--c1"), c2 = cv("--c2"), c3 = cv("--c3"), text = cv("--text");
+  circ(O, k, muted, { w: 2, fill: cv("--accent-soft"), fop: 0.35 });
+  const out = { k };
+  if (show.line) {
+    longLine(L1, L2, c2, { w: 2 });
+    out.line = imgLine(L1, L2, O, k); drawShape(out.line, c2, "7 5");
+  }
+  if (show.circ) {
+    circ(C, rho, c3, { w: 2 });
+    out.circ = imgCircle(C, rho, O, k); drawShape(out.circ, c3, "7 5");
+    if (out.circ.type === "circle") { const C2 = inv(C, O, k); if (C2) { dot(C2, c3, "C′", 3); dot(out.circ.c, c3, "", 2.5); } }
+  }
+  if (show.samp) {
+    const samples = [];
+    if (show.line) { const d = sub(L2, L1); for (let i = -24; i < 24; i++) samples.push([add(L1, mul(d, Math.tan((i + 0.5) * Math.PI / 49) * 0.6)), c2]); }
+    if (show.circ) for (let i = 0; i < 48; i++) { const t = (2 * Math.PI * i) / 48; samples.push([add(C, [rho * Math.cos(t), rho * Math.sin(t)]), c3]); }
+    for (const [p, col] of samples) { const q = inv(p, O, k); if (!q) continue; seg(p, q, col, { w: 0.6, op: 0.25 }); dot(q, col, "", 2.2); }
+  }
+  if (show.pts) {
+    const P2 = inv(P, O, k), Q2 = inv(Q, O, k);
+    out.P2 = P2; out.Q2 = Q2;
+    if (P2) { seg(O, dist(O, P) > dist(O, P2) ? P : P2, c1, { w: 0.8, op: 0.5 }); dot(P2, c1, "P′", 5); }
+    if (Q2) { seg(O, dist(O, Q) > dist(O, Q2) ? Q : Q2, c1, { w: 0.8, op: 0.5 }); dot(Q2, c1, "Q′", 5); }
+    seg(P, Q, c1, { w: 1, op: 0.6 }); if (P2 && Q2) seg(P2, Q2, c1, { w: 1, op: 0.6, dash: "4 3" });
+    handle("P", P, c1, "P"); handle("Q", Q, c1, "Q");
+  }
+  if (show.line) { handle("L1", L1, c2, ""); handle("L2", L2, c2, "ℓ"); }
+  if (show.circ) { handle("C", C, c3, "C"); handle("Rh", Rh, c3, ""); }
+  handle("O", O, text, "O"); handle("K", K, muted, "k");
+  last = out; stats(out);
+}
+
+function stats(o) {
+  const { O, P, Q, C, Rh, L1, L2 } = S, k = o.k, row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  let h = row("radius k", fmt(k));
+  if (show.pts && o.P2 && o.Q2) {
+    h += row("OP · OP′ = k²?", (dist(O, P) * dist(O, o.P2) / (U * U)).toFixed(3) + " vs " + ((k * k) / (U * U)).toFixed(3));
+    h += row("P′Q′  vs  k²·PQ/(OP·OQ)", fmt(dist(o.P2, o.Q2)) + " vs " + fmt((k * k * dist(P, Q)) / (dist(O, P) * dist(O, Q))));
+  }
+  if (show.line) h += row("ℓ′", o.line.type === "line" ? "ℓ itself (ℓ passes through O)" : `circle through O, r = ${fmt(o.line.r)}`);
+  if (show.circ) {
+    const rho = dist(C, Rh), d = dist(O, C), pw = (d * d - rho * rho) / (U * U);
+    h += row("power of O w.r.t. γ", pw.toFixed(3) + (Math.abs(pw - (k * k) / (U * U)) < 0.02 ? " = k² (γ ⟂ ω)" : ""));
+    h += row("γ′", o.circ.type === "line" ? "a line (γ passes through O)" : `circle, r′ = ${fmt(o.circ.r)} = k²ρ/|pow|`);
+  }
+  document.getElementById("stats").innerHTML = h + `<p class="note" style="margin:8px 0 0">Units: 50 px = 1.</p>`;
+  const ins = document.getElementById("insight");
+  if (show.circ && o.circ.type === "line") ins.innerHTML = "γ passes through O, so its image is a <b>line</b>. It is perpendicular to OC, at distance k²/(2ρ) from O.";
+  else if (show.circ && Math.abs(dist(O, C) ** 2 - dist(C, Rh) ** 2 - k * k) < 0.02 * U * U) ins.innerHTML = "pow(O, γ) = k², so γ is <b>orthogonal</b> to ω and maps to <b>itself</b> (the two arcs swap).";
+  else if (show.line && o.line.type === "line") ins.innerHTML = "ℓ passes through O, so it maps to itself (but its points move along it).";
+  else ins.innerHTML = "Turn on <b>Sample</b> to watch individual points jump to their images. Note that C′ (the image of γ's center) is <i>not</i> the center of γ′.";
+}
+
+let drag = null, raf = 0, grabOff = [0, 0];
+function svgPt(e) { const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; const q = pt.matrixTransform(svg.getScreenCTM().inverse()); return [Math.max(5, Math.min(595, q.x)), Math.max(5, Math.min(445, q.y))]; }
+svg.addEventListener("pointerdown", (e) => { const g = e.target.closest(".h"); if (!g) return; drag = g.dataset.h; const p = svgPt(e); grabOff = sub(S[drag], p); svg.setPointerCapture(e.pointerId); e.preventDefault(); });
+svg.addEventListener("pointermove", (e) => {
+  if (!drag) return; const p = add(svgPt(e), grabOff);
+  if (drag === "O") { const d = sub(p, S.O); S.O = p; S.K = add(S.K, d); }
+  else if (drag === "C") { const d = sub(p, S.C); S.C = p; S.Rh = add(S.Rh, d); }
+  else S[drag] = p;
+  if (dist(S.O, S.K) < 15) S.K = add(S.O, [15, 0]);
+  if (drag === "L1" || drag === "L2") { if (dist(S.L1, S.L2) < 10) S[drag] = add(S[drag], [10, 0]); }
+  if (!raf) raf = requestAnimationFrame(() => { raf = 0; draw(); });
+});
+const end = () => { drag = null; }; svg.addEventListener("pointerup", end); svg.addEventListener("pointercancel", end);
+document.querySelectorAll("[data-k]").forEach((cb) => cb.addEventListener("change", () => { show[cb.dataset.k] = cb.checked; draw(); }));
+document.querySelectorAll("[data-preset]").forEach((b) => b.addEventListener("click", () => { S = JSON.parse(JSON.stringify(presets[b.dataset.preset])); draw(); }));
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+draw();
+window.__inv = { S: () => S, last: () => last, inv, imgLine, imgCircle, draw, setShow: (k, v) => { show[k] = v; draw(); } };
+</script>
+</body>
+</html>
