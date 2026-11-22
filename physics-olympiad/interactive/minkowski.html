@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Minkowski Diagram</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style> #c { aspect-ratio: 1 / 1; max-width: 640px; margin: 0 auto; } table.t td.n { font-family: var(--mono); text-align: right; } </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Physics Olympiad tools</a></header>
+  <h1>Minkowski (Spacetime) Diagram</h1>
+  <p class="lead">Frame S has the usual square axes. Frame S′ moves at speed βc along x; its axes (ct′, x′) tilt toward the light line. Drag events A and B, change β, and read off coordinates in both frames. The interval Δs² never changes (module 06).</p>
+  <div class="grid two">
+    <div>
+      <canvas id="c" width="640" height="640" aria-label="Spacetime diagram. Drag the events."></canvas>
+      <div class="legend" style="margin-top:6px;justify-content:center"><span><i style="background:var(--muted)"></i>S axes</span><span><i style="background:var(--c2)"></i>S′ axes and grid</span><span><i style="background:var(--warn)"></i>light cone (45°)</span><span><i style="background:var(--c1)"></i>event A</span><span><i style="background:var(--c5)"></i>event B</span></div>
+    </div>
+    <div class="controls">
+      <label class="ctl">Velocity of S′: β = v/c = <span class="val" id="bv"></span><input type="range" id="b" min="-0.95" max="0.95" step="0.01" value="0.5"></label>
+      <div class="row"><button id="view" class="">Draw in S′ coordinates</button><button id="grid" class="active">S′ grid</button></div>
+      <div class="note">Scenarios</div>
+      <div class="row">
+        <button data-s="sim">Simultaneity</button>
+        <button data-s="dil">Time dilation</button>
+        <button data-s="caus">Cause → effect</button>
+        <button data-s="space">Spacelike pair</button>
+      </div>
+      <div class="card scroll-x"><table class="t" id="tab"></table></div>
+      <div class="card" id="explain"></div>
+    </div>
+  </div>
+  <h2>Lorentz transformation (c = 1 units)</h2>
+  <div class="card"><ul style="margin:0;padding-left:20px">
+    <li>t′ = γ(t − βx), x′ = γ(x − βt), γ = 1/√(1 − β²).</li>
+    <li>Interval Δs² = (cΔt)² − Δx² is the same in every frame. Δs² &gt; 0: timelike, so every frame agrees on the order and a signal could connect them. Δs² &lt; 0: spacelike, so some frame sees them simultaneous and the order can flip.</li>
+    <li>The ct′ axis is the worldline x = βct of the S′ origin. The x′ axis is the line of S′-simultaneity, ct = βx. Both lean toward the light line as β → 1.</li>
+    <li>Tick spacing on the S′ axes is stretched by √((1 + β²)/(1 − β²)) on paper. The hyperbolas (ct)² − x² = 1 pass through each frame's unit ticks.</li>
+  </ul></div>
+  <footer class="foot">Part of the Self-Study repo · physics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const c = $("c"), RANGE = 5;
+let W, inS2 = false, showGrid = true, drag = null;
+let ev = { A: [0, 0], B: [1, 3] }; // [ct, x] in frame S
+const SC = {
+  sim: { A: [2, -2], B: [2, 2], b: 0.5, t: "A and B happen at the same time in S (same ct). In S′ they don't: for β > 0, B (ahead in the direction of motion) happens <b>first</b>. Simultaneity is relative." },
+  dil: { A: [0, 0], B: [4, 2], b: 0.5, t: "B lies on the ct′ axis, so both events happen at the S′ origin: it's a clock moving with S′. Its own (proper) time is Δt′ = √(Δs²). In S the time is longer by γ: Δt = γΔτ." },
+  caus: { A: [0, 0], B: [3, 1.5], b: 0.9, t: "B is inside A's future light cone (timelike). Move β all the way: B stays after A in every frame. Cause and effect are never reversed." },
+  space: { A: [0, 0], B: [1, 3], b: 0.5, t: "B is outside A's light cone (spacelike). Drag β: at β = cΔt/Δx = 1/3 they are simultaneous, and beyond that the order flips. Nothing can travel from A to B." },
+};
+const g = (b) => 1 / Math.sqrt(1 - b * b);
+const toP = ([t, x], b) => [g(b) * (t - b * x), g(b) * (x - b * t)];
+const B = () => +$("b").value;
+function fit() { const d = devicePixelRatio || 1; W = c.clientWidth; c.width = W * d; c.height = W * d; c.getContext("2d").setTransform(d, 0, 0, d, 0, 0); }
+// world (x, ct) → pixels; when drawing in S′ coords, a point is first transformed
+const PX = (x) => W / 2 + (x / RANGE) * (W / 2), PY = (t) => W / 2 - (t / RANGE) * (W / 2);
+const IX = (px) => ((px - W / 2) / (W / 2)) * RANGE, IT = (py) => ((W / 2 - py) / (W / 2)) * RANGE;
+function show([t, x]) { const b = B(); return inS2 ? toP([t, x], b) : [t, x]; }
+function line(ctx, p1, p2, color, w = 1, dash = []) {
+  const a = show(p1), z = show(p2); ctx.strokeStyle = color; ctx.lineWidth = w; ctx.setLineDash(dash);
+  ctx.beginPath(); ctx.moveTo(PX(a[1]), PY(a[0])); ctx.lineTo(PX(z[1]), PY(z[0])); ctx.stroke(); ctx.setLineDash([]);
+}
+function draw() {
+  const ctx = c.getContext("2d"), b = B(), G = g(b), L = 30;
+  ctx.fillStyle = col("--surface"); ctx.fillRect(0, 0, W, W);
+  // S grid (light)
+  for (let k = -RANGE * 3; k <= RANGE * 3; k++) { line(ctx, [-L, k], [L, k], col("--surface-2")); line(ctx, [k, -L], [k, L], col("--surface-2")); }
+  // S′ grid: lines of constant x′ (worldlines x = βt + x′/γ) and constant t′ (t = βx + t′/γ)
+  if (showGrid) for (let k = -12; k <= 12; k++) {
+    if (k === 0) continue;
+    line(ctx, [-L, b * -L + k / G], [L, b * L + k / G], col("--c2"), 0.6, [2, 4]);
+    line(ctx, [b * -L + k / G, -L], [b * L + k / G, L], col("--c2"), 0.6, [2, 4]);
+  }
+  // light cone through A
+  const A = ev.A; [1, -1].forEach((s) => line(ctx, [A[0] - L, A[1] - s * L], [A[0] + L, A[1] + s * L], col("--warn"), 1.5));
+  // S axes
+  line(ctx, [-L, 0], [L, 0], col("--muted"), 1.6); line(ctx, [0, -L], [0, L], col("--muted"), 1.6);
+  // S′ axes
+  line(ctx, [-L, -L * b], [L, L * b], col("--c2"), 2.2); line(ctx, [-L * b, -L], [L * b, L], col("--c2"), 2.2);
+  // unit hyperbolas
+  ctx.strokeStyle = col("--border"); ctx.lineWidth = 1; [1, -1].forEach((s) => { ctx.beginPath(); for (let i = -60; i <= 60; i++) { const u = i / 20, p = show([s * Math.cosh(u), Math.sinh(u)]); i === -60 ? ctx.moveTo(PX(p[1]), PY(p[0])) : ctx.lineTo(PX(p[1]), PY(p[0])); } ctx.stroke(); });
+  // labels
+  ctx.font = "13px system-ui"; ctx.fillStyle = col("--muted");
+  const lab = (p, s, color) => { const q = show(p); ctx.fillStyle = color; ctx.fillText(s, PX(q[1]) + 4, PY(q[0]) - 4); };
+  const v = inS2 ? 4.2 / G : 4.6; lab([v, 0], "ct", col("--muted")); lab([0, v], "x", col("--muted"));
+  const u = inS2 ? 4.2 * G : 4.2 / G, ctp = [u, u * b], xp = [u * b, u]; // S coords of points on the S′ axes that land on screen
+  lab(ctp, "ct′", col("--c2")); lab(xp, "x′", col("--c2"));
+  // events
+  [["A", "--c1"], ["B", "--c5"]].forEach(([k, cv]) => {
+    const p = show(ev[k]); ctx.fillStyle = col(cv); ctx.beginPath(); ctx.arc(PX(p[1]), PY(p[0]), 8, 0, 7); ctx.fill();
+    ctx.fillStyle = "#fff"; ctx.font = "600 11px system-ui"; ctx.textAlign = "center"; ctx.fillText(k, PX(p[1]), PY(p[0]) + 4); ctx.textAlign = "left";
+    // projection to S′ axes (dashed, parallel to the other axis)
+    if (showGrid) { const [tp, xq] = toP(ev[k], b); line(ctx, ev[k], [G * tp, G * tp * b], col(cv), 1, [3, 3]); line(ctx, ev[k], [G * xq * b, G * xq], col(cv), 1, [3, 3]); }
+  });
+  table(b);
+}
+function table(b) {
+  const Ap = toP(ev.A, b), Bp = toP(ev.B, b), f = (v) => v.toFixed(2);
+  const dt = ev.B[0] - ev.A[0], dx = ev.B[1] - ev.A[1], s2 = dt * dt - dx * dx, dtp = Bp[0] - Ap[0];
+  const kind = Math.abs(s2) < 0.02 ? "lightlike" : s2 > 0 ? "timelike" : "spacelike";
+  $("tab").innerHTML = `<tr><th></th><th>ct</th><th>x</th><th>ct′</th><th>x′</th></tr>` +
+    `<tr><td><b style="color:var(--c1)">A</b></td><td class="n">${f(ev.A[0])}</td><td class="n">${f(ev.A[1])}</td><td class="n">${f(Ap[0])}</td><td class="n">${f(Ap[1])}</td></tr>` +
+    `<tr><td><b style="color:var(--c5)">B</b></td><td class="n">${f(ev.B[0])}</td><td class="n">${f(ev.B[1])}</td><td class="n">${f(Bp[0])}</td><td class="n">${f(Bp[1])}</td></tr>` +
+    `<tr><td>Δ</td><td class="n">${f(dt)}</td><td class="n">${f(dx)}</td><td class="n">${f(dtp)}</td><td class="n">${f(Bp[1] - Ap[1])}</td></tr>`;
+  const order = (d) => (Math.abs(d) < 0.01 ? "simultaneous" : d > 0 ? "A first" : "B first");
+  const extra = kind === "spacelike" ? `<div class="stat"><span>β that makes them simultaneous</span><b>${f(dt / dx)}</b></div>` : kind === "timelike" ? `<div class="stat"><span>Proper time between them √Δs²</span><b>${f(Math.sqrt(s2))}</b></div>` : "";
+  $("explain").innerHTML = (cur ? `<p style="margin-top:0">${SC[cur].t}</p>` : "") +
+    `<div class="stat"><span>γ</span><b>${g(b).toFixed(3)}</b></div>` +
+    `<div class="stat"><span>Δs² = (cΔt)² − Δx² (same in both)</span><b>${f(s2)} = ${f(dtp * dtp - (Bp[1] - Ap[1]) ** 2)}</b></div>` +
+    `<div class="stat"><span>Separation</span><b>${kind}</b></div>` +
+    `<div class="stat"><span>Order in S / in S′</span><b>${order(dt)} / ${order(dtp)}</b></div>` + extra;
+  $("bv").textContent = b.toFixed(2);
+}
+let cur = "space";
+function pick(e) {
+  const r = c.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+  let best = null, bd = 18;
+  ["A", "B"].forEach((k) => { const p = show(ev[k]), d = Math.hypot(PX(p[1]) - px, PY(p[0]) - py); if (d < bd) { bd = d; best = k; } });
+  return best;
+}
+c.addEventListener("pointerdown", (e) => { drag = pick(e); if (drag) c.setPointerCapture(e.pointerId); });
+c.addEventListener("pointermove", (e) => {
+  if (!drag) return; const r = c.getBoundingClientRect();
+  let t = IT(e.clientY - r.top), x = IX(e.clientX - r.left);
+  if (inS2) { const b = -B(); [t, x] = toP([t, x], b); } // inverse transform
+  const snap = (v) => Math.round(v * 4) / 4;
+  ev[drag] = [snap(t), snap(x)]; cur = null; draw();
+});
+c.addEventListener("pointerup", () => (drag = null));
+$("b").addEventListener("input", draw);
+$("view").addEventListener("click", () => { inS2 = !inS2; $("view").classList.toggle("active", inS2); $("view").textContent = inS2 ? "Draw in S coordinates" : "Draw in S′ coordinates"; draw(); });
+$("grid").addEventListener("click", () => { showGrid = !showGrid; $("grid").classList.toggle("active", showGrid); draw(); });
+document.querySelectorAll("[data-s]").forEach((btn) => btn.addEventListener("click", () => { const s = SC[btn.dataset.s]; cur = btn.dataset.s; ev = { A: [...s.A], B: [...s.B] }; $("b").value = s.b; draw(); }));
+window.addEventListener("resize", () => { fit(); draw(); });
+fit(); draw();
+</script>
+</body>
+</html>
