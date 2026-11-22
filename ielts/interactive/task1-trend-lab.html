@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Task 1 Trend Lab</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg.plot { aspect-ratio: 600 / 340; cursor: default; }
+  svg text { font: 12px system-ui, sans-serif; fill: var(--muted); }
+  svg .pt { cursor: grab; }
+  svg .pt:active { cursor: grabbing; }
+  .desc p { margin: 0 0 10px; }
+  .desc .v { font-weight: 600; color: var(--accent); }
+  .seg { display: grid; grid-template-columns: 90px 1fr; gap: 6px; font-size: 14px; padding: 4px 0; border-bottom: 1px dashed var(--border); }
+  .seg:last-child { border-bottom: 0; }
+  .ov label { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; cursor: pointer; font-size: 15px; }
+  .ov .res { font-size: 13px; margin-left: 26px; }
+  .modes { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← IELTS tools</a><a class="back" href="../04-writing-task1.md">Module 04 · Task 1 →</a></header>
+  <h1>Task 1 Trend Lab</h1>
+  <p class="lead"><b>Drag the points</b> to shape the data. The lab picks the right trend verb, adverb and approximation for every change, so you see how the size of a change maps to the language. Then test yourself: which sentences make a valid <b>overview</b>?</p>
+
+  <div class="modes">
+    <button id="rand" class="primary">🎲 Random data</button>
+    <button data-p="cross">Preset: crossover</button>
+    <button data-p="peak">Preset: peak then fall</button>
+    <button data-p="flat">Preset: stable vs rising</button>
+  </div>
+
+  <div class="grid two">
+    <div>
+      <svg class="plot" id="chart" viewBox="0 0 600 340" role="img" aria-label="Editable line chart"></svg>
+      <div class="legend" style="margin-top:8px"><span><i style="background:var(--c1)"></i><span id="nA">Country A</span></span><span><i style="background:var(--c2)"></i><span id="nB">Country B</span></span><span>Percentage of households with solar panels (invented data)</span></div>
+    </div>
+    <div class="card desc">
+      <b>Language for each change</b>
+      <div id="segs" style="margin-top:6px"></div>
+      <label class="ctl" style="margin-top:10px">Show series <select id="which"><option value="0">Country A</option><option value="1">Country B</option></select></label>
+    </div>
+  </div>
+
+  <h2>Model paragraphs (generated)</h2>
+  <div class="grid two">
+    <div class="card desc" id="model"></div>
+    <div class="card">
+      <b>How the lab chooses words</b>
+      <table class="t" style="margin-top:6px">
+        <tr><th>Change (pct points)</th><th>Verb + adverb</th><th>Noun phrase</th></tr>
+        <tr><td>&lt; 2</td><td>remained stable / levelled off</td><td>—</td></tr>
+        <tr><td>2–6</td><td>rose / fell slightly</td><td>a slight rise / dip</td></tr>
+        <tr><td>6–15</td><td>increased / decreased steadily</td><td>a steady increase / decline</td></tr>
+        <tr><td>15–30</td><td>rose / fell significantly</td><td>a significant rise / drop</td></tr>
+        <tr><td>&gt; 30</td><td>surged / plummeted</td><td>a dramatic surge / fall</td></tr>
+      </table>
+      <p class="note" style="margin:8px 0 0">These cut-offs are a rule of thumb for a 0–100% scale over 5 years, not an official rule. What matters is that the word matches the size of the change <i>relative to the chart</i>.</p>
+    </div>
+  </div>
+
+  <h2>Overview spotter</h2>
+  <div class="card ov">
+    <p style="margin-top:0">Tick <b>every</b> sentence that would work in the <b>overview</b> paragraph for the chart above. (Overview = the main trends or differences, accurate, with no specific numbers.)</p>
+    <div id="ovq"></div>
+    <div class="row" style="margin-top:8px"><button class="primary" id="ovchk">Check</button><button id="ovnew">New sentences</button><span class="note" id="ovres"></span></div>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · ielts/interactive · invented data for practice</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const cssv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const YEARS = [2000, 2005, 2010, 2015, 2020, 2025];
+const NAMES = ["Country A", "Country B"];
+let data = [[12, 18, 27, 41, 55, 62], [35, 37, 36, 38, 44, 47]];
+const W = 600, H = 340, L = 44, R = 20, T = 16, B = 34;
+const X = (i) => L + (i / (YEARS.length - 1)) * (W - L - R);
+const Y = (v) => H - B - (v / 100) * (H - B - T);
+const V = (y) => Math.max(0, Math.min(100, Math.round(((H - B - y) / (H - B - T)) * 100)));
+
+// ---------- language ----------
+function band(d) {
+  const a = Math.abs(d);
+  if (a < 2) return { k: 0, verb: "remained stable", noun: null };
+  const up = d > 0;
+  if (a <= 6) return { k: 1, verb: up ? "rose slightly" : "fell slightly", noun: up ? "a slight rise" : "a slight dip" };
+  if (a <= 15) return { k: 2, verb: up ? "increased steadily" : "decreased steadily", noun: up ? "a steady increase" : "a steady decline" };
+  if (a <= 30) return { k: 3, verb: up ? "rose significantly" : "fell significantly", noun: up ? "a significant rise" : "a significant drop" };
+  return { k: 4, verb: up ? "surged" : "plummeted", noun: up ? "a dramatic surge" : "a dramatic fall" };
+}
+// approximation phrase for a percentage
+function approx(v) {
+  const F = [[10, "a tenth"], [20, "a fifth"], [25, "a quarter"], [100 / 3, "a third"], [40, "two fifths"], [50, "half"], [60, "three fifths"], [200 / 3, "two thirds"], [75, "three quarters"], [80, "four fifths"], [90, "nine out of ten"], [100, "all"]];
+  if (v < 5) return "almost none";
+  let best = F[0];
+  F.forEach((f) => { if (Math.abs(f[0] - v) < Math.abs(best[0] - v)) best = f; });
+  const d = v - best[0];
+  if (Math.abs(d) < 1) return (best[1] === "all" ? "" : "exactly ") + best[1];
+  if (Math.abs(d) <= 3) return (d < 0 ? "just under " : "just over ") + best[1];
+  if (Math.abs(d) <= 6) return (d < 0 ? "nearly " : "roughly ") + best[1];
+  return "around " + v + "%";
+}
+// merge consecutive segments with same direction & strength
+function segments(s) {
+  const out = [];
+  for (let i = 0; i < s.length - 1; i++) {
+    const b = band(s[i + 1] - s[i]), dir = Math.sign(b.k ? s[i + 1] - s[i] : 0);
+    const last = out[out.length - 1];
+    if (last && last.k === b.k && last.dir === dir) { last.j = i + 1; }
+    else out.push({ i, j: i + 1, k: b.k, dir, verb: b.verb, noun: b.noun });
+  }
+  // keep the per-step wording: two steady 5-year rises = "increased steadily" over 10 years
+  return out.map((g) => ({ ...g, from: s[g.i], to: s[g.j] }));
+}
+const pp = (d) => `${Math.abs(d)} percentage point${Math.abs(d) === 1 ? "" : "s"}`;
+
+function describe(k) {
+  const s = data[k], n = NAMES[k];
+  const segs = segments(s);
+  $("segs").innerHTML = segs.map((g) => `<div class="seg"><span class="mono">${YEARS[g.i]}–${YEARS[g.j]}</span><span>${g.k === 0 ? `<span class="v">remained stable</span> at around ${g.from}%` : `<span class="v">${g.verb}</span> from ${g.from}% to ${g.to}% <span class="note">(${pp(g.to - g.from)}${g.noun ? ` · "there was ${g.noun}"` : ""})</span>`}</span></div>`).join("");
+}
+
+function overviewFacts() {
+  const [a, b] = data, n = YEARS.length - 1;
+  const dirOf = (s) => { const d = s[n] - s[0]; return Math.abs(d) < 4 ? "stable" : d > 0 ? "up" : "down"; };
+  const peakIdx = (s) => s.indexOf(Math.max(...s));
+  const crosses = []; for (let i = 0; i < n; i++) if (Math.sign(a[i] - b[i]) !== Math.sign(a[i + 1] - b[i + 1]) && a[i + 1] !== b[i + 1] && a[i] !== b[i]) crosses.push(i);
+  return { dA: dirOf(a), dB: dirOf(b), aHigherAll: a.every((v, i) => v > b[i]), bHigherAll: b.every((v, i) => v > a[i]), crosses, peakA: peakIdx(a), peakB: peakIdx(b) };
+}
+const dirWord = { up: "rose", down: "fell", stable: "remained relatively stable" };
+
+function model() {
+  const f = overviewFacts(), [a, b] = data, n = YEARS.length - 1;
+  let ov = `Overall, the proportion of households with solar panels ${f.dA === "stable" ? "remained relatively stable" : f.dA === "up" ? "rose" : "fell"} in ${NAMES[0]}`;
+  ov += f.dA === f.dB ? `, and the same was true of ${NAMES[1]}` : `, whereas in ${NAMES[1]} it ${dirWord[f.dB]}`;
+  ov += ". ";
+  if (f.aHigherAll) ov += `${NAMES[0]} had the higher figure throughout the period.`;
+  else if (f.bHigherAll) ov += `${NAMES[1]} had the higher figure throughout the period.`;
+  else if (f.crosses.length) ov += `${a[n] > b[n] ? NAMES[0] : NAMES[1]} ${f.crosses.length === 1 ? "overtook" : "eventually overtook"} ${a[n] > b[n] ? NAMES[1] : NAMES[0]} during the period.`;
+  const body = (k) => {
+    const s = data[k], segs = segments(s);
+    let t = `In ${YEARS[0]}, ${approx(s[0])} of households in ${NAMES[k]} had solar panels (${s[0]}%). `;
+    t += segs.map((g, idx) => {
+      const when = idx === 0 ? `Between ${YEARS[g.i]} and ${YEARS[g.j]}` : pick2(idx, [`From ${YEARS[g.i]} to ${YEARS[g.j]}`, `Over the following ${(g.j - g.i) * 5} years`, `After ${YEARS[g.i]}`]);
+      if (g.k === 0) return `${when}, the figure remained stable at around ${g.from}%.`;
+      return idx % 2 === 0 ? `${when}, the figure ${g.verb}, reaching ${g.to}%.` : `${when}, there was ${g.noun}, to ${g.to}%.`;
+    }).join(" ");
+    const pk = s.indexOf(Math.max(...s));
+    if (pk !== 0 && pk !== n) t += ` The highest point was ${s[pk]}% in ${YEARS[pk]}.`;
+    return t;
+  };
+  $("model").innerHTML = `<p><b>Overview.</b> ${ov}</p><p><b>Body 1.</b> ${body(0)}</p><p><b>Body 2.</b> ${body(1)}</p><p class="note">Generated from the rules on the right: a starting model, not a band-9 answer. A real answer groups and <i>compares</i> the two series (e.g. "…while B's figure was only half that of A").</p>`;
+}
+function pick2(i, arr) { return arr[i % arr.length]; }
+
+// ---------- overview spotter ----------
+let ovItems = [];
+function makeOverview() {
+  const f = overviewFacts(), [a, b] = data, n = YEARS.length - 1;
+  const opp = { up: "fell", down: "rose", stable: "rose sharply" };
+  const pool = [
+    { t: `Overall, the figure for ${NAMES[0]} ${dirWord[f.dA]} over the period.`, ok: true, why: "Accurate main trend, no numbers." },
+    { t: `Overall, the figure for ${NAMES[1]} ${dirWord[f.dB]} over the period.`, ok: true, why: "Accurate main trend, no numbers." },
+    { t: `Overall, the figure for ${NAMES[0]} ${opp[f.dA]} over the period.`, ok: false, why: "Inaccurate: check the start and end points." },
+    { t: `In ${YEARS[2]}, ${a[2]}% of households in ${NAMES[0]} had solar panels.`, ok: false, why: "A specific data point is a body-paragraph detail, not an overview." },
+    { t: `${NAMES[1]}'s figure went from ${b[0]}% in ${YEARS[0]} to ${b[n]}% in ${YEARS[n]}.`, ok: false, why: "Numbers belong in the body. The overview states the pattern." },
+    { t: `Solar panels became more popular because electricity prices increased.`, ok: false, why: "Invented cause: Task 1 reports the data only." },
+  ];
+  if (f.aHigherAll) pool.push({ t: `${NAMES[0]} had a higher proportion than ${NAMES[1]} throughout.`, ok: true, why: "A key comparison that holds for every year." });
+  else if (f.bHigherAll) pool.push({ t: `${NAMES[1]} had a higher proportion than ${NAMES[0]} throughout.`, ok: true, why: "A key comparison that holds for every year." });
+  else pool.push({ t: `${NAMES[0]} had a higher proportion than ${NAMES[1]} in every year.`, ok: false, why: "Not true for every year: the lines cross or touch." });
+  if (f.crosses.length) { const lead = a[n] > b[n] ? 0 : 1; pool.push({ t: `By the end of the period, ${NAMES[lead]} had overtaken ${NAMES[1 - lead]}.`, ok: true, why: "A crossover is a key feature worth an overview sentence." }); }
+  ovItems = pool.sort(() => Math.random() - 0.5).slice(0, 5);
+  if (!ovItems.some((x) => x.ok)) ovItems[0] = pool.find((x) => x.ok);
+  $("ovq").innerHTML = ovItems.map((x, i) => `<label><input type="checkbox" data-i="${i}"> <span>${x.t}</span></label><div class="res" id="ovr${i}"></div>`).join("");
+  $("ovres").textContent = "";
+}
+$("ovchk").addEventListener("click", () => {
+  let right = 0;
+  ovItems.forEach((x, i) => {
+    const ticked = document.querySelector(`#ovq input[data-i="${i}"]`).checked, ok = ticked === x.ok; if (ok) right++;
+    $("ovr" + i).innerHTML = `<span class="${ok ? "good" : "bad"}">${ok ? "✓" : "✗"} ${x.ok ? "Valid overview sentence" : "Not for the overview"}</span> <span class="note">· ${x.why}</span>`;
+  });
+  $("ovres").textContent = `${right}/${ovItems.length} judged correctly`;
+});
+$("ovnew").addEventListener("click", makeOverview);
+
+// ---------- chart + drag ----------
+function draw() {
+  const cols = [cssv("--c1"), cssv("--c2")];
+  let s = "";
+  for (let v = 0; v <= 100; v += 20) s += `<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="${cssv("--border")}"/><text x="${L - 6}" y="${Y(v) + 4}" text-anchor="end">${v}%</text>`;
+  YEARS.forEach((y, i) => (s += `<text x="${X(i)}" y="${H - B + 20}" text-anchor="middle">${y}</text>`));
+  data.forEach((ser, k) => {
+    s += `<polyline fill="none" stroke="${cols[k]}" stroke-width="3" points="${ser.map((v, i) => `${X(i)},${Y(v)}`).join(" ")}"/>`;
+    ser.forEach((v, i) => (s += `<circle class="pt" data-k="${k}" data-i="${i}" cx="${X(i)}" cy="${Y(v)}" r="9" fill="${cols[k]}" stroke="${cssv("--surface")}" stroke-width="2"><title>${NAMES[k]} ${YEARS[i]}: ${v}%</title></circle><text x="${X(i)}" y="${Y(v) - 13}" text-anchor="middle" style="fill:${cols[k]};font-weight:600">${v}</text>`));
+  });
+  $("chart").innerHTML = s;
+}
+function refresh(full = true) { draw(); describe(+$("which").value); model(); if (full) makeOverview(); }
+let drag = null;
+const svgY = (e) => { const r = $("chart").getBoundingClientRect(); return ((e.clientY - r.top) / r.height) * H; };
+$("chart").addEventListener("pointerdown", (e) => {
+  const c = e.target.closest(".pt"); if (!c) return;
+  drag = { k: +c.dataset.k, i: +c.dataset.i }; $("chart").setPointerCapture(e.pointerId); e.preventDefault();
+});
+$("chart").addEventListener("pointermove", (e) => { if (!drag) return; data[drag.k][drag.i] = V(svgY(e)); $("which").value = drag.k; refresh(false); });
+const end = () => { if (drag) { drag = null; makeOverview(); } };
+$("chart").addEventListener("pointerup", end); $("chart").addEventListener("pointercancel", end);
+$("which").addEventListener("change", () => describe(+$("which").value));
+
+const PRESETS = { cross: [[12, 18, 27, 41, 55, 62], [35, 37, 36, 38, 44, 47]], peak: [[20, 34, 58, 71, 52, 40], [15, 16, 18, 21, 25, 30]], flat: [[48, 49, 47, 48, 50, 49], [8, 15, 26, 33, 45, 58]] };
+document.querySelectorAll("[data-p]").forEach((b) => b.addEventListener("click", () => { data = PRESETS[b.dataset.p].map((s) => [...s]); refresh(); }));
+$("rand").addEventListener("click", () => {
+  data = [0, 1].map(() => { let v = 5 + Math.random() * 50; const slope = (Math.random() - 0.4) * 16; return YEARS.map(() => { const o = Math.max(1, Math.min(98, Math.round(v))); v += slope + (Math.random() - 0.5) * 14; return o; }); });
+  refresh();
+});
+refresh();
+
+window.__selftest = () => {
+  const errs = [];
+  const chk = (got, want, what) => { if (got !== want) errs.push(`${what}: ${got} ≠ ${want}`); };
+  chk(band(1).k, 0, "band 1"); chk(band(5).verb, "rose slightly", "band 5"); chk(band(-10).verb, "decreased steadily", "band -10"); chk(band(40).verb, "surged", "band 40");
+  chk(approx(32), "just under a third", "approx 32"); chk(approx(49), "just under half", "approx 49"); chk(approx(76), "just over three quarters", "approx 76"); chk(approx(50), "exactly half", "approx 50");
+  chk(segments([10, 20, 30, 30]).length, 2, "merge segments");
+  data = PRESETS.cross.map((s) => [...s]); refresh();
+  const f = overviewFacts(); chk(f.crosses.length, 1, "crossover"); chk(f.dA, "up", "dirA");
+  document.querySelectorAll("#ovq input").forEach((c, i) => (c.checked = ovItems[i].ok)); $("ovchk").click();
+  chk($("ovres").textContent.startsWith(`${ovItems.length}/`), true, "overview all right");
+  return errs.length ? "FAIL " + errs.join("; ") : "ok";
+};
+</script>
+</body>
+</html>
