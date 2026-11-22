@@ -30,6 +30,8 @@
         <label><input type="checkbox" data-k="ort" checked> <span style="color:var(--c5)">●</span> Orthocenter H + altitudes</label>
         <label><input type="checkbox" data-k="eul" checked> <span style="color:var(--c4)">●</span> Euler line</label>
         <label><input type="checkbox" data-k="nine"> <span style="color:var(--c6)">●</span> Nine-point circle</label>
+        <label><input type="checkbox" data-k="refl"> <span style="color:var(--c5)">◆</span> <span>Reflections of H (over sides and side midpoints)</span></label>
+        <label><input type="checkbox" data-k="iex"> <span style="color:var(--c3)">◆</span> <span>Incenter–excenter lemma (I<sub>A</sub>, M<sub>A</sub>)</span></label>
       </div>
       <div class="card" id="stats"></div>
       <div class="row">
@@ -49,8 +51,20 @@
       <li>The <b>nine-point circle</b> passes through the 3 side midpoints and the 3 feet of the altitudes. Its center is the midpoint of OH and its radius is R/2.</li>
       <li>In a <b>right</b> triangle, H sits on the right-angle vertex and O on the hypotenuse midpoint. In an <b>obtuse</b> one, O and H leave the triangle.</li>
       <li>In an <b>equilateral</b> triangle, all centers coincide and the Euler line is undefined.</li>
+      <li><b>Reflections of H</b> (turn the toggle on): the reflection H<sub>a</sub> of H over BC lies on the circumcircle, and the reflection A′ of H over the <i>midpoint</i> of BC is the antipode of A.</li>
+      <li><b>Incenter–excenter lemma</b>: M<sub>A</sub>B = M<sub>A</sub>I = M<sub>A</sub>C = M<sub>A</sub>I<sub>A</sub>, so B, I, C, I<sub>A</sub> lie on a circle centered at the arc midpoint M<sub>A</sub>, and I<sub>A</sub>I is its diameter.</li>
     </ol>
   </div>
+
+  <h2>Prove it (hints → full sketches)</h2>
+  <details class="card"><summary><b>OG : GH = 1 : 2</b></summary>
+    <p>The homothety h centered at G with ratio −½ sends A, B, C to the midpoints of BC, CA, AB. It sends the altitude from A to the line through the midpoint of BC perpendicular to BC, which is the perpendicular bisector of BC. So h maps the altitudes' intersection H to the perpendicular bisectors' intersection O: O = h(H), i.e. O − G = −½(H − G). That is the Euler line with GH = 2·OG. In vectors with O as origin, this is H = A + B + C.</p></details>
+  <details class="card"><summary><b>H<sub>a</sub> lies on the circumcircle</b></summary>
+    <p>Let the altitudes from B and C meet the opposite sides at E and F. In the cyclic quadrilateral AFHE (right angles at E and F), ∠BHC = ∠FHE = 180° − A. Reflection over BC preserves angles, so ∠BH<sub>a</sub>C = 180° − A. Then A and H<sub>a</sub> are on opposite sides of BC with ∠BAC + ∠BH<sub>a</sub>C = 180°, so ABH<sub>a</sub>C is cyclic. (Use directed angles to cover the obtuse case.)</p></details>
+  <details class="card"><summary><b>Reflection over the midpoint is the antipode</b></summary>
+    <p>With O as origin, H = A + B + C. The reflection of H over M = (B + C)/2 is 2M − H = −A, which is the point diametrically opposite A. Equivalently BHCA′ is a parallelogram: BH ⟂ AC and CA′ ∥ BH give ∠ACA′ = 90°.</p></details>
+  <details class="card"><summary><b>Incenter–excenter lemma</b></summary>
+    <p>Let ∠A = 2α, ∠B = 2β, ∠C = 2γ. AI bisects ∠A, so it meets the circumcircle again at the midpoint M<sub>A</sub> of arc BC. Then ∠IBM<sub>A</sub> = ∠IBC + ∠CBM<sub>A</sub> = β + ∠CAM<sub>A</sub> = β + α. The exterior angle of triangle ABI at I gives ∠BIM<sub>A</sub> = ∠BAI + ∠ABI = α + β. So triangle M<sub>A</sub>BI is isosceles and M<sub>A</sub>B = M<sub>A</sub>I. In the same way M<sub>A</sub>C = M<sub>A</sub>I. The internal and external bisectors at B are perpendicular, so ∠IBI<sub>A</sub> = 90°. Hence I<sub>A</sub> lies on the circle with center M<sub>A</sub> through B and I, and II<sub>A</sub> is a diameter.</p></details>
   <footer class="foot">Part of the Self-Study repo · math-olympiad/interactive</footer>
 </div>
 
@@ -58,7 +72,9 @@
 const svg = document.getElementById("svg");
 const NS = "http://www.w3.org/2000/svg";
 let P = { A: [180, 90], B: [90, 370], C: [500, 360] };
-const show = { circ: true, inc: true, cen: true, ort: true, eul: true, nine: false };
+const show = { circ: true, inc: true, cen: true, ort: true, eul: true, nine: false, refl: false, iex: false };
+// Read lemma toggles from the URL, e.g. triangle-centers.html?show=iex
+for (const k of (new URLSearchParams(location.search).get("show") || "").split(",")) if (k in show) show[k] = true;
 
 const sub = (p, q) => [p[0] - q[0], p[1] - q[1]];
 const add = (p, q) => [p[0] + q[0], p[1] + q[1]];
@@ -81,13 +97,17 @@ function centers(A, B, C) {
   const area = Math.abs(d) / 4;
   const R = dist(O, A), r = (2 * area) / per;
   const N = mid(O, H);
-  return { a, b, c, O, G, H, I, R, r, N, area, degenerate: Math.abs(d) < 1e-6 };
+  // Excenter opposite A and the midpoint M_A of arc BC not containing A (= second intersection of AI with the circumcircle)
+  const IA = [(-a * A[0] + b * B[0] + c * C[0]) / (-a + b + c), (-a * A[1] + b * B[1] + c * C[1]) / (-a + b + c)];
+  const MA = mid(I, IA);
+  return { a, b, c, O, G, H, I, R, r, N, IA, MA, area, degenerate: Math.abs(d) < 1e-6 };
 }
 
 function foot(P0, Q, R0) { // foot of perpendicular from P0 onto line QR0
   const v = sub(R0, Q), t = ((P0[0] - Q[0]) * v[0] + (P0[1] - Q[1]) * v[1]) / (v[0] * v[0] + v[1] * v[1]);
   return add(Q, mul(v, t));
 }
+function reflect(P0, Q, R0) { return sub(mul(foot(P0, Q, R0), 2), P0); }
 function angle(at, p, q) {
   const u = sub(p, at), v = sub(q, at);
   return (Math.acos((u[0] * v[0] + u[1] * v[1]) / (Math.hypot(...u) * Math.hypot(...v))) * 180) / Math.PI;
@@ -106,16 +126,29 @@ function line(p, q, color, opts = {}) {
 }
 function dot(p, color, label, r = 4.5) {
   el("circle", { cx: p[0], cy: p[1], r, fill: color });
-  if (label) { const t = el("text", { x: p[0] + 8, y: p[1] - 8 }); t.textContent = label; }
+  if (label) {
+    const t = el("text", { x: p[0] + 8, y: p[1] - 8 }), [main, subs] = label.split("_");
+    t.textContent = main;
+    if (subs) { const s2 = document.createElementNS(NS, "tspan"); s2.setAttribute("dy", "4"); s2.setAttribute("font-size", "10"); s2.textContent = subs; t.appendChild(s2); }
+  }
 }
 function circle(c, r, color, dash) {
   el("circle", { cx: c[0], cy: c[1], r, fill: "none", stroke: color, "stroke-width": 1.4, "stroke-dasharray": dash || "" });
 }
 
+let VB = [0, 0, 600, 450];
 function draw() {
   svg.innerHTML = "";
   const { A, B, C } = P;
   const k = centers(A, B, C);
+  // Grow the view (never shrink below the default) so the excenter and its circle stay visible.
+  VB = [0, 0, 600, 450];
+  if (show.iex && !k.degenerate) {
+    const rr = dist(k.MA, k.I), xs = [0, 600, k.IA[0] - 20, k.MA[0] - rr - 10, k.MA[0] + rr + 10], ys = [0, 450, k.IA[1] - 20, k.IA[1] + 20, k.MA[1] - rr - 10, k.MA[1] + rr + 10];
+    const x0 = Math.max(-900, Math.min(...xs)), y0 = Math.max(-700, Math.min(...ys)), x1 = Math.min(1500, Math.max(...xs)), y1 = Math.min(1150, Math.max(...ys));
+    VB = [x0, y0, x1 - x0, y1 - y0];
+  }
+  svg.setAttribute("viewBox", VB.join(" "));
   const text = cv("--text"), muted = cv("--muted");
   const c1 = cv("--c1"), c2 = cv("--c2"), c3 = cv("--c3"), c4 = cv("--c4"), c5 = cv("--c5"), c6 = cv("--c6");
 
@@ -125,6 +158,19 @@ function draw() {
     if (show.nine) {
       circle(k.N, k.R / 2, c6, "5 4");
       [mid(A, B), mid(B, C), mid(C, A), foot(A, B, C), foot(B, C, A), foot(C, A, B)].forEach((p) => dot(p, c6, "", 3));
+    }
+    if (show.refl) {
+      const hs = [reflect(k.H, B, C), reflect(k.H, C, A), reflect(k.H, A, B)];
+      const ms = [sub(mul(mid(B, C), 2), k.H), sub(mul(mid(C, A), 2), k.H), sub(mul(mid(A, B), 2), k.H)];
+      hs.forEach((p, i) => { line(k.H, p, c5, { dash: "2 3", op: 0.6 }); dot(p, c5, ["H_a", "H_b", "H_c"][i], 4); });
+      ms.forEach((p, i) => { line(k.H, p, c4, { dash: "2 3", op: 0.45 }); dot(p, c4, ["A′", "B′", "C′"][i], 4); line([A, B, C][i], p, c4, { op: 0.35 }); });
+    }
+    if (show.iex) {
+      circle(k.MA, dist(k.MA, k.I), c3, "6 4");
+      line(A, k.IA, c3, { op: 0.6 });
+      line(B, k.IA, muted, { op: 0.35 }); line(C, k.IA, muted, { op: 0.35 });
+      dot(k.IA, c3, "I_A"); dot(k.MA, c3, "M_A");
+      if (!show.inc) dot(k.I, c3, "I");
     }
     if (show.cen) { line(A, mid(B, C), c2, { op: 0.6 }); line(B, mid(C, A), c2, { op: 0.6 }); line(C, mid(A, B), c2, { op: 0.6 }); }
     if (show.ort) {
@@ -171,22 +217,28 @@ function stats(k) {
     row("OI²  vs  R(R − 2r)", (OI2 / 2500).toFixed(3) + "  vs  " + ((k.R * (k.R - 2 * k.r)) / 2500).toFixed(3)) +
     row("R / r  (≥ 2)", (k.R / k.r).toFixed(3)) +
     row("|N·midAB| / R,  |N·footA| / R", (dist(k.N, mid(A, B)) / k.R).toFixed(3) + ",  " + (dist(k.N, foot(A, B, C)) / k.R).toFixed(3)) +
-    `<p class="note" style="margin:8px 0 0">Units: 50 px = 1.</p>`;
+    (show.refl ? row("|OH<sub>a</sub>|, |OH<sub>b</sub>|, |OH<sub>c</sub>|  ÷ R", [reflect(k.H, B, C), reflect(k.H, C, A), reflect(k.H, A, B)].map((p) => (dist(k.O, p) / k.R).toFixed(3)).join(", ")) +
+      row("A′ = reflection of H over mid BC: |OA′|/R, O = mid AA′?", (dist(k.O, sub(mul(mid(B, C), 2), k.H)) / k.R).toFixed(3) + ", " + (dist(k.O, mid(A, sub(mul(mid(B, C), 2), k.H))) < 1e-6 * k.R ? "yes" : "no")) : "") +
+    (show.iex ? row("M<sub>A</sub>B, M<sub>A</sub>I, M<sub>A</sub>C, M<sub>A</sub>I<sub>A</sub>  ÷ R", [B, k.I, C, k.IA].map((p) => (dist(k.MA, p) / k.R).toFixed(3)).join(", ")) +
+      row("|OM<sub>A</sub>| / R  (on circumcircle?)", (dist(k.O, k.MA) / k.R).toFixed(3)) : "") +
+    `<p class="note" style="margin:8px 0 0">Units: 50 px = 1. Ratios ÷ R equal to 1.000 mean "on the circumcircle".</p>`;
 }
 
 let drag = null;
 function svgPoint(e) {
   const pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
   const q = pt.matrixTransform(svg.getScreenCTM().inverse());
-  return [Math.max(10, Math.min(590, q.x)), Math.max(10, Math.min(440, q.y))];
+  return [Math.max(VB[0] + 10, Math.min(VB[0] + VB[2] - 10, q.x)), Math.max(VB[1] + 10, Math.min(VB[1] + VB[3] - 10, q.y))];
 }
 svg.addEventListener("pointerdown", (e) => {
   const g = e.target.closest(".pt"); if (!g) return;
   drag = g.getAttribute("data-name"); svg.setPointerCapture(e.pointerId);
 });
-svg.addEventListener("pointermove", (e) => { if (drag) { P[drag] = svgPoint(e); draw(); } });
+let raf = 0;
+svg.addEventListener("pointermove", (e) => { if (!drag) return; P[drag] = svgPoint(e); if (!raf) raf = requestAnimationFrame(() => { raf = 0; draw(); }); });
 svg.addEventListener("pointerup", () => { drag = null; });
 
+document.querySelectorAll("[data-k]").forEach((cb) => { cb.checked = show[cb.dataset.k]; });
 document.querySelectorAll("[data-k]").forEach((cb) => cb.addEventListener("change", () => { show[cb.dataset.k] = cb.checked; draw(); }));
 const presets = {
   eq: { A: [300, 70], B: [127, 370], C: [473, 370] },
