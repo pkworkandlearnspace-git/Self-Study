@@ -66,7 +66,7 @@ flowchart LR
 
 ## Learn from
 - ⭐ **Cambridge IELTS Academic** books (official practice tests; the newest volumes are IELTS 20 (2025) and IELTS 21 (2026)) 💲. Use the newest first; the recordings and transcripts are the gold standard.
-- **[IELTS official sample test questions (Academic)](https://ielts.org/take-a-test/preparation-resources/sample-test-questions/academic-test)** and the free **[IELTS trial test](https://ielts.org/take-a-test/preparation-resources/ielts-trial-test)**.
+- **[IELTS official sample test questions (Academic)](https://ielts.org/take-a-test/preparation-resources/sample-test-questions/academic-test)** and the **[IELTS trial test](https://ielts.org/take-a-test/preparation-resources/ielts-trial-test)**.
 - **[British Council: free IELTS practice tests](https://takeielts.britishcouncil.org/take-ielts/prepare/free-ielts-english-practice-tests/listening)** (also the free IELTS Ready course).
 
 ## Done when
