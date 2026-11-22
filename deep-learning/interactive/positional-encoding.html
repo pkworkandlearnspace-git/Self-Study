@@ -75,10 +75,11 @@ function part1() {
   const d = +$("d").value, base = 10 ** +$("b").value; $("dv").textContent = d; $("bv").textContent = Math.round(base).toLocaleString("en-US");
   const P = 128; $("Pmax").textContent = P - 1;
   const cv = $("hm"), ctx = cv.getContext("2d"), img = ctx.createImageData(d, P);
+  const hx = css("--surface-2").replace("#", ""); const surf = hx.length === 6 ? [0, 2, 4].map((k) => parseInt(hx.slice(k, k + 2), 16)) : [240, 240, 236];
   for (let p = 0; p < P; p++) { const v = pe(p, d, base); for (let j = 0; j < d; j++) {
     const x = v[j], k = 4 * (p * d + j);
     // diverging blue (+) / orange (−)
-    const t = Math.abs(x); const base0 = [240, 240, 236];
+    const t = Math.abs(x); const base0 = surf;
     const c = x >= 0 ? [47, 111, 222] : [217, 98, 43];
     for (let q = 0; q < 3; q++) img.data[k + q] = base0[q] * (1 - t) + c[q] * t;
     img.data[k + 3] = 255;
