@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IELTS Listening Drills</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .modes { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .q { font-size: 18px; font-weight: 600; margin: 4px 0 10px; }
+  .instr { display: inline-block; font-size: 12px; letter-spacing: .04em; font-weight: 700; background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; margin-bottom: 8px; }
+  .fb { margin-top: 12px; min-height: 1.5em; }
+  .fb .script { margin-top: 8px; padding: 10px 12px; background: var(--surface-2); border-radius: 8px; font-size: 15px; }
+  .fb mark { background: var(--accent-soft); color: var(--text); padding: 0 3px; border-radius: 3px; }
+  .fb s { color: var(--bad); }
+  .play { font-size: 16px; padding: 10px 18px; }
+  .choices { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .choices button { text-align: left; }
+  .choices button.ok { background: var(--good); border-color: var(--good); color: #fff; }
+  .choices button.no { background: var(--bad); border-color: var(--bad); color: #fff; }
+  #ans { width: 100%; font-size: 18px; padding: 10px 12px; }
+  .pill { font-size: 12px; padding: 1px 8px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap" style="max-width:820px">
+  <header class="top"><a class="back" href="index.html">← IELTS tools</a><a class="back" href="../02-listening.md">Module 02 · Listening →</a></header>
+  <h1>Listening Drills</h1>
+  <p class="lead">Three short drills for the marks strong students lose for silly reasons: numbers and spelling, distractors (the speaker corrects themselves), and word limits. Audio uses your browser's built-in voice, so it works offline. Each item plays <b>once</b> by default, like the real test.</p>
+
+  <div class="modes" id="modes">
+    <button data-m="dict" class="active">🔢 Numbers & spelling</button>
+    <button data-m="dist">🪤 Distractors</button>
+    <button data-m="limit">📏 Word limits</button>
+  </div>
+
+  <div class="card" id="panel"></div>
+
+  <div class="grid two" style="margin-top:14px">
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><b>Score</b><span class="note" id="score">0 / 0</span></div>
+      <div class="fc-bar" style="margin-top:8px"><div id="sbar" style="width:0%"></div></div>
+      <p class="note" id="weak" style="margin:10px 0 0"></p>
+    </div>
+    <div class="card controls">
+      <label class="ctl">Voice speed <span class="val" id="ratev"></span><input type="range" id="rate" min="0.7" max="1.2" step="0.05" value="0.95"></label>
+      <label class="ctl" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="replay"> Allow replays (practice mode)</label>
+      <p class="note" id="voiceinfo" style="margin:0"></p>
+    </div>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · ielts/interactive · original practice items, not official test material</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+const norm = (s) => s.toLowerCase().replace(/[’']/g, "'").replace(/[.,!?;:"]/g, "").replace(/\s+/g, " ").trim();
+const esc = (s) => s.replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+
+// ---------- item banks (original) ----------
+// say: what the voice reads · ans: accepted answers · tag: error category · tip: why people miss it
+const DICT = [
+  { cat: "Spelling", q: "Write the surname.", say: "My surname is Thornton. That's T, H, O, R, N, T, O, N.", ans: ["thornton"], tip: "Letters are spelled at speed. Write each letter as you hear it, then check the count." },
+  { cat: "Spelling", q: "Write the street name.", say: "It's on Ashcombe Road. A, S, H, C, O, M, B, E.", ans: ["ashcombe road", "ashcombe rd", "ashcombe"], tip: "Silent letters (the b in Ashcombe) are only caught if you write letters as dictated." },
+  { cat: "Spelling", q: "Write the name of the tutor.", say: "Your tutor is Dr Kaye. That's K, A, Y, E.", ans: ["kaye", "dr kaye"], tip: "A and E are easily confused when spelled aloud. A rhymes with 'day', E with 'see'." },
+  { cat: "Spelling", q: "Write the town.", say: "We're based in Greysham. G, R, E, Y, S, H, A, M.", ans: ["greysham"], tip: "Grey vs Gray: only the dictated letters tell you." },
+  { cat: "Spelling", q: "Write the postcode.", say: "The postcode is B, N, one, four, space, seven, double J.", ans: ["bn14 7jj", "bn147jj"], tip: "'Double J' = JJ. 'Space' is not written as a word." },
+  { cat: "Numbers", q: "Write the phone number.", say: "You can call me on oh seven nine double four, three two six, eight one five.", ans: ["07944326815", "07944 326815", "07944 326 815", "0794 4326 815"], tip: "'Oh' = 0 and 'double four' = 44. Group digits as you hear them." },
+  { cat: "Numbers", q: "How many students enrolled?", say: "This year, fifteen students enrolled, which is fewer than last year.", ans: ["15", "fifteen"], tip: "-teen numbers are stressed on the end: fif-TEEN. -ty numbers on the start: FIF-ty." },
+  { cat: "Numbers", q: "How many people attended?", say: "Around fifty people attended the first session.", ans: ["50", "fifty"], tip: "FIF-ty (stress on the first syllable) vs fif-TEEN." },
+  { cat: "Numbers", q: "What is the price per person?", say: "The tour costs thirty-two pounds fifty per person.", ans: ["£32.50", "32.50", "£3250", "3250", "32.5", "£32.5"], tip: "Write the currency symbol if the gap doesn't already give it. Don't drop the pence." },
+  { cat: "Numbers", q: "What is the membership fee?", say: "Membership is a hundred and fourteen dollars a year.", ans: ["$114", "114", "114 dollars"], tip: "Write numbers as digits: faster and no spelling risk." },
+  { cat: "Dates & times", q: "When does the course start?", say: "The course starts on the twenty-third of September.", ans: ["23 september", "23rd september", "september 23", "september 23rd", "23/9", "23 sept", "23rd of september"], tip: "Any standard date format is accepted; spelling of the month must be right." },
+  { cat: "Dates & times", q: "What time does the museum close?", say: "On Thursdays the museum closes at half past five.", ans: ["5:30", "530", "5.30", "17:30", "1730", "half past five", "5:30 pm", "5.30 pm", "530pm", "5:30pm"], tip: "'Half past five' = 5:30. 'Quarter to' = 45 minutes past the previous hour." },
+  { cat: "Dates & times", q: "What time is the meeting?", say: "Let's meet at quarter to eleven.", ans: ["10:45", "1045", "10.45", "10:45 am", "10.45am", "10:45am"], tip: "Quarter to eleven = 10:45, not 11:45." },
+  { cat: "Tricky words", q: "What is provided? (ONE WORD)", say: "All of the equipment is provided, so you don't need to bring anything.", ans: ["equipment"], tip: "'Equipment' is uncountable: never 'equipments'." },
+  { cat: "Tricky words", q: "What does the price include? (ONE WORD)", say: "The price includes accommodation for three nights.", ans: ["accommodation"], tip: "Accommodation: double c, double m. One of the most misspelled IELTS words." },
+  { cat: "Tricky words", q: "What should students bring? (ONE WORD)", say: "Please bring your own calculators to every lecture.", ans: ["calculators"], tip: "Plural matters: 'calculator' is marked wrong if the speaker said calculators." },
+  { cat: "Tricky words", q: "What is the main problem? (ONE WORD)", say: "The main problem in the area is pollution from the factories.", ans: ["pollution"], tip: "-tion endings: spell them carefully under time pressure." },
+  { cat: "Tricky words", q: "What will the talk focus on? (ONE WORD)", say: "Today's talk will focus mainly on the environment.", ans: ["environment"], tip: "e-n-v-i-r-o-n-m-e-n-t: the 'n' before 'ment' is often dropped." },
+];
+
+const DIST = [
+  { q: "What day is the appointment?", choices: ["Monday", "Tuesday", "Thursday", "Friday"], ans: "Thursday",
+    say: "So, I've put you down for Tuesday at ten. Oh, wait, no, sorry, Tuesday's fully booked. It'll have to be Thursday, same time.", trap: "Tuesday" },
+  { q: "How much is the deposit?", choices: ["£40", "£50", "£60", "£80"], ans: "£60",
+    say: "The deposit used to be forty pounds, but it went up last year, so now it's sixty. The full fee is eighty.", trap: "£40" },
+  { q: "Where will the group meet?", choices: ["the main entrance", "the café", "the car park", "the library"], ans: "the café",
+    say: "We normally meet at the main entrance, but because of the building work, this week we'll gather in the café instead.", trap: "the main entrance" },
+  { q: "Which room is the seminar in?", choices: ["Room 12", "Room 20", "Room 21", "Room 120"], ans: "Room 21",
+    say: "The seminar's in room twelve. Actually, hang on, I'm reading last term's list. It's room twenty-one now.", trap: "Room 12" },
+  { q: "How will the woman travel?", choices: ["by bus", "by train", "by car", "by bike"], ans: "by train",
+    say: "I was going to drive, but parking near the campus is impossible. The bus takes forever, so I'll get the train.", trap: "by car" },
+  { q: "What does the student want to change?", choices: ["her topic", "her deadline", "her supervisor", "her word count"], ans: "her topic",
+    say: "I'm happy with the deadline, and my supervisor's been great. It's really the topic I'd like to switch, if that's possible.", trap: "her deadline" },
+  { q: "What is the man's main reason for joining?", choices: ["to get fit", "to meet people", "to learn a skill", "to save money"], ans: "to meet people",
+    say: "Well, obviously it'll help me get fit, but to be honest, the main thing is that I've just moved here and I don't know anyone.", trap: "to get fit" },
+  { q: "How many places are left?", choices: ["3", "8", "11", "13"], ans: "3",
+    say: "There were thirteen places originally, and ten have already gone, so you'd better book soon.", trap: "13" },
+];
+
+// word-limit drill: instruction + candidate answer + correct verdict
+const LIMIT = [
+  { ins: "NO MORE THAN TWO WORDS", heard: "…a guided tour of the old harbour…", cand: "guided tour", ok: true, why: "Two words. ✓" },
+  { ins: "NO MORE THAN TWO WORDS", heard: "…a guided tour of the old harbour…", cand: "a guided tour", ok: false, why: "Three words (articles count). The answer is 'guided tour' and the article is usually already in the sentence." },
+  { ins: "ONE WORD ONLY", heard: "…the problem was mainly the noise from the road…", cand: "noise", ok: true, why: "One word. ✓" },
+  { ins: "ONE WORD AND/OR A NUMBER", heard: "…open from nine until 5.30 on weekdays…", cand: "5.30", ok: true, why: "A number on its own is allowed. ✓" },
+  { ins: "NO MORE THAN THREE WORDS AND/OR A NUMBER", heard: "…costs £25 for a student membership card…", cand: "£25", ok: true, why: "A number with a currency symbol counts as a number. ✓" },
+  { ins: "ONE WORD ONLY", heard: "…students must bring their own laptops…", cand: "laptop", ok: false, why: "The speaker said 'laptops'. Singular/plural must match what you hear and the grammar of the gap." },
+  { ins: "NO MORE THAN TWO WORDS", heard: "…in the north-east corner of the park…", cand: "north-east corner", ok: true, why: "Hyphenated words count as one word, so this is two words. ✓" },
+  { ins: "NO MORE THAN TWO WORDS", heard: "…a very detailed weather forecast…", cand: "detailed weather forecast", ok: false, why: "Three words. Choose the core noun phrase that fits the gap: 'weather forecast'." },
+  { ins: "ONE WORD ONLY", heard: "…the equipment is kept in the basement…", cand: "equipments", ok: false, why: "'Equipment' is uncountable; 'equipments' is a spelling/grammar error and is marked wrong." },
+  { ins: "NO MORE THAN TWO WORDS AND/OR A NUMBER", heard: "…on the 3rd of March…", cand: "3rd March", ok: true, why: "A date written as a number + month is fine. ✓" },
+];
+
+// ---------- speech ----------
+let voice = null;
+const synth = window.speechSynthesis;
+function loadVoice() {
+  if (!synth) { $("voiceinfo").textContent = "Your browser has no speech engine: use 'Show transcript' and ask someone to read it to you."; return; }
+  const vs = synth.getVoices().filter((v) => /^en[-_](GB|AU|NZ|IE|US|CA)/i.test(v.lang));
+  voice = vs.find((v) => /en[-_]GB/i.test(v.lang)) || vs[0] || null;
+  $("voiceinfo").textContent = voice ? `Voice: ${voice.name} (${voice.lang}). IELTS uses a range of accents (British, Australian, North American…).` : "No English voice found yet: install one in your OS speech settings, or use 'Show transcript'.";
+}
+if (synth) { loadVoice(); synth.onvoiceschanged = loadVoice; } else loadVoice();
+function speak(text, done) {
+  if (!synth) { done && done(); return false; }
+  synth.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  if (voice) u.voice = voice;
+  u.rate = +$("rate").value; u.onend = () => done && done();
+  synth.speak(u); return true;
+}
+
+// ---------- state ----------
+let mode = "dict", cur = null, plays = 0, answered = false, right = 0, total = 0;
+const misses = {};
+function bump(ok, cat) {
+  total++; if (ok) right++; else misses[cat] = (misses[cat] || 0) + 1;
+  $("score").textContent = `${right} / ${total}`;
+  $("sbar").style.width = (100 * right / total).toFixed(0) + "%";
+  const worst = Object.entries(misses).sort((a, b) => b[1] - a[1])[0];
+  $("weak").textContent = worst ? `Most missed: ${worst[0]} (${worst[1]}). Log it in progress.md.` : "No misses yet.";
+}
+
+function playBtn() {
+  return `<div class="row" style="margin-bottom:12px"><button class="primary play" id="play">▶ Play</button><button id="tx">Show transcript</button><span class="note" id="pinfo"></span></div>`;
+}
+function wirePlay() {
+  $("play").addEventListener("click", () => {
+    if (plays > 0 && !$("replay").checked && !answered) { $("pinfo").textContent = "Played once (tick 'Allow replays' to practise)."; return; }
+    plays++; $("play").disabled = true; $("pinfo").textContent = "Listening…";
+    const ok = speak(cur.say, () => { $("play").disabled = false; $("pinfo").textContent = ""; const a = $("ans"); if (a) a.focus(); });
+    if (!ok) { $("play").disabled = false; $("pinfo").textContent = "No speech engine: use the transcript."; }
+  });
+  $("tx").addEventListener("click", () => { $("pinfo").innerHTML = `<i>${esc(cur.say)}</i>`; });
+}
+
+function renderDict() {
+  cur = pick(DICT); plays = 0; answered = false;
+  $("panel").innerHTML = `<span class="pill">${cur.cat}</span><div class="q">${esc(cur.q)}</div>${playBtn()}
+    <div class="row"><input type="text" id="ans" autocomplete="off" spellcheck="false" placeholder="Type what you hear…" style="flex:1"><button class="primary" id="chk">Check</button></div>
+    <div class="fb" id="fb"></div>`;
+  wirePlay();
+  const check = () => {
+    if (answered) return next();
+    const v = norm($("ans").value); if (!v) return;
+    answered = true;
+    const ok = cur.ans.some((a) => norm(a) === v || norm(a).replace(/[£$ ]/g, "") === v.replace(/[£$ ]/g, ""));
+    bump(ok, cur.cat);
+    $("fb").innerHTML = `<b class="${ok ? "good" : "bad"}">${ok ? "✓ Correct" : "✗ Not quite"}</b>${ok ? "" : ` · expected <b>${esc(cur.ans[0])}</b>`}
+      <div class="script">🔊 <i>${esc(cur.say)}</i><br><span class="note">💡 ${esc(cur.tip)}</span></div>
+      <div class="row" style="margin-top:10px"><button class="primary" id="nx">Next →</button><span class="note">or press Enter</span></div>`;
+    $("chk").textContent = "Next";
+    $("nx").addEventListener("click", next);
+  };
+  $("chk").addEventListener("click", check);
+  $("ans").addEventListener("keydown", (e) => { if (e.key === "Enter") check(); });
+}
+
+function renderDist() {
+  cur = pick(DIST); plays = 0; answered = false;
+  const ch = [...cur.choices];
+  $("panel").innerHTML = `<span class="pill">Distractor</span><div class="q">${esc(cur.q)}</div>${playBtn()}
+    <div class="choices" id="ch">${ch.map((c) => `<button data-c="${esc(c)}">${esc(c)}</button>`).join("")}</div><div class="fb" id="fb"></div>`;
+  wirePlay();
+  $("ch").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+    if (answered) return; answered = true;
+    const ok = b.dataset.c === cur.ans; bump(ok, ok ? "" : (b.dataset.c === cur.trap ? "Fell for the distractor" : "Distractors"));
+    b.classList.add(ok ? "ok" : "no");
+    $("ch").querySelector(`[data-c="${cur.ans}"]`).classList.add("ok");
+    let script = esc(cur.say);
+    const hi = (w) => { const re = new RegExp("(" + w.replace(/[.*+?^${}()|[\]\\£]/g, "\\$&") + ")", "i"); script = script.replace(re, "<mark>$1</mark>"); };
+    ["no, sorry", "Actually", "instead", "now it's", "so I'll", "really", "the main thing", "ten have already gone"].forEach(hi);
+    $("fb").innerHTML = `<b class="${ok ? "good" : "bad"}">${ok ? "✓ Correct" : b.dataset.c === cur.trap ? "✗ That's the distractor" : "✗ Not quite"}</b> · answer: <b>${esc(cur.ans)}</b>
+      <div class="script">🔊 ${script}<br><span class="note">💡 The first option mentioned (<s>${esc(cur.trap)}</s>) is rejected later. Highlighted words are the signal that the speaker is changing or qualifying the answer.</span></div>
+      <div class="row" style="margin-top:10px"><button class="primary" id="nx">Next →</button></div>`;
+    $("nx").addEventListener("click", next);
+  }));
+}
+
+function renderLimit() {
+  cur = pick(LIMIT); answered = false;
+  $("panel").innerHTML = `<span class="pill">Word limit</span><div style="margin-top:8px"><span class="instr">Write ${esc(cur.ins)} for each answer.</span></div>
+    <p class="note" style="margin:4px 0">You hear: <i>${esc(cur.heard)}</i></p>
+    <div class="q">A candidate writes: <span class="mono" style="background:var(--surface-2);padding:2px 8px;border-radius:6px">${esc(cur.cand)}</span></div>
+    <div class="row"><button id="yes">✓ Accepted</button><button id="no">✗ Marked wrong</button></div><div class="fb" id="fb"></div>`;
+  const go = (say) => {
+    if (answered) return; answered = true;
+    const ok = say === cur.ok; bump(ok, "Word limits");
+    $("fb").innerHTML = `<b class="${ok ? "good" : "bad"}">${ok ? "✓ Right" : "✗ No"}</b>: it is <b>${cur.ok ? "accepted" : "marked wrong"}</b>. ${esc(cur.why)}
+      <div class="row" style="margin-top:10px"><button class="primary" id="nx">Next →</button></div>`;
+    $("nx").addEventListener("click", next);
+  };
+  $("yes").addEventListener("click", () => go(true));
+  $("no").addEventListener("click", () => go(false));
+}
+
+function next() { if (synth) synth.cancel(); ({ dict: renderDict, dist: renderDist, limit: renderLimit })[mode](); }
+$("modes").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => {
+  $("modes").querySelectorAll("button").forEach((x) => x.classList.toggle("active", x === b));
+  mode = b.dataset.m; next();
+}));
+$("rate").addEventListener("input", () => ($("ratev").textContent = (+$("rate").value).toFixed(2) + "×"));
+$("ratev").textContent = (+$("rate").value).toFixed(2) + "×";
+next();
+
+window.__selftest = () => {
+  // every distractor item: answer and trap are among choices; trap ≠ answer; every dict item has answers
+  const bad = DIST.filter((d) => !d.choices.includes(d.ans) || !d.choices.includes(d.trap) || d.ans === d.trap).length + DICT.filter((d) => !d.ans.length).length;
+  // exercise each mode once
+  for (const m of ["dict", "dist", "limit"]) { mode = m; next(); }
+  mode = "dict"; next(); $("ans").value = cur.ans[0]; $("chk").click();
+  const ok1 = $("fb").textContent.includes("Correct");
+  mode = "limit"; next(); (cur.ok ? $("yes") : $("no")).click();
+  const ok2 = $("fb").textContent.includes("Right");
+  return bad || !ok1 || !ok2 ? `FAIL bank=${bad} dict=${ok1} limit=${ok2}` : `ok ${DICT.length + DIST.length + LIMIT.length} items`;
+};
+</script>
+</body>
+</html>
