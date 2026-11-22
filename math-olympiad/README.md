@@ -26,6 +26,8 @@ Modules 02–05 run **in parallel**: rotate topics weekly instead of finishing o
 - **Inequality lab:** power means, equality-case heat maps, tangent line trick.
 - **Modular arithmetic lab:** multiplication tables mod n, orders, primitive roots, Fermat/Euler check.
 - **Number theory toolkit:** step-through Euclid/Bézout and CRT, LTE checker, Legendre's formula.
+- **Lattice paths & Catalan:** Pascal counts, obstacles, reflection principle.
+- **Games lab:** Nim vs a perfect computer, P/N tables and Grundy values.
 - **Which technique? quiz:** 22 classic problems; pick the tool that cracks each one (auto-graded).
 - **Invariant & pigeonhole lab:** play erase-and-replace games, drag points in a square, tile a mutilated chessboard.
 - **Flashcards:** spaced repetition for theorems, lemmas, and techniques.

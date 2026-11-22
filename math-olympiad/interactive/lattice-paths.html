@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lattice Paths &amp; Catalan</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg.plot { aspect-ratio: 1 / 1; max-width: 560px; margin: 0 auto; }
+  svg text { font: 11px var(--mono); fill: var(--text); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+  svg .node { cursor: pointer; }
+  .modes { display: flex; gap: 6px; flex-wrap: wrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Math Olympiad tools</a><span class="note">Module 04 · Combinatorics</span></header>
+  <h1>Lattice Paths &amp; Catalan</h1>
+  <p class="lead">Each number is the count of right/up paths from the bottom-left corner to that point. It equals the sum of the counts to its left and below: Pascal's rule, i.e. a recursion. Add obstacles or a diagonal barrier and watch the counts change.</p>
+
+  <div class="grid two">
+    <div class="card"><svg class="plot" id="g" viewBox="0 0 560 560" aria-label="Lattice grid with path counts"></svg></div>
+    <div class="controls">
+      <div class="modes">
+        <button class="active" data-m="free">All paths</button>
+        <button data-m="diag">Never above y = x</button>
+        <button data-m="block">Blocked points</button>
+      </div>
+      <label class="ctl">width m = <span class="val" id="mv"></span><input type="range" id="m" min="1" max="10" value="6"></label>
+      <label class="ctl">height n = <span class="val" id="nv"></span><input type="range" id="n" min="1" max="10" value="6"></label>
+      <div class="card" id="stats"></div>
+      <div class="row"><button id="rand">Random path</button><button id="randBad">Random bad path + reflection</button><button id="clear">Clear</button></div>
+      <div class="callout" id="hint"></div>
+    </div>
+  </div>
+
+  <h2>Try these</h2>
+  <div class="card">
+    <ol style="margin:0;padding-left:20px">
+      <li>In <b>All paths</b>, check that the corner count is C(m + n, m). Why? (Choose which m of the m + n steps go right.)</li>
+      <li>In <b>Never above y = x</b> with m = n, read the corner values for n = 1…6: 1, 2, 5, 14, 42, 132. These are the Catalan numbers.</li>
+      <li>Press <b>Random bad path + reflection</b> several times. The orange tail is reflected across y = x + 1 and always ends at (n − 1, n + 1). That bijection proves C<sub>n</sub> = C(2n, n) − C(2n, n + 1).</li>
+      <li>In <b>Blocked points</b>, click a point to block it. How many paths avoid the centre? Check by inclusion–exclusion: total − (paths through the centre).</li>
+    </ol>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · math-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const NS = "http://www.w3.org/2000/svg";
+const cv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+const binom = (n, k) => { if (k < 0 || k > n) return 0; let r = 1; for (let i = 1; i <= k; i++) r = (r * (n - k + i)) / i; return Math.round(r); };
+let mode = "free", blocked = new Set(), path = null, refl = null;
+
+function counts(m, n) {
+  const c = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+  for (let x = 0; x <= m; x++) for (let y = 0; y <= n; y++) {
+    if (mode === "diag" && y > x) continue;
+    if (mode === "block" && blocked.has(x + "," + y)) continue;
+    c[x][y] = x === 0 && y === 0 ? 1 : (x > 0 ? c[x - 1][y] : 0) + (y > 0 ? c[x][y - 1] : 0);
+  }
+  return c;
+}
+function randomPath(m, n) { // uniform over all paths to (m, n)
+  const steps = Array(m).fill("R").concat(Array(n).fill("U"));
+  for (let i = steps.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [steps[i], steps[j]] = [steps[j], steps[i]]; }
+  const pts = [[0, 0]]; for (const s of steps) { const [x, y] = pts[pts.length - 1]; pts.push(s === "R" ? [x + 1, y] : [x, y + 1]); }
+  return pts;
+}
+function draw() {
+  const m = +$("m").value, n = +$("n").value; $("mv").textContent = m; $("nv").textContent = n;
+  const svg = $("g"); svg.innerHTML = "";
+  const mk = (tag, at, txt) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt !== undefined) e.textContent = txt; svg.appendChild(e); return e; };
+  const ext = Math.max(m, n + 1) + 0.6, pad = 34, S = 560 - 2 * pad, u = S / ext;
+  const X = (x) => pad + x * u, Y = (y) => 560 - pad - y * u;
+  const c = counts(m, n);
+  for (let x = 0; x <= m; x++) mk("line", { x1: X(x), y1: Y(0), x2: X(x), y2: Y(n), stroke: cv("--border") });
+  for (let y = 0; y <= n; y++) mk("line", { x1: X(0), y1: Y(y), x2: X(m), y2: Y(y), stroke: cv("--border") });
+  if (mode === "diag") {
+    const d = Math.min(m, n);
+    mk("line", { x1: X(0), y1: Y(0), x2: X(d), y2: Y(d), stroke: cv("--c3"), "stroke-width": 2 });
+    mk("line", { x1: X(0), y1: Y(1), x2: X(Math.min(m, n)), y2: Y(Math.min(m, n) + 1), stroke: cv("--bad"), "stroke-width": 1.5, "stroke-dasharray": "6 4" });
+    mk("text", { x: X(0) + 4, y: Y(1) - 6 }, "y = x + 1");
+  }
+  if (path) {
+    let d = ""; path.forEach(([x, y], i) => (d += (i ? "L" : "M") + X(x) + "," + Y(y)));
+    mk("path", { d, fill: "none", stroke: cv("--accent"), "stroke-width": 4, "stroke-linejoin": "round", opacity: 0.85 });
+  }
+  if (refl) {
+    let d = ""; refl.forEach(([x, y], i) => (d += (i ? "L" : "M") + X(x) + "," + Y(y)));
+    mk("path", { d, fill: "none", stroke: cv("--c2"), "stroke-width": 4, "stroke-dasharray": "8 5", opacity: 0.95 });
+    const e = refl[refl.length - 1]; mk("circle", { cx: X(e[0]), cy: Y(e[1]), r: 7, fill: cv("--c2") });
+    mk("text", { x: X(e[0]) + 9, y: Y(e[1]) - 6 }, `(${e[0]}, ${e[1]})`);
+  }
+  for (let x = 0; x <= m; x++) for (let y = 0; y <= n; y++) {
+    const key = x + "," + y, isB = mode === "block" && blocked.has(key), dead = mode === "diag" && y > x;
+    const g = mk("g", { class: "node" });
+    const circ = document.createElementNS(NS, "circle");
+    Object.entries({ cx: X(x), cy: Y(y), r: isB ? 8 : 4, fill: isB ? cv("--bad") : dead ? cv("--border") : cv("--accent") }).forEach(([k, v]) => circ.setAttribute(k, v));
+    g.appendChild(circ);
+    if (!isB && !dead && (u > 34 || c[x][y] < 1000)) { const t = document.createElementNS(NS, "text"); t.setAttribute("x", X(x) + 5); t.setAttribute("y", Y(y) - 6); t.textContent = c[x][y]; g.appendChild(t); }
+    g.addEventListener("click", () => { if (mode !== "block" || (x === 0 && y === 0) || (x === m && y === n)) return; blocked.has(key) ? blocked.delete(key) : blocked.add(key); path = refl = null; draw(); });
+  }
+  const total = c[m][n];
+  let st = row("paths to (m, n)", total) + row("C(m + n, m)", binom(m + n, m));
+  if (mode === "diag" && m === n) st += row("C(2n, n) − C(2n, n + 1)", binom(2 * n, n) - binom(2 * n, n + 1)) + row("Catalan Cₙ = C(2n, n)/(n + 1)", binom(2 * n, n) / (n + 1));
+  if (mode === "diag" && m !== n) st += row("ballot formula C(m+n, n) − C(m+n, n−1)", m >= n ? binom(m + n, n) - binom(m + n, n - 1) : 0);
+  if (mode === "block") st += row("blocked points", blocked.size) + row("paths destroyed", binom(m + n, m) - total);
+  $("stats").innerHTML = st;
+  $("hint").innerHTML = mode === "free" ? "Every count is the sum of the one to the left and the one below. The numbers are Pascal's triangle, rotated 45°."
+    : mode === "diag" ? (m === n ? "Points above y = x are forbidden (grey). The diagonal values are the Catalan numbers." : "Set m = n to see Catalan numbers. With m ≥ n you get the ballot numbers.")
+    : "Click interior points to block or unblock them. The recursion still works: a blocked point simply has count 0.";
+  $("randBad").disabled = mode !== "diag" || m !== n;
+}
+document.querySelectorAll("[data-m]").forEach((b) => b.addEventListener("click", () => {
+  mode = b.dataset.m; document.querySelectorAll("[data-m]").forEach((x) => x.classList.toggle("active", x === b));
+  if (mode === "diag") { $("n").value = $("m").value; }
+  path = refl = null; draw();
+}));
+["m", "n"].forEach((id) => $(id).addEventListener("input", () => { blocked.clear(); path = refl = null; draw(); }));
+$("rand").addEventListener("click", () => {
+  const m = +$("m").value, n = +$("n").value; refl = null;
+  for (let t = 0; t < 500; t++) { // in restricted modes, rejection-sample a valid path
+    const p = randomPath(m, n);
+    const ok = p.every(([x, y]) => (mode !== "diag" || y <= x) && (mode !== "block" || !blocked.has(x + "," + y)));
+    if (ok || mode === "free") { path = p; break; }
+  }
+  draw();
+});
+$("randBad").addEventListener("click", () => {
+  const n = +$("n").value; let p;
+  do { p = randomPath(n, n); } while (!p.some(([x, y]) => y > x));
+  const i = p.findIndex(([x, y]) => y === x + 1);
+  path = p.slice(0, i + 1);
+  refl = p.slice(i).map(([x, y]) => [y - 1, x + 1]); // reflect across y = x + 1
+  draw();
+  $("hint").innerHTML = `Blue: the path up to its <b>first touch</b> of y = x + 1. Orange: the rest, reflected across that line. It always ends at (n − 1, n + 1) = (${n - 1}, ${n + 1}), and every path to (${n - 1}, ${n + 1}) arises exactly once. So bad paths = C(2n, n + 1) = ${binom(2 * n, n + 1)}.`;
+});
+$("clear").addEventListener("click", () => { blocked.clear(); path = refl = null; draw(); });
+draw();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+</script>
+</body>
+</html>

@@ -39,6 +39,8 @@ Small cases · draw it · work backwards · strengthen the induction · extremal
 - Stars & bars: $\binom{n+k-1}{k-1}$ · Derangements $D_n=n!\sum_{i=0}^n\frac{(-1)^i}{i!}$ · Catalan $\frac{1}{n+1}\binom{2n}n$
 - Handshake: $\sum\deg=2|E|$ · Tree: $|E|=|V|-1$ · Bipartite ⟺ no odd cycle · Hall: $|N(S)|\ge|S|\ \forall S$
 - Max/min problems = **bound + construction**. Expected value < 1 ⇒ a good object exists.
+- Reflection: paths $(0,0)\to(n,n)$ never above $y=x$: $\binom{2n}n-\binom{2n}{n+1}=C_n$ · Mantel: triangle-free ⇒ $|E|\le\lfloor n^2/4\rfloor$ · $R(3,3)=6$
+- Games: N ⟺ some move to P · Nim: P ⟺ $\bigoplus$ piles $=0$ · Grundy $g=\operatorname{mex}$ of options; sum of games P ⟺ $\bigoplus g=0$
 
 ## Geometry (→ 05)
 - Inscribed angle = ½ arc · cyclic ⟺ opposite angles sum to 180° ⟺ equal angles on the same chord
