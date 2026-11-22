@@ -9,6 +9,8 @@
 - [ ] Explain k-fold cross-validation and data leakage, with an example.
 - [ ] Say what ROC-AUC measures as a probability, and why it doesn't change when the class balance changes but precision does.
 
+🎯 Not sure? Take the auto-graded [Foundations Quiz](interactive/foundations-quiz.html) (filter by module) before deciding.
+
 ## Core ideas
 - **Learning = optimization + generalization.** Fit training data (minimize empirical risk) and do well on unseen data. The second is the hard part.
 - **Supervised setup:** data $(x_i, y_i)$, model $f_\theta$, loss $\ell$, minimize $\frac1N\sum\ell(f_\theta(x_i), y_i)$.

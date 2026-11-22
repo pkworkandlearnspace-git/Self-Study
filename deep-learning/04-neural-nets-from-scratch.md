@@ -12,6 +12,8 @@
 - [ ] Explain vanishing gradients with sigmoid, and why ReLU helps.
 - [ ] Say what the initial loss of a 10-class classifier should be, and derive the 2 in He initialization.
 
+🎯 Not sure? Take the auto-graded [Foundations Quiz](interactive/foundations-quiz.html) (filter by module) before deciding.
+
 ## Core ideas
 - **Neuron:** $a = \phi(\mathbf w^\top\mathbf x + b)$. **Layer:** $\mathbf h = \phi(W\mathbf x + \mathbf b)$. **MLP:** a stack of layers.
 - **Why nonlinearity:** $W_2(W_1\mathbf x) = (W_2W_1)\mathbf x$ is still linear. $\phi$ (ReLU, GELU, tanh) gives expressive power.

@@ -12,6 +12,8 @@ You're strong at math, so this module skips the basics. It covers three things s
 - [ ] Explain why gradient descent with too large a step size diverges on $f(x)=\tfrac{a}{2}x^2$, and give the exact threshold.
 - [ ] Say why a rotation matrix has singular values $1, 1$ but no real eigenvectors, and why $\mathrm{softmax}(\mathbf z - \max_j z_j)$ is used in code.
 
+🎯 Not sure? Take the auto-graded [Foundations Quiz](interactive/foundations-quiz.html) (filter by module) before deciding.
+
 ## Core ideas
 
 ### Linear algebra (geometry first)

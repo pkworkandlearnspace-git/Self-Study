@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Foundations Quiz</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .opt { display: block; width: 100%; text-align: left; margin: 6px 0; padding: 10px 14px; font-size: 15px; line-height: 1.4; }
+  .opt.right { border-color: var(--good); background: color-mix(in srgb, var(--good) 14%, transparent); }
+  .opt.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 12%, transparent); }
+  .qtext { font-size: 18px; font-weight: 600; margin: 6px 0 10px; }
+  .qtext code, .opt code { font-size: 0.9em; }
+  .dots { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 10px; }
+  .dots span { width: 12px; height: 12px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--border); }
+  .dots span.r { background: var(--good); border-color: var(--good); } .dots span.w { background: var(--bad); border-color: var(--bad); } .dots span.c { outline: 2px solid var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap" style="max-width:780px">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a><span class="note">Modules 01–04 · Skip-test practice</span></header>
+  <h1>Foundations Quiz</h1>
+  <p class="lead">Auto-graded questions on the math, NumPy, ML and backprop modules. Each answer comes with the reason. Score ≥ 90% on a module's questions and you can probably take its skip test with confidence.</p>
+  <div class="row" style="justify-content:space-between">
+    <label class="ctl">Module <select id="mod"><option value="all">All (01–04)</option><option value="01">01 Math</option><option value="02">02 NumPy</option><option value="03">03 ML fundamentals</option><option value="04">04 Neural nets</option></select></label>
+    <button id="restart">Restart (shuffled)</button>
+  </div>
+  <div class="card" style="margin-top:12px" id="qcard">
+    <div class="row" style="justify-content:space-between"><span class="note" id="qmeta"></span><span class="note">Score <b id="score">0</b></span></div>
+    <div class="qtext" id="qtext"></div>
+    <div id="opts"></div>
+    <div class="callout" id="why" hidden style="margin-top:10px"></div>
+    <div class="row" style="justify-content:flex-end;margin-top:10px"><button class="primary" id="next" disabled>Next →</button></div>
+    <div class="dots" id="dots"></div>
+  </div>
+  <div class="card" id="done" hidden style="margin-top:12px"></div>
+  <p class="note">Keys: <b>1–4</b> to answer, <b>Enter</b> for next.</p>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+// a = index of the correct option in o
+const Q = [
+  { m: "01", q: "What is ∇ₓ(xᵀAx) for a general (not necessarily symmetric) square A?", o: ["2Ax", "(A + Aᵀ)x", "Aᵀx", "xᵀA"], a: 1, w: "Expand Σᵢⱼ xᵢAᵢⱼxⱼ and differentiate: you get Ax + Aᵀx. It is 2Ax only when A is symmetric." },
+  { m: "01", q: "Gradient descent on f(x) = ½·a·x² with a = 10. Which learning rate diverges?", o: ["η = 0.05", "η = 0.15", "η = 0.19", "η = 0.25"], a: 3, w: "xₜ₊₁ = (1 − ηa)xₜ. It converges iff |1 − ηa| < 1, i.e. η < 2/a = 0.2. At 0.15 and 0.19 it oscillates but converges; 0.25 gives a factor −1.5." },
+  { m: "01", q: "A 3×3 matrix has singular values 5, 2, 0. Which is true?", o: ["It is invertible with condition number 2.5", "Its rank is 2 and it is not invertible", "Its determinant is 10", "Its eigenvalues are 5, 2, 0"], a: 1, w: "Rank = number of nonzero singular values = 2. |det| = product of singular values = 0. Eigenvalues equal singular values only for symmetric PSD matrices." },
+  { m: "01", q: "Which statement about KL divergence is correct?", o: ["D_KL(p‖q) = D_KL(q‖p)", "D_KL(p‖q) = H(p) − H(p, q)", "D_KL(p‖q) ≥ 0, with equality iff p = q", "It satisfies the triangle inequality"], a: 2, w: "Gibbs' inequality (via Jensen). KL = H(p, q) − H(p), it is asymmetric, and it is not a metric." },
+  { m: "01", q: "Minimizing mean squared error is maximum likelihood under which noise model?", o: ["Laplace noise", "Gaussian noise with fixed variance", "Bernoulli noise", "Uniform noise"], a: 1, w: "The Gaussian negative log-likelihood is Σ(y − f(x))²/(2σ²) + const. (Laplace noise gives mean absolute error.)" },
+  { m: "01", q: "softmax(z + c·1) for a constant c equals…", o: ["softmax(z)", "e^c · softmax(z)", "softmax(z) + c", "softmax(cz)"], a: 0, w: "The e^c cancels between numerator and denominator. That's why code subtracts max(z) for stability." },
+  { m: "01", q: "A Gaussian prior w ~ N(0, τ²I) in MAP estimation corresponds to…", o: ["L1 regularization", "Dropout", "L2 regularization (weight decay) with λ ∝ 1/τ²", "Early stopping"], a: 2, w: "−log prior = ‖w‖²/(2τ²) + const. A Laplace prior would give L1." },
+  { m: "02", q: "Shape of np.zeros((32,1,5)) + np.zeros((4,5))?", o: ["(32, 4, 5)", "(32, 1, 5)", "error", "(4, 32, 5)"], a: 0, w: "Right-align: (32,1,5) vs (1,4,5). 1 stretches to 4 and the missing dim counts as 1." },
+  { m: "02", q: "y_pred has shape (N,1) and y has shape (N,). What does ((y_pred − y)**2).mean() compute?", o: ["The correct MSE", "An error is raised", "The mean over an N×N matrix of every prediction against every target", "The MSE of only the first column"], a: 2, w: "(N,1) − (N,) broadcasts to (N,N). A silent bug: assert shapes or squeeze." },
+  { m: "02", q: "Which of these returns a view (shares memory with x)?", o: ["x[[0, 2, 4]]", "x[x > 0]", "x[1:5]", "x.copy()"], a: 2, w: "Basic slicing gives views. Fancy and boolean indexing return copies." },
+  { m: "02", q: "x has shape (64, 10). Shape of x.mean(axis=1, keepdims=True)?", o: ["(10,)", "(64,)", "(64, 1)", "(1, 10)"], a: 2, w: "axis=1 collapses the 10 columns; keepdims keeps a size-1 axis so the result broadcasts back against x." },
+  { m: "02", q: "np.einsum('bij,bjk->bik', A, B) is the same as…", o: ["A * B", "A @ B (batched matmul)", "A.T @ B", "np.outer(A, B)"], a: 1, w: "j is summed (it appears in the inputs but not the output), b is a shared batch index." },
+  { m: "02", q: "Default float dtype of np.array([1.0]) and torch.tensor([1.0])?", o: ["float32 and float32", "float64 and float64", "float64 and float32", "float32 and float64"], a: 2, w: "NumPy defaults to float64, PyTorch to float32. Converting with torch.from_numpy keeps float64, which can surprise you." },
+  { m: "03", q: "Train error 1%, validation error 14%. Most likely diagnosis?", o: ["High bias (underfitting)", "High variance (overfitting)", "Data leakage", "Learning rate too small"], a: 1, w: "A large train/val gap means the model fits training-specific noise. More data, regularization, augmentation, or a smaller model." },
+  { m: "03", q: "1% of samples are positive. A model predicts 'negative' for everything. Its accuracy and recall are…", o: ["99% and 0%", "1% and 100%", "50% and 50%", "99% and 99%"], a: 0, w: "The accuracy trap: high accuracy, useless model. Use precision, recall, F1, or PR-AUC." },
+  { m: "03", q: "ROC-AUC = 0.9 means…", o: ["90% accuracy at the best threshold", "90% of predictions are correct at threshold 0.5", "A random positive scores higher than a random negative with probability 0.9", "Precision is 0.9"], a: 2, w: "AUC is a ranking probability. It is independent of the threshold and of the class balance." },
+  { m: "03", q: "Which of these is data leakage?", o: ["Standardizing with the training set's mean/std", "Using 5-fold CV to pick λ", "Selecting features by correlation with y on the full dataset, then cross-validating", "Holding out a test set"], a: 2, w: "Feature selection saw the validation labels. Every fitted step must happen inside each training fold (use a Pipeline)." },
+  { m: "03", q: "Gradient of the summed binary cross-entropy for logistic regression?", o: ["Xᵀ(ŷ − y)", "Xᵀ(ŷ − y) ⊙ ŷ(1 − ŷ)", "2Xᵀ(Xw − y)", "Xᵀ log ŷ"], a: 0, w: "The σ′ = ŷ(1 − ŷ) factor cancels against the cross-entropy's 1/ŷ terms. (The 2Xᵀ(Xw − y) option is linear regression.)" },
+  { m: "03", q: "Expected squared test error decomposes as…", o: ["bias + variance", "bias² + variance + irreducible noise", "variance² + noise", "train error + validation error"], a: 1, w: "The noise term σ² is a floor no model can beat on average." },
+  { m: "04", q: "For logits z and one-hot y, ∂(cross-entropy(softmax(z), y))/∂z =", o: ["softmax(z) − y", "y − softmax(z)", "softmax(z)(1 − softmax(z))", "−y / softmax(z)"], a: 0, w: "Write L = −zᵧ + log Σₖ e^{zₖ} and differentiate: pⱼ − yⱼ." },
+  { m: "04", q: "Y = XWᵀ with X (N×D), W (H×D). Upstream gradient G = ∂L/∂Y. Then ∂L/∂W =", o: ["XᵀG", "GᵀX", "GW", "WᵀG"], a: 1, w: "It must be H×D like W. Gᵀ (H×N) times X (N×D) is the only product with that shape." },
+  { m: "04", q: "c = a·b + a. With a = 3, b = −2, what is ∂c/∂a?", o: ["−2", "1", "−1", "3"], a: 2, w: "Two paths: b (through a·b) plus 1 (direct). −2 + 1 = −1. Backprop must accumulate with +=." },
+  { m: "04", q: "A fresh 10-class classifier should start with a loss of about…", o: ["0", "1", "2.30", "10"], a: 2, w: "Uniform predictions give −ln(1/10) = ln 10 ≈ 2.30. Much higher means overconfident logits at init." },
+  { m: "04", q: "He (Kaiming) initialization for ReLU layers uses Var(w) =", o: ["1/n_in", "2/n_in", "2/(n_in + n_out)", "1/√n_in"], a: 1, w: "ReLU zeroes half of its inputs, halving E[x²]; the factor 2 compensates. 2/(n_in + n_out) is Glorot/Xavier." },
+  { m: "04", q: "Why does a 10-layer sigmoid network train slowly?", o: ["Sigmoid is not differentiable", "σ′ ≤ 0.25, so backpropagated gradients shrink geometrically with depth", "Sigmoid outputs can be negative", "It has too few parameters"], a: 1, w: "0.25¹⁰ ≈ 10⁻⁶. ReLU has derivative 1 on its active side." },
+  { m: "04", q: "Why is reverse-mode autodiff (backprop) used for training rather than forward mode?", o: ["It is more accurate", "It needs less memory", "One backward pass gives the gradient w.r.t. all parameters of one scalar loss", "Forward mode can't handle ReLU"], a: 2, w: "Reverse mode costs a small constant times the forward pass, whatever the number of parameters. (It actually uses more memory: it caches activations.)" },
+  { m: "04", q: "Stacking Linear → Linear → Linear with no activation gives…", o: ["A deeper, more expressive model", "A model equivalent to a single linear layer", "A universal approximator", "A model that can't be trained"], a: 1, w: "W₃(W₂(W₁x)) = (W₃W₂W₁)x. Nonlinearities provide the expressive power." },
+];
+const shuffle = (a) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+let list = [], i = 0, score = 0, results = [], answered = false;
+function start() {
+  list = shuffle(Q.filter((q) => $("mod").value === "all" || q.m === $("mod").value).map((q) => {
+    const idx = shuffle(q.o.map((_, k) => k)); return { ...q, o: idx.map((k) => q.o[k]), a: idx.indexOf(q.a) };
+  }));
+  i = 0; score = 0; results = []; $("done").hidden = true; $("qcard").hidden = false; show();
+}
+function show() {
+  const q = list[i]; answered = false;
+  $("qmeta").textContent = `Question ${i + 1} of ${list.length} · module ${q.m}`;
+  $("qtext").textContent = q.q; $("why").hidden = true; $("next").disabled = true; $("score").textContent = `${score} / ${results.length}`;
+  $("opts").innerHTML = ""; q.o.forEach((t, k) => { const b = document.createElement("button"); b.className = "opt"; b.textContent = `${k + 1}. ${t}`; b.onclick = () => pick(k); $("opts").appendChild(b); });
+  $("dots").innerHTML = list.map((_, k) => `<span class="${k < results.length ? (results[k] ? "r" : "w") : ""} ${k === i ? "c" : ""}"></span>`).join("");
+}
+function pick(k) {
+  if (answered) return; answered = true; const q = list[i], ok = k === q.a;
+  if (ok) score++; results.push(ok);
+  [...$("opts").children].forEach((b, j) => { b.disabled = true; b.style.opacity = 1; if (j === q.a) b.classList.add("right"); else if (j === k) b.classList.add("wrong"); });
+  $("why").hidden = false; $("why").innerHTML = (ok ? '<b class="good">Correct.</b> ' : '<b class="bad">Not quite.</b> ') + q.w;
+  $("next").disabled = false; $("next").textContent = i === list.length - 1 ? "See results →" : "Next →";
+  $("score").textContent = `${score} / ${results.length}`; $("dots").children[i].className = ok ? "r c" : "w c"; $("next").focus({ preventScroll: true });
+}
+function next() {
+  if (!answered) return;
+  if (i < list.length - 1) { i++; show(); return; }
+  const by = {}; list.forEach((q, k) => { by[q.m] = by[q.m] || [0, 0]; by[q.m][1]++; if (results[k]) by[q.m][0]++; });
+  const pct = Math.round((100 * score) / list.length);
+  $("qcard").hidden = true; $("done").hidden = false;
+  $("done").innerHTML = `<div class="big ${pct >= 90 ? "good" : pct >= 60 ? "warn" : "bad"}">${pct}%</div><p>${score} of ${list.length} correct.</p>` +
+    Object.keys(by).sort().map((m) => { const [r, t] = by[m]; return `<div class="stat"><span>Module ${m}</span><b class="${r / t >= 0.9 ? "good" : "warn"}">${r} / ${t} ${r / t >= 0.9 ? "→ try the skip test" : "→ study this module"}</b></div>`; }).join("") +
+    `<div class="row" style="margin-top:12px"><button class="primary" onclick="start()">Try again</button></div>`;
+}
+$("next").onclick = next; $("restart").onclick = start; $("mod").onchange = start;
+document.addEventListener("keydown", (e) => { if (e.target.tagName === "SELECT") return; if (/^[1-4]$/.test(e.key) && !$("qcard").hidden && list[i] && +e.key <= list[i].o.length) pick(+e.key - 1); else if (e.key === "Enter" && answered && document.activeElement !== $("next")) next(); });
+start();
+</script>
+</body>
+</html>

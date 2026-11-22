@@ -9,6 +9,8 @@
 - [ ] Create a virtual env, install packages, and run a Jupyter notebook.
 - [ ] `git` commit, branch, push. Write a `.gitignore`.
 
+🎯 Not sure? Take the auto-graded [Foundations Quiz](interactive/foundations-quiz.html) (filter by module) before deciding.
+
 ## Core ideas
 - **Vectorize everything.** A Python loop over 1M elements is typically 10–100× slower than the equivalent NumPy op (which runs in compiled C over contiguous memory). Thinking in whole arrays is the core DL skill, and PyTorch works the same way.
 - **Broadcasting rule:** align shapes from the right; missing leading dims count as 1. Each pair of dims must be equal or one of them 1. Dims of size 1 stretch (virtually: no copy). 🎛️ Drill it in the [Broadcasting Lab](interactive/broadcasting-lab.html).

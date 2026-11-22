@@ -54,6 +54,7 @@
 - **Optimizer landscape:** SGD vs Momentum vs Adam on 2D loss surfaces (modules 01, 05).
 - **Neural net playground:** an MLP trained live with from-scratch backprop. Decision boundaries, overfitting, vanishing gradients (modules 03–05).
 - **Attention & sampling:** drag q/k vectors, see the √d scaling and the causal mask, try temperature/top-k/top-p (modules 08–09).
+- **Foundations quiz:** 27 auto-graded questions on modules 01–04, scored per module.
 - **Flashcards:** ~60 core facts with spaced repetition.
 
 ## Support files
