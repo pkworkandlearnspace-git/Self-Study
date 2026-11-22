@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Coupled Oscillators</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style> #anim { aspect-ratio: 4 / 1; } #plot { aspect-ratio: 2.4 / 1; } </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Physics Olympiad tools</a></header>
+  <h1>Coupled Oscillators &amp; Normal Modes</h1>
+  <p class="lead">Wall – k – m₁ – κ – m₂ – k – wall. Start in a pure normal mode and the pattern never changes. Kick one mass and the energy sloshes back and forth (beats). Predict ω₁, ω₂ and the beat period before you press play (module 02).</p>
+  <canvas id="anim" width="960" height="240" aria-label="Animation of two masses on springs"></canvas>
+  <div class="grid two" style="margin-top:14px">
+    <div>
+      <canvas id="plot" width="960" height="400" aria-label="Displacements and energies versus time"></canvas>
+      <div class="legend" style="margin-top:6px"><span><i style="background:var(--c1)"></i>x₁(t)</span><span><i style="background:var(--c2)"></i>x₂(t)</span><span><i style="background:var(--c3)"></i>energy of mass 1 (shaded)</span></div>
+    </div>
+    <div class="controls">
+      <div class="row">
+        <button data-ic="in" class="ic">In-phase mode</button>
+        <button data-ic="anti" class="ic">Anti-phase mode</button>
+        <button data-ic="kick" class="ic active">Displace mass 1</button>
+      </div>
+      <label class="ctl">Wall springs k = <span class="val" id="kv"></span><input type="range" id="k" min="0.2" max="3" step="0.05" value="1"></label>
+      <label class="ctl">Coupling κ = <span class="val" id="cv"></span><input type="range" id="c" min="0" max="2" step="0.01" value="0.1"></label>
+      <label class="ctl">Mass ratio m₂/m₁ = <span class="val" id="mv"></span><input type="range" id="m" min="0.25" max="4" step="0.05" value="1"></label>
+      <label class="ctl">Speed ×<span class="val" id="sv"></span><input type="range" id="s" min="0.25" max="6" step="0.25" value="2"></label>
+      <div class="row"><button id="pause" class="primary">Pause</button><button id="restart">Restart</button></div>
+      <div class="card" id="stats"></div>
+    </div>
+  </div>
+  <h2>The physics</h2>
+  <div class="card"><ul style="margin:0;padding-left:20px">
+    <li>Equations: m₁ẍ₁ = −k x₁ − κ(x₁ − x₂), m₂ẍ₂ = −k x₂ − κ(x₂ − x₁). Try x = A e<sup>iωt</sup> and set det(K − ω²M) = 0.</li>
+    <li>Equal masses: ω₁ = √(k/m) (in phase, middle spring never stretches) and ω₂ = √((k + 2κ)/m) (anti-phase).</li>
+    <li>Any motion is a sum of the two modes. A kick to one mass excites both equally, so the energy moves completely across every half beat, π/(ω₂ − ω₁).</li>
+    <li>Unequal masses: the modes are no longer symmetric, and the energy transfer is incomplete. Try m₂/m₁ = 2.</li>
+  </ul></div>
+  <footer class="foot">Part of the Self-Study repo · physics-olympiad/interactive · RK4 integration</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const ac = $("anim"), actx = ac.getContext("2d"), pc = $("plot"), pctx = pc.getContext("2d");
+let ic = "kick", st, hist, paused = false;
+const P = () => ({ k: +$("k").value, c: +$("c").value, m1: 1, m2: +$("m").value, sp: +$("s").value });
+
+function modes(p) {
+  // Generalized eigenproblem K a = ω² M a  →  M^{-1}K
+  const a = (p.k + p.c) / p.m1, b = -p.c / p.m1, c = -p.c / p.m2, d = (p.k + p.c) / p.m2;
+  const tr = a + d, det = a * d - b * c, disc = Math.sqrt(Math.max(0, tr * tr / 4 - det));
+  const l1 = tr / 2 - disc, l2 = tr / 2 + disc;
+  const vec = (l) => (Math.abs(b) > 1e-12 ? [1, (l - a) / b] : (Math.abs(l - a) < 1e-9 ? [1, 0] : [0, 1]));
+  return [{ w: Math.sqrt(l1), v: vec(l1) }, { w: Math.sqrt(l2), v: vec(l2) }];
+}
+function reset() {
+  const p = P(), md = modes(p), A = 1;
+  let x1 = A, x2 = 0;
+  if (ic === "in") { x1 = A * md[0].v[0]; x2 = A * md[0].v[1]; }
+  if (ic === "anti") { x1 = A * md[1].v[0]; x2 = A * md[1].v[1]; }
+  const n = Math.max(Math.abs(x1), Math.abs(x2)) || 1;
+  st = { x1: x1 / n, x2: x2 / n, v1: 0, v2: 0, t: 0 }; hist = [];
+}
+function acc(s, p) {
+  return [(-p.k * s.x1 - p.c * (s.x1 - s.x2)) / p.m1, (-p.k * s.x2 - p.c * (s.x2 - s.x1)) / p.m2];
+}
+function step(dt, p) {
+  const f = (s) => { const a = acc(s, p); return [s.v1, s.v2, a[0], a[1]]; };
+  const add = (s, k, h) => ({ x1: s.x1 + h * k[0], x2: s.x2 + h * k[1], v1: s.v1 + h * k[2], v2: s.v2 + h * k[3] });
+  const k1 = f(st), k2 = f(add(st, k1, dt / 2)), k3 = f(add(st, k2, dt / 2)), k4 = f(add(st, k3, dt));
+  const n = add(st, k1.map((_, i) => (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]) / 6), dt);
+  st = { ...n, t: st.t + dt };
+}
+function fit(c, ctx, r) { const d = devicePixelRatio || 1, w = c.clientWidth; c.width = w * d; c.height = (w / r) * d; ctx.setTransform(d, 0, 0, d, 0, 0); }
+function fitAll() { fit(ac, actx, 4); fit(pc, pctx, 2.4); }
+function spring(ctx, x0, x1, y, coils = 10, amp = 9) {
+  ctx.beginPath(); ctx.moveTo(x0, y);
+  const L = x1 - x0, lead = Math.min(10, L * 0.1);
+  ctx.lineTo(x0 + lead, y);
+  for (let i = 0; i <= coils * 2; i++) { const t = i / (coils * 2); ctx.lineTo(x0 + lead + t * (L - 2 * lead), y + (i === 0 || i === coils * 2 ? 0 : (i % 2 ? -amp : amp))); }
+  ctx.lineTo(x1, y); ctx.stroke();
+}
+function drawAnim(p) {
+  const W = ac.clientWidth, H = W / 4, ctx = actx, y = H / 2;
+  ctx.fillStyle = col("--surface"); ctx.fillRect(0, 0, W, H);
+  const wall = 20, span = W - 2 * wall, eq1 = wall + span / 3, eq2 = wall + 2 * span / 3, sc = span / 10;
+  const X1 = eq1 + st.x1 * sc, X2 = eq2 + st.x2 * sc, box = Math.min(46, H * 0.4);
+  ctx.fillStyle = col("--surface-2"); ctx.fillRect(0, 0, wall, H); ctx.fillRect(W - wall, 0, wall, H);
+  ctx.strokeStyle = col("--muted"); ctx.lineWidth = 1.5;
+  spring(ctx, wall, X1 - box / 2, y);
+  ctx.strokeStyle = col("--c4"); spring(ctx, X1 + box / 2, X2 - box / 2, y, 8, 7);
+  ctx.strokeStyle = col("--muted"); spring(ctx, X2 + box / 2, W - wall, y);
+  const bw = (m) => box * Math.sqrt(m);
+  ctx.fillStyle = col("--c1"); ctx.fillRect(X1 - box / 2, y - bw(1) / 2, box, bw(1));
+  ctx.fillStyle = col("--c2"); const b2 = Math.min(H * 0.8, bw(p.m2)); ctx.fillRect(X2 - box / 2, y - b2 / 2, box, b2);
+  ctx.setLineDash([3, 4]); ctx.strokeStyle = col("--border");
+  [eq1, eq2].forEach((e) => { ctx.beginPath(); ctx.moveTo(e, 6); ctx.lineTo(e, H - 6); ctx.stroke(); });
+  ctx.setLineDash([]);
+  ctx.fillStyle = "#fff"; ctx.font = "600 13px system-ui"; ctx.textAlign = "center";
+  ctx.fillText("m₁", X1, y + 4); ctx.fillText("m₂", X2, y + 4); ctx.textAlign = "left";
+}
+function drawPlot(p) {
+  const W = pc.clientWidth, H = W / 2.4, ctx = pctx, WIN = 120;
+  ctx.fillStyle = col("--surface"); ctx.fillRect(0, 0, W, H);
+  const t1 = st.t, t0 = Math.max(0, t1 - WIN), X = (t) => ((t - t0) / WIN) * W, Y = (v) => H / 2 - v * (H / 2 - 10) / 1.15;
+  const E0 = hist.length ? hist[0][3] + hist[0][4] || 1 : 1;
+  ctx.fillStyle = col("--c3"); ctx.globalAlpha = 0.18; ctx.beginPath(); ctx.moveTo(X(t0), H);
+  hist.forEach((h) => ctx.lineTo(X(h[0]), H - (h[3] / E0) * (H - 4))); ctx.lineTo(X(t1), H); ctx.fill(); ctx.globalAlpha = 1;
+  ctx.strokeStyle = col("--border"); ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.stroke();
+  [[1, "--c1"], [2, "--c2"]].forEach(([k, c]) => { ctx.strokeStyle = col(c); ctx.lineWidth = 1.8; ctx.beginPath(); hist.forEach((h, i) => (i ? ctx.lineTo(X(h[0]), Y(h[k])) : ctx.moveTo(X(h[0]), Y(h[k])))); ctx.stroke(); });
+  ctx.fillStyle = col("--muted"); ctx.font = "12px system-ui"; ctx.fillText("t = " + t1.toFixed(0) + " s", W - 74, 16);
+}
+function stats(p) {
+  const md = modes(p), row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  const beat = md[1].w - md[0].w;
+  const ratio = (v) => (Math.abs(v[0]) < 1e-9 ? "0 : 1" : "1 : " + (v[1] / v[0]).toFixed(2));
+  $("stats").innerHTML =
+    row("ω₁ (slow mode)", md[0].w.toFixed(4) + " rad/s") + row("  shape x₁ : x₂", ratio(md[0].v)) +
+    row("ω₂ (fast mode)", md[1].w.toFixed(4) + " rad/s") + row("  shape x₁ : x₂", ratio(md[1].v)) +
+    row("Beat period 2π/(ω₂−ω₁)", beat > 1e-6 ? (2 * Math.PI / beat).toFixed(1) + " s" : "∞") +
+    row("Energy transfer time π/(ω₂−ω₁)", beat > 1e-6 ? (Math.PI / beat).toFixed(1) + " s" : "∞");
+  $("kv").textContent = p.k.toFixed(2); $("cv").textContent = p.c.toFixed(2); $("mv").textContent = p.m2.toFixed(2); $("sv").textContent = p.sp;
+}
+function frame() {
+  const p = P();
+  if (!paused) {
+    const n = Math.round(10 * p.sp);
+    for (let i = 0; i < n; i++) step(0.01, p);
+    const E1 = 0.5 * p.m1 * st.v1 ** 2 + 0.5 * p.k * st.x1 ** 2, E2 = 0.5 * p.m2 * st.v2 ** 2 + 0.5 * p.k * st.x2 ** 2;
+    hist.push([st.t, st.x1, st.x2, E1, E2]);
+    while (hist.length && hist[0][0] < st.t - 120) hist.shift();
+  }
+  drawAnim(p); drawPlot(p); stats(p);
+  requestAnimationFrame(frame);
+}
+document.querySelectorAll(".ic").forEach((b) => b.addEventListener("click", () => { ic = b.dataset.ic; document.querySelectorAll(".ic").forEach((x) => x.classList.toggle("active", x === b)); reset(); }));
+["k", "c", "m"].forEach((id) => $(id).addEventListener("input", reset));
+$("pause").addEventListener("click", () => { paused = !paused; $("pause").textContent = paused ? "Play" : "Pause"; });
+$("restart").addEventListener("click", reset);
+window.addEventListener("resize", fitAll);
+fitAll(); reset(); frame();
+</script>
+</body>
+</html>

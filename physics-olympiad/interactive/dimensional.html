@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dimensional Analysis Solver</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .vars { display: grid; gap: 8px; }
+  .var { display: grid; grid-template-columns: 1fr repeat(5, 54px) 34px; gap: 6px; align-items: center; }
+  .var input[type="number"] { width: 100%; padding: 5px 6px; text-align: center; }
+  .var input[type="text"] { width: 100%; }
+  .var.head { font-size: 12px; color: var(--muted); text-align: center; }
+  .var.head span:first-child { text-align: left; }
+  .var.target { padding: 8px; border-radius: 8px; background: var(--accent-soft); }
+  .formula { font-size: 22px; font-family: var(--mono); padding: 12px 0; overflow-wrap: anywhere; }
+  @media (max-width: 520px) { .var { grid-template-columns: 1fr repeat(5, 40px) 28px; gap: 4px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Physics Olympiad tools</a></header>
+  <h1>Dimensional Analysis Solver</h1>
+  <p class="lead">Give the quantity you want and the quantities it may depend on, each as powers of M, L, T, Θ (temperature) and I (current). The solver matches exponents, like you would by hand, and finds the dimensionless groups (Buckingham π). Try predicting the answer before pressing Solve (module 01).</p>
+
+  <div class="grid two">
+    <div class="card">
+      <div class="row" style="margin-bottom:10px">
+        <label class="ctl" style="flex:1">Preset
+          <select id="preset"></select>
+        </label>
+      </div>
+      <div class="vars" id="vars"></div>
+      <div class="row" style="margin-top:10px">
+        <button id="add">+ Add variable</button>
+        <button id="solve" class="primary">Solve</button>
+      </div>
+      <p class="note" style="margin-top:10px">Row 1 (shaded) is the target. Exponents can be fractions such as <code>-0.5</code>.</p>
+    </div>
+    <div class="controls">
+      <div class="card">
+        <div class="note">Result</div>
+        <div class="formula" id="formula">—</div>
+        <div id="explain" class="note"></div>
+      </div>
+      <div class="card" id="steps"></div>
+    </div>
+  </div>
+
+  <h2>How to read the result</h2>
+  <div class="card"><ul style="margin:0;padding-left:20px">
+    <li><b>Unique answer</b> (no dimensionless group among the inputs): the target is fixed up to a pure number C. Dimensional analysis can never give C.</li>
+    <li><b>One or more π groups</b>: the answer is target = (power law) × f(π₁, π₂, …) with f unknown. Physics (a limit, a symmetry, linearity) has to pin f down.</li>
+    <li><b>No solution</b>: the target cannot be built from your inputs. You have missed a variable, often g, a constant like G or k<sub>B</sub>, or a density.</li>
+  </ul></div>
+  <footer class="foot">Part of the Self-Study repo · physics-olympiad/interactive · exact rational arithmetic</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const DIMS = ["M", "L", "T", "Θ", "I"];
+const PRESETS = {
+  "Pendulum period": [["T (period)", 0, 0, 1, 0, 0], ["m", 1, 0, 0, 0, 0], ["L", 0, 1, 0, 0, 0], ["g", 0, 1, -2, 0, 0]],
+  "Deep-water wave speed": [["v", 0, 1, -1, 0, 0], ["g", 0, 1, -2, 0, 0], ["λ", 0, 1, 0, 0, 0], ["ρ", 1, -3, 0, 0, 0]],
+  "Droplet oscillation frequency": [["f", 0, 0, -1, 0, 0], ["σ (surface tension)", 1, 0, -2, 0, 0], ["ρ", 1, -3, 0, 0, 0], ["R", 0, 1, 0, 0, 0]],
+  "Drag on a sphere (Reynolds number)": [["F", 1, 1, -2, 0, 0], ["ρ", 1, -3, 0, 0, 0], ["v", 0, 1, -1, 0, 0], ["R", 0, 1, 0, 0, 0], ["η (viscosity)", 1, -1, -1, 0, 0]],
+  "Thermal speed of a molecule": [["v", 0, 1, -1, 0, 0], ["k_B T (energy)", 1, 2, -2, 0, 0], ["m", 1, 0, 0, 0, 0]],
+  "Bohr radius": [["a₀", 0, 1, 0, 0, 0], ["ħ", 1, 2, -1, 0, 0], ["m_e", 1, 0, 0, 0, 0], ["e²/4πε₀", 1, 3, -2, 0, 0]],
+  "Blackbody energy density": [["u (J/m³)", 1, -1, -2, 0, 0], ["k_B T", 1, 2, -2, 0, 0], ["ħ", 1, 2, -1, 0, 0], ["c", 0, 1, -1, 0, 0]],
+  "Missing variable (fails)": [["T (period of a spring)", 0, 0, 1, 0, 0], ["k (spring const.)", 1, 0, -2, 0, 0], ["A (amplitude)", 0, 1, 0, 0, 0]],
+};
+const sel = $("preset");
+Object.keys(PRESETS).forEach((k) => sel.add(new Option(k, k)));
+
+function rowHTML(r, i) {
+  return `<div class="var ${i === 0 ? "target" : ""}" data-i="${i}">
+    <input type="text" value="${r[0]}" aria-label="name">
+    ${DIMS.map((d, j) => `<input type="number" step="any" value="${r[j + 1]}" aria-label="${d} exponent">`).join("")}
+    ${i === 0 ? "<span></span>" : `<button class="del" title="Remove" style="padding:4px 0">✕</button>`}
+  </div>`;
+}
+function render(rows) {
+  $("vars").innerHTML = `<div class="var head"><span>Quantity</span>${DIMS.map((d) => `<span>${d}</span>`).join("")}<span></span></div>` + rows.map(rowHTML).join("");
+  $("vars").querySelectorAll(".del").forEach((b) => b.addEventListener("click", () => { const rs = read(); rs.splice(+b.parentNode.dataset.i, 1); render(rs); solve(); }));
+}
+function read() {
+  return [...$("vars").querySelectorAll(".var:not(.head)")].map((el) => { const ins = el.querySelectorAll("input"); return [ins[0].value || "?", ...[...ins].slice(1).map((x) => +x.value || 0)]; });
+}
+
+// --- exact rationals ---
+const gcd = (a, b) => { a = Math.abs(a); b = Math.abs(b); while (b) [a, b] = [b, a % b]; return a || 1; };
+const Q = (n, d = 1) => { if (d < 0) { n = -n; d = -d; } const g = gcd(n, d); return [n / g, d / g]; };
+const toQ = (x) => { for (let d = 1; d <= 64; d++) { const n = Math.round(x * d); if (Math.abs(n / d - x) < 1e-9) return Q(n, d); } return Q(Math.round(x * 1000), 1000); };
+const add = (a, b) => Q(a[0] * b[1] + b[0] * a[1], a[1] * b[1]);
+const mul = (a, b) => Q(a[0] * b[0], a[1] * b[1]);
+const div = (a, b) => Q(a[0] * b[1], a[1] * b[0]);
+const neg = (a) => [-a[0], a[1]];
+const isZ = (a) => a[0] === 0;
+const fmt = (a) => (a[1] === 1 ? "" + a[0] : a[0] + "/" + a[1]);
+
+// Row-reduce augmented matrix (dims × vars | target). Returns {solvable, particular, nullspace}.
+function analyze(A, b) {
+  const m = A.length, n = A[0].length;
+  const M = A.map((row, i) => [...row, b[i]]);
+  const piv = []; let r = 0;
+  for (let c = 0; c < n && r < m; c++) {
+    let p = r; while (p < m && isZ(M[p][c])) p++;
+    if (p === m) continue;
+    [M[r], M[p]] = [M[p], M[r]];
+    const inv = div([1, 1], M[r][c]); M[r] = M[r].map((x) => mul(x, inv));
+    for (let i = 0; i < m; i++) if (i !== r && !isZ(M[i][c])) { const f = M[i][c]; M[i] = M[i].map((x, j) => add(x, neg(mul(f, M[r][j])))); }
+    piv.push(c); r++;
+  }
+  for (let i = r; i < m; i++) if (!isZ(M[i][n])) return { solvable: false };
+  const free = [...Array(n).keys()].filter((c) => !piv.includes(c));
+  const particular = Array(n).fill([0, 1]);
+  piv.forEach((c, i) => (particular[c] = M[i][n]));
+  const nullspace = free.map((f) => { const v = Array(n).fill([0, 1]); v[f] = [1, 1]; piv.forEach((c, i) => (v[c] = neg(M[i][f]))); return v; });
+  return { solvable: true, particular, nullspace, free };
+}
+function monomial(names, exps) {
+  const num = [], den = [];
+  exps.forEach((e, i) => { if (isZ(e)) return; const base = names[i].split(" (")[0]; const p = e[0] < 0 ? neg(e) : e; const b2 = /[\s\/]/.test(base) ? "(" + base + ")" : base; const s = (p[0] === 1 && p[1] === 1 ? base : b2 + "^" + fmt(p)); (e[0] < 0 ? den : num).push(s); });
+  return (num.join("·") || "1") + (den.length ? " / " + (den.length > 1 ? "(" + den.join("·") + ")" : den[0]) : "");
+}
+function solve() {
+  const rows = read(); const target = rows[0], ins = rows.slice(1);
+  if (!ins.length) { $("formula").textContent = "Add at least one variable"; return; }
+  const A = DIMS.map((_, d) => ins.map((r) => toQ(r[d + 1])));
+  const b = DIMS.map((_, d) => toQ(target[d + 1]));
+  const res = analyze(A, b), names = ins.map((r) => r[0]);
+  const tname = target[0].split(" (")[0];
+  const dimStr = (r) => DIMS.map((d, j) => (r[j + 1] ? d + (r[j + 1] === 1 ? "" : "^" + fmt(toQ(r[j + 1]))) : "")).join(" ") || "1";
+  let steps = `<div class="note" style="margin-bottom:6px">Matching exponents of each base dimension:</div><div class="scroll-x"><table class="t"><tr><th>dim</th>${names.map((n, i) => `<th>a${i + 1}<br><span class="note">${n.split(" (")[0]}</span></th>`).join("")}<th>target</th></tr>`;
+  DIMS.forEach((d, i) => { if (A[i].every(isZ) && isZ(b[i])) return; steps += `<tr><td><b>${d}</b></td>${A[i].map((x) => `<td>${fmt(x)}</td>`).join("")}<td>${fmt(b[i])}</td></tr>`; });
+  steps += `</table></div><div class="note" style="margin-top:8px">[${tname}] = ${dimStr(target)}</div>`;
+  $("steps").innerHTML = steps;
+  if (!res.solvable) {
+    $("formula").innerHTML = `<span class="bad">No solution</span>`;
+    $("explain").innerHTML = "The target's dimensions can't be made from these inputs. A relevant variable is missing (for the spring: the mass m).";
+    return;
+  }
+  // choose particular solution with free exponents = 0
+  const pi = res.nullspace.map((v) => monomial(names, v));
+  const base = monomial(names, res.particular);
+  if (!pi.length) {
+    $("formula").innerHTML = `${tname} = C · ${base}`;
+    $("explain").innerHTML = `<span class="good">Unique power law.</span> C is a pure number that dimensional analysis can't find.` +
+      (res.particular.some(isZ) ? ` Note: ${names.filter((_, i) => isZ(res.particular[i])).map((n) => n.split(" (")[0]).join(", ")} drops out entirely.` : "");
+  } else {
+    $("formula").innerHTML = `${tname} = ${base} · f(${pi.map((p, i) => "π" + (i + 1)).join(", ")})`;
+    $("explain").innerHTML = `<span class="warn">${pi.length} dimensionless group${pi.length > 1 ? "s" : ""}</span>, so an unknown function remains:<br>` + pi.map((p, i) => `π${i + 1} = ${p}`).join("<br>") +
+      `<br>Any product of powers of these groups is also dimensionless. You can choose a different "base" by multiplying by them.`;
+  }
+}
+sel.addEventListener("change", () => { render(PRESETS[sel.value].map((r) => [...r])); solve(); });
+$("add").addEventListener("click", () => { const rs = read(); rs.push(["x", 0, 0, 0, 0, 0]); render(rs); });
+$("solve").addEventListener("click", solve);
+$("vars").addEventListener("keydown", (e) => { if (e.key === "Enter") solve(); });
+render(PRESETS[sel.value].map((r) => [...r])); solve();
+</script>
+</body>
+</html>

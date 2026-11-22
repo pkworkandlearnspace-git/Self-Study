@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Physics Olympiad Quiz</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .q { margin-bottom: 12px; }
+  .q .qh { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .q .qt { font-weight: 600; margin-bottom: 10px; }
+  .q .ans { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .q .ans input { width: 160px; }
+  .q .opts { display: grid; gap: 6px; }
+  .q .opts button { text-align: left; }
+  .q .opts button.right { border-color: var(--good); background: color-mix(in srgb, var(--good) 15%, var(--surface)); }
+  .q .opts button.wrong { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 15%, var(--surface)); }
+  .q .fb { margin-top: 10px; font-size: 14px; }
+  .q.done-right { border-color: var(--good); }
+  .q.done-wrong { border-color: var(--bad); }
+  .score { position: sticky; top: 0; z-index: 2; background: var(--bg); padding: 8px 0; }
+</style>
+</head>
+<body>
+<div class="wrap" style="max-width:820px">
+  <header class="top"><a class="back" href="index.html">← Physics Olympiad tools</a></header>
+  <h1>Auto-graded Quiz</h1>
+  <p class="lead">Short numeric and multiple-choice checks for every module. Work each one on paper first. Numeric answers are accepted within ±2% (or the stated tolerance), so use g = 9.81 m/s² and the constants on the <a href="../cheatsheet.md">cheatsheet</a>.</p>
+
+  <div class="score">
+    <div class="row" style="justify-content:space-between">
+      <div class="chips" id="chips"></div>
+      <div class="row"><button id="shuffle">Shuffle</button><button id="reset">Reset</button></div>
+    </div>
+    <div class="row" style="margin-top:8px;justify-content:space-between">
+      <div class="note" id="tally"></div>
+      <div class="fc-bar" style="flex:1;max-width:280px"><div id="bar" style="width:0"></div></div>
+    </div>
+  </div>
+  <div id="list" style="margin-top:10px"></div>
+  <footer class="foot">Part of the Self-Study repo · physics-olympiad/interactive · answers checked in Python</footer>
+</div>
+<script>
+const QUESTIONS = [
+  // Methods (01)
+  { deck: "01 Methods", q: "Pendulum: L = 1.00 m. Small-amplitude period T?", unit: "s", a: 2.006, ex: "T = 2π√(L/g) = 2π√(1/9.81) = 2.006 s." },
+  { deck: "01 Methods", q: "U(x) = −½kx² + ¼λx⁴ with k = 2 N/m, mass 1 kg. Angular frequency of small oscillations about a stable equilibrium?", unit: "rad/s", a: 2, ex: "Stable points x = ±√(k/λ), where U'' = 2k. ω = √(2k/m) = 2 rad/s, whatever λ is." },
+  { deck: "01 Methods", q: "Leading term of √(1+x) − √(1−x) − x for small x?", choices: ["0", "x²/4", "x³/8", "−x³/16"], a: 2, ex: "Even powers cancel by symmetry. The x³ terms are +x³/16 and −(−x³/16), giving x³/8." },
+  { deck: "01 Methods", q: "A puck has drag dv/dt = −kv² with k = 0.1 m⁻¹. Distance travelled until its speed halves?", unit: "m", a: 6.93, ex: "v dv/dx = −kv² ⇒ v = v₀e^(−kx). Half speed at x = ln2/k = 6.93 m, for any v₀." },
+  { deck: "01 Methods", q: "Deep-water waves: v = C√(gλ). What is C?", choices: ["1", "1/√(2π)", "√(2π)", "Dimensional analysis can't tell"], a: 3, ex: "Dimensional analysis can never give C. (Fluid dynamics gives C = 1/√(2π) ≈ 0.40.)" },
+  // Mechanics (02)
+  { deck: "02 Mechanics", q: "A solid sphere rolls without slipping down a 30° incline. Its acceleration?", unit: "m/s²", a: 3.504, ex: "a = g sinθ/(1 + I/mR²) = (5/7)(9.81)(0.5) = 3.50 m/s²." },
+  { deck: "02 Mechanics", q: "Escape speed from Earth's surface (GM = 3.986×10¹⁴ m³/s², R = 6371 km)?", unit: "km/s", a: 11.19, ex: "v = √(2GM/R) = 11.19 km/s." },
+  { deck: "02 Mechanics", q: "Ladder against a frictionless wall, floor friction μ = 0.5. Minimum angle with the floor before it slips?", unit: "°", a: 45, ex: "Torques about the foot: N_wall L sinθ = mg (L/2) cosθ, and N_wall = f ≤ μmg. So tanθ ≥ 1/(2μ) = 1 ⇒ θ = 45°." },
+  { deck: "02 Mechanics", q: "Rocket with exhaust speed 3.0 km/s burns until m₀/m_f = 4. Δv (no gravity)?", unit: "m/s", a: 4159, ex: "Δv = u ln(m₀/m_f) = 3000 ln 4 = 4159 m/s." },
+  { deck: "02 Mechanics", q: "Geostationary orbit radius (sidereal day 86 164 s, GM = 3.986×10¹⁴)?", unit: "km", a: 42164, ex: "r = (GMT²/4π²)^(1/3) = 42 164 km (about 35 800 km above the surface)." },
+  // Thermo (03)
+  { deck: "03 Thermo", q: "Maximum efficiency of an engine between 600 K and 300 K?", unit: "", a: 0.5, tol: 0.01, ex: "Carnot: η = 1 − T_c/T_h = 0.5." },
+  { deck: "03 Thermo", q: "Air (γ = 1.4) at 300 K is compressed adiabatically to 1/10 of its volume. Final temperature?", unit: "K", a: 753.6, ex: "TV^(γ−1) = const ⇒ T = 300 × 10^0.4 = 754 K. (This is why diesel engines need no spark plug.)" },
+  { deck: "03 Thermo", q: "rms speed of N₂ (28 u) at 300 K?", unit: "m/s", a: 517, ex: "v_rms = √(3kT/m) = √(3·1.38e-23·300 / 4.65e-26) = 517 m/s." },
+  { deck: "03 Thermo", q: "Earth's equilibrium temperature with solar constant 1361 W/m² and albedo 0.30 (no greenhouse)?", unit: "K", a: 254.6, ex: "Absorbed S(1−A)πR² = emitted 4πR²σT⁴ ⇒ T = [S(1−A)/(4σ)]^(1/4) = 255 K." },
+  { deck: "03 Thermo", q: "An ideal gas expands isothermally into a vacuum (free expansion, insulated). What happens to its entropy?", choices: ["Unchanged: Q = 0", "Increases by nR ln(V₂/V₁)", "Decreases", "Undefined: the process is irreversible"], a: 1, ex: "Q = 0, but the process is irreversible, so dS ≠ δQ/T. S is a state function: use a reversible isotherm between the same states, which gives ΔS = nR ln(V₂/V₁) > 0." },
+  // E&M (04)
+  { deck: "04 E&M", q: "R = 10 kΩ, C = 100 µF, charging from 0. Time to reach 90% of the final voltage?", unit: "s", a: 2.303, ex: "1 − e^(−t/RC) = 0.9 ⇒ t = RC ln 10 = 1 s × 2.303." },
+  { deck: "04 E&M", q: "Resonant frequency f of an LC circuit with L = 10 mH, C = 1.0 µF?", unit: "Hz", a: 1592, ex: "f = 1/(2π√(LC)) = 1/(2π × 10⁻⁴) = 1592 Hz." },
+  { deck: "04 E&M", q: "Magnetic field 5.0 cm from a long straight wire carrying 10 A?", unit: "µT", a: 40, ex: "B = µ₀I/(2πr) = (4π×10⁻⁷)(10)/(2π·0.05) = 4.0×10⁻⁵ T = 40 µT." },
+  { deck: "04 E&M", q: "Infinite ladder: each rung is a series R followed by a shunt R to ground. Input resistance in units of R?", unit: "R", a: 1.618, ex: "Self-similarity: R_eq = R + (R ∥ R_eq) ⇒ R_eq² − R R_eq − R² = 0 ⇒ R_eq = R(1+√5)/2." },
+  { deck: "04 E&M", q: "Crossed fields E = 1000 V/m and B = 0.010 T. Speed of the undeflected (drifting) particle?", unit: "m/s", a: 1e5, ex: "qE = qvB ⇒ v = E/B = 10⁵ m/s, independent of charge and mass." },
+  // Waves (05)
+  { deck: "05 Waves & optics", q: "Double slit: λ = 600 nm, d = 0.20 mm, screen at L = 2.0 m. Fringe spacing?", unit: "mm", a: 6, ex: "Δy = λL/d = 600e-9 × 2 / 2e-4 = 6.0 mm." },
+  { deck: "05 Waves & optics", q: "Thin converging lens, f = 10 cm, object at 15 cm. Image distance?", unit: "cm", a: 30, ex: "1/d_i = 1/10 − 1/15 = 1/30 ⇒ 30 cm (real, inverted, magnification −2)." },
+  { deck: "05 Waves & optics", q: "Brewster angle for light going from air into glass with n = 1.50?", unit: "°", a: 56.31, ex: "tan θ_B = n₂/n₁ = 1.5 ⇒ θ_B = 56.3°." },
+  { deck: "05 Waves & optics", q: "Diffraction limit of a 10 cm telescope at 550 nm?", unit: "µrad", a: 6.71, ex: "θ = 1.22λ/D = 6.7×10⁻⁶ rad ≈ 1.4 arcsec." },
+  { deck: "05 Waves & optics", q: "A 500 Hz siren approaches you at 30 m/s (sound speed 343 m/s). Frequency heard?", unit: "Hz", a: 547.9, ex: "f' = f v/(v − v_s) = 500 × 343/313 = 548 Hz." },
+  // Modern (06)
+  { deck: "06 Modern", q: "γ for a muon at v = 0.995c?", unit: "", a: 10.01, ex: "γ = 1/√(1 − 0.995²) = 10.0." },
+  { deck: "06 Modern", q: "Energy of a 500 nm photon?", unit: "eV", a: 2.48, ex: "E = hc/λ = 1240 eV·nm / 500 nm = 2.48 eV." },
+  { deck: "06 Modern", q: "Compton shift of a photon scattered by an electron through 90°?", unit: "pm", a: 2.43, ex: "Δλ = (h/m_ec)(1 − cos90°) = 2.43 pm." },
+  { deck: "06 Modern", q: "Threshold kinetic energy of the proton in p + p(at rest) → p + p + π⁰ (m_p = 938.3 MeV, m_π = 135.0 MeV)?", unit: "MeV", a: 279.7, ex: "Invariant s at threshold = (2m_p + m_π)². In the lab, s = 2m_p² + 2m_pE. So K = E − m_p = m_π(4m_p + m_π)/(2m_p) = 280 MeV." },
+  { deck: "06 Modern", q: "Wavelength of hydrogen Lyman-α (n = 2 → 1)?", unit: "nm", a: 121.6, ex: "1/λ = R_H(1 − 1/4) with R_H = 1.0968×10⁷ m⁻¹ ⇒ λ = 121.6 nm." },
+  // Experiment (07)
+  { deck: "07 Experiment", q: "g = 4π²L/T² with ΔL/L = 0.5% and ΔT/T = 0.2% (independent). Relative error of g?", unit: "%", a: 0.64, tol: 0.03, ex: "√(0.5² + (2×0.2)²) = 0.64%. T enters squared, so its relative error doubles." },
+  { deck: "07 Experiment", q: "25 repeated timings have standard deviation 0.05 s. Uncertainty of their mean?", unit: "s", a: 0.01, ex: "σ/√N = 0.05/5 = 0.01 s." },
+  { deck: "07 Experiment", q: "To get μ from I = I₀e^(−μx), plot…", choices: ["I vs x: slope −μ", "ln I vs x: slope −μ", "ln I vs ln x: slope −μ", "1/I vs x: slope μ"], a: 1, ex: "ln I = ln I₀ − μx is a straight line in x." },
+  { deck: "07 Experiment", q: "A log–log plot of y against x is a straight line of slope 3. So…", choices: ["y = 3x", "y ∝ e^(3x)", "y ∝ x³", "y ∝ 3^x"], a: 2, ex: "ln y = 3 ln x + c ⇒ y = Cx³." },
+  { deck: "07 Experiment", q: "You time 20 oscillations instead of 1, with the same reaction-time error. The uncertainty in the period is…", choices: ["unchanged", "20× smaller", "√20× smaller", "20× larger"], a: 1, ex: "The ~0.2 s start/stop error is spread over 20 periods, so ΔT = Δt_total/20." },
+];
+const $ = (id) => document.getElementById(id);
+const decks = ["All", ...new Set(QUESTIONS.map((q) => q.deck))];
+let deck = "All", order = QUESTIONS.map((_, i) => i), state = {};
+const KEY = "selfstudy-quiz-physics";
+try { state = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { state = {}; }
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {} };
+const hit = new URLSearchParams(location.search).get("deck");
+if (hit) { const d = decks.find((x) => x.toLowerCase().includes(hit.toLowerCase())); if (d) deck = d; }
+
+function chips() {
+  $("chips").innerHTML = decks.map((d) => `<button class="${d === deck ? "active" : ""}" data-d="${d}">${d}</button>`).join("");
+  $("chips").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { deck = b.dataset.d; chips(); list(); }));
+}
+function parseNum(s) {
+  s = s.trim().replace(/×\s*10\^?/g, "e").replace(/x\s*10\^/gi, "e").replace(/,/g, "").replace(/−/g, "-");
+  return s === "" ? NaN : Number(s);
+}
+function grade(i, given) {
+  const Q = QUESTIONS[i];
+  if (Q.choices) return given === Q.a;
+  const tol = Q.tol ?? 0.02, v = parseNum(given);
+  return isFinite(v) && Math.abs(v - Q.a) <= tol * Math.abs(Q.a);
+}
+function card(i, n) {
+  const Q = QUESTIONS[i], s = state[i];
+  const cls = s ? (s.ok ? "done-right" : "done-wrong") : "";
+  const body = Q.choices
+    ? `<div class="opts">${Q.choices.map((c, j) => `<button data-j="${j}" class="${s ? (j === Q.a ? "right" : j === s.given ? "wrong" : "") : ""}" ${s ? "disabled" : ""}>${String.fromCharCode(65 + j)}. ${c}</button>`).join("")}</div>`
+    : `<div class="ans"><input type="text" inputmode="decimal" placeholder="your answer" value="${s ? s.given : ""}" ${s ? "disabled" : ""} aria-label="answer"><span class="note">${Q.unit || ""}</span><button class="primary chk" ${s ? "disabled" : ""}>Check</button></div>`;
+  const fb = s ? `<div class="fb"><b class="${s.ok ? "good" : "bad"}">${s.ok ? "✓ Correct." : "✗ Not quite."}</b> ${Q.choices ? "" : `Answer: <b>${Q.a}</b> ${Q.unit || ""}. `}${Q.ex}</div>` : "";
+  return `<div class="card q ${cls}" data-i="${i}"><div class="qh"><span>${Q.deck}</span><span>#${n}</span></div><div class="qt">${Q.q}</div>${body}${fb}</div>`;
+}
+function list() {
+  const ids = order.filter((i) => deck === "All" || QUESTIONS[i].deck === deck);
+  $("list").innerHTML = ids.map((i, n) => card(i, n + 1)).join("");
+  $("list").querySelectorAll(".q").forEach((el) => {
+    const i = +el.dataset.i;
+    el.querySelectorAll(".opts button").forEach((b) => b.addEventListener("click", () => answer(i, +b.dataset.j)));
+    const inp = el.querySelector("input"), chk = el.querySelector(".chk");
+    if (chk) { chk.addEventListener("click", () => answer(i, inp.value)); inp.addEventListener("keydown", (e) => { if (e.key === "Enter") answer(i, inp.value); }); }
+  });
+  const done = ids.filter((i) => state[i]), right = done.filter((i) => state[i].ok);
+  $("tally").textContent = `${right.length} correct · ${done.length - right.length} wrong · ${ids.length - done.length} to go`;
+  $("bar").style.width = (ids.length ? (100 * right.length) / ids.length : 0) + "%";
+}
+function answer(i, given) {
+  if (!QUESTIONS[i].choices && !isFinite(parseNum(String(given)))) return;
+  state[i] = { given, ok: grade(i, given) }; save(); list();
+  const el = $("list").querySelector(`.q[data-i="${i}"]`); if (el && el.scrollIntoView) el.scrollIntoView({ block: "nearest" });
+}
+$("shuffle").addEventListener("click", () => { for (let k = order.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [order[k], order[j]] = [order[j], order[k]]; } list(); });
+$("reset").addEventListener("click", () => { const ids = order.filter((i) => deck === "All" || QUESTIONS[i].deck === deck); ids.forEach((i) => delete state[i]); save(); list(); });
+chips(); list();
+</script>
+</body>
+</html>

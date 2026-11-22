@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Heat Engine Cycles</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  #pv { aspect-ratio: 1.4 / 1; }
+  table.t td.n { font-family: var(--mono); text-align: right; }
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Physics Olympiad tools</a></header>
+  <h1>Heat Engine Cycles on a p–V Diagram</h1>
+  <p class="lead">One mole of ideal gas runs a cycle. The enclosed area is the net work. The table gives Q, W and ΔU for every step, so you can check your own hand calculation and compare the efficiency with the Carnot limit (module 03).</p>
+  <div class="grid two">
+    <div>
+      <canvas id="pv" width="900" height="640" aria-label="Pressure–volume diagram"></canvas>
+      <div class="legend" style="margin-top:6px"><span><i style="background:var(--c5)"></i>heat in (Q &gt; 0)</span><span><i style="background:var(--c1)"></i>heat out (Q &lt; 0)</span><span><i style="background:var(--muted)"></i>adiabatic (Q = 0)</span></div>
+    </div>
+    <div class="controls">
+      <div class="row" id="cycles"></div>
+      <label class="ctl">Gas <select id="gas"><option value="1.6667">Monatomic (γ = 5/3)</option><option value="1.4" selected>Diatomic (γ = 7/5)</option></select></label>
+      <label class="ctl" id="l-th">Hot temperature T<sub>h</sub> = <span class="val" id="thv"></span> K<input type="range" id="th" min="400" max="2000" step="10" value="1200"></label>
+      <label class="ctl" id="l-tc">Cold temperature T<sub>c</sub> = <span class="val" id="tcv"></span> K<input type="range" id="tc" min="200" max="600" step="5" value="300"></label>
+      <label class="ctl" id="l-r"><span id="rlab">Ratio</span> = <span class="val" id="rv"></span><input type="range" id="r" min="1.5" max="20" step="0.1" value="8"></label>
+      <label class="ctl" id="l-rc">Cut-off ratio r<sub>c</sub> = V₃/V₂ = <span class="val" id="rcv"></span><input type="range" id="rc" min="1.1" max="4" step="0.05" value="2"></label>
+      <div class="card">
+        <div class="stat"><span>Efficiency η = W<sub>net</sub>/Q<sub>in</sub></span><b id="eta"></b></div>
+        <div class="stat"><span>Textbook formula</span><b id="etaf"></b></div>
+        <div class="stat"><span>Carnot limit 1 − T<sub>min</sub>/T<sub>max</sub></span><b id="etac"></b></div>
+        <div class="stat"><span>Net work per cycle</span><b id="wnet"></b></div>
+      </div>
+      <div class="note" id="warn"></div>
+    </div>
+  </div>
+  <h2>Step by step</h2>
+  <div class="card scroll-x"><table class="t" id="tab"></table></div>
+  <h2>Formulas used (n = 1 mol, C<sub>V</sub> = R/(γ − 1))</h2>
+  <div class="card"><ul style="margin:0;padding-left:20px">
+    <li><b>Isothermal:</b> ΔU = 0, Q = W = nRT ln(V<sub>b</sub>/V<sub>a</sub>).</li>
+    <li><b>Adiabatic:</b> Q = 0, pV<sup>γ</sup> and TV<sup>γ−1</sup> constant, W = −ΔU = nC<sub>V</sub>(T<sub>a</sub> − T<sub>b</sub>).</li>
+    <li><b>Isochoric:</b> W = 0, Q = ΔU = nC<sub>V</sub>ΔT. <b>Isobaric:</b> W = pΔV, Q = nC<sub>p</sub>ΔT.</li>
+    <li>Only the Carnot cycle reaches the Carnot limit, because all its heat is exchanged at T<sub>max</sub> and T<sub>min</sub>. A Stirling engine with a perfect regenerator (which stores the isochoric heat internally) also reaches it. Without one it falls short, as shown here.</li>
+  </ul></div>
+  <footer class="foot">Part of the Self-Study repo · physics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const R = 8.314, V0 = 1e-3;
+const CYCLES = {
+  Carnot: { params: ["th", "tc", "r"], rlab: "Isothermal expansion ratio V₂/V₁", rmax: 6 },
+  Otto: { params: ["th", "tc", "r"], rlab: "Compression ratio r", rmax: 20 },
+  Diesel: { params: ["tc", "r", "rc"], rlab: "Compression ratio r", rmax: 25 },
+  Stirling: { params: ["th", "tc", "r"], rlab: "Volume ratio r", rmax: 10 },
+  Brayton: { params: ["th", "tc", "r"], rlab: "Pressure ratio r_p", rmax: 30 },
+};
+let cyc = "Otto", tAnim = 0;
+Object.keys(CYCLES).forEach((k) => { const b = document.createElement("button"); b.textContent = k; b.dataset.c = k; b.onclick = () => { cyc = k; setup(); }; $("cycles").appendChild(b); });
+
+function states(c, p) {
+  const g = p.g, Th = p.th, Tc = p.tc, r = p.r;
+  if (c === "Carnot") { const f = Math.pow(Th / Tc, 1 / (g - 1)); return { S: [[V0, Th], [r * V0, Th], [r * V0 * f, Tc], [V0 * f, Tc]], P: ["T", "S", "T", "S"] }; }
+  if (c === "Otto") { const T2 = Tc * Math.pow(r, g - 1); return { S: [[r * V0, Tc], [V0, T2], [V0, Th], [r * V0, Th * Math.pow(r, 1 - g)]], P: ["S", "V", "S", "V"], bad: Th <= T2 ? `T_h must exceed T₂ = ${T2.toFixed(0)} K (the temperature after compression).` : "" }; }
+  if (c === "Diesel") { const T2 = Tc * Math.pow(r, g - 1), T3 = T2 * p.rc; return { S: [[r * V0, Tc], [V0, T2], [p.rc * V0, T3], [r * V0, T3 * Math.pow(p.rc / r, g - 1)]], P: ["S", "p", "S", "V"], bad: p.rc >= r ? "The cut-off ratio must be smaller than the compression ratio." : "" }; }
+  if (c === "Stirling") return { S: [[V0, Th], [r * V0, Th], [r * V0, Tc], [V0, Tc]], P: ["T", "V", "T", "V"] };
+  if (c === "Brayton") { const e = (g - 1) / g, p1 = 1e5, T2 = Tc * Math.pow(r, e), T4 = Th * Math.pow(r, -e); const V = (T, pp) => (R * T) / pp; return { S: [[V(Tc, p1), Tc], [V(T2, r * p1), T2], [V(Th, r * p1), Th], [V(T4, p1), T4]], P: ["S", "p", "S", "p"], bad: Th <= T2 ? `T_h must exceed T₂ = ${T2.toFixed(0)} K.` : "" }; }
+}
+function step(a, b, type, g) {
+  const Cv = R / (g - 1), Cp = Cv + R, dU = Cv * (b[1] - a[1]);
+  let W = 0;
+  if (type === "T") W = R * a[1] * Math.log(b[0] / a[0]);
+  if (type === "S") W = -dU;
+  if (type === "p") W = (R * a[1] / a[0]) * (b[0] - a[0]);
+  return { dU, W, Q: dU + W };
+}
+function path(a, b, type, g, n = 80) {
+  const pts = [];
+  for (let i = 0; i <= n; i++) {
+    const s = i / n; let V, T;
+    if (type === "V") { V = a[0]; T = a[1] + s * (b[1] - a[1]); }
+    else { V = a[0] * Math.pow(b[0] / a[0], s); T = type === "T" ? a[1] : type === "S" ? a[1] * Math.pow(a[0] / V, g - 1) : a[1] * V / a[0]; }
+    pts.push([V, R * T / V]);
+  }
+  return pts;
+}
+const P = () => ({ g: +$("gas").value, th: +$("th").value, tc: +$("tc").value, r: +$("r").value, rc: +$("rc").value });
+function setup() {
+  const C = CYCLES[cyc];
+  document.querySelectorAll("#cycles button").forEach((b) => b.classList.toggle("active", b.dataset.c === cyc));
+  ["th", "tc", "r", "rc"].forEach((k) => $("l-" + k).classList.toggle("hidden", !C.params.includes(k)));
+  $("rlab").textContent = C.rlab; $("r").max = C.rmax; if (+$("r").value > C.rmax) $("r").value = C.rmax;
+  update();
+}
+let cache;
+function update() {
+  const p = P(), st = states(cyc, p), steps = [], paths = [];
+  for (let i = 0; i < 4; i++) { const a = st.S[i], b = st.S[(i + 1) % 4]; steps.push(step(a, b, st.P[i], p.g)); paths.push(path(a, b, st.P[i], p.g)); }
+  const Qin = steps.reduce((s, x) => s + Math.max(0, x.Q), 0), Wn = steps.reduce((s, x) => s + x.W, 0);
+  const Ts = st.S.map((s) => s[1]), Tmax = Math.max(...Ts), Tmin = Math.min(...Ts);
+  const g = p.g, r = p.r;
+  const formula = { Carnot: 1 - p.tc / p.th, Otto: 1 - Math.pow(r, 1 - g), Diesel: 1 - (Math.pow(p.rc, g) - 1) / (g * Math.pow(r, g - 1) * (p.rc - 1)), Brayton: 1 - Math.pow(r, -(g - 1) / g), Stirling: null }[cyc];
+  $("eta").textContent = (100 * Wn / Qin).toFixed(1) + " %";
+  $("etaf").textContent = formula == null ? "no closed form (no regenerator)" : (100 * formula).toFixed(1) + " %";
+  $("etac").textContent = (100 * (1 - Tmin / Tmax)).toFixed(1) + " %";
+  $("wnet").textContent = (Wn / 1000).toFixed(2) + " kJ";
+  $("warn").innerHTML = st.bad ? `<span class="warn">⚠ ${st.bad}</span>` : "";
+  $("thv").textContent = p.th; $("tcv").textContent = p.tc; $("rv").textContent = p.r.toFixed(1); $("rcv").textContent = p.rc.toFixed(2);
+  const name = { T: "isothermal", S: "adiabatic", V: "isochoric", p: "isobaric" };
+  $("tab").innerHTML = `<tr><th>Step</th><th>Process</th><th>T start → end (K)</th><th>Q (kJ)</th><th>W by gas (kJ)</th><th>ΔU (kJ)</th></tr>` +
+    steps.map((s, i) => `<tr><td>${i + 1}→${(i + 1) % 4 + 1}</td><td>${name[st.P[i]]}</td><td class="n">${st.S[i][1].toFixed(0)} → ${st.S[(i + 1) % 4][1].toFixed(0)}</td><td class="n ${s.Q > 1e-6 ? "bad" : s.Q < -1e-6 ? "" : "note"}">${(s.Q / 1000).toFixed(2)}</td><td class="n">${(s.W / 1000).toFixed(2)}</td><td class="n">${(s.dU / 1000).toFixed(2)}</td></tr>`).join("") +
+    `<tr><td colspan="3"><b>Total</b> (ΔU must be 0)</td><td class="n"><b>${(steps.reduce((s, x) => s + x.Q, 0) / 1000).toFixed(2)}</b></td><td class="n"><b>${(Wn / 1000).toFixed(2)}</b></td><td class="n"><b>${(steps.reduce((s, x) => s + x.dU, 0) / 1000).toFixed(2)}</b></td></tr>`;
+  cache = { st, steps, paths };
+}
+function fit() { const c = $("pv"), d = devicePixelRatio || 1, w = c.clientWidth; c.width = w * d; c.height = (w / 1.4) * d; c.getContext("2d").setTransform(d, 0, 0, d, 0, 0); }
+function draw() {
+  const c = $("pv"), ctx = c.getContext("2d"), W = c.clientWidth, H = W / 1.4, L = 56, B = 40, T = 16, Rm = 16;
+  ctx.fillStyle = col("--surface"); ctx.fillRect(0, 0, W, H);
+  if (!cache) return;
+  const all = cache.paths.flat(), Vmax = Math.max(...all.map((q) => q[0])) * 1.08, Pmax = Math.max(...all.map((q) => q[1])) * 1.08;
+  const X = (V) => L + (V / Vmax) * (W - L - Rm), Y = (p) => H - B - (p / Pmax) * (H - B - T);
+  ctx.strokeStyle = col("--border"); ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, H - B); ctx.lineTo(W - Rm, H - B); ctx.stroke();
+  ctx.fillStyle = col("--muted"); ctx.font = "12px system-ui";
+  for (let i = 1; i <= 4; i++) { const v = (Vmax / 1.08) * i / 4; ctx.fillText((v * 1000).toFixed(v * 1000 < 10 ? 1 : 0), X(v) - 8, H - B + 16); const pp = (Pmax / 1.08) * i / 4; ctx.fillText((pp / 1e5).toFixed(pp / 1e5 < 10 ? 1 : 0), 8, Y(pp) + 4); }
+  ctx.fillText("V (L)", W - Rm - 34, H - B - 6); ctx.fillText("p (bar)", L + 6, T + 10);
+  // area
+  ctx.beginPath(); cache.paths.forEach((pts) => pts.forEach((q, i) => (i === 0 && pts === cache.paths[0] ? ctx.moveTo(X(q[0]), Y(q[1])) : ctx.lineTo(X(q[0]), Y(q[1])))));
+  ctx.closePath(); ctx.fillStyle = col("--accent"); ctx.globalAlpha = 0.12; ctx.fill(); ctx.globalAlpha = 1;
+  cache.paths.forEach((pts, i) => {
+    const Q = cache.steps[i].Q; ctx.strokeStyle = Math.abs(Q) < 1e-6 ? col("--muted") : Q > 0 ? col("--c5") : col("--c1"); ctx.lineWidth = 2.5;
+    ctx.beginPath(); pts.forEach((q, j) => (j ? ctx.lineTo(X(q[0]), Y(q[1])) : ctx.moveTo(X(q[0]), Y(q[1])))); ctx.stroke();
+    // arrow at midpoint
+    const m = pts[Math.floor(pts.length / 2)], m2 = pts[Math.floor(pts.length / 2) + 1], a = Math.atan2(Y(m2[1]) - Y(m[1]), X(m2[0]) - X(m[0]));
+    ctx.save(); ctx.translate(X(m[0]), Y(m[1])); ctx.rotate(a); ctx.fillStyle = ctx.strokeStyle; ctx.beginPath(); ctx.moveTo(7, 0); ctx.lineTo(-5, -5); ctx.lineTo(-5, 5); ctx.fill(); ctx.restore();
+  });
+  cache.st.S.forEach((s, i) => { const x = X(s[0]), y = Y(R * s[1] / s[0]); ctx.fillStyle = col("--text"); ctx.beginPath(); ctx.arc(x, y, 4, 0, 7); ctx.fill(); ctx.font = "600 13px system-ui"; ctx.fillText(i + 1, x + 7, y - 7); });
+  // moving dot
+  tAnim = (tAnim + 0.004) % 1; const seg = Math.floor(tAnim * 4), pts = cache.paths[seg], q = pts[Math.floor((tAnim * 4 - seg) * (pts.length - 1))];
+  ctx.fillStyle = col("--c2"); ctx.beginPath(); ctx.arc(X(q[0]), Y(q[1]), 6, 0, 7); ctx.fill();
+  requestAnimationFrame(draw);
+}
+["gas", "th", "tc", "r", "rc"].forEach((id) => $(id).addEventListener("input", update));
+window.addEventListener("resize", fit);
+fit(); setup(); draw();
+</script>
+</body>
+</html>

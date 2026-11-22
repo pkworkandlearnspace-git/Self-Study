@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uncertainty Propagation</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .vrow { display: grid; grid-template-columns: 70px 1fr 1fr 34px; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .vrow input { width: 100%; }
+  .vhead { font-size: 12px; color: var(--muted); }
+  .bar { height: 14px; border-radius: 4px; background: var(--accent); }
+  .contrib { display: grid; grid-template-columns: 70px 1fr 64px; gap: 8px; align-items: center; font-size: 14px; margin: 4px 0; }
+  #hist { aspect-ratio: 2 / 1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Physics Olympiad tools</a></header>
+  <h1>Uncertainty Propagation</h1>
+  <p class="lead">Type a formula and the measured values ± uncertainties. You get the result with its uncertainty (independent errors added in quadrature), a breakdown of which measurement dominates, and a Monte Carlo check. The breakdown tells you what to measure better (module 07).</p>
+  <div class="grid two">
+    <div class="card">
+      <label class="ctl">Preset <select id="preset"></select></label>
+      <label class="ctl" style="margin-top:10px">Formula f = <input type="text" id="expr" style="width:100%;font-family:var(--mono)" spellcheck="false" autocomplete="off"></label>
+      <p class="note">Use * / + − ^, parentheses, pi, sqrt, sin, cos, tan, exp, ln, log10. Angles in radians.</p>
+      <div class="vrow vhead"><span>name</span><span>value</span><span>± uncertainty</span><span></span></div>
+      <div id="vars"></div>
+      <div class="row"><button id="add">+ Variable</button><button id="go" class="primary">Compute</button></div>
+    </div>
+    <div class="controls">
+      <div class="card">
+        <div class="note">Result (rounded to 1–2 significant figures of uncertainty)</div>
+        <div class="big" id="res" style="font-size:30px;overflow-wrap:anywhere">—</div>
+        <div class="note" id="rel"></div>
+      </div>
+      <div class="card"><div class="note" style="margin-bottom:6px">Share of the variance (δf<sub>i</sub>)²/(Δf)²</div><div id="bars"></div></div>
+    </div>
+  </div>
+  <h2>Monte Carlo check</h2>
+  <canvas id="hist" width="900" height="450" aria-label="Histogram of simulated results"></canvas>
+  <p class="note" id="mc"></p>
+  <h2>Rules</h2>
+  <div class="card"><ul style="margin:0;padding-left:20px">
+    <li>General: (Δf)² = Σ (∂f/∂x<sub>i</sub> · Δx<sub>i</sub>)² for independent errors. The tool finds each derivative numerically.</li>
+    <li>Sums: absolute errors add in quadrature. Products and powers: relative errors add in quadrature, each times its power, so for f = aⁿbᵐ, (Δf/f)² = (nΔa/a)² + (mΔb/b)².</li>
+    <li>If Monte Carlo and the linear formula disagree, the errors are too big for a first-order expansion (e.g. dividing by a quantity that is close to zero).</li>
+    <li>Round the uncertainty to 1–2 significant figures, and the value to the same decimal place.</li>
+  </ul></div>
+  <footer class="foot">Part of the Self-Study repo · physics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const PRESETS = {
+  "Pendulum: g = 4π²L/T²": ["4*pi^2*L/T^2", [["L", 0.800, 0.002], ["T", 1.794, 0.005]]],
+  "Period from 20 swings: g with T = t/20": ["4*pi^2*L/(t/20)^2", [["L", 0.800, 0.002], ["t", 35.88, 0.2]]],
+  "Density of a cylinder ρ = 4m/(πd²h)": ["4*m/(pi*d^2*h)", [["m", 0.1234, 0.0005], ["d", 0.0200, 0.0001], ["h", 0.0500, 0.0002]]],
+  "Refractive index n = sin(θ1)/sin(θ2)": ["sin(a)/sin(b)", [["a", 0.698, 0.009], ["b", 0.443, 0.009]]],
+  "Difference of close numbers": ["a-b", [["a", 10.3, 0.2], ["b", 9.8, 0.2]]],
+  "Decay constant λ = ln(N0/N)/t": ["ln(N0/N)/t", [["N0", 1000, 32], ["N", 250, 16], ["t", 60, 0.5]]],
+};
+Object.keys(PRESETS).forEach((k) => $("preset").add(new Option(k, k)));
+function row(n = "x", v = 1, e = 0.1) {
+  const d = document.createElement("div"); d.className = "vrow";
+  d.innerHTML = `<input type="text" value="${n}" aria-label="name"><input type="number" step="any" value="${v}" aria-label="value"><input type="number" step="any" value="${e}" aria-label="uncertainty"><button title="Remove" style="padding:4px 0">✕</button>`;
+  d.querySelector("button").onclick = () => { d.remove(); compute(); };
+  $("vars").appendChild(d);
+}
+function load(k) { const [ex, vs] = PRESETS[k]; $("expr").value = ex; $("vars").innerHTML = ""; vs.forEach((v) => row(...v)); compute(); }
+function compile(expr, names) {
+  if (!/^[\w\s+\-*/^().,]*$/.test(expr)) throw new Error("Only letters, digits and + − * / ^ ( ) are allowed.");
+  const js = expr.replace(/\^/g, "**").replace(/\bln\b/g, "Math.log").replace(/\blog10\b/g, "Math.log10").replace(/\b(sqrt|sin|cos|tan|asin|acos|atan|exp|abs)\b/g, "Math.$1").replace(/\bpi\b/g, "Math.PI");
+  const ids = js.replace(/Math\.\w+/g, "").match(/[A-Za-z_]\w*/g) || [];
+  const unknown = ids.filter((i) => !names.includes(i)); if (unknown.length) throw new Error("Unknown name: " + unknown[0]);
+  return new Function(...names, "return (" + js + ");");
+}
+function sig(x, n) { if (x === 0 || !isFinite(x)) return x; return Number(x.toPrecision(n)); }
+function fmt(v, e) {
+  if (!(e > 0)) return v.toPrecision(6);
+  const lead = e / Math.pow(10, Math.floor(Math.log10(e))), n = lead < 2.5 ? 2 : 1; // 2 s.f. if the uncertainty starts with 1 or 2
+  const eR = sig(e, n), dec = Math.max(0, -Math.floor(Math.log10(eR)) + n - 1);
+  if (Math.abs(v) >= 1e5 || Math.abs(v) < 1e-3) { const p = Math.floor(Math.log10(Math.abs(v))), s = Math.pow(10, p); return `(${(v / s).toFixed(Math.max(0, dec + p))} ± ${(eR / s).toFixed(Math.max(0, dec + p))})×10^${p}`; }
+  return `${v.toFixed(dec)} ± ${eR.toFixed(dec)}`;
+}
+const gauss = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); };
+function compute() {
+  const rows = [...$("vars").children].map((d) => { const i = d.querySelectorAll("input"); return [i[0].value.trim(), +i[1].value, Math.abs(+i[2].value)]; });
+  const names = rows.map((r) => r[0]), vals = rows.map((r) => r[1]), errs = rows.map((r) => r[2]);
+  let f;
+  try { f = compile($("expr").value, names); } catch (e) { $("res").innerHTML = `<span class="bad" style="font-size:16px">${e.message}</span>`; return; }
+  const f0 = f(...vals); if (!isFinite(f0)) { $("res").innerHTML = `<span class="bad" style="font-size:16px">f is not finite at these values</span>`; return; }
+  const parts = vals.map((v, i) => { const h = Math.max(Math.abs(v), 1e-12) * 1e-6, a = [...vals], b = [...vals]; a[i] += h; b[i] -= h; return ((f(...a) - f(...b)) / (2 * h)) * errs[i]; });
+  const df = Math.sqrt(parts.reduce((s, p) => s + p * p, 0));
+  $("res").textContent = "f = " + fmt(f0, df);
+  $("rel").textContent = `Relative uncertainty ${(100 * df / Math.abs(f0)).toPrecision(2)}% · unrounded: ${f0.toPrecision(6)} ± ${df.toPrecision(3)}`;
+  $("bars").innerHTML = parts.map((p, i) => { const sh = df ? (p * p) / (df * df) : 0; return `<div class="contrib"><span class="mono">${names[i]}</span><div style="background:var(--surface-2);border-radius:4px"><div class="bar" style="width:${(100 * sh).toFixed(1)}%"></div></div><b class="mono">${(100 * sh).toFixed(0)}%</b></div>`; }).join("");
+  // Monte Carlo
+  const N = 20000, s = [];
+  for (let k = 0; k < N; k++) { const r = f(...vals.map((v, i) => v + errs[i] * gauss())); if (isFinite(r)) s.push(r); }
+  const mean = s.reduce((a, b) => a + b, 0) / s.length, sd = Math.sqrt(s.reduce((a, b) => a + (b - mean) ** 2, 0) / (s.length - 1));
+  $("mc").innerHTML = `${s.length} random trials: mean ${mean.toPrecision(5)}, standard deviation ${sd.toPrecision(3)} (linear formula: ${df.toPrecision(3)}). ` + (Math.abs(sd - df) > 0.1 * df ? `<span class="warn">They differ by more than 10%: the first-order formula is unreliable here.</span>` : `<span class="good">They agree.</span>`);
+  hist(s, f0, df);
+}
+function hist(s, f0, df) {
+  const c = $("hist"), d = devicePixelRatio || 1, W = c.clientWidth, H = W / 2; c.width = W * d; c.height = H * d;
+  const ctx = c.getContext("2d"); ctx.setTransform(d, 0, 0, d, 0, 0); ctx.fillStyle = col("--surface"); ctx.fillRect(0, 0, W, H);
+  if (!df) return;
+  const lo = f0 - 4.5 * df, hi = f0 + 4.5 * df, nb = 60, bins = Array(nb).fill(0);
+  s.forEach((v) => { const k = Math.floor(((v - lo) / (hi - lo)) * nb); if (k >= 0 && k < nb) bins[k]++; });
+  const mx = Math.max(...bins), pad = 24, bw = (W - 2 * pad) / nb;
+  ctx.fillStyle = col("--c1"); ctx.globalAlpha = 0.55;
+  bins.forEach((b, k) => ctx.fillRect(pad + k * bw, H - pad - (b / mx) * (H - 2 * pad), bw - 1, (b / mx) * (H - 2 * pad)));
+  ctx.globalAlpha = 1; ctx.strokeStyle = col("--c2"); ctx.lineWidth = 2; ctx.beginPath();
+  for (let i = 0; i <= 200; i++) { const x = lo + (i / 200) * (hi - lo), y = Math.exp(-0.5 * ((x - f0) / df) ** 2); const px = pad + ((x - lo) / (hi - lo)) * (W - 2 * pad), py = H - pad - y * (H - 2 * pad); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+  ctx.stroke();
+  ctx.fillStyle = col("--muted"); ctx.font = "12px system-ui"; ctx.fillText("bars: simulated · curve: Gaussian with the linear-formula Δf", pad, 16);
+  [-2, 0, 2].forEach((k) => { const x = f0 + k * df, px = pad + ((x - lo) / (hi - lo)) * (W - 2 * pad); ctx.fillText((k ? (k > 0 ? "+" : "−") + Math.abs(k) + "σ" : x.toPrecision(4)), px - 12, H - 6); });
+}
+$("preset").addEventListener("change", () => load($("preset").value));
+$("add").addEventListener("click", () => row("x" + ($("vars").children.length + 1), 1, 0.1));
+$("go").addEventListener("click", compute);
+document.addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.tagName === "INPUT") compute(); });
+window.addEventListener("resize", compute);
+load(Object.keys(PRESETS)[0]);
+</script>
+</body>
+</html>
