@@ -8,7 +8,9 @@ Copy this folder layout to start a topic:
 ├── 01-<module>.md   ← one file per module (use the "Module" section below)
 ├── cheatsheet.md    ← formulas / commands / facts, one page
 ├── resources.md     ← ⭐ main resource per area + optional extras
-└── progress.md      ← checklist + learning log
+├── progress.md      ← checklist + learning log
+└── interactive/     ← index.html + visual tools; link ../../_shared/style.css
+                       and reuse ../../_shared/flashcards.js for a flashcard deck
 ```
 
 ---

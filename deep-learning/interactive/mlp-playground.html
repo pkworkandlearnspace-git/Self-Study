@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Neural Net Playground</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style> #cv { aspect-ratio: 1 / 1; } #lc { aspect-ratio: 3 / 1; } </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a></header>
+  <h1>Neural Net Playground</h1>
+  <p class="lead">A real MLP, trained live in your browser with backprop written from scratch (the same math as module 04) and the Adam optimizer. Watch the decision boundary bend. Then break it: one neuron, no hidden layer, a huge learning rate.</p>
+  <div class="grid two">
+    <div>
+      <canvas id="cv" width="600" height="600" aria-label="Decision boundary"></canvas>
+    </div>
+    <div class="controls">
+      <label class="ctl">Dataset<select id="data"><option value="circle">Circle</option><option value="xor">XOR</option><option value="moons">Two moons</option><option value="spiral">Spiral (hard)</option><option value="linear">Linearly separable</option></select></label>
+      <div class="row">
+        <label class="ctl">Hidden layers<select id="layers"><option>0</option><option selected>1</option><option>2</option><option>3</option></select></label>
+        <label class="ctl">Neurons / layer <span class="val" id="wv"></span><input type="range" id="width" min="1" max="16" value="8"></label>
+      </div>
+      <div class="row">
+        <label class="ctl">Activation<select id="act"><option value="tanh">tanh</option><option value="relu">ReLU</option><option value="sigmoid">sigmoid</option></select></label>
+        <label class="ctl">Learning rate <span class="val" id="lrv"></span><input type="range" id="lr" min="-4" max="0" step="0.1" value="-1.5"></label>
+      </div>
+      <label class="ctl">L2 weight decay λ = <span class="val" id="l2v"></span><input type="range" id="l2" min="0" max="0.05" step="0.001" value="0"></label>
+      <label class="ctl">Label noise / overlap <span class="val" id="nv"></span><input type="range" id="noise" min="0" max="0.5" step="0.01" value="0.1"></label>
+      <div class="row"><button class="primary" id="play">⏸ Pause</button><button id="step">Step ×10</button><button id="reset">Re-initialize weights</button></div>
+      <div class="card" id="stats"></div>
+      <canvas id="lc" width="600" height="200" aria-label="Training loss curve"></canvas>
+      <div class="legend"><span><i style="background:var(--c1)"></i>train loss (BCE)</span><span><i style="background:var(--c2)"></i>test loss</span></div>
+    </div>
+  </div>
+  <h2>Experiments</h2>
+  <div class="card"><ol style="margin:0;padding-left:20px">
+    <li><b>0 hidden layers</b> = logistic regression. It can only draw a straight line, so it fails on Circle and XOR.</li>
+    <li><b>XOR with 1 layer of 2 neurons:</b> just barely possible. Re-initialize a few times and see how often it gets stuck.</li>
+    <li><b>Spiral:</b> needs depth. Compare 1×16 against 3×8.</li>
+    <li><b>Sigmoid with 3 layers</b> trains much slower than ReLU/tanh: vanishing gradients.</li>
+    <li><b>High noise + a big net:</b> the train loss keeps falling while the test loss rises. That's overfitting. Add L2 to fight it.</li>
+    <li><b>Learning rate 1.0:</b> the loss explodes or oscillates.</li>
+  </ol></div>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive · full-batch Adam, binary cross-entropy, He/Xavier init</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const hex = (h) => { h = h.replace("#", ""); if (h.length === 3) h = h.split("").map((c) => c + c).join(""); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+const cv = $("cv"), ctx = cv.getContext("2d"), lc = $("lc"), lctx = lc.getContext("2d");
+const randn = () => Math.sqrt(-2 * Math.log(Math.random() + 1e-12)) * Math.cos(2 * Math.PI * Math.random());
+let train = [], test = [], net, adam, t = 0, epoch = 0, playing = true, hist = [];
+
+function makeData(kind, n, noise) {
+  const pts = [];
+  for (let i = 0; i < n; i++) {
+    let x, y, l;
+    if (kind === "circle") { const r = Math.random() < 0.5 ? Math.random() * 0.45 : 0.6 + Math.random() * 0.35; const a = Math.random() * 2 * Math.PI; x = r * Math.cos(a); y = r * Math.sin(a); l = r < 0.5 ? 1 : 0; }
+    else if (kind === "xor") { x = Math.random() * 2 - 1; y = Math.random() * 2 - 1; const m = 0.05; x += Math.sign(x) * m; y += Math.sign(y) * m; l = x * y > 0 ? 1 : 0; }
+    else if (kind === "moons") { const a = Math.random() * Math.PI; l = Math.random() < 0.5 ? 1 : 0; x = l ? Math.cos(a) * 0.6 - 0.3 : 0.3 - Math.cos(a) * 0.6; y = l ? Math.sin(a) * 0.6 - 0.15 : 0.15 - Math.sin(a) * 0.6; }
+    else if (kind === "spiral") { const k = i % 2, r = (Math.floor(i / 2) / (n / 2)) * 0.9 + 0.05, a = r * 3.2 * Math.PI + k * Math.PI; x = r * Math.cos(a); y = r * Math.sin(a); l = k; }
+    else { x = Math.random() * 2 - 1; y = Math.random() * 2 - 1; l = y > 0.4 * x + 0.1 ? 1 : 0; }
+    x += randn() * noise * 0.35; y += randn() * noise * 0.35;
+    pts.push([x, y, l]);
+  }
+  return pts;
+}
+const A = {
+  tanh: { f: Math.tanh, d: (y) => 1 - y * y },
+  relu: { f: (x) => (x > 0 ? x : 0), d: (y) => (y > 0 ? 1 : 0) },
+  sigmoid: { f: (x) => 1 / (1 + Math.exp(-x)), d: (y) => y * (1 - y) },
+};
+const sig = (x) => 1 / (1 + Math.exp(-x));
+function initNet() {
+  const L = +$("layers").value, w = +$("width").value, act = $("act").value;
+  const sizes = [2, ...Array(L).fill(w), 1];
+  net = { sizes, act, W: [], b: [] };
+  for (let l = 0; l + 1 < sizes.length; l++) {
+    const fin = sizes[l], fout = sizes[l + 1], scale = Math.sqrt((act === "relu" && l + 2 < sizes.length ? 2 : 1) / fin);
+    net.W.push(Float64Array.from({ length: fin * fout }, () => randn() * scale)); net.b.push(new Float64Array(fout));
+  }
+  adam = { m: net.W.map((w) => new Float64Array(w.length)), v: net.W.map((w) => new Float64Array(w.length)), mb: net.b.map((b) => new Float64Array(b.length)), vb: net.b.map((b) => new Float64Array(b.length)) };
+  t = 0; epoch = 0; hist = [];
+}
+function forward(x, keep) {
+  let a = Float64Array.from(x); const acts = keep ? [a] : null; const n = net.W.length;
+  for (let l = 0; l < n; l++) {
+    const fin = net.sizes[l], fout = net.sizes[l + 1], W = net.W[l], out = new Float64Array(fout);
+    for (let j = 0; j < fout; j++) { let s = net.b[l][j]; for (let i = 0; i < fin; i++) s += W[j * fin + i] * a[i]; out[j] = l === n - 1 ? s : A[net.act].f(s); }
+    a = out; if (keep) acts.push(a);
+  }
+  return keep ? acts : sig(a[0]);
+}
+function lossOf(data) { let s = 0; for (const p of data) { const q = Math.min(1 - 1e-7, Math.max(1e-7, forward([p[0], p[1]]))); s -= p[2] ? Math.log(q) : Math.log(1 - q); } return s / data.length; }
+function accOf(data) { return data.filter((p) => (forward([p[0], p[1]]) > 0.5) === (p[2] === 1)).length / data.length; }
+function trainStep() {
+  const n = net.W.length, gW = net.W.map((w) => new Float64Array(w.length)), gb = net.b.map((b) => new Float64Array(b.length));
+  for (const p of train) {
+    const acts = forward([p[0], p[1]], true);
+    let delta = Float64Array.of(sig(acts[n][0]) - p[2]); // dL/dz for sigmoid + BCE
+    for (let l = n - 1; l >= 0; l--) {
+      const fin = net.sizes[l], fout = net.sizes[l + 1], a = acts[l], W = net.W[l];
+      for (let j = 0; j < fout; j++) { gb[l][j] += delta[j]; for (let i = 0; i < fin; i++) gW[l][j * fin + i] += delta[j] * a[i]; }
+      if (l > 0) { const nd = new Float64Array(fin); for (let i = 0; i < fin; i++) { let s = 0; for (let j = 0; j < fout; j++) s += W[j * fin + i] * delta[j]; nd[i] = s * A[net.act].d(a[i]); } delta = nd; }
+    }
+  }
+  t++; const lr = Math.pow(10, +$("lr").value), l2 = +$("l2").value, N = train.length, b1 = 0.9, b2 = 0.999;
+  const upd = (P, G, M, V, decay) => { for (let k = 0; k < P.length; k++) { const g = G[k] / N + (decay ? l2 * P[k] : 0); M[k] = b1 * M[k] + (1 - b1) * g; V[k] = b2 * V[k] + (1 - b2) * g * g; P[k] -= (lr * (M[k] / (1 - b1 ** t))) / (Math.sqrt(V[k] / (1 - b2 ** t)) + 1e-8); } };
+  for (let l = 0; l < n; l++) { upd(net.W[l], gW[l], adam.m[l], adam.v[l], true); upd(net.b[l], gb[l], adam.mb[l], adam.vb[l], false); }
+  epoch++;
+}
+const RES = 64; const off = document.createElement("canvas"); off.width = RES; off.height = RES; const octx = off.getContext("2d"), img = octx.createImageData(RES, RES);
+function draw() {
+  const d = devicePixelRatio || 1, W = cv.clientWidth; if (cv.width !== Math.round(W * d)) { cv.width = W * d; cv.height = W * d; } ctx.setTransform(d, 0, 0, d, 0, 0);
+  const c0 = hex(col("--c2")), c1 = hex(col("--c1")), bgc = hex(col("--surface"));
+  for (let j = 0; j < RES; j++) for (let i = 0; i < RES; i++) {
+    const x = (i / (RES - 1)) * 2.4 - 1.2, y = 1.2 - (j / (RES - 1)) * 2.4, p = forward([x, y]), s = Math.abs(p - 0.5) * 2, c = p > 0.5 ? c1 : c0;
+    img.data.set([bgc[0] + (c[0] - bgc[0]) * s * 0.45, bgc[1] + (c[1] - bgc[1]) * s * 0.45, bgc[2] + (c[2] - bgc[2]) * s * 0.45, 255], (j * RES + i) * 4);
+  }
+  octx.putImageData(img, 0, 0); ctx.imageSmoothingEnabled = true; ctx.drawImage(off, 0, 0, W, W);
+  const P = (x, y) => [((x + 1.2) / 2.4) * W, ((1.2 - y) / 2.4) * W];
+  for (const [data, hollow] of [[train, false], [test, true]]) for (const p of data) {
+    const q = P(p[0], p[1]); ctx.beginPath(); ctx.arc(q[0], q[1], 4, 0, 7);
+    if (hollow) { ctx.strokeStyle = col(p[2] ? "--c1" : "--c2"); ctx.lineWidth = 1.5; ctx.stroke(); } else { ctx.fillStyle = col(p[2] ? "--c1" : "--c2"); ctx.fill(); ctx.strokeStyle = col("--surface"); ctx.lineWidth = 1; ctx.stroke(); }
+  }
+  // loss curve
+  const lw = lc.clientWidth, lh = lw / 3; if (lc.width !== Math.round(lw * d)) { lc.width = lw * d; lc.height = lh * d; } lctx.setTransform(d, 0, 0, d, 0, 0);
+  lctx.fillStyle = col("--surface"); lctx.fillRect(0, 0, lw, lh);
+  if (hist.length > 1) {
+    const mx = Math.max(0.8, ...hist.map((h) => Math.max(h[0], h[1])));
+    [[0, "--c1"], [1, "--c2"]].forEach(([k, c]) => { lctx.strokeStyle = col(c); lctx.lineWidth = 2; lctx.beginPath(); hist.forEach((h, i) => { const x = (i / (hist.length - 1)) * (lw - 10) + 5, y = lh - 6 - (Math.min(h[k], mx) / mx) * (lh - 12); i ? lctx.lineTo(x, y) : lctx.moveTo(x, y); }); lctx.stroke(); });
+  }
+  const params = net.W.reduce((s, w) => s + w.length, 0) + net.b.reduce((s, b) => s + b.length, 0);
+  const h = hist[hist.length - 1] || [lossOf(train), lossOf(test)];
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  $("stats").innerHTML = row("Architecture", net.sizes.join(" → ")) + row("Parameters", params) + row("Epoch", epoch) +
+    row("Train loss / acc", `${h[0].toFixed(3)} / ${(accOf(train) * 100).toFixed(1)}%`) + row("Test loss / acc", `${h[1].toFixed(3)} / ${(accOf(test) * 100).toFixed(1)}%`);
+  $("wv").textContent = $("width").value; $("lrv").textContent = Math.pow(10, +$("lr").value).toPrecision(2); $("l2v").textContent = (+$("l2").value).toFixed(3); $("nv").textContent = (+$("noise").value).toFixed(2);
+}
+let frame = 0;
+function loop() {
+  if (playing && epoch < 20000) { for (let i = 0; i < 4; i++) trainStep(); if (frame % 2 === 0) { hist.push([lossOf(train), lossOf(test)]); if (hist.length > 600) hist = hist.filter((_, i) => i % 2 === 0); } }
+  if (frame % 2 === 0) draw();
+  frame++; requestAnimationFrame(loop);
+}
+function newData() { const k = $("data").value, nz = +$("noise").value; train = makeData(k, 200, nz); test = makeData(k, 100, nz); initNet(); }
+["data", "noise"].forEach((id) => $(id).addEventListener("change", newData));
+["layers", "width", "act"].forEach((id) => $(id).addEventListener("change", initNet));
+$("width").addEventListener("input", () => { $("wv").textContent = $("width").value; });
+$("reset").addEventListener("click", initNet);
+$("play").addEventListener("click", () => { playing = !playing; $("play").textContent = playing ? "⏸ Pause" : "▶ Play"; });
+$("step").addEventListener("click", () => { for (let i = 0; i < 10; i++) trainStep(); hist.push([lossOf(train), lossOf(test)]); draw(); });
+newData(); loop();
+</script>
+</body>
+</html>

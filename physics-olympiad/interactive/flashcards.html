@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Physics Olympiad Flashcards</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+<div class="wrap" style="max-width:760px">
+  <header class="top"><a class="back" href="index.html">← Physics Olympiad tools</a></header>
+  <h1>Physics Olympiad Flashcards</h1>
+  <p class="lead">Standard results you should recall in seconds, so exam time goes to modeling instead. Say the answer out loud before flipping.</p>
+  <div id="fc"></div>
+  <footer class="foot">Part of the Self-Study repo · physics-olympiad/interactive</footer>
+</div>
+<script>
+window.FLASHCARDS = { id: "physics-olympiad", cards: [
+  { deck: "Methods", q: "Period of small oscillations about a minimum of U(x)", a: "ω² = U''(x₀)/m, so T = 2π√(m/U''(x₀))." },
+  { deck: "Methods", q: "Three checks for every final answer", a: "Dimensions · limiting cases (m→0, θ→0, …) · symmetry/sign/order of magnitude." },
+  { deck: "Methods", q: "(1+x)ⁿ to second order", a: "1 + nx + n(n−1)x²/2." },
+  { deck: "Mechanics", q: "Moments of inertia: rod about its center, disk, solid sphere, spherical shell", a: "ML²/12 · MR²/2 · 2MR²/5 · 2MR²/3." },
+  { deck: "Mechanics", q: "Acceleration of a body rolling without slipping down an incline", a: "a = g sinθ / (1 + I/(mR²)). Solid sphere: (5/7) g sinθ." },
+  { deck: "Mechanics", q: "About which points can you safely use τ = dL/dt?", a: "A fixed point in an inertial frame, or the center of mass (even if accelerating)." },
+  { deck: "Mechanics", q: "Coriolis and centrifugal forces in a frame rotating at ω", a: "F_cor = −2m ω × v · F_cf = −m ω × (ω × r), magnitude mω²r⊥, pointing outward." },
+  { deck: "Mechanics", q: "Effective potential for a central gravitational force", a: "U_eff(r) = −GMm/r + L²/(2mr²)." },
+  { deck: "Mechanics", q: "Orbital energy in terms of the semi-major axis a", a: "E = −GMm/(2a), for circles and ellipses alike. Vis-viva: v² = GM(2/r − 1/a)." },
+  { deck: "Mechanics", q: "Escape speed vs circular speed at radius r", a: "v_esc = √2 · v_circ = √(2GM/r)." },
+  { deck: "Mechanics", q: "Tsiolkovsky rocket equation", a: "Δv = u ln(m₀/m_f), u = exhaust speed relative to the rocket." },
+  { deck: "Mechanics", q: "Elastic 1D collision: velocities after, with m₂ at rest", a: "v₁' = (m₁−m₂)/(m₁+m₂) v₁ · v₂' = 2m₁/(m₁+m₂) v₁. The relative velocity reverses." },
+  { deck: "Mechanics", q: "Driven damped oscillator: steady-state amplitude", a: "A = (F/m) / √((ω₀² − ω²)² + (2γω)²). Phase lag π/2 at ω = ω₀. Q = ω₀/(2γ)." },
+  { deck: "Mechanics", q: "Laplace pressure for a droplet vs a soap bubble", a: "Droplet: Δp = 2σ/R. Soap bubble (2 surfaces): Δp = 4σ/R." },
+  { deck: "Thermo", q: "Adiabatic relations for an ideal gas", a: "pV^γ = const, TV^(γ−1) = const, γ = C_p/C_V (5/3 monatomic, 7/5 diatomic)." },
+  { deck: "Thermo", q: "Work in an isothermal expansion V₁ → V₂", a: "W = nRT ln(V₂/V₁)." },
+  { deck: "Thermo", q: "Carnot efficiency and refrigerator COP", a: "η = 1 − T_c/T_h. COP_fridge = T_c/(T_h − T_c)." },
+  { deck: "Thermo", q: "Equipartition theorem", a: "Each quadratic degree of freedom has ½kT of average energy." },
+  { deck: "Thermo", q: "Isothermal atmosphere density profile", a: "n(h) = n₀ e^(−mgh/kT): the Boltzmann factor. Scale height H = kT/(mg) ≈ 8 km." },
+  { deck: "Thermo", q: "Stefan–Boltzmann and Wien", a: "P = εσAT⁴ · λ_max T = 2.9 × 10⁻³ m·K." },
+  { deck: "Thermo", q: "Thermal resistance of a slab", a: "R = L/(kA), like an electrical resistor. Heat current = ΔT/R." },
+  { deck: "E&M", q: "Field inside and outside a uniformly charged ball", a: "Inside: E = kQr/R³ (linear). Outside: E = kQ/r²." },
+  { deck: "E&M", q: "Field of an infinite charged plane, and between capacitor plates", a: "Plane: σ/(2ε₀). Between parallel plates: σ/ε₀." },
+  { deck: "E&M", q: "Point charge q at distance d from a grounded conducting plane: force?", a: "Image charge −q at distance d behind the plane: F = kq²/(2d)², attractive." },
+  { deck: "E&M", q: "Energy density of E and B fields", a: "u = ε₀E²/2 + B²/(2μ₀)." },
+  { deck: "E&M", q: "B of a long wire, at the center of a loop, inside a solenoid", a: "μ₀I/(2πr) · μ₀I/(2R) · μ₀nI." },
+  { deck: "E&M", q: "Cyclotron radius and frequency", a: "r = mv/(qB), ω = qB/m (independent of speed, non-relativistic)." },
+  { deck: "E&M", q: "Drift velocity in crossed E and B", a: "v = E × B / B², magnitude E/B, independent of charge and mass." },
+  { deck: "E&M", q: "Time constants of RC and RL circuits; LC frequency", a: "τ = RC · τ = L/R · ω = 1/√(LC)." },
+  { deck: "E&M", q: "Complex impedances of R, L, C", a: "Z_R = R · Z_L = iωL · Z_C = 1/(iωC)." },
+  { deck: "E&M", q: "Thevenin's theorem", a: "Any linear two-terminal network equals an EMF ε_th (open-circuit voltage) in series with R_th (= ε_th / short-circuit current)." },
+  { deck: "Waves/Optics", q: "Double-slit fringe spacing", a: "Δy = λL/d (small angles)." },
+  { deck: "Waves/Optics", q: "Thin film: when is there an extra π phase shift?", a: "On reflection from a medium with a higher refractive index. Count shifts at both surfaces." },
+  { deck: "Waves/Optics", q: "Rayleigh criterion for a circular aperture", a: "θ_min ≈ 1.22 λ/D." },
+  { deck: "Waves/Optics", q: "Brewster's angle", a: "tan θ_B = n₂/n₁. The reflected light is fully polarized ⟂ to the plane of incidence." },
+  { deck: "Waves/Optics", q: "Wave speed on a string", a: "v = √(T/μ)." },
+  { deck: "Modern", q: "Relativistic energy–momentum invariant", a: "E² − (pc)² = (mc²)². It's the same in all frames, so use it for thresholds and decays." },
+  { deck: "Modern", q: "Relativistic velocity addition", a: "u' = (u − v)/(1 − uv/c²)." },
+  { deck: "Modern", q: "Compton shift", a: "Δλ = (h/(m_e c))(1 − cos θ), with h/(m_e c) ≈ 2.43 pm." },
+  { deck: "Modern", q: "Hydrogen (Bohr) levels and radius", a: "E_n = −13.6 eV/n², r_n = n²a₀, a₀ ≈ 0.053 nm." },
+  { deck: "Modern", q: "Handy product hc", a: "hc ≈ 1240 eV·nm (a 500 nm photon has ≈ 2.5 eV)." },
+  { deck: "Modern", q: "Particle in a 1D box energies", a: "E_n = n²h²/(8mL²)." },
+  { deck: "Experiment", q: "Uncertainty of f = aⁿbᵐ", a: "Δf/f = √((nΔa/a)² + (mΔb/b)²)." },
+  { deck: "Experiment", q: "How to linearize T = 2π√(L/g)?", a: "Plot T² vs L. Slope = 4π²/g." },
+  { deck: "Experiment", q: "How to linearize y = a xⁿ?", a: "Plot ln y vs ln x. Slope = n, intercept = ln a." },
+  { deck: "Experiment", q: "Standard error of the mean of N measurements", a: "σ/√N." },
+  { deck: "Experiment", q: "Graph checklist at IPhO", a: "Title · axis labels with units · scale filling the page · error bars · best-fit line · a large slope triangle." },
+]};
+</script>
+<script src="../../_shared/flashcards.js"></script>
+</body>
+</html>

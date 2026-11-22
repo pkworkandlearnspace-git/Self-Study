@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Self-Study Hub</title>
+<link rel="stylesheet" href="_shared/style.css">
+<style>
+  .topic { display: grid; gap: 10px; }
+  .topic h2 { margin: 0; font-size: 18px; }
+  .links { display: flex; gap: 6px; flex-wrap: wrap; }
+  .links a { font-size: 13px; text-decoration: none; padding: 3px 10px; border: 1px solid var(--border); border-radius: 99px; color: var(--text); }
+  .links a:hover { border-color: var(--accent); color: var(--accent); }
+  .sections { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Self-Study Hub</h1>
+  <p class="lead">All the interactive tools in one place. The written material (roadmaps, modules, cheatsheets, progress logs) lives in each topic's folder as Markdown files.</p>
+  <div class="sections">
+    <div class="card topic"><span style="font-size:12px;color:var(--accent);background:var(--accent-soft);border-radius:99px;padding:1px 8px;width:max-content">Olympiad · Math</span><h2><a href="math-olympiad/interactive/index.html">Math Olympiad</a></h2>
+      <div class="links"><a href="math-olympiad/interactive/triangle-centers.html">Triangle centers</a><a href="math-olympiad/interactive/modular-arithmetic.html">Modular lab</a><a href="math-olympiad/interactive/flashcards.html">Flashcards</a></div></div>
+    <div class="card topic"><span style="font-size:12px;color:var(--accent);background:var(--accent-soft);border-radius:99px;padding:1px 8px;width:max-content">Olympiad · Physics</span><h2><a href="physics-olympiad/interactive/index.html">Physics Olympiad</a></h2>
+      <div class="links"><a href="physics-olympiad/interactive/orbits.html">Orbits</a><a href="physics-olympiad/interactive/oscillator.html">Oscillator</a><a href="physics-olympiad/interactive/interference.html">Interference</a><a href="physics-olympiad/interactive/linear-fit.html">Linear fit</a><a href="physics-olympiad/interactive/flashcards.html">Flashcards</a></div></div>
+    <div class="card topic"><span style="font-size:12px;color:var(--accent);background:var(--accent-soft);border-radius:99px;padding:1px 8px;width:max-content">Olympiad · Informatics</span><h2><a href="informatics-olympiad/interactive/index.html">Informatics Olympiad</a></h2>
+      <div class="links"><a href="informatics-olympiad/interactive/graph-search.html">Graph search</a><a href="informatics-olympiad/interactive/segment-tree.html">Segment tree</a><a href="informatics-olympiad/interactive/dp-table.html">DP table</a><a href="informatics-olympiad/interactive/flashcards.html">Flashcards</a></div></div>
+    <div class="card topic"><span style="font-size:12px;color:var(--accent);background:var(--accent-soft);border-radius:99px;padding:1px 8px;width:max-content">Language</span><h2><a href="ielts/interactive/index.html">IELTS Academic</a></h2>
+      <div class="links"><a href="ielts/interactive/band-calculator.html">Band calculator</a><a href="ielts/interactive/writing-practice.html">Writing</a><a href="ielts/interactive/speaking-practice.html">Speaking</a><a href="ielts/interactive/flashcards.html">Flashcards</a></div></div>
+    <div class="card topic"><span style="font-size:12px;color:var(--accent);background:var(--accent-soft);border-radius:99px;padding:1px 8px;width:max-content">AI</span><h2><a href="deep-learning/interactive/index.html">Deep Learning</a></h2>
+      <div class="links"><a href="deep-learning/interactive/gradient-descent.html">Optimizers</a><a href="deep-learning/interactive/mlp-playground.html">NN playground</a><a href="deep-learning/interactive/attention.html">Attention</a><a href="deep-learning/interactive/flashcards.html">Flashcards</a></div></div>
+  </div>
+  <footer class="foot">Open this file in any browser. Everything works offline. Flashcard progress and writing drafts are saved in this browser only.</footer>
+</div>
+</body>
+</html>

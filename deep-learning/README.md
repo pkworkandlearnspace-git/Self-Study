@@ -46,6 +46,12 @@
 
 ---
 
+## Interactive tools → [`interactive/`](interactive/index.html)
+- **Optimizer landscape:** SGD vs Momentum vs Adam on 2D loss surfaces (modules 01, 05).
+- **Neural net playground:** an MLP trained live with from-scratch backprop. Decision boundaries, overfitting, vanishing gradients (modules 03–05).
+- **Attention & sampling:** drag q/k vectors, see the √d scaling and the causal mask, try temperature/top-k/top-p (modules 08–09).
+- **Flashcards:** ~50 core facts with spaced repetition.
+
 ## Support files
 
 - **[cheatsheet.md](cheatsheet.md)**: every key formula on one page. Use it for recaps.

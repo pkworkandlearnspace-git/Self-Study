@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Modular Arithmetic Lab</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg.plot { aspect-ratio: 1 / 1; max-width: 520px; margin: 0 auto; }
+  svg text { font: 12px system-ui, sans-serif; fill: var(--muted); }
+  table.pow { border-collapse: collapse; font-family: var(--mono); font-size: 12px; }
+  table.pow td, table.pow th { width: 28px; height: 24px; text-align: center; border: 1px solid var(--border); }
+  table.pow th { color: var(--muted); font-weight: 500; background: var(--surface-2); }
+  table.pow td.one { background: var(--accent); color: #fff; font-weight: 700; }
+  table.pow tr.prim th:first-child { background: var(--good); color: #fff; }
+  table.pow tr.sel td, table.pow tr.sel th { outline: 2px solid var(--c2); outline-offset: -2px; }
+  table.pow tr { cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Math Olympiad tools</a></header>
+  <h1>Modular Arithmetic Lab</h1>
+  <p class="lead">See <b>orders</b>, <b>primitive roots</b>, and <b>Fermat/Euler</b> at work. The order of <i>a</i> mod <i>n</i> is the smallest <i>d</i> with <i>a<sup>d</sup></i> ≡ 1. It's the single most useful idea in olympiad number theory (module 03).</p>
+
+  <div class="grid two">
+    <div class="card">
+      <svg class="plot" id="clock" viewBox="-260 -260 520 520" aria-label="Powers of a on a clock mod n"></svg>
+      <div class="legend" style="justify-content:center;margin-top:8px">
+        <span><i style="background:var(--c2)"></i>cycle 1 → a → a² → … → 1</span>
+        <span><i style="background:var(--muted)"></i>not coprime to n</span>
+      </div>
+    </div>
+    <div class="controls">
+      <label class="ctl">Modulus n = <span class="val" id="nv"></span><input type="range" id="n" min="2" max="60" value="13"></label>
+      <label class="ctl">Base a = <span class="val" id="av"></span><input type="range" id="a" min="1" max="12" value="2"></label>
+      <div class="card" id="stats"></div>
+      <div class="callout" id="insight"></div>
+    </div>
+  </div>
+
+  <h2>Power table a<sup>k</sup> mod n</h2>
+  <p class="note">Rows: bases coprime to n. Blue cells: a<sup>k</sup> ≡ 1. A <span class="good"><b>green</b></span> row label = primitive root (order = φ(n)). Click a row to select that base.</p>
+  <div class="card scroll-x" id="tablewrap"></div>
+
+  <h2>Try these</h2>
+  <div class="card">
+    <ol style="margin:0;padding-left:20px">
+      <li>For prime n, does every order divide n − 1? (Fermat + order lemma.)</li>
+      <li>For n = 13, count the elements of each order d. Compare with φ(d).</li>
+      <li>Find an n with <b>no</b> primitive root (try 8, 12, 15). Primitive roots exist only for n = 1, 2, 4, p<sup>k</sup>, 2p<sup>k</sup>.</li>
+      <li>For prime p, is (p−1)! ≡ −1? Check Wilson's theorem in the panel.</li>
+    </ol>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · math-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const gcd = (x, y) => { while (y) [x, y] = [y, x % y]; return x; };
+const phi = (n) => { let r = 0; for (let i = 1; i <= n; i++) if (gcd(i, n) === 1) r++; return r; };
+const powmod = (b, e, m) => { let r = 1 % m; b %= m; while (e > 0) { if (e & 1) r = (r * b) % m; b = (b * b) % m; e >>= 1; } return r; };
+const order = (a, n) => { if (gcd(a, n) !== 1) return null; let x = a % n, d = 1; while (x !== 1 % n) { x = (x * a) % n; d++; if (d > n) return null; } return d; };
+const isPrime = (n) => { if (n < 2) return false; for (let i = 2; i * i <= n; i++) if (n % i === 0) return false; return true; };
+const cv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+function drawClock(n, a) {
+  const svg = $("clock"), NS = "http://www.w3.org/2000/svg";
+  svg.innerHTML = "";
+  const R = 215, pos = (i) => [R * Math.sin((2 * Math.PI * i) / n), -R * Math.cos((2 * Math.PI * i) / n)];
+  const mk = (tag, at) => { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); svg.appendChild(e); return e; };
+  mk("circle", { cx: 0, cy: 0, r: R, fill: "none", stroke: cv("--border") });
+  // cycle of powers
+  if (gcd(a, n) === 1) {
+    let x = 1 % n, pts = [x];
+    for (let k = 0; k < n + 1; k++) { x = (x * a) % n; pts.push(x); if (x === 1 % n) break; }
+    for (let i = 0; i + 1 < pts.length; i++) {
+      const p = pos(pts[i]), q = pos(pts[i + 1]);
+      mk("line", { x1: p[0], y1: p[1], x2: q[0], y2: q[1], stroke: cv("--c2"), "stroke-width": 2, opacity: 0.85 });
+    }
+  }
+  for (let i = 0; i < n; i++) {
+    const [x, y] = pos(i), co = gcd(i, n) === 1;
+    mk("circle", { cx: x, cy: y, r: n > 40 ? 4 : 6, fill: co ? cv("--accent") : cv("--muted"), opacity: co ? 1 : 0.5 });
+    if (n <= 40 || i % 5 === 0) { const t = mk("text", { x: x * 1.1, y: y * 1.1 + 4, "text-anchor": "middle" }); t.textContent = i; }
+  }
+}
+
+function drawTable(n, a) {
+  const f = phi(n), units = [];
+  for (let b = 1; b < n; b++) if (gcd(b, n) === 1) units.push(b);
+  const maxK = Math.min(f, 40);
+  let h = `<table class="pow"><tr><th>a \\ k</th>`;
+  for (let k = 1; k <= maxK; k++) h += `<th>${k}</th>`;
+  h += `<th>ord</th></tr>`;
+  for (const b of units) {
+    const o = order(b, n);
+    h += `<tr data-b="${b}" class="${o === f ? "prim" : ""} ${b === a ? "sel" : ""}"><th>${b}</th>`;
+    for (let k = 1; k <= maxK; k++) { const v = powmod(b, k, n); h += `<td class="${v === 1 % n ? "one" : ""}">${v}</td>`; }
+    h += `<th>${o}</th></tr>`;
+  }
+  h += `</table>` + (f > 40 ? `<p class="note">Showing k ≤ 40 of φ(n) = ${f}.</p>` : "");
+  $("tablewrap").innerHTML = h;
+  $("tablewrap").querySelectorAll("tr[data-b]").forEach((tr) => tr.addEventListener("click", () => {
+    const b = +tr.dataset.b; $("a").max = Math.max(+$("a").max, b); $("a").value = b; update();
+  }));
+}
+
+function update() {
+  const n = +$("n").value; $("a").max = n - 1; let a = Math.min(+$("a").value, n - 1); $("a").value = a;
+  $("nv").textContent = n; $("av").textContent = a;
+  const f = phi(n), o = order(a, n);
+  const units = []; for (let b = 1; b < n; b++) if (gcd(b, n) === 1) units.push(b);
+  const prims = units.filter((b) => order(b, n) === f);
+  let fact = 1; for (let i = 2; i < n; i++) fact = (fact * i) % n;
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  $("stats").innerHTML =
+    row("φ(n)", f) +
+    row("n prime?", isPrime(n) ? "yes" : "no") +
+    row(`gcd(a, n)`, gcd(a, n)) +
+    row(`ord<sub>n</sub>(a)`, o === null ? "undefined (not coprime)" : o) +
+    row(`a<sup>φ(n)</sup> mod n (Euler)`, powmod(a, f, n)) +
+    row("primitive roots", prims.length ? prims.slice(0, 10).join(", ") + (prims.length > 10 ? " …" : "") + ` (${prims.length})` : "none") +
+    row("(n−1)! mod n", fact + (isPrime(n) ? "  = n − 1 ✓ Wilson" : ""));
+  $("insight").innerHTML = o === null
+    ? `a and n share a factor, so no power of a is ever 1 mod n.`
+    : `ord(${a}) = ${o} divides φ(${n}) = ${f} ✓ — ${f / o} cosets. ${o === f ? "<b>" + a + " is a primitive root</b>: its powers hit every unit." : "Its powers hit only " + o + " of the " + f + " units."}`;
+  drawClock(n, a); drawTable(n, a);
+}
+$("n").addEventListener("input", update); $("a").addEventListener("input", update);
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", update);
+update();
+</script>
+</body>
+</html>

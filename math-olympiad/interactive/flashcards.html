@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Math Olympiad Flashcards</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+<div class="wrap" style="max-width:760px">
+  <header class="top"><a class="back" href="index.html">← Math Olympiad tools</a></header>
+  <h1>Math Olympiad Flashcards</h1>
+  <p class="lead">Theorems, lemmas, and "when to use what". Try to state the answer <i>before</i> you flip. Progress is saved in this browser.</p>
+  <div id="fc"></div>
+  <footer class="foot">Part of the Self-Study repo · math-olympiad/interactive</footer>
+</div>
+<script>
+window.FLASHCARDS = { id: "math-olympiad", cards: [
+  { deck: "Strategy", q: "A process repeats. You must show it terminates. What tool?", a: "A monovariant: a quantity that strictly increases or decreases each step and is bounded (e.g. a positive integer that decreases)." },
+  { deck: "Strategy", q: "\"Can we reach configuration X from Y?\" What do you look for?", a: "An invariant: a quantity (often mod 2 or 3, or a coloring count) that never changes but differs between X and Y." },
+  { deck: "Strategy", q: "Extremal principle: what is it?", a: "Look at the largest/smallest/leftmost object (or the minimal counterexample). Its extremality forces structure or a contradiction." },
+  { deck: "Strategy", q: "\"Find the maximum\" combinatorics problem: what two things must you prove?", a: "1) A bound: no configuration beats M.\n2) A construction that achieves M." },
+  { deck: "Strategy", q: "Induction doesn't go through. Classic fix?", a: "Strengthen the hypothesis: prove a stronger statement, which gives a stronger inductive assumption." },
+  { deck: "Algebra", q: "AM-GM (n variables) and its equality case", a: "(x₁+…+xₙ)/n ≥ (x₁⋯xₙ)^{1/n} for xᵢ ≥ 0, equality iff all xᵢ are equal." },
+  { deck: "Algebra", q: "Cauchy–Schwarz in Engel/Titu form", a: "Σ aᵢ²/bᵢ ≥ (Σ aᵢ)² / Σ bᵢ for bᵢ > 0." },
+  { deck: "Algebra", q: "Schur's inequality (t = 1)", a: "a(a−b)(a−c) + b(b−a)(b−c) + c(c−a)(c−b) ≥ 0 for a, b, c ≥ 0. Equality at a=b=c, or two equal and the third 0." },
+  { deck: "Algebra", q: "Jensen's inequality", a: "For convex f: f((x₁+…+xₙ)/n) ≤ (f(x₁)+…+f(xₙ))/n. Reversed for concave f." },
+  { deck: "Algebra", q: "Ravi substitution: when and what?", a: "For triangle sides a, b, c: set a = y+z, b = z+x, c = x+y with x, y, z > 0. This removes the triangle inequality constraints." },
+  { deck: "Algebra", q: "First step for any inequality?", a: "Find the equality case. It tells you which inequalities can work (they must have the same equality case)." },
+  { deck: "Algebra", q: "Vieta for a cubic ax³+bx²+cx+d with roots r, s, t", a: "r+s+t = −b/a, rs+st+tr = c/a, rst = −d/a." },
+  { deck: "Algebra", q: "Integer-coefficient polynomial divisibility fact", a: "a − b divides P(a) − P(b)." },
+  { deck: "Algebra", q: "Cauchy's functional equation f(x+y)=f(x)+f(y): solutions?", a: "Over ℚ: f(x) = cx. Over ℝ: f(x) = cx if f is monotone, continuous, or bounded on an interval. Otherwise there are pathological solutions." },
+  { deck: "Algebra", q: "Standard first substitutions in a functional equation", a: "x=y=0, y=0, x=y, y=−x, x=1, swap x↔y. Then look for injectivity/surjectivity and fixed points. Always verify the final answer." },
+  { deck: "Number theory", q: "Order lemma", a: "aᵏ ≡ 1 (mod n) ⟺ ord_n(a) divides k. Hence ord_n(a) | φ(n)." },
+  { deck: "Number theory", q: "Fermat, Euler, Wilson", a: "Fermat: a^{p−1} ≡ 1 (mod p), p ∤ a.\nEuler: a^{φ(n)} ≡ 1 (mod n), gcd(a,n)=1.\nWilson: (p−1)! ≡ −1 (mod p)." },
+  { deck: "Number theory", q: "LTE for odd prime p", a: "If p | a − b and p ∤ a, b, then v_p(aⁿ − bⁿ) = v_p(a − b) + v_p(n)." },
+  { deck: "Number theory", q: "LTE for p = 2 (a, b odd, n even)", a: "v₂(aⁿ − bⁿ) = v₂(a − b) + v₂(a + b) + v₂(n) − 1." },
+  { deck: "Number theory", q: "gcd(aᵐ − 1, aⁿ − 1) = ?", a: "a^{gcd(m,n)} − 1." },
+  { deck: "Number theory", q: "Legendre's formula", a: "v_p(n!) = Σ_{k≥1} ⌊n / pᵏ⌋." },
+  { deck: "Number theory", q: "When is −1 a quadratic residue mod an odd prime p?", a: "Iff p ≡ 1 (mod 4)." },
+  { deck: "Number theory", q: "Which n have a primitive root?", a: "n = 1, 2, 4, pᵏ, 2pᵏ (p an odd prime)." },
+  { deck: "Number theory", q: "Squares mod 4 and mod 8", a: "mod 4: {0, 1}. mod 8: {0, 1, 4}. Odd squares ≡ 1 (mod 8)." },
+  { deck: "Number theory", q: "Bézout's identity", a: "There exist integers x, y with ax + by = gcd(a, b)." },
+  { deck: "Number theory", q: "Diophantine toolbox (4 items)", a: "Factor · reduce mod m to kill cases · bound with inequalities · infinite descent / Vieta jumping." },
+  { deck: "Combinatorics", q: "Stars and bars: solutions of x₁+…+x_k = n, xᵢ ≥ 0", a: "C(n+k−1, k−1)." },
+  { deck: "Combinatorics", q: "Derangements Dₙ", a: "Dₙ = n! Σ_{i=0}^{n} (−1)ⁱ / i!  ≈ n!/e. Recurrence Dₙ = (n−1)(D_{n−1} + D_{n−2})." },
+  { deck: "Combinatorics", q: "Catalan number Cₙ and two things it counts", a: "Cₙ = C(2n, n)/(n+1). It counts balanced parentheses, Dyck paths, triangulations of an (n+2)-gon, and binary trees." },
+  { deck: "Combinatorics", q: "Double counting: the idea", a: "Count one set (often pairs or incidences) in two ways and equate. E.g. Σ deg(v) = 2|E|." },
+  { deck: "Combinatorics", q: "Hall's marriage theorem", a: "A bipartite graph has a matching saturating side X iff |N(S)| ≥ |S| for every S ⊆ X." },
+  { deck: "Combinatorics", q: "Probabilistic method (basic)", a: "If the expected number of 'bad' events in a random construction is < 1, some outcome has none, so a good object exists." },
+  { deck: "Combinatorics", q: "Strategy stealing argument", a: "If the second player had a winning strategy, the first player could make an arbitrary move and then 'steal' it. An extra move never hurts, so the first player wins (or draws)." },
+  { deck: "Combinatorics", q: "Nim: who wins?", a: "The position is losing for the player to move iff the XOR of the pile sizes is 0." },
+  { deck: "Geometry", q: "Power of a point P w.r.t. circle (O, r)", a: "PA·PB = PO² − r² for any line through P meeting the circle at A, B (signed)." },
+  { deck: "Geometry", q: "Radical axis theorem", a: "The three pairwise radical axes of three circles (centers not collinear) are concurrent at the radical center." },
+  { deck: "Geometry", q: "Euler line facts", a: "O, G, H are collinear with OG : GH = 1 : 2. The nine-point center N is the midpoint of OH." },
+  { deck: "Geometry", q: "Nine-point circle", a: "Passes through the 3 side midpoints, 3 feet of the altitudes, and the 3 midpoints of AH, BH, CH. Radius R/2." },
+  { deck: "Geometry", q: "Incenter–excenter lemma", a: "The midpoint M of arc BC (not containing A) is equidistant from B, C, I, and I_A, so they lie on a circle centered at M." },
+  { deck: "Geometry", q: "Reflections of the orthocenter H", a: "Reflecting H over any side, or over any side's midpoint, lands on the circumcircle." },
+  { deck: "Geometry", q: "Euler's theorem on O and I", a: "OI² = R(R − 2r). So R ≥ 2r, with equality iff the triangle is equilateral." },
+  { deck: "Geometry", q: "Ceva's theorem (cevians AD, BE, CF)", a: "Concurrent ⟺ (BD/DC)(CE/EA)(AF/FB) = 1. Trig form: Π sin∠BAD / sin∠DAC = 1." },
+  { deck: "Geometry", q: "Ptolemy's theorem", a: "For a cyclic quadrilateral ABCD: AC·BD = AB·CD + AD·BC. In general ≤ (Ptolemy's inequality)." },
+  { deck: "Geometry", q: "Triangle area formulas (4)", a: "½ab sin C = rs = abc/(4R) = √(s(s−a)(s−b)(s−c))." },
+  { deck: "Geometry", q: "Why use directed angles mod 180°?", a: "So one angle-chasing proof works for every configuration (the order of points on a circle doesn't matter)." },
+  { deck: "Geometry", q: "Complex numbers setup for a triangle on the unit circle", a: "|a|=|b|=|c|=1, so the conjugate of a is 1/a. Then O = 0 and H = a + b + c." },
+]};
+</script>
+<script src="../../_shared/flashcards.js"></script>
+</body>
+</html>
