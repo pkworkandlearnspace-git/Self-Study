@@ -25,6 +25,7 @@ Modules 02–05 run **in parallel**: rotate topics weekly instead of finishing o
 - **Triangle centers explorer:** drag a triangle and see the circumcenter, incenter, centroid, orthocenter, Euler line, and nine-point circle live.
 - **Inequality lab:** power means, equality-case heat maps, tangent line trick.
 - **Modular arithmetic lab:** multiplication tables mod n, orders, primitive roots, Fermat/Euler check.
+- **Number theory toolkit:** step-through Euclid/Bézout and CRT, LTE checker, Legendre's formula.
 - **Which technique? quiz:** 22 classic problems; pick the tool that cracks each one (auto-graded).
 - **Invariant & pigeonhole lab:** play erase-and-replace games, drag points in a square, tile a mutilated chessboard.
 - **Flashcards:** spaced repetition for theorems, lemmas, and techniques.

@@ -28,8 +28,11 @@ Small cases · draw it · work backwards · strengthen the induction · extremal
 | Order lemma | $a^k\equiv1\iff\text{ord}(a)\mid k$; $\text{ord}_p(a)\mid p-1$ |
 | gcd of powers | $\gcd(a^m-1,a^n-1)=a^{\gcd(m,n)}-1$ |
 | LTE (odd $p$) | $p\mid a-b$, $p\nmid ab$: $v_p(a^n-b^n)=v_p(a-b)+v_p(n)$ |
+| LTE ($p=2$) | $a,b$ odd, $n$ even: $v_2(a^n-b^n)=v_2(a-b)+v_2(a+b)+v_2(n)-1$ |
+| Primitive roots | exist mod $n$ ⟺ $n=1,2,4,p^k,2p^k$ ($p$ odd); exactly $\varphi(d)$ elements of order $d\mid p-1$ |
+| CRT | coprime $m_i$: unique $x$ mod $\prod m_i$; general: solvable ⟺ $\gcd(m_i,m_j)\mid r_i-r_j$ |
 | Legendre | $v_p(n!)=\sum\lfloor n/p^k\rfloor$ |
-| QR | $-1$ is a QR mod odd $p$ ⟺ $p\equiv1\ (4)$; Euler's criterion $\left(\frac ap\right)\equiv a^{(p-1)/2}$ |
+| QR | $-1$ is a QR mod odd $p$ ⟺ $p\equiv1\ (4)$; $2$ is a QR ⟺ $p\equiv\pm1\ (8)$; Euler's criterion $\left(\frac ap\right)\equiv a^{(p-1)/2}$ |
 | Squares mod | mod 4: {0,1} · mod 8: {0,1,4} · mod 3: {0,1} · mod 9 (cubes): {0,1,8} |
 
 ## Combinatorics (→ 04)
