@@ -23,6 +23,7 @@
 - ⭐ **[Kalda: Electricity & Magnetism study guide](https://www.ioc.ee/~kalda/ipho/)** + Kevin Zhou's E&M (**E**) handouts.
 - ⭐ **Electricity and Magnetism, Purcell & Morin** (3rd ed.) 💲: the olympiad-standard E&M textbook.
 - **Introduction to Electrodynamics, Griffiths** 💲: ch. 1–7, for more mathematical depth.
+- 👉 Interactive: [Field lines, equipotentials & image charges](interactive/fields.html). Drag charges, and check the plane and sphere image constructions live.
 
 ## Build
 - Solve 5 infinite/symmetric circuit puzzles. Derive the field of a uniformly magnetized sphere (stretch). Do 3 past IPhO E&M problems.
