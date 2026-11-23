@@ -3,6 +3,13 @@
 **Starting point:** you've passed school/regional rounds and are strong at math and physics.
 **Target:** national team selection, then IPhO-level theory **and** experiment.
 
+> [!KEY] How each chapter works
+> Every module is a self-contained chapter: you can learn everything from the page without opening another source. Each section follows the same flow:
+>
+> 📖 **definitions** → 🧮 **formulas / rules** → ✍️ **worked examples** → 🎛️ **try it** (an interactive tool, right where it helps) → ▶️ **videos** where they help → 📚 optional books and courses for going deeper.
+>
+> Every chapter starts with a **skip test** (skip what you already know) and ends with **practice questions** (answers hidden), a **project to build**, common **traps**, and a **done when** checklist.
+
 ## ⚠️ Read first: eligibility and format
 - IPhO contestants generally must be **under 20** and **not yet university students**. As a senior, **this cycle is likely your last**. Check your national rules and selection dates now.
 - **IPhO format:** a **theory exam** (3 long multi-part problems, 5 h, 30 points) and an **experimental exam** (1–2 problems, 5 h, 20 points). **40% of the score is experimental**, and many self-learners neglect it.

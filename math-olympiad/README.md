@@ -3,6 +3,13 @@
 **Starting point:** you've passed school/regional rounds and are strong at math.
 **Target:** national team selection, then IMO-level problem solving.
 
+> [!KEY] How each chapter works
+> Every module is a self-contained chapter: you can learn everything from the page without opening another source. Each section follows the same flow:
+>
+> 📖 **definitions** → 🧮 **formulas / rules** → ✍️ **worked examples** → 🎛️ **try it** (an interactive tool, right where it helps) → ▶️ **videos** where they help → 📚 optional books and courses for going deeper.
+>
+> Every chapter starts with a **skip test** (skip what you already know) and ends with **practice questions** (answers hidden), a **project to build**, common **traps**, and a **done when** checklist.
+
 ## ⚠️ Read first: eligibility and timing
 - The IMO generally requires contestants to be **under 20** on the day of the contest and **not enrolled at a university**. As a high-school senior, **this cycle is probably your last chance**. Verify the rules with your country's olympiad committee.
 - **National selection** often starts months before the IMO (July). Find your country's dates **now** and plan backwards from them.

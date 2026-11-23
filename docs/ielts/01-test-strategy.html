@@ -7,7 +7,9 @@
 <meta name="description" content="Strategy, listening, reading, both writing tasks, speaking, and band-7 vocabulary.">
 <script>try{var t=localStorage.getItem('ss-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
 <link rel="stylesheet" href="../assets/site.css">
-
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script defer src="../assets/katex/katex.min.js"></script>
+<script defer src="../assets/katex/contrib/auto-render.min.js"></script>
 <script defer src="../assets/search-index.js"></script>
 <script defer src="../assets/site.js"></script>
 </head>
@@ -109,35 +111,278 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../ielts/index.html">IELTS Academic</a> <span class="sep">›</span> <span>Test Strategy &amp; Scoring</span></nav><article class="doc"><h1 id="01-test-strategy-scoring">01 · Test Strategy &amp; Scoring<a class="anchor" href="#01-test-strategy-scoring" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 01</span><span>⏱ 2 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/ielts/01-test-strategy.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../ielts/index.html">IELTS Academic</a> <span class="sep">›</span> <span>Test Strategy &amp; Scoring</span></nav><article class="doc"><h1 id="01-test-strategy-scoring">01 · Test Strategy &amp; Scoring<a class="anchor" href="#01-test-strategy-scoring" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 01</span><span>⏱ 5 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/ielts/01-test-strategy.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> know exactly what is graded so you practice the right things. · <strong>Time:</strong> ~2 h</p>
 </blockquote>
-<h2 id="what-examiners-grade">What examiners grade<a class="anchor" href="#what-examiners-grade" title="Link to this section">#</a></h2>
-<p><strong>Writing</strong> (each criterion is 25%):
-| Criterion | Band 7 in plain words |
-|---|---|
-| Task Achievement (T1) / Task Response (T2) | covers every part of the task. T1: a <strong>clear overview</strong> of the main trends. T2: a <strong>clear position throughout</strong>, with main ideas extended and supported |
-| Coherence &amp; Cohesion | logical organization, clear progression, a <strong>range</strong> of linking devices (not mechanical), one clear central idea per paragraph |
-| Lexical Resource | enough range for flexibility and precision, <strong>less common vocabulary</strong>, awareness of style and <strong>collocation</strong>, only occasional errors |
-| Grammatical Range &amp; Accuracy | a <strong>variety of complex structures</strong>, <strong>frequent error-free sentences</strong>, good control |</p>
-<p><strong>Speaking</strong> (each 25%): Fluency &amp; Coherence · Lexical Resource · Grammatical Range &amp; Accuracy · Pronunciation.
-Band 7 = speaks at length without noticeable effort, uses some less common and idiomatic vocabulary, has frequent error-free sentences, and is easy to understand.</p>
-<p>Read the official public band descriptors (links in <a href="resources.html">resources</a>). Everything in modules 04–06 follows from them.</p>
-<h2 id="general-strategy">General strategy<a class="anchor" href="#general-strategy" title="Link to this section">#</a></h2>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
 <ul>
-<li><strong>Accuracy beats ambition.</strong> A simple sentence with no errors is better than a complex sentence that breaks. Band 7 needs <em>frequent error-free</em> sentences.</li>
-<li><strong>Answer the question asked.</strong> Off-topic content caps Task Response no matter how good the English is.</li>
-<li><strong>Never memorize whole answers.</strong> Examiners recognize them and penalize them. Memorize <em>structures</em> and <em>collocations</em> instead.</li>
-<li><strong>Computer vs paper:</strong> the content is the same. Computer-delivered has faster results and typing (it helps if you type quickly). Do your mocks in the same format you'll take.</li>
-<li><strong>One Skill Retake:</strong> some test centers let you retake a single skill. Check availability. It's useful if one skill drags you below 7.</li>
+<li>describe every part of the IELTS Academic test: timing, number of questions, what you produce;</li>
+<li>convert raw Listening/Reading scores to bands and compute the <strong>overall band</strong> with the official rounding;</li>
+<li>name the four <strong>criteria</strong> for Writing and Speaking and say what band 7 needs in each;</li>
+<li>choose between paper and computer, and know when <strong>One Skill Retake</strong> helps;</li>
+<li>plan your preparation around your weakest skill.</li>
 </ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> You can name the 4 Writing criteria and 4 Speaking criteria, and say what band 7 needs in each.</li>
 <li class="task"><input type="checkbox"> You know how the overall band is rounded.</li>
+</ul>
+<h2 id="1-the-test-at-a-glance">1 · The test at a glance<a class="anchor" href="#1-the-test-at-a-glance" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · IELTS Academic format (about 2 h 45 min)</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Skill</th>
+<th>Time</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Listening</strong></td>
+<td>~30 min (+10 min to transfer answers on the paper test)</td>
+<td>4 recordings, 40 questions, each heard <strong>once</strong></td>
+</tr>
+<tr>
+<td><strong>Reading</strong></td>
+<td>60 min, <strong>no extra transfer time</strong></td>
+<td>3 long academic passages, 40 questions</td>
+</tr>
+<tr>
+<td><strong>Writing</strong></td>
+<td>60 min</td>
+<td>Task 1: describe a chart/diagram, <strong>≥150 words</strong> · Task 2: essay, <strong>≥250 words</strong> (worth twice Task 1)</td>
+</tr>
+<tr>
+<td><strong>Speaking</strong></td>
+<td>11–14 min</td>
+<td>face-to-face interview in 3 parts; may be on another day up to about a week before or after</td>
+</tr>
+</tbody>
+</table></div>
+<p>Listening, Reading and Writing are taken in one sitting, in that order. Check details with your test centre, as arrangements vary.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Paper vs computer</div>
+<p>The content and scoring are the same. On computer you type your Writing (a word counter helps), see the Listening and Reading questions on screen, and get results faster. Do your mock tests in the format you'll take. <strong>One Skill Retake</strong> is only available for computer-delivered tests.</p>
+</div>
+<h2 id="2-how-scores-work">2 · How scores work<a class="anchor" href="#2-how-scores-work" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · From raw scores to bands (Listening, Academic Reading)</div>
+<p>Each correct answer is 1 mark out of 40. The usual conversion (it can vary slightly between test versions):</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Band</th>
+<th>Listening raw</th>
+<th>Academic Reading raw</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>9</td>
+<td>39–40</td>
+<td>39–40</td>
+</tr>
+<tr>
+<td>8.5</td>
+<td>37–38</td>
+<td>37–38</td>
+</tr>
+<tr>
+<td>8</td>
+<td>35–36</td>
+<td>35–36</td>
+</tr>
+<tr>
+<td>7.5</td>
+<td>32–34</td>
+<td>33–34</td>
+</tr>
+<tr>
+<td><strong>7</strong></td>
+<td><strong>30–31</strong></td>
+<td><strong>30–32</strong></td>
+</tr>
+<tr>
+<td>6.5</td>
+<td>26–29</td>
+<td>27–29</td>
+</tr>
+<tr>
+<td>6</td>
+<td>23–25</td>
+<td>23–26</td>
+</tr>
+<tr>
+<td>5.5</td>
+<td>18–22</td>
+<td>19–22</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Overall band: average and round</div>
+<p>The overall band is the <strong>average of the four skill bands, rounded to the nearest half band</strong>. Officially: an average ending in <strong>.25 rounds up</strong> to the next half band, and one ending in <strong>.75 rounds up</strong> to the next whole band.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Skill bands</th>
+<th>Average</th>
+<th>Overall</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7, 7, 6.5, 6.5</td>
+<td>6.75</td>
+<td><strong>7.0</strong></td>
+</tr>
+<tr>
+<td>7, 6.5, 6.5, 6.5</td>
+<td>6.625</td>
+<td><strong>6.5</strong></td>
+</tr>
+<tr>
+<td>7.5, 7, 6.5, 6</td>
+<td>6.75</td>
+<td><strong>7.0</strong></td>
+</tr>
+<tr>
+<td>7, 7, 7, 6</td>
+<td>6.75</td>
+<td><strong>7.0</strong></td>
+</tr>
+<tr>
+<td>6.5, 6.5, 6.5, 6</td>
+<td>6.375</td>
+<td><strong>6.5</strong></td>
+</tr>
+<tr>
+<td>6.5, 6.5, 6, 6</td>
+<td>6.25</td>
+<td><strong>6.5</strong></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/band-calculator.html">Band calculator</a></div>
+<p>Enter your mock-test raw scores and writing/speaking estimates. It applies these tables and the rounding, and tells you what you need in each skill to reach your target.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Check the minimum per skill</div>
+<p>Many universities require an overall band <strong>and</strong> a minimum in each skill (e.g. "7.0 overall, no band below 6.5"). A strong Listening score can lift your overall band but cannot rescue a Writing score below the minimum.</p>
+</div>
+<h2 id="3-what-examiners-grade-in-writing-and-speaking">3 · What examiners grade in Writing and Speaking<a class="anchor" href="#3-what-examiners-grade-in-writing-and-speaking" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Writing: four criteria, 25% each</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Criterion</th>
+<th>Band 7 in plain words</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Task Achievement</strong> (T1) / <strong>Task Response</strong> (T2)</td>
+<td>covers every part of the task. T1: a <strong>clear overview</strong> of the main trends, differences or stages. T2: a <strong>clear position throughout</strong>, with main ideas extended and supported</td>
+</tr>
+<tr>
+<td><strong>Coherence &amp; Cohesion</strong></td>
+<td>logical organisation, clear progression, a <strong>range</strong> of linking devices used appropriately (not mechanically), a clear central topic in each paragraph</td>
+</tr>
+<tr>
+<td><strong>Lexical Resource</strong></td>
+<td>enough range for flexibility and precision, some <strong>less common vocabulary</strong>, awareness of style and <strong>collocation</strong>, only occasional errors</td>
+</tr>
+<tr>
+<td><strong>Grammatical Range &amp; Accuracy</strong></td>
+<td>a <strong>variety of complex structures</strong>, <strong>frequent error-free sentences</strong>, good control of grammar and punctuation</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Speaking: four criteria, 25% each</div>
+<ul>
+<li><strong>Fluency &amp; Coherence:</strong> speaks at length without noticeable effort; some hesitation is fine; uses a range of connectives and discourse markers.</li>
+<li><strong>Lexical Resource:</strong> uses vocabulary flexibly across topics, some less common and idiomatic words, paraphrases effectively.</li>
+<li><strong>Grammatical Range &amp; Accuracy:</strong> a range of complex structures; <strong>frequent error-free sentences</strong>.</li>
+<li><strong>Pronunciation:</strong> easy to understand throughout; uses stress, rhythm and intonation to help meaning. Your accent is not a problem; clarity is what counts.</li>
+</ul>
+</div>
+<div class="box box-learn">
+<div class="box-title"><span class="box-ico">📚</span> Go deeper (optional)</div>
+<p>Read the official public band descriptors for Writing and Speaking (linked from <a href="https://ielts.org/" target="_blank" rel="noopener">ielts.org</a> and the <a href="resources.html">resources</a> page). Every technique in modules 04–06 follows from them.</p>
+</div>
+<h2 id="4-general-strategy">4 · General strategy<a class="anchor" href="#4-general-strategy" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Accuracy beats ambition</div>
+<p>A simple sentence with no errors is better than a complex one that breaks. Band 7 needs <em>frequent error-free</em> sentences, so use complex grammar you control and check your work.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Answer the question asked</div>
+<p>Off-topic or partly answered tasks cap Task Response, however good the English. Read the prompt twice and plan.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Never memorise whole answers</div>
+<p>Examiners recognise memorised answers and don't credit them. Memorise <strong>structures</strong> and <strong>collocations</strong>, then build fresh answers.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · One Skill Retake</div>
+<p>Where available, you can retake <strong>one</strong> skill (once per original test, within 60 days) instead of the whole test; your new report shows the better result. Only for computer-delivered tests at participating centres, and not every institution accepts it, so check first.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Planning from a diagnostic test</div>
+<p>Diagnostic: Listening 31/40 (7.0), Reading 28/40 (6.5), Writing 6.0, Speaking 6.5. Average 6.5. To reach 7.0 overall, the cheapest gains are Writing (6.0 → 6.5 or 7.0 with feedback) and Reading (28 → 30). Plan: 3 essays a week with marking, plus one timed reading passage a day.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>Your bands are Listening 7.5, Reading 7, Writing 6.5, Speaking 6.5. Overall?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Average $27.5/4=6.875$, which rounds to the nearest half band: <strong>7.0</strong>.</p>
+</details>
+<ol start="2">
+<li>You score 29/40 in Academic Reading. What band, and how many more correct answers for 7.0?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>6.5; one more (30/40) gives 7.0.</p>
+</details>
+<ol start="3">
+<li>Which Writing task matters more, and how should that shape your time?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Task 2 counts twice as much as Task 1. Spend about 40 minutes on Task 2 and 20 on Task 1; many candidates do Task 2 first so it never gets rushed.</p>
+</details>
+<ol start="4">
+<li>True or false: speaking with a strong accent lowers your Pronunciation band.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>False. The criterion is how easy you are to understand (sounds, stress, rhythm, intonation), not whether you sound like a native speaker.</p>
+</details>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://ielts.org/" target="_blank" rel="noopener">IELTS official site</a></strong>: test format, scoring, band descriptors, free practice.</li>
+<li><strong><a href="https://takeielts.britishcouncil.org/take-ielts/test-format" target="_blank" rel="noopener">British Council: test format</a></strong> and <strong><a href="https://takeielts.britishcouncil.org/results/one-skill-retake" target="_blank" rel="noopener">One Skill Retake</a></strong>.</li>
+</ul>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> You can compute any overall band in your head · <input type="checkbox"> diagnostic test done and weakest skill identified</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../ielts/index.html"><small>← Previous</small>Overview</a><a class="pn next" href="../ielts/02-listening.html"><small>Next →</small>Listening</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#what-examiners-grade">What examiners grade</a></li><li><a href="#general-strategy">General strategy</a></li><li><a href="#skip-test">Skip test</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-the-test-at-a-glance">1 · The test at a glance</a></li><li><a href="#2-how-scores-work">2 · How scores work</a></li><li><a href="#3-what-examiners-grade-in-writing-and-speaking">3 · What examiners grade in Writing and Speaking</a></li><li><a href="#4-general-strategy">4 · General strategy</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

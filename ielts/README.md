@@ -3,6 +3,13 @@
 **Goal:** an overall band 7.0–7.5 with **no skill below 6.5** (a common university requirement; check yours).
 **Time budget:** ~8–10 weeks at 5–7 h/week, alongside the olympiads.
 
+> [!KEY] How each chapter works
+> Every module is a self-contained chapter: you can learn everything from the page without opening another source. Each section follows the same flow:
+>
+> 📖 **definitions** → 🧮 **formulas / rules** → ✍️ **worked examples** → 🎛️ **try it** (an interactive tool, right where it helps) → ▶️ **videos** where they help → 📚 optional books and courses for going deeper.
+>
+> Every chapter starts with a **skip test** (skip what you already know) and ends with **practice questions** (answers hidden), a **project to build**, common **traps**, and a **done when** checklist.
+
 ## The test at a glance
 | Skill | Time | Format | Band 7 needs (approx.) |
 |---|---|---|---|

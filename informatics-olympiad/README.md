@@ -3,6 +3,13 @@
 **Starting point:** you've passed school/regional rounds and know C++ and the STL.
 **Target:** national team selection, then IOI-level algorithms.
 
+> [!KEY] How each chapter works
+> Every module is a self-contained chapter: you can learn everything from the page without opening another source. Each section follows the same flow:
+>
+> 📖 **definitions** → 🧮 **formulas / rules** → ✍️ **worked examples** → 🎛️ **try it** (an interactive tool, right where it helps) → ▶️ **videos** where they help → 📚 optional books and courses for going deeper.
+>
+> Every chapter starts with a **skip test** (skip what you already know) and ends with **practice questions** (answers hidden), a **project to build**, common **traps**, and a **done when** checklist.
+
 ## ⚠️ Read first: eligibility and format
 - IOI contestants must generally be **secondary-school students** (or have finished very recently) and **under 20**. As a senior, this is likely your **last cycle**. Check your national selection dates now.
 - **IOI format:** **2 contest days × 3 problems × 5 hours**, 100 points per problem, split into **subtasks**. Submissions are judged live with full feedback. **C++** is the language to use.
