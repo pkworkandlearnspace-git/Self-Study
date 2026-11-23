@@ -111,10 +111,21 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../math-olympiad/index.html">Math Olympiad</a> <span class="sep">›</span> <span>Algebra</span></nav><article class="doc"><h1 id="02-algebra">02 · Algebra<a class="anchor" href="#02-algebra" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 02</span><span>⏱ 2 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/math-olympiad/02-algebra.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../math-olympiad/index.html">Math Olympiad</a> <span class="sep">›</span> <span>Algebra</span></nav><article class="doc"><h1 id="02-algebra">02 · Algebra<a class="anchor" href="#02-algebra" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 02</span><span>⏱ 9 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/math-olympiad/02-algebra.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> inequalities, polynomials, functional equations, and sequences at national-to-IMO level. · <strong>Time:</strong> 4–6 weeks (in rotation)</p>
 </blockquote>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>prove and apply <strong>AM-GM, power means, Cauchy–Schwarz (Titu), rearrangement, Chebyshev, Jensen, Schur</strong> and know where each one's equality case is;</li>
+<li>use the standard techniques: homogenize, normalize, substitute, SOS, tangent line trick;</li>
+<li>handle <strong>polynomials</strong> with the factor theorem, Vieta, integer-coefficient tricks, roots of unity and interpolation;</li>
+<li>solve <strong>functional equations</strong> systematically, including Cauchy's equation;</li>
+<li>solve linear recurrences and telescoping sums.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Prove AM-GM for $n$ variables, and use it to minimize $x + \frac{4}{x^2}$ for $x&gt;0$.</li>
@@ -123,44 +134,256 @@
 <li class="task"><input type="checkbox"> Use Vieta: if $x^3-6x^2+11x-6$ has roots $r,s,t$, find $r^2+s^2+t^2$ without solving.</li>
 <li class="task"><input type="checkbox"> Explain when equality holds in Cauchy–Schwarz.</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
-<h3 id="inequalities">Inequalities<a class="anchor" href="#inequalities" title="Link to this section">#</a></h3>
+<h2 id="1-am-gm-and-the-mean-inequalities">1 · AM-GM and the mean inequalities<a class="anchor" href="#1-am-gm-and-the-mean-inequalities" title="Link to this section">#</a></h2>
+<p>Almost every olympiad inequality rests on one fact: <strong>squares are non-negative</strong>. AM-GM is the first big consequence.</p>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · AM-GM inequality</div>
+<p>For non-negative reals $x_1,\dots,x_n$:
+$$\frac{x_1+x_2+\dots+x_n}{n}\ \ge\ \sqrt[n]{x_1x_2\cdots x_n}$$
+with <strong>equality iff all $x_i$ are equal</strong>.</p>
+<p><strong>Weighted AM-GM:</strong> for weights $w_i\ge0$ with $\sum w_i=1$: $\sum w_ix_i\ge\prod x_i^{w_i}$.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Proof for $n=2$, and the idea for all $n$</div>
+<p>$n=2$: $\frac{x+y}{2}-\sqrt{xy} = \frac{(\sqrt x-\sqrt y)^2}{2}\ge0$, with equality iff $x=y$.</p>
+<p>General $n$ (Cauchy's forward–backward induction): from $n=2$, get $n=4$ by applying it to two pairs, then all powers of 2. For other $n$, pad the list with copies of the mean $m$ up to the next power of 2: the inequality for $2^k$ numbers then gives it for $n$. (Jensen's inequality for the concave $\log$, section 3, is a one-line alternative.)</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Minimize $x+\frac{4}{x^2}$ for $x&gt;0$</div>
+<p>Split $x$ so that the product becomes constant: $x+\frac4{x^2} = \frac x2+\frac x2+\frac{4}{x^2}\ \ge\ 3\sqrt[3]{\frac x2\cdot\frac x2\cdot\frac4{x^2}} = 3$. Equality needs $\frac x2=\frac4{x^2}$, i.e. $x=2$, where the value is $2+1=3$ ✓. So the minimum is <strong>3</strong>.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Find the equality case first</div>
+<p>Before choosing a tool, guess where equality holds (usually all variables equal, or one variable 0). An inequality step that is <strong>strict</strong> at that point can't be part of a proof. This single check eliminates most wrong approaches.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Power-mean chain (QM ≥ AM ≥ GM ≥ HM)</div>
+<p>For positive reals:
+$$\sqrt{\frac{\sum x_i^2}{n}}\ \ge\ \frac{\sum x_i}{n}\ \ge\ \sqrt[n]{\prod x_i}\ \ge\ \frac{n}{\sum 1/x_i}$$
+all with equality iff all $x_i$ are equal. A useful consequence (AM-HM): $(x_1+\dots+x_n)\big(\tfrac1{x_1}+\dots+\tfrac1{x_n}\big)\ge n^2$.</p>
+</div>
+<h2 id="2-cauchyschwarz-and-friends">2 · Cauchy–Schwarz and friends<a class="anchor" href="#2-cauchyschwarz-and-friends" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Cauchy–Schwarz</div>
+<p>For real $a_i,b_i$:
+$$\Big(\sum a_i^2\Big)\Big(\sum b_i^2\Big)\ \ge\ \Big(\sum a_ib_i\Big)^2$$
+<strong>Equality iff</strong> the vectors are proportional: $a_i = \lambda b_i$ for all $i$ (or $\mathbf b=\mathbf 0$).</p>
+<p><em>Proof:</em> the quadratic $\sum(a_it-b_i)^2 = t^2\sum a_i^2-2t\sum a_ib_i+\sum b_i^2$ is $\ge0$ for every real $t$, so its discriminant is $\le0$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Titu's lemma (Engel form)</div>
+<p>For reals $a_i$ and positive $b_i$:
+$$\frac{a_1^2}{b_1}+\dots+\frac{a_n^2}{b_n}\ \ge\ \frac{(a_1+\dots+a_n)^2}{b_1+\dots+b_n}$$
+with equality iff $a_i/b_i$ is constant. Ideal for sums of fractions.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Nesbitt's inequality, two proofs</div>
+<p>For $a,b,c&gt;0$: $\frac{a}{b+c}+\frac{b}{c+a}+\frac{c}{a+b}\ge\frac32$.</p>
+<p><strong>Proof 1 (Titu).</strong> Write each term as $\frac{a^2}{a(b+c)}$: the sum is $\ge\frac{(a+b+c)^2}{2(ab+bc+ca)}\ge\frac32$, because $(a+b+c)^2\ge3(ab+bc+ca)$ ⟺ $a^2+b^2+c^2\ge ab+bc+ca$ ⟺ $\tfrac12\sum(a-b)^2\ge0$.</p>
+<p><strong>Proof 2 (AM-HM).</strong> Add 1 to each term: $\sum\frac{a+b+c}{b+c} = (a+b+c)\sum\frac1{b+c}$. By AM-HM, $\big((b+c)+(c+a)+(a+b)\big)\sum\frac1{b+c}\ge9$, so the sum is $\ge\frac92$. Subtract 3. ∎ Equality iff $a=b=c$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Rearrangement and Chebyshev</div>
+<p><strong>Rearrangement:</strong> if $a_1\le\dots\le a_n$ and $b_1\le\dots\le b_n$, then $\sum a_ib_{\sigma(i)}$ is largest when the $b$'s are in the same order ($\sigma$ = identity) and smallest in the opposite order.
+<strong>Chebyshev:</strong> for similarly ordered sequences, $\frac1n\sum a_ib_i\ge\big(\frac1n\sum a_i\big)\big(\frac1n\sum b_i\big)$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Hölder (three sequences)</div>
+<p>For positive reals, $\big(\sum a_i^3\big)\big(\sum b_i^3\big)\big(\sum c_i^3\big)\ge\big(\sum a_ib_ic_i\big)^3$. It generalizes Cauchy–Schwarz and handles cube roots and three-factor products.</p>
+</div>
+<h2 id="3-jensen-schur-and-muirhead">3 · Jensen, Schur and Muirhead<a class="anchor" href="#3-jensen-schur-and-muirhead" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Jensen's inequality</div>
+<p>If $f$ is <strong>convex</strong> on an interval ($f''\ge0$), then for points in it and weights $w_i\ge0$ summing to 1:
+$$f\Big(\sum w_ix_i\Big)\le\sum w_if(x_i)$$
+The inequality reverses for concave $f$. Example: $\log$ is concave, which gives weighted AM-GM immediately.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Tangent line trick</div>
+<p>To prove $\sum f(x_i)\ge n f(m)$ when $\sum x_i = nm$ is fixed but $f$ is not convex everywhere: find the tangent line at the equality point, $f(x)\ge f(m)+f'(m)(x-m)$, prove it for all allowed $x$ (often just one-variable algebra), and sum.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · A tangent line in action</div>
+<p>$a,b,c\ge0$ with $a+b+c=3$: show $a^4+b^4+c^4\ge3$. The tangent to $x^4$ at $x=1$ is $4x-3$, and $x^4\ge4x-3$ holds for all real $x$ since $x^4+1+1+1\ge4x$ (AM-GM, or $x^4-4x+3=(x-1)^2(x^2+2x+3)\ge0$). Summing: $\sum a^4\ge4\cdot3-9=3$. ∎</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Schur's inequality</div>
+<p>For $a,b,c\ge0$ and $t&gt;0$:
+$$a^t(a-b)(a-c)+b^t(b-a)(b-c)+c^t(c-a)(c-b)\ \ge\ 0$$
+The case $t=1$ expands to $a^3+b^3+c^3+abc\ge ab(a+b)+bc(b+c)+ca(c+a)$. Equality when $a=b=c$, <strong>or</strong> when two are equal and the third is 0. Use it when equality also occurs at a boundary point.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Muirhead's inequality</div>
+<p>For exponent triples sorted in decreasing order, if $(p_1,p_2,p_3)$ <strong>majorizes</strong> $(q_1,q_2,q_3)$ ($p_1\ge q_1$, $p_1+p_2\ge q_1+q_2$, equal total), then the symmetric sum of $a^{p_1}b^{p_2}c^{p_3}$ is at least that of $a^{q_1}b^{q_2}c^{q_3}$ (for non-negative $a,b,c$). E.g. $(2,0,0)\succ(1,1,0)$ gives $a^2+b^2+c^2\ge ab+bc+ca$. Graders accept it, but SOS or AM-GM proofs are often cleaner.</p>
+</div>
+<h2 id="4-techniques-for-inequalities">4 · Techniques for inequalities<a class="anchor" href="#4-techniques-for-inequalities" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · The standard toolkit</div>
 <ul>
-<li><strong>AM-GM:</strong> $\frac{x_1+\dots+x_n}{n}\ge\sqrt[n]{x_1\cdots x_n}$, with equality iff all are equal. <strong>Weighted</strong> version too.</li>
-<li><strong>Power mean chain:</strong> QM ≥ AM ≥ GM ≥ HM.</li>
-<li><strong>Cauchy–Schwarz:</strong> $\left(\sum a_i^2\right)\left(\sum b_i^2\right)\ge\left(\sum a_ib_i\right)^2$. <strong>Titu/Engel form:</strong> $\sum\frac{a_i^2}{b_i}\ge\frac{(\sum a_i)^2}{\sum b_i}$.</li>
-<li><strong>Hölder</strong>, <strong>rearrangement</strong>, <strong>Chebyshev</strong>, <strong>Schur</strong> ($t&gt;0$: $\sum a^t(a-b)(a-c)\ge0$), <strong>Muirhead</strong> (for symmetric polynomial inequalities).</li>
-<li><strong>Jensen:</strong> for convex $f$, $f\!\left(\frac{\sum x_i}{n}\right)\le\frac{\sum f(x_i)}{n}$. <strong>Tangent line trick</strong> for $\sum f(x_i)$ with $\sum x_i$ fixed.</li>
-<li><strong>Techniques:</strong> homogenize, normalize ($a+b+c=1$ or $abc=1$), substitution ($a=\frac{x}{y}$, Ravi $a=y+z$ for triangle sides), <strong>SOS</strong> (sum of squares), and $uvw$ / mixing variables.</li>
-<li><strong>Always find the equality case first.</strong> It tells you which inequality <em>can</em> work.</li>
+<li><strong>Homogenize:</strong> use a constraint (e.g. $a+b+c=3$) to make every term the same degree, so you can scale freely.</li>
+<li><strong>Normalize:</strong> for a homogeneous inequality, assume WLOG $a+b+c=1$ or $abc=1$.</li>
+<li><strong>Substitute:</strong> $a=\frac xy,\ b=\frac yz,\ c=\frac zx$ for $abc=1$; <strong>Ravi substitution</strong> $a=y+z,\ b=z+x,\ c=x+y$ ($x,y,z&gt;0$) for triangle sides.</li>
+<li><strong>SOS (sum of squares):</strong> write the difference as $\sum S_c(a-b)^2$ and show the coefficients behave. Key identity:
+  $a^2+b^2+c^2-ab-bc-ca = \tfrac12\big[(a-b)^2+(b-c)^2+(c-a)^2\big]$.</li>
+<li><strong>Smoothing / mixing variables:</strong> show the expression improves when two variables move toward each other.</li>
 </ul>
-<h3 id="polynomials">Polynomials<a class="anchor" href="#polynomials" title="Link to this section">#</a></h3>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Common mistakes</div>
 <ul>
-<li><strong>Factor theorem</strong>, <strong>Vieta's formulas</strong>, <strong>Rational root theorem</strong>.</li>
-<li>Integer-coefficient trick: $a-b \mid P(a)-P(b)$.</li>
-<li><strong>Roots of unity filter:</strong> $\frac1n\sum_{k=0}^{n-1}P(\omega^k)$ extracts the coefficients with index ≡ 0 (mod n).</li>
-<li><strong>Lagrange interpolation</strong>, <strong>finite differences</strong> (a degree-$d$ polynomial has a constant $d$-th difference).</li>
-<li>Irreducibility: Eisenstein's criterion; the mod-$p$ reduction trick.</li>
+<li>Applying AM-GM where its equality case can't occur (the bound is then never reached and the "minimum" is wrong).</li>
+<li>Forgetting sign conditions: AM-GM needs non-negative numbers; Titu needs positive denominators.</li>
+<li>Using an inequality in the wrong direction while chaining.</li>
 </ul>
-<h3 id="functional-equations">Functional equations<a class="anchor" href="#functional-equations" title="Link to this section">#</a></h3>
+</div>
+<h2 id="5-polynomials">5 · Polynomials<a class="anchor" href="#5-polynomials" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Factor theorem and rational root theorem</div>
 <ul>
-<li><strong>Standard plays:</strong> substitute $x=y=0$, $y=0$, $y=x$, $y=-x$, $x=1$. Find $f(0)$ and $f(1)$.</li>
-<li>Prove <strong>injective / surjective</strong>, find <strong>fixed points</strong>, use <strong>symmetry</strong> (swap $x,y$).</li>
-<li><strong>Cauchy's equation</strong> $f(x+y)=f(x)+f(y)$: over $\mathbb Q$ gives $f(x)=cx$. Over $\mathbb R$ it needs extra conditions (monotonic, bounded on an interval, or continuous).</li>
-<li>Guess the answer (usually $f(x)=x$, $cx$, $x^2$, constant), <strong>verify it</strong>, then prove it's the only one.</li>
-<li>Over $\mathbb N$ / $\mathbb Z$: induction, bounding, and number theory.</li>
+<li><strong>Factor theorem:</strong> $P(r)=0$ iff $(x-r)$ divides $P(x)$. A nonzero polynomial of degree $n$ has at most $n$ roots.</li>
+<li><strong>Rational root theorem:</strong> if $P$ has integer coefficients and $p/q$ (lowest terms) is a root, then $p$ divides the constant term and $q$ divides the leading coefficient.</li>
 </ul>
-<h3 id="sequences-sums">Sequences &amp; sums<a class="anchor" href="#sequences-sums" title="Link to this section">#</a></h3>
-<ul>
-<li>Linear recurrences: characteristic equation. Telescoping. Bounding by monotonicity/convergence.</li>
-</ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
-<ul>
-<li>⭐ <strong><a href="https://web.evanchen.cc/handouts/Ineq/en.pdf" target="_blank" rel="noopener">Evan Chen: "A Brief Introduction to Olympiad Inequalities"</a></strong>, plus his functional equations material on the <a href="https://web.evanchen.cc/handouts.html" target="_blank" rel="noopener">handouts page</a>.</li>
-<li>⭐ <strong><a href="https://yufeizhao.com/olympiad/" target="_blank" rel="noopener">Yufei Zhao's olympiad handouts</a></strong>: inequalities, polynomials, and more.</li>
-<li><strong>Secrets in Inequalities</strong>, Pham Kim Hung 💲 · <strong>Functional Equations</strong>, Venkatachala 💲 · <strong>Problems from the Book</strong>, Andreescu &amp; Dospinescu 💲 (advanced).</li>
-<li><strong><a href="https://artofproblemsolving.com/store" target="_blank" rel="noopener">AoPS: Intermediate Algebra</a></strong> 💲 if you need a gentler ramp.</li>
-</ul>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Vieta's formulas (cubic)</div>
+<p>If $x^3+ax^2+bx+c=(x-r)(x-s)(x-t)$, then
+$$r+s+t=-a,\qquad rs+st+tr=b,\qquad rst=-c$$
+(In general: the elementary symmetric sums of the roots are the coefficients with alternating signs, divided by the leading coefficient.)</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Symmetric functions without solving</div>
+<p>$x^3-6x^2+11x-6$: $r+s+t=6$, $rs+st+tr=11$. Then $r^2+s^2+t^2=(r+s+t)^2-2(rs+st+tr)=36-22=14$. (Check: the roots are $1,2,3$ and $1+4+9=14$ ✓.)</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Integer-coefficient trick</div>
+<p>If $P$ has integer coefficients, then for integers $a\ne b$:
+$$a-b\ \mid\ P(a)-P(b)$$
+because $a^k-b^k$ is divisible by $a-b$ for every $k$.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · An impossible polynomial</div>
+<p>Is there an integer-coefficient $P$ with $P(1)=2$ and $P(3)=5$? Then $3-1=2$ would divide $5-2=3$. No. ∎</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Roots of unity filter</div>
+<p>Let $\omega=e^{2\pi i/n}$. For $P(x)=\sum a_kx^k$:
+$$\sum_{k\equiv0\ (\mathrm{mod}\ n)}a_k = \frac1n\sum_{j=0}^{n-1}P(\omega^j)$$
+because $\sum_{j=0}^{n-1}\omega^{jk}$ is $n$ if $n\mid k$ and $0$ otherwise.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · $\binom m0+\binom m3+\binom m6+\cdots$</div>
+<p>With $P(x)=(1+x)^m$ and $\omega=e^{2\pi i/3}$: $1+\omega = e^{i\pi/3}$ and $1+\omega^2=e^{-i\pi/3}$, so the sum is $\frac13\big(2^m+2\cos\frac{m\pi}{3}\big)$. Check $m=4$: $\binom40+\binom43=5$ and $\frac13(16+2\cos\frac{4\pi}3)=\frac13(16-1)=5$ ✓.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Lagrange interpolation and finite differences</div>
+<p>The unique polynomial of degree $\le n$ through $(x_0,y_0),\dots,(x_n,y_n)$ is
+$$P(x)=\sum_{i=0}^n y_i\prod_{j\ne i}\frac{x-x_j}{x_i-x_j}$$
+A polynomial of degree $d$ has constant $d$-th finite differences ($\Delta P(x)=P(x+1)-P(x)$ lowers the degree by one).</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Irreducibility tools</div>
+<p><strong>Eisenstein:</strong> if a prime $p$ divides every coefficient except the leading one, and $p^2$ doesn't divide the constant term, the integer polynomial is irreducible over $\mathbb Q$. <strong>Reduction mod $p$:</strong> if the polynomial (with leading coefficient not divisible by $p$) is irreducible mod $p$, it is irreducible over $\mathbb Q$.</p>
+</div>
+<h2 id="6-functional-equations">6 · Functional equations<a class="anchor" href="#6-functional-equations" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · The standard plays</div>
+<ol>
+<li><strong>Plug in special values:</strong> $x=y=0$, $y=0$, $y=x$, $y=-x$, $x=1$. Find $f(0)$ and $f(1)$.</li>
+<li><strong>Swap</strong> $x$ and $y$ and compare.</li>
+<li>Prove <strong>injectivity</strong> ($f(a)=f(b)\Rightarrow a=b$) or <strong>surjectivity</strong> (every value is hit). Look for a <strong>fixed point</strong> or a zero.</li>
+<li><strong>Guess</strong> the answer (usually $f(x)=x$, $cx$, $x+c$, $x^2$ or a constant) and plug it in.</li>
+<li>Prove there are <strong>no other</strong> solutions, then <strong>verify</strong> each answer in the original equation.</li>
+</ol>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Cauchy's functional equation</div>
+<p>$f(x+y)=f(x)+f(y)$. Then $f(0)=0$, $f(nx)=nf(x)$ by induction, and so $f(q)=qf(1)$ for every <strong>rational</strong> $q$. Over $\mathbb R$, $f(x)=cx$ follows if additionally $f$ is <strong>monotonic</strong>, <strong>continuous</strong>, or <strong>bounded on some interval</strong>. Without such a condition there are wild non-linear solutions (built with a Hamel basis), so you must use the extra condition.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Monotonic additive functions are linear</div>
+<p>Let $f$ be additive and increasing, $c=f(1)$. For real $x$, pick rationals $q_1&lt;x&lt;q_2$: then $cq_1=f(q_1)\le f(x)\le f(q_2)=cq_2$. Letting $q_1,q_2\to x$ squeezes $f(x)=cx$. Check: $f(x)=cx$ works. ∎</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Solving by substitution</div>
+<p>Find all $f:\mathbb R\to\mathbb R$ with $f(x)+2f(1-x)=x^2$.
+Replace $x$ by $1-x$: $f(1-x)+2f(x)=(1-x)^2$. Solve the two linear equations for $f(x)$: $f(x)=\frac{2(1-x)^2-x^2}{3}$. Check: $f(x)+2f(1-x)=\frac{2(1-x)^2-x^2+2\left(2x^2-(1-x)^2\right)}{3}=x^2$ ✓.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Surjectivity unlocks the answer</div>
+<p>Find all $f:\mathbb R\to\mathbb R$ with $f\big(f(x)+y\big)=2x+f\big(f(y)-x\big)$.</p>
+<p><em>Surjective:</em> put $y=-f(x)$: $f(0)=2x+f\big(f(-f(x))-x\big)$, so $f\big(f(-f(x))-x\big)=f(0)-2x$, which takes every real value as $x$ varies.
+<em>Find a zero:</em> so some $a$ has $f(a)=0$. Put $x=a$: $f(y)=2a+f\big(f(y)-a\big)$. As $f(y)$ ranges over all reals $t$: $f(t-a)=t-2a$, i.e. $f(u)=u-a$.
+<em>Check:</em> $f(x)=x+c$ gives $x+y+2c$ on both sides ✓. <strong>Answer:</strong> $f(x)=x+c$ for any constant $c$.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Two classic errors</div>
+<p>Forgetting to <strong>check</strong> that your answers satisfy the original equation, and forgetting that Cauchy's equation over $\mathbb R$ has pathological solutions unless you use an extra condition.</p>
+</div>
+<h2 id="7-sequences-and-sums">7 · Sequences and sums<a class="anchor" href="#7-sequences-and-sums" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Linear recurrences</div>
+<p>For $a_{n+2}=pa_{n+1}+qa_n$, solve the <strong>characteristic equation</strong> $r^2=pr+q$. With distinct roots $r_1,r_2$: $a_n=Ar_1^n+Br_2^n$; with a double root $r$: $a_n=(A+Bn)r^n$. Fit $A,B$ to the first two terms.</p>
+<p><em>Example:</em> Fibonacci gives $r^2=r+1$, $r=\frac{1\pm\sqrt5}{2}$, hence Binet's formula $F_n=\frac{\varphi^n-\psi^n}{\sqrt5}$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Telescoping</div>
+<p>Write each term as a difference $g(k)-g(k+1)$; the sum collapses:
+$$\sum_{k=1}^n\frac1{k(k+1)}=\sum_{k=1}^n\Big(\frac1k-\frac1{k+1}\Big)=1-\frac1{n+1}$$</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>Algebra</strong> deck to drill the inequalities and their equality cases.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>For $a,b,c&gt;0$ with $abc=1$, prove $a+b+c\ge3$.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>AM-GM: $\frac{a+b+c}3\ge\sqrt[3]{abc}=1$. Equality iff $a=b=c=1$.</p>
+</details>
+<ol start="2">
+<li>For $x,y,z&gt;0$ with $x+y+z=1$, find the minimum of $\frac1x+\frac1y+\frac1z$.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>AM-HM: $(x+y+z)\big(\frac1x+\frac1y+\frac1z\big)\ge9$, so the minimum is $9$, at $x=y=z=\frac13$.</p>
+</details>
+<ol start="3">
+<li>Prove $\frac{a^2}{b}+\frac{b^2}{c}+\frac{c^2}{a}\ge a+b+c$ for $a,b,c&gt;0$.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Titu: $\ge\frac{(a+b+c)^2}{a+b+c}=a+b+c$. Equality iff $a/b=b/c=c/a$, i.e. $a=b=c$.</p>
+</details>
+<ol start="4">
+<li>$P$ is a cubic with roots $r,s,t$ and $P(x)=x^3-3x+1$. Find $\frac1r+\frac1s+\frac1t$.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$r+s+t=0$, $rs+st+tr=-3$, $rst=-1$. Then $\frac1r+\frac1s+\frac1t=\frac{rs+st+tr}{rst}=\frac{-3}{-1}=3$.</p>
+</details>
+<ol start="5">
+<li>Find all $f:\mathbb R\to\mathbb R$ with $f(x+y)=f(x)+f(y)+2xy$ that are continuous.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Let $g(x)=f(x)-x^2$. Then $g(x+y)=g(x)+g(y)$ and $g$ is continuous, so $g(x)=cx$. Hence $f(x)=x^2+cx$; check: $(x+y)^2+c(x+y)=x^2+cx+y^2+cy+2xy$ ✓.</p>
+</details>
+<ol start="6">
+<li>Solve $a_{n+2}=5a_{n+1}-6a_n$ with $a_0=0$, $a_1=1$.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$r^2-5r+6=0$ gives $r=2,3$. $a_n=A2^n+B3^n$ with $A+B=0$, $2A+3B=1$: $B=1$, $A=-1$. So $a_n=3^n-2^n$.</p>
+</details>
+<ol start="7">
+<li>Is there a polynomial with integer coefficients such that $P(0)=P(1)=1$ and $P(2)=4$?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>No. The pair $(0,1)$ is fine ($1\mid0$), and so is $(1,2)$ ($1\mid3$), but the pair $(0,2)$ fails: $2-0=2$ must divide $P(2)-P(0)=3$. (Always check every pair.)</p>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ul>
 <li>Solve the A1–A4 problems from the last 5 years of <strong>IMO Shortlists</strong>. Make a one-line "key idea" note for each.</li>
@@ -169,8 +392,19 @@
 <ul>
 <li>Applying AM-GM where the equality case can't happen.</li>
 <li>In functional equations, forgetting to <strong>check the solution</strong> in the original equation, and forgetting the pathological solutions of Cauchy.</li>
+</ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://web.evanchen.cc/handouts/Ineq/en.pdf" target="_blank" rel="noopener">Evan Chen: "A Brief Introduction to Olympiad Inequalities"</a></strong>, plus his functional equations material on the <a href="https://web.evanchen.cc/handouts.html" target="_blank" rel="noopener">handouts page</a>.</li>
+<li>⭐ <strong><a href="https://yufeizhao.com/olympiad/" target="_blank" rel="noopener">Yufei Zhao's olympiad handouts</a></strong>: inequalities, polynomials, and more.</li>
+<li><strong>Secrets in Inequalities</strong>, Pham Kim Hung 💲 · <strong>Functional Equations</strong>, Venkatachala 💲 · <strong>Problems from the Book</strong>, Andreescu &amp; Dospinescu 💲 (advanced).</li>
+<li><strong><a href="https://artofproblemsolving.com/store" target="_blank" rel="noopener">AoPS: Intermediate Algebra</a></strong> 💲 if you need a gentler ramp.</li>
+</ul>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> Every skip-test item proved on paper · <input type="checkbox"> 20 shortlist A-problems attempted, key ideas logged</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../math-olympiad/01-problem-solving-proofs.html"><small>← Previous</small>Problem Solving &amp; Proof Writing</a><a class="pn next" href="../math-olympiad/03-number-theory.html"><small>Next →</small>Number Theory</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a><ul><li><a href="#inequalities">Inequalities</a></li><li><a href="#polynomials">Polynomials</a></li><li><a href="#functional-equations">Functional equations</a></li><li><a href="#sequences-sums">Sequences &amp; sums</a></li></ul></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-am-gm-and-the-mean-inequalities">1 · AM-GM and the mean inequalities</a></li><li><a href="#2-cauchyschwarz-and-friends">2 · Cauchy–Schwarz and friends</a></li><li><a href="#3-jensen-schur-and-muirhead">3 · Jensen, Schur and Muirhead</a></li><li><a href="#4-techniques-for-inequalities">4 · Techniques for inequalities</a></li><li><a href="#5-polynomials">5 · Polynomials</a></li><li><a href="#6-functional-equations">6 · Functional equations</a></li><li><a href="#7-sequences-and-sums">7 · Sequences and sums</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

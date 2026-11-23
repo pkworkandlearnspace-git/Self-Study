@@ -111,10 +111,22 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../math-olympiad/index.html">Math Olympiad</a> <span class="sep">›</span> <span>Combinatorics</span></nav><article class="doc"><h1 id="04-combinatorics">04 · Combinatorics<a class="anchor" href="#04-combinatorics" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 04</span><span>⏱ 2 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/math-olympiad/04-combinatorics.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../math-olympiad/index.html">Math Olympiad</a> <span class="sep">›</span> <span>Combinatorics</span></nav><article class="doc"><h1 id="04-combinatorics">04 · Combinatorics<a class="anchor" href="#04-combinatorics" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 04</span><span>⏱ 8 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/math-olympiad/04-combinatorics.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> the hardest and least formulaic IMO area. Build a toolkit, then lots of experience. · <strong>Time:</strong> 5–7 weeks (in rotation)</p>
 </blockquote>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>count with the product rule, binomial coefficients, <strong>stars and bars</strong>, <strong>inclusion–exclusion</strong> and <strong>bijections</strong>;</li>
+<li>prove identities by <strong>double counting</strong>, and set up recursions (Catalan numbers) and generating functions;</li>
+<li>use graph theory: degrees, trees, bipartite graphs, Euler circuits, <strong>Hall's theorem</strong>, <strong>Mantel/Turán</strong>, <strong>Ramsey</strong>;</li>
+<li>analyse games (P/N positions, <strong>Nim</strong>, strategy stealing);</li>
+<li>use the <strong>probabilistic method</strong>, and handle "find the maximum" problems with a construction <em>and</em> a bound.</li>
+</ul>
+<p>The general tools of module 01 (pigeonhole, extremal principle, invariants, colouring) are the main weapons here; this chapter adds the specialised ones.</p>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Count lattice paths from $(0,0)$ to $(m,n)$ and give a bijective proof of $\binom{n}{k}=\binom{n}{n-k}$.</li>
@@ -124,27 +136,185 @@
 <li class="task"><input type="checkbox"> Game theory: find the winning positions in Nim.</li>
 <li class="task"><input type="checkbox"> Prove $R(3,3)=6$.</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h2 id="1-basic-counting">1 · Basic counting<a class="anchor" href="#1-basic-counting" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Product and sum rules, permutations, combinations</div>
 <ul>
-<li><strong>Counting:</strong> product/sum rule, permutations, $\binom nk$, stars and bars, <strong>inclusion–exclusion</strong>, <strong>bijections</strong> (count something else that is easier).</li>
-<li><strong>Double counting:</strong> count the same set two ways, e.g. pairs (person, club) by person and by club.</li>
-<li><strong>Recursion:</strong> set up $a_n$ in terms of smaller cases (tilings, paths). <strong>Catalan numbers</strong> $C_n=\frac1{n+1}\binom{2n}{n}$.</li>
-<li><strong>Generating functions:</strong> $\sum a_nx^n$ turns counting into algebra.</li>
-<li><strong>Pigeonhole, extremal, invariants, monovariants, coloring</strong> (from module 01) are <em>the</em> combinatorics weapons.</li>
-<li><strong>Graph theory:</strong> degrees, trees ($|E|=|V|-1$), bipartite ⟺ no odd cycle, Euler paths, Hall's marriage theorem, Turán's theorem, Ramsey.</li>
-<li><strong>Algorithms &amp; processes:</strong> "does the process end?" → find a monovariant (a bounded, strictly changing quantity).</li>
-<li><strong>Games:</strong> work backwards from end positions. <strong>Strategy stealing</strong>. Symmetry strategies. Nim and the Sprague–Grundy idea.</li>
-<li><strong>Combinatorial geometry:</strong> convex hulls, the extremal point, coloring the plane.</li>
-<li><strong>Probabilistic method:</strong> if a random object has expected bad count &lt; 1, then a good object exists.</li>
-<li><strong>Constructions:</strong> many problems ask for "the maximum" → you must give a <strong>construction</strong> <em>and</em> a <strong>bound</strong>. Two separate proofs.</li>
+<li><strong>Sum rule:</strong> if a choice is made from one of several disjoint sets, add their sizes.</li>
+<li><strong>Product rule:</strong> for a sequence of independent choices with $a_1,a_2,\dots$ options, multiply.</li>
+<li>Arrangements of $n$ distinct objects: $n!$. Ordered selections of $k$: $\frac{n!}{(n-k)!}$.</li>
+<li><strong>Binomial coefficient</strong> $\binom nk=\frac{n!}{k!(n-k)!}$: the number of $k$-element subsets of an $n$-element set.</li>
 </ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Binomial theorem and Pascal's rule</div>
+<p>$$(x+y)^n=\sum_{k=0}^n\binom nkx^ky^{n-k},\qquad \binom nk=\binom{n-1}{k-1}+\binom{n-1}{k}$$
+Pascal's rule: a $k$-subset either contains element $n$ (choose the other $k-1$) or doesn't (choose all $k$ from the rest).</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Lattice paths</div>
+<p>Paths from $(0,0)$ to $(m,n)$ using unit steps right (R) and up (U) are words with $m$ R's and $n$ U's, so there are $\binom{m+n}{m}$ of them.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Bijective proofs</div>
+<p>Show two sets have the same size by pairing their elements exactly. <em>Example:</em> $\binom nk=\binom n{n-k}$ because choosing which $k$ elements to <strong>take</strong> is the same as choosing which $n-k$ to <strong>leave</strong>.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Stars and bars</div>
+<p>The number of solutions of $x_1+\dots+x_k=n$ in <strong>non-negative</strong> integers is
+$$\binom{n+k-1}{k-1}$$
+(arrange $n$ stars and $k-1$ bars in a row). With $x_i\ge1$: $\binom{n-1}{k-1}$ (substitute $y_i=x_i-1$).</p>
+</div>
+<h2 id="2-inclusionexclusion">2 · Inclusion–exclusion<a class="anchor" href="#2-inclusionexclusion" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Inclusion–exclusion principle</div>
+<p>$$|A_1\cup\dots\cup A_n|=\sum_i|A_i|-\sum_{i&lt;j}|A_i\cap A_j|+\sum_{i&lt;j&lt;k}|A_i\cap A_j\cap A_k|-\dots+(-1)^{n+1}|A_1\cap\dots\cap A_n|$$
+Typically $A_i$ = "property $i$ fails", and you count the complement.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Derangements</div>
+<p>A <strong>derangement</strong> is a permutation with no fixed point. Let $A_i$ = permutations fixing $i$; any $k$ of them intersect in $(n-k)!$ permutations. So
+$$D_n=n!-\binom n1(n-1)!+\binom n2(n-2)!-\dots=n!\sum_{k=0}^n\frac{(-1)^k}{k!}$$
+$D_1,\dots,D_5=0,1,2,9,44$, and $D_n/n!\to1/e$.</p>
+</div>
+<h2 id="3-double-counting">3 · Double counting<a class="anchor" href="#3-double-counting" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Count one thing in two ways</div>
+<p>Count the same set of pairs (person, club), (vertex, edge), (row, column)… once in each order. The two expressions are equal, which often yields the inequality or identity you need.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Handshake lemma</div>
+<p>Count pairs (vertex, edge at that vertex): by vertices it is $\sum_v\deg v$; by edges it is $2|E|$ (each edge has two ends). So $\sum_v\deg v=2|E|$, and in particular the number of odd-degree vertices is <strong>even</strong>.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · $\sum_k k\binom nk=n2^{n-1}$</div>
+<p>Count pairs (committee, chair) from $n$ people, the chair being a member. By committee size $k$: $\binom nk$ committees, $k$ chairs each. By chair first: $n$ choices, then any subset of the other $n-1$ people: $n2^{n-1}$. ∎</p>
+</div>
+<h2 id="4-recursion-and-generating-functions">4 · Recursion and generating functions<a class="anchor" href="#4-recursion-and-generating-functions" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Setting up a recursion</div>
+<p>Express $a_n$ through smaller cases by looking at the <strong>first</strong> (or last) step. <em>Example:</em> tilings of a $2\times n$ strip with dominoes: the left end is either one vertical domino ($a_{n-1}$ ways to finish) or two horizontal ones ($a_{n-2}$), so $a_n=a_{n-1}+a_{n-2}$: Fibonacci numbers.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Catalan numbers</div>
+<p>$$C_n=\frac1{n+1}\binom{2n}n:\quad 1,1,2,5,14,42,\dots$$
+They count balanced bracket strings with $n$ pairs, lattice paths that never go above the diagonal, triangulations of a convex $(n+2)$-gon, and binary trees with $n$ nodes. Recursion: $C_{n+1}=\sum_{i=0}^nC_iC_{n-i}$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Generating functions</div>
+<p>Encode a sequence as $A(x)=\sum a_nx^n$. Products of generating functions correspond to combining independent choices. <em>Example:</em> the number of ways to pay $n$ with coins of 1 and 2 is the coefficient of $x^n$ in $\frac1{(1-x)(1-x^2)}$, which is $\lfloor n/2\rfloor+1$. Roots of unity (module 02) then extract coefficients with index in a residue class.</p>
+</div>
+<div class="box box-learn">
+<div class="box-title"><span class="box-ico">📚</span> Go deeper (optional)</div>
+<p>3Blue1Brown's lesson "<a href="https://www.3blue1brown.com/lessons/subsets-puzzle" target="_blank" rel="noopener">Olympiad level counting</a>" solves a US training problem (subsets of $\{1,\dots,2000\}$ with sum divisible by 5) with generating functions and roots of unity.</p>
+</div>
+<h2 id="5-graph-theory">5 · Graph theory<a class="anchor" href="#5-graph-theory" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Graph vocabulary</div>
+<p>A <strong>graph</strong> has vertices and edges (pairs of vertices). The <strong>degree</strong> of a vertex is its number of edges. A graph is <strong>connected</strong> if any two vertices are joined by a path. A <strong>cycle</strong> is a closed path with no repeated vertex. A <strong>tree</strong> is a connected graph with no cycle. A graph is <strong>bipartite</strong> if its vertices split into two sides with every edge going between them.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Basic theorems</div>
 <ul>
-<li>⭐ <strong><a href="https://link.springer.com/book/10.1007/978-3-0348-0597-1" target="_blank" rel="noopener">Problem Solving Methods in Combinatorics, Pablo Soberón</a></strong> 💲: short, by technique, IMO-focused.</li>
-<li><strong><a href="https://yufeizhao.com/olympiad/" target="_blank" rel="noopener">Yufei Zhao's combinatorics handouts</a></strong> (e.g. "Combinatorics: a few techniques", double counting).</li>
-<li><strong>102 Combinatorial Problems</strong>, Andreescu &amp; Feng 💲 · <strong>Engel</strong> ch. on combinatorics · <strong><a href="https://web.evanchen.cc/handouts.html" target="_blank" rel="noopener">Evan Chen's handouts</a></strong>.</li>
-<li><strong><a href="https://artofproblemsolving.com/store" target="_blank" rel="noopener">AoPS: Intro / Intermediate Counting &amp; Probability</a></strong> 💲 for the basics.</li>
+<li>A tree with $n$ vertices has exactly $n-1$ edges; adding any edge creates a cycle; removing any edge disconnects it.</li>
+<li>A graph is bipartite <strong>iff</strong> it has no odd cycle.</li>
+<li><strong>Euler:</strong> a connected graph has a closed walk using every edge exactly once iff every degree is even (an open one iff exactly 0 or 2 vertices have odd degree).</li>
 </ul>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Hall's marriage theorem</div>
+<p>A bipartite graph with sides $X,Y$ has a matching covering all of $X$ iff for every subset $S\subseteq X$, the set of neighbours $N(S)$ satisfies $|N(S)|\ge|S|$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Mantel's theorem (Turán for triangles)</div>
+<p>A graph on $n$ vertices with no triangle has at most $\big\lfloor\frac{n^2}{4}\big\rfloor$ edges. Equality for the complete bipartite graph with parts of sizes $\lfloor n/2\rfloor$ and $\lceil n/2\rceil$. (Turán's theorem generalises this to graphs with no $K_{r+1}$.)</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · $R(3,3)=6$</div>
+<p><em>Any 2-colouring of the edges of $K_6$ contains a monochromatic triangle; $K_5$ does not have to.</em>
+Pick a vertex $v$; it has 5 edges, so by pigeonhole at least 3 have the same colour, say red, to $a,b,c$. If any edge among $a,b,c$ is red, it forms a red triangle with $v$; otherwise $abc$ is a blue triangle. For $K_5$: colour the edges of a pentagon red and its diagonals (a pentagram) blue; neither colour contains a triangle. ∎</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>Combinatorics</strong> deck to drill the named theorems.</p>
+</div>
+<h2 id="6-games">6 · Games<a class="anchor" href="#6-games" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · P-positions and N-positions</div>
+<p>In a finite two-player game with no draws where the player who can't move loses: a position is a <strong>P-position</strong> (Previous player wins) if every move leads to an N-position, and an <strong>N-position</strong> (Next player wins) if some move leads to a P-position. Terminal positions are P. Work <strong>backwards</strong> from the end.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Nim</div>
+<p>Several heaps; a move removes any positive number of stones from one heap; whoever takes the last stone wins. A position is a P-position <strong>iff the XOR (binary sum without carries) of the heap sizes is 0</strong>. <em>Example:</em> heaps $3,5,6$: $011\oplus101\oplus110=000$, so the player to move loses with best play.</p>
+<p><strong>Sprague–Grundy:</strong> every impartial game position is equivalent to a single Nim heap (its Grundy value), so sums of games are solved by XOR-ing these values.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Strategy stealing and symmetry</div>
+<p><strong>Strategy stealing:</strong> if an extra move can never hurt you, then the first player can't be losing: otherwise they make an arbitrary move and then follow the second player's "winning" strategy. (Proves the first player wins Chomp and Hex, without saying how.) <strong>Symmetry:</strong> answer each move with its mirror image so that you always have a reply.</p>
+</div>
+<h2 id="7-the-probabilistic-method-and-extremal-problems">7 · The probabilistic method and extremal problems<a class="anchor" href="#7-the-probabilistic-method-and-extremal-problems" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · The probabilistic method</div>
+<p>To show a good object <strong>exists</strong>, pick one at random and show the expected number of "bad" features is less than 1 (then some choice has none), or that the expected value of a quantity is at least $X$ (then some choice achieves $X$).</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · A lower bound for Ramsey numbers</div>
+<p>Colour each edge of $K_n$ red or blue at random. A fixed set of $k$ vertices is monochromatic with probability $2\cdot2^{-\binom k2}$. If $\binom nk2^{1-\binom k2}&lt;1$, the expected number of monochromatic $K_k$ is below 1, so some colouring has none: $R(k,k)&gt;n$. This gives $R(k,k)&gt;2^{k/2}$ for $k\ge3$.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · "Find the maximum" needs two proofs</div>
+<p>An extremal answer $M$ requires (1) a <strong>construction</strong> achieving $M$, and (2) a <strong>bound</strong> proving nothing exceeds $M$. Giving only one of them earns little credit. Find the construction from small cases first; it tells you what the bound must be tight on.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>How many solutions does $a+b+c=10$ have in positive integers?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\binom{10-1}{3-1}=\binom92=36$.</p>
+</details>
+<ol start="2">
+<li>How many integers from 1 to 1000 are divisible by none of 2, 3, 5?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Divisible by at least one: $500+333+200-166-100-66+33=734$. So $1000-734=266$.</p>
+</details>
+<ol start="3">
+<li>Prove $\sum_{k=0}^n\binom nk^2=\binom{2n}n$.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Choose $n$ people from $n$ men and $n$ women: $\binom{2n}n$. Alternatively choose $k$ men and $n-k$ women for each $k$: $\sum_k\binom nk\binom n{n-k}=\sum_k\binom nk^2$.</p>
+</details>
+<ol start="4">
+<li>In Nim with heaps $1,4,7$, is the first player winning? If so, give a winning move.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$1\oplus4\oplus7=001\oplus100\oplus111=010=2\ne0$: winning. Make the XOR 0: change the heap of 7 to $7\oplus2=5$ (remove 2 stones). Check $1\oplus4\oplus5=0$.</p>
+</details>
+<ol start="5">
+<li>Show that at a party of 6 people, some 3 know each other or some 3 are mutual strangers.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>People = vertices of $K_6$, colour edges by "know" / "don't know". By $R(3,3)=6$ there is a monochromatic triangle.</p>
+</details>
+<ol start="6">
+<li>What is the maximum number of edges in a triangle-free graph on 10 vertices? Give the construction.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\lfloor100/4\rfloor=25$ (Mantel), attained by the complete bipartite graph $K_{5,5}$.</p>
+</details>
+<ol start="7">
+<li>How many balanced strings of 4 pairs of brackets are there?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$C_4=\frac15\binom84=14$.</p>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ul>
 <li>Solve <strong>C1–C4</strong> from the last 5–8 IMO Shortlists. Combinatorics gets better mostly with <em>volume</em>, so aim for 60+ problems.</li>
@@ -153,8 +323,19 @@
 <ul>
 <li>Overcounting from treating identical objects as distinct (or the reverse).</li>
 <li>For max/min problems: giving only the construction or only the bound.</li>
+</ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://link.springer.com/book/10.1007/978-3-0348-0597-1" target="_blank" rel="noopener">Problem Solving Methods in Combinatorics, Pablo Soberón</a></strong> 💲: short, by technique, IMO-focused.</li>
+<li><strong><a href="https://yufeizhao.com/olympiad/" target="_blank" rel="noopener">Yufei Zhao's combinatorics handouts</a></strong> (e.g. "Combinatorics: a few techniques", double counting).</li>
+<li><strong>102 Combinatorial Problems</strong>, Andreescu &amp; Feng 💲 · <strong>Engel</strong> ch. on combinatorics · <strong><a href="https://web.evanchen.cc/handouts.html" target="_blank" rel="noopener">Evan Chen's handouts</a></strong>.</li>
+<li><strong><a href="https://artofproblemsolving.com/store" target="_blank" rel="noopener">AoPS: Intro / Intermediate Counting &amp; Probability</a></strong> 💲 for the basics.</li>
+</ul>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> Every skip-test item proved on paper · <input type="checkbox"> 60+ combinatorics problems attempted, key ideas logged</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../math-olympiad/03-number-theory.html"><small>← Previous</small>Number Theory</a><a class="pn next" href="../math-olympiad/05-geometry.html"><small>Next →</small>Geometry</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-basic-counting">1 · Basic counting</a></li><li><a href="#2-inclusionexclusion">2 · Inclusion–exclusion</a></li><li><a href="#3-double-counting">3 · Double counting</a></li><li><a href="#4-recursion-and-generating-functions">4 · Recursion and generating functions</a></li><li><a href="#5-graph-theory">5 · Graph theory</a></li><li><a href="#6-games">6 · Games</a></li><li><a href="#7-the-probabilistic-method-and-extremal-problems">7 · The probabilistic method and extremal problems</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

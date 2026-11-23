@@ -7,7 +7,9 @@
 <meta name="description" content="Proofs, algebra, number theory, combinatorics and geometry, from regional rounds to the IMO.">
 <script>try{var t=localStorage.getItem('ss-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
 <link rel="stylesheet" href="../assets/site.css">
-
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script defer src="../assets/katex/katex.min.js"></script>
+<script defer src="../assets/katex/contrib/auto-render.min.js"></script>
 <script defer src="../assets/search-index.js"></script>
 <script defer src="../assets/site.js"></script>
 </head>
@@ -109,31 +111,163 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../math-olympiad/index.html">Math Olympiad</a> <span class="sep">›</span> <span>Contest Practice &amp; Solution Writing</span></nav><article class="doc"><h1 id="06-contest-practice-solution-writing">06 · Contest Practice &amp; Solution Writing<a class="anchor" href="#06-contest-practice-solution-writing" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 06</span><span>⏱ 1 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/math-olympiad/06-contest-practice.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../math-olympiad/index.html">Math Olympiad</a> <span class="sep">›</span> <span>Contest Practice &amp; Solution Writing</span></nav><article class="doc"><h1 id="06-contest-practice-solution-writing">06 · Contest Practice &amp; Solution Writing<a class="anchor" href="#06-contest-practice-solution-writing" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 06</span><span>⏱ 6 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/math-olympiad/06-contest-practice.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> turn knowledge into points under exam conditions. · <strong>Time:</strong> ongoing from week 3</p>
 </blockquote>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
 <ul>
-<li><strong>Mock exams:</strong> 3 problems, 4.5 h, no notes, real timer. Use past national olympiads → <strong>IMO Shortlist (ISL)</strong> → past IMOs.</li>
-<li><strong>Grade strictly</strong> on the 0–7 IMO scale. A "nearly complete" proof usually earns 0–2, not 6.</li>
-<li><strong>Time allocation:</strong> first 30 min on reading <em>all</em> three problems and trying small cases. Spend the most time on the problem you're most likely to fully solve.</li>
-<li><strong>Partial credit:</strong> write down proven lemmas, reductions, and the answer with a construction. Graders reward <em>substantial progress</em>.</li>
-<li><strong>Post-mortem every mock:</strong> for each problem, what was the key idea, and what would have led you to it faster? Log it in <code>progress.md</code>.</li>
-<li><strong>Difficulty ladder</strong> (roughly): school/regional → national olympiad → hard national (e.g. USAMO/Balkan/APMO style) → ISL easy (A1/C1/G1/N1) → IMO P1/P4 → ISL medium → IMO P2/P5 → P3/P6.</li>
+<li>run realistic <strong>mock exams</strong> and grade them honestly on the IMO 0–7 scale;</li>
+<li>manage the 4.5 hours: reading, small cases, choosing a problem, switching, writing up;</li>
+<li>write solutions that collect <strong>partial credit</strong> when you don't finish;</li>
+<li>learn from every mock with a structured <strong>post-mortem</strong>;</li>
+<li>choose problems at the right difficulty from the right sources.</li>
 </ul>
-<h2 id="where-to-find-problems">Where to find problems<a class="anchor" href="#where-to-find-problems" title="Link to this section">#</a></h2>
+</div>
+<h2 id="1-how-the-imo-is-scored">1 · How the IMO is scored<a class="anchor" href="#1-how-the-imo-is-scored" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · The format</div>
+<p>Two consecutive days, <strong>3 problems per day, 4.5 hours per day</strong>, each problem worth <strong>7 points</strong> (42 total). Problems cover algebra, combinatorics, geometry and number theory, ordered roughly easy → hard: problems 1 and 4 are the most accessible, 3 and 6 the hardest. At most half of the contestants receive medals, in a gold : silver : bronze ratio of about $1:2:3$; a contestant without a medal who scores 7 on some problem gets an honourable mention. National olympiads often copy this format.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · What earns points</div>
+<ul>
+<li><strong>7:</strong> a complete, correct proof (minor slips may cost a point).</li>
+<li><strong>1–3 typical partial credit:</strong> substantial progress defined in the marking scheme, e.g. a key lemma proved, a correct reduction, the right answer with a construction <em>and</em> part of the bound.</li>
+<li><strong>0:</strong> the answer alone, examples, unjustified claims, an idea without proof, "it is easy to see".</li>
+</ul>
+<p>A "nearly complete" proof with a real gap usually scores <strong>0–2, not 6</strong>. Grade yourself that strictly.</p>
+</div>
+<h2 id="2-the-mock-exam-routine">2 · The mock-exam routine<a class="anchor" href="#2-the-mock-exam-routine" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Make mocks realistic</div>
+<p>3 problems, 4.5 hours, no notes, no internet, a real timer, scrap paper, a clean final write-up. Use past national olympiads → <strong>IMO Shortlist (ISL)</strong> → past IMOs, at the right difficulty (section 5). From week 3 of your preparation, sit one mock a week.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Time plan for 4.5 hours</div>
+<ol>
+<li><strong>First 30 minutes:</strong> read <strong>all three</strong> problems. Try small cases on each. Note first ideas.</li>
+<li><strong>Choose:</strong> spend most of your time on the problem you are <strong>most likely to fully solve</strong> (usually the first), not the most interesting one.</li>
+<li><strong>Switch rule:</strong> if you've had no new idea for ~45 minutes, move to another problem and come back later; a fresh look often unlocks it.</li>
+<li><strong>Last 45–60 minutes:</strong> write up. A solved-but-unwritten problem scores 0. Write partial progress on unsolved problems too.</li>
+</ol>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · A post-mortem log entry</div>
+<p><em>Mock 7, Problem 2 (number theory), score 2/7.</em> I found the answer $n=1$ from small cases and proved $n$ is odd, but missed the key idea: <strong>take the smallest prime factor $p$ of $n$ and use $\operatorname{ord}_p(2)\mid\gcd(n,p-1)$</strong>. What would have led me there faster: the expression $2^n-1$ with $n$ in the exponent should trigger "orders". Next time: when a variable appears both as modulus and exponent, try the smallest prime factor + orders.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Post-mortem every mock</div>
+<p>For each problem write: (1) your score and why; (2) the <strong>key idea in one line</strong>; (3) <strong>what should have triggered it</strong>; (4) any write-up mistakes. Keep these in <code>progress.md</code>. Re-reading this log before contests is worth more than any new theory.</p>
+</div>
+<h2 id="3-writing-under-time-pressure">3 · Writing under time pressure<a class="anchor" href="#3-writing-under-time-pressure" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · A solution template</div>
+<ol>
+<li><strong>Answer</strong> (for "find all" / "determine"): state it first.</li>
+<li><strong>Setup:</strong> notation and any WLOG, with justification.</li>
+<li><strong>Claims:</strong> numbered lemmas, each followed by its proof.</li>
+<li><strong>Main argument:</strong> how the claims combine.</li>
+<li><strong>Verification:</strong> the answer actually works (for "find all"), or the construction (for extremal problems).</li>
+</ol>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Common write-up losses</div>
+<ul>
+<li>"Find all" solutions that never check the answers satisfy the conditions.</li>
+<li>Extremal problems with only the bound or only the construction.</li>
+<li>Geometry proofs that rely on one drawing's configuration.</li>
+<li>Skipped "obvious" cases ($n=1$, equal variables, degenerate triangles).</li>
+<li>Messy scratch work submitted instead of a clean, ordered write-up.</li>
+</ul>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Collecting partial credit</div>
+<p>If you can't finish: write down every result you <strong>did</strong> prove as a clearly stated claim (e.g. "Claim: $n$ must be odd"), the reduction you found ("it suffices to show…"), the answer with its construction, and small cases you verified. Graders reward substantial, correctly proven progress; they don't reward vague outlines.</p>
+</div>
+<h2 id="4-training-beyond-mocks">4 · Training beyond mocks<a class="anchor" href="#4-training-beyond-mocks" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · A balanced week (~10–12 h)</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Day</th>
+<th>Do</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3 days</td>
+<td><strong>Topic study:</strong> one handout section, then 4–6 problems from it</td>
+</tr>
+<tr>
+<td>1 day</td>
+<td><strong>Hard problem:</strong> one problem above your level, 1.5–2 h, no hints for the first hour</td>
+</tr>
+<tr>
+<td>1 day</td>
+<td><strong>Mock:</strong> 3 problems in 4.5 h, graded strictly</td>
+</tr>
+<tr>
+<td>1 day</td>
+<td><strong>Review:</strong> clean write-ups, read official solutions, update the post-mortem log</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Using hints and solutions well</div>
+<p>Stay stuck for <strong>at least 30–60 minutes</strong> before looking at a hint. Read one hint, then try again. After reading a full solution, close it and write it yourself from memory the next day, and record the one-line key idea. Solutions you only read are forgotten; solutions you reconstruct are learned.</p>
+</div>
+<h2 id="5-where-to-find-problems-and-at-what-level">5 · Where to find problems, and at what level<a class="anchor" href="#5-where-to-find-problems-and-at-what-level" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · The difficulty ladder (roughly)</div>
+<p>school/regional rounds → national olympiad → hard national olympiads and regional international contests (e.g. USAMO, Balkan MO, APMO) → ISL easy (A1/C1/G1/N1) → IMO P1/P4 → ISL medium → IMO P2/P5 → IMO P3/P6.</p>
+<p>Work mostly at the level where you solve <strong>about half</strong> the problems in the time limit: easier is too comfortable, harder gives too little feedback.</p>
+</div>
+<div class="box box-learn">
+<div class="box-title"><span class="box-ico">📚</span> Go deeper (optional)</div>
 <ul>
 <li>⭐ <strong><a href="https://artofproblemsolving.com/community/c13_contest_collections" target="_blank" rel="noopener">AoPS Contest Collections</a></strong>: almost every olympiad ever, with community solutions.</li>
-<li>⭐ <strong><a href="https://www.imo-official.org/problems.aspx" target="_blank" rel="noopener">IMO official site: problems &amp; results</a></strong> and the <a href="https://www.imo-official.org/problems.aspx" target="_blank" rel="noopener">IMO Shortlists</a> (published after the following IMO).</li>
-<li><strong><a href="https://web.evanchen.cc/" target="_blank" rel="noopener">Evan Chen's practice materials / OTIS excerpts</a></strong> and his <strong><a href="https://web.evanchen.cc/upload/MOHS-hardness.pdf" target="_blank" rel="noopener">MOHS hardness ratings</a></strong> (to pick problems at the right level).</li>
+<li>⭐ <strong><a href="https://www.imo-official.org/problems.aspx" target="_blank" rel="noopener">IMO official site: problems &amp; results</a></strong>, including the Shortlists (published after the following IMO).</li>
+<li><strong><a href="https://web.evanchen.cc/upload/MOHS-hardness.pdf" target="_blank" rel="noopener">Evan Chen's MOHS hardness ratings</a></strong> to pick problems at the right level, and his <strong><a href="https://web.evanchen.cc/" target="_blank" rel="noopener">website</a></strong> for practice materials.</li>
 <li>Past papers of your <strong>own national olympiad</strong>. Ask the committee or past participants.</li>
 </ul>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Run the <strong>Strategy</strong> deck before each mock as a warm-up.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>You have 4.5 hours. After 1 hour you've solved nothing but have a promising idea for P1 and nothing for P2 or P3. What do you do?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Keep working on P1: it's the one most likely to become a full 7. Set a checkpoint (e.g. 2.5 h). If it's done, write it up immediately, then spend remaining time looking for partial progress on P2. Reserve the last 45–60 minutes for write-ups no matter what.</p>
+</details>
+<ol start="2">
+<li>Your solution to a "find all $n$" problem proves every solution satisfies $n\le5$ and then checks $n=1,\dots,5$ by hand, finding $n=1,3$. What score would a strict grader give if you forgot to show that $n=3$ actually works?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Usually a 1-point deduction (6/7) if the verification is routine, but possibly more if it's not obvious. Always include the check; it costs a minute.</p>
+</details>
+<ol start="3">
+<li>You proved a key lemma but couldn't finish. How should you write it?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>As a clearly labelled claim with a complete proof, plus one sentence explaining how it would finish the problem ("If additionally … then the result follows"). Graders can then award the partial-credit points tied to that lemma.</p>
+</details>
 <h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> You consistently fully solve P1/P4-level problems in mocks and have partial progress on P2/P5.</li>
+<li class="task"><input type="checkbox"> Your post-mortem log has entries for at least 10 mocks.</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../math-olympiad/05-geometry.html"><small>← Previous</small>Geometry</a><a class="pn next" href="../math-olympiad/cheatsheet.html"><small>Next →</small>Cheatsheet</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#core-ideas">Core ideas</a></li><li><a href="#where-to-find-problems">Where to find problems</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#1-how-the-imo-is-scored">1 · How the IMO is scored</a></li><li><a href="#2-the-mock-exam-routine">2 · The mock-exam routine</a></li><li><a href="#3-writing-under-time-pressure">3 · Writing under time pressure</a></li><li><a href="#4-training-beyond-mocks">4 · Training beyond mocks</a></li><li><a href="#5-where-to-find-problems-and-at-what-level">5 · Where to find problems, and at what level</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

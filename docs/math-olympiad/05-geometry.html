@@ -111,11 +111,22 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../math-olympiad/index.html">Math Olympiad</a> <span class="sep">›</span> <span>Geometry</span></nav><article class="doc"><h1 id="05-geometry">05 · Geometry<a class="anchor" href="#05-geometry" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 05</span><span>⏱ 2 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/math-olympiad/05-geometry.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../math-olympiad/index.html">Math Olympiad</a> <span class="sep">›</span> <span>Geometry</span></nav><article class="doc"><h1 id="05-geometry">05 · Geometry<a class="anchor" href="#05-geometry" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 05</span><span>⏱ 9 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/math-olympiad/05-geometry.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> from angle chasing to projective tools, plus reliable computational backups. · <strong>Time:</strong> 5–7 weeks (in rotation)</p>
 </blockquote>
-<p>👉 Use the <strong><a href="interactive/triangle-centers.html">Triangle centers explorer</a></strong> while studying this module.</p>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>angle-chase with inscribed angles and <strong>cyclic quadrilaterals</strong>, safely, using directed angles;</li>
+<li>use the triangle centres and the classic lemmas: <strong>Euler line, nine-point circle, reflections of $H$, the incenter–excenter lemma</strong>;</li>
+<li>compute lengths with the laws of sines/cosines, <strong>Ceva, Menelaus, Stewart, Ptolemy</strong>;</li>
+<li>use <strong>power of a point</strong> and <strong>radical axes</strong>;</li>
+<li>recognise when homothety, spiral similarity, inversion or projective tools help;</li>
+<li>fall back on a <strong>complex-number bash</strong> when synthetic ideas run out.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Prove the four points of a cyclic quadrilateral satisfy "opposite angles sum to 180°", and the converse.</li>
@@ -125,24 +136,193 @@
 <li class="task"><input type="checkbox"> Explain the Euler line and the nine-point circle (center, radius $R/2$).</li>
 <li class="task"><input type="checkbox"> Set up a problem in complex numbers with the unit circle as the circumcircle.</li>
 </ul>
-<h2 id="core-ideas-in-learning-order">Core ideas (in learning order)<a class="anchor" href="#core-ideas-in-learning-order" title="Link to this section">#</a></h2>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/triangle-centers.html">Triangle centers explorer</a></div>
+<p>Keep it open while you read: drag the triangle and watch every theorem below hold in every shape.</p>
+</div>
+<h2 id="1-angle-chasing-and-cyclic-quadrilaterals">1 · Angle chasing and cyclic quadrilaterals<a class="anchor" href="#1-angle-chasing-and-cyclic-quadrilaterals" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Inscribed angle theorem</div>
+<p>An angle inscribed in a circle is <strong>half the central angle</strong> on the same arc: if $A,B,C$ lie on a circle with centre $O$, then $\angle ACB=\tfrac12\angle AOB$. Consequences: all inscribed angles on the same arc (same side) are equal; an angle inscribed in a semicircle is $90°$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Cyclic quadrilateral criteria</div>
+<p>For a convex quadrilateral $ABCD$, the following are equivalent:</p>
 <ol>
-<li><strong>Angle chasing:</strong> inscribed angle theorem, cyclic quadrilaterals, tangent–chord angle. <strong>Directed angles mod 180°</strong> avoid configuration issues.</li>
-<li><strong>Triangle centers &amp; lemmas:</strong> centroid $G$, circumcenter $O$, incenter $I$, orthocenter $H$. Euler line $O,G,H$ with $OG:GH=1:2$. Nine-point circle. Incenter–excenter lemma. Reflections of $H$.</li>
-<li><strong>Length tools:</strong> law of sines/cosines, <strong>Ceva</strong> and <strong>Menelaus</strong> (with the trig version), Stewart, Ptolemy.</li>
-<li><strong>Circles:</strong> <strong>power of a point</strong>, <strong>radical axis / radical center</strong>, coaxal circles, tangent circles.</li>
-<li><strong>Transformations:</strong> homothety (e.g. the incircle–excircle homothety), spiral similarity (Miquel point), reflections, rotations.</li>
-<li><strong>Projective (IMO level):</strong> cross-ratio, harmonic bundles, poles/polars, Pascal and Brianchon, Desargues' involution.</li>
-<li><strong>Inversion:</strong> turns circles through the center into lines. Great for tangency problems.</li>
-<li><strong>Computational "bash" backups:</strong> Cartesian coordinates, <strong>complex numbers</strong> (unit circle), <strong>barycentric coordinates</strong>. Slow but reliable. Learn <strong>one</strong> well as a safety net.</li>
+<li>$A,B,C,D$ lie on a circle;</li>
+<li>opposite angles are supplementary: $\angle A+\angle C=180°$;</li>
+<li>$\angle ABD=\angle ACD$ (a side "sees" the opposite side under equal angles);</li>
+<li>(power of a point, section 4) if lines $AB$ and $CD$ meet at $P$: $PA\cdot PB=PC\cdot PD$.</li>
 </ol>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+<p>The <strong>converses</strong> are what you use most: find equal angles, conclude the points are concyclic, then use the circle.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Tangent–chord angle</div>
+<p>The angle between a tangent at $A$ and a chord $AB$ equals the inscribed angle on the other side of $AB$: $\angle(\text{tangent},AB)=\angle ACB$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Directed angles</div>
+<p>$\measuredangle(\ell,m)$ is the angle to rotate line $\ell$ counterclockwise onto $m$, taken <strong>mod $180°$</strong>. With directed angles, "$A,B,C,D$ concyclic iff $\measuredangle ABC=\measuredangle ADC$" holds in <strong>every</strong> configuration, so a proof doesn't depend on how your figure happens to look.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Configuration issues</div>
+<p>A proof read off one drawing may fail for another (a point inside vs outside a circle, an obtuse vs acute triangle). Use directed angles, or check each case separately.</p>
+</div>
+<h2 id="2-triangle-centres-and-the-classic-lemmas">2 · Triangle centres and the classic lemmas<a class="anchor" href="#2-triangle-centres-and-the-classic-lemmas" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · The four classical centres</div>
 <ul>
-<li>⭐ <strong>Euclidean Geometry in Mathematical Olympiads (EGMO), Evan Chen</strong> 💲. <em>The</em> olympiad geometry book. Part I (ch. 1–4) is essential, Part II for IMO-level. Some chapters are free on <a href="https://web.evanchen.cc/" target="_blank" rel="noopener">his website</a>.</li>
-<li><strong><a href="https://yufeizhao.com/olympiad/" target="_blank" rel="noopener">Yufei Zhao: Lemmas in Euclidean geometry, Cyclic quadrilaterals handouts</a></strong>.</li>
-<li><strong>Lemmas in Olympiad Geometry</strong>, Andreescu, Korsky &amp; Pohoata 💲 · <strong>Geometry Revisited</strong>, Coxeter &amp; Greitzer 💲 (classic).</li>
-<li><strong><a href="https://www.geogebra.org/geometry" target="_blank" rel="noopener">GeoGebra</a></strong>: draw every problem precisely. It's free.</li>
+<li><strong>Centroid $G$:</strong> where the medians meet; it divides each median $2:1$ from the vertex.</li>
+<li><strong>Circumcentre $O$:</strong> where the perpendicular bisectors meet; centre of the circumcircle (radius $R$).</li>
+<li><strong>Incentre $I$:</strong> where the angle bisectors meet; centre of the incircle (radius $r$). <strong>Excentre $I_A$:</strong> where the external bisectors at $B,C$ and the internal bisector at $A$ meet.</li>
+<li><strong>Orthocentre $H$:</strong> where the altitudes meet.</li>
 </ul>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Euler line and nine-point circle</div>
+<p>Put the origin at $O$. Then (as vectors) $G=\frac{A+B+C}3$ and $H=A+B+C$. So <strong>$O,G,H$ are collinear with $OG:GH=1:2$</strong>.
+The <strong>nine-point circle</strong> passes through the three side midpoints, the three feet of the altitudes and the midpoints of $AH,BH,CH$. Its centre $N$ is the midpoint of $OH$ and its radius is $R/2$.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · The reflection of $H$ over $BC$ lies on the circumcircle</div>
+<p>(Acute triangle; directed angles make it general.) Let $E,F$ be the feet of the altitudes from $B,C$. Quadrilateral $AEHF$ has right angles at $E$ and $F$, so it is cyclic and $\angle BHC=\angle EHF=180°-\angle A$. Reflecting $H$ over $BC$ to $H'$ preserves the angle: $\angle BH'C=180°-\angle A$, and $H'$ lies on the opposite side of $BC$ from $A$. So $\angle BH'C+\angle BAC=180°$, and $ABH'C$ is cyclic. ∎ (The reflection over the <strong>midpoint</strong> of $BC$ is also on the circumcircle: it is the point diametrically opposite $A$.)</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Incenter–excenter lemma</div>
+<p>Let the bisector of $\angle A$ meet the circumcircle again at $M$ (the midpoint of arc $BC$ not containing $A$). Then $MB=MC=MI=MI_A$.</p>
+<p>$MB=MC$ since $M$ bisects the arc. Write $\angle A=2\alpha$, $\angle B=2\beta$. Then $\angle MBI=\angle MBC+\angle CBI=\alpha+\beta$ (as $\angle MBC=\angle MAC=\alpha$), and $\angle MIB=\angle IAB+\angle IBA=\alpha+\beta$ (exterior angle of triangle $ABI$). So triangle $MBI$ is isosceles: $MB=MI$. Finally the internal and external bisectors at $B$ are perpendicular, so $\angle IBI_A=90°$; $I_A$ lies on line $AI$, and $M$ (on $II_A$, with $MB=MI$) must be the midpoint of the hypotenuse $II_A$. ∎ This lemma appears in a huge number of olympiad problems.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Area, $R$ and $r$</div>
+<p>With sides $a,b,c$, semiperimeter $s$ and area $K$:
+$$K=\tfrac12ab\sin C=rs=\frac{abc}{4R}=\sqrt{s(s-a)(s-b)(s-c)}\ \ \text{(Heron)}$$
+<strong>Euler's theorem:</strong> $OI^2=R^2-2Rr$, so $R\ge2r$.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · The 13-14-15 triangle</div>
+<p>$s=21$, $K=\sqrt{21\cdot8\cdot7\cdot6}=84$, $r=K/s=4$, $R=\frac{13\cdot14\cdot15}{4\cdot84}=\frac{65}8$. Then $OI^2=R(R-2r)=\frac{65}8\cdot\frac18=\frac{65}{64}$.</p>
+</div>
+<h2 id="3-lengths-sines-cosines-ceva-menelaus-stewart-ptolemy">3 · Lengths: sines, cosines, Ceva, Menelaus, Stewart, Ptolemy<a class="anchor" href="#3-lengths-sines-cosines-ceva-menelaus-stewart-ptolemy" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Laws of sines and cosines</div>
+<p>$$\frac{a}{\sin A}=\frac b{\sin B}=\frac c{\sin C}=2R,\qquad c^2=a^2+b^2-2ab\cos C$$</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Ceva's theorem</div>
+<p>Cevians $AD,BE,CF$ (with $D\in BC$, $E\in CA$, $F\in AB$) are concurrent iff
+$$\frac{BD}{DC}\cdot\frac{CE}{EA}\cdot\frac{AF}{FB}=1$$
+<strong>Trig Ceva:</strong> concurrent iff $\frac{\sin\angle BAD}{\sin\angle DAC}\cdot\frac{\sin\angle CBE}{\sin\angle EBA}\cdot\frac{\sin\angle ACF}{\sin\angle FCB}=1$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Menelaus' theorem</div>
+<p>Points $D,E,F$ on lines $BC,CA,AB$ are collinear iff $\frac{BD}{DC}\cdot\frac{CE}{EA}\cdot\frac{AF}{FB}=-1$ with <strong>signed</strong> lengths (an odd number of the points, 1 or 3, lie outside the sides).</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Stewart's theorem</div>
+<p>For a cevian $AD=d$ with $BD=m$, $DC=n$, $BC=a=m+n$:
+$$b^2m+c^2n=a(d^2+mn)$$
+<em>Special case (median):</em> $d^2=\frac{2b^2+2c^2-a^2}{4}$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Ptolemy's theorem</div>
+<p>For a cyclic quadrilateral $ABCD$: $AC\cdot BD=AB\cdot CD+AD\cdot BC$. (For any quadrilateral "$\le$" holds, with equality iff cyclic.)</p>
+</div>
+<h2 id="4-power-of-a-point-and-radical-axes">4 · Power of a point and radical axes<a class="anchor" href="#4-power-of-a-point-and-radical-axes" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Power of a point</div>
+<p>For a circle with centre $O$, radius $r$, and a point $P$: $\operatorname{pow}(P)=OP^2-r^2$. For <strong>any</strong> line through $P$ meeting the circle at $A,B$:
+$$PA\cdot PB=|\operatorname{pow}(P)|$$
+(and $=PT^2$ for a tangent $PT$ when $P$ is outside). The power is positive outside, zero on, negative inside the circle.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Radical axis and radical centre</div>
+<p>The <strong>radical axis</strong> of two non-concentric circles is the set of points with equal power with respect to both: a straight line perpendicular to the line of centres. If the circles intersect, it is the line through the two intersection points. For three circles (centres not collinear), the three radical axes meet at one point, the <strong>radical centre</strong>.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · The common chord bisects the common tangent</div>
+<p>Two circles meet at $P,Q$; a common tangent touches them at $T_1,T_2$. Let line $PQ$ meet $T_1T_2$ at $M$. $M$ is on the radical axis, so $MT_1^2=\operatorname{pow}_1(M)=\operatorname{pow}_2(M)=MT_2^2$. Hence $M$ is the midpoint of $T_1T_2$. ∎</p>
+</div>
+<h2 id="5-transformations">5 · Transformations<a class="anchor" href="#5-transformations" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Homothety</div>
+<p>A homothety with centre $X$ and ratio $k$ maps each point $P$ to $P'$ on line $XP$ with $\vec{XP'}=k\,\vec{XP}$. It maps lines to parallel lines and circles to circles. Two circles of different radii are related by two homotheties (external and internal centres). <em>Example:</em> the homothety at $A$ taking the incircle to the $A$-excircle explains many tangency facts.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Spiral similarity</div>
+<p>A rotation combined with a scaling about a centre. <strong>Key lemma:</strong> if lines $AC$ and $BD$ meet at $X$, then the centre of the spiral similarity sending segment $AB$ to segment $CD$ ($A\mapsto C$, $B\mapsto D$) is the second intersection of the circles $(ABX)$ and $(CDX)$. Spiral similarities come in pairs: the same point is also the centre of the one sending $A\mapsto B$, $C\mapsto D$. This is the <strong>Miquel point</strong> idea.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Inversion</div>
+<p>Inversion in a circle with centre $O$ and radius $\rho$ sends $P$ to $P'$ on ray $OP$ with $OP\cdot OP'=\rho^2$. It maps lines through $O$ to themselves, circles through $O$ to lines not through $O$ (and back), and other circles to circles; it preserves angles between curves. Distances: $A'B'=\frac{\rho^2\,AB}{OA\cdot OB}$. Great for problems with many circles through one point or tangencies.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Projective tools (IMO level)</div>
+<p><strong>Cross-ratio</strong> $(A,B;C,D)=\frac{CA}{CB}\Big/\frac{DA}{DB}$ (signed) is preserved by projection; $(A,B;C,D)=-1$ is a <strong>harmonic</strong> bundle. <strong>Pascal:</strong> for six points on a conic, the three intersections of opposite sides of the hexagon are collinear. <strong>Poles and polars</strong>, <strong>Desargues</strong>, <strong>Brianchon</strong> complete the kit. Learn these after the basics are solid.</p>
+</div>
+<h2 id="6-computational-backups-bashing">6 · Computational backups ("bashing")<a class="anchor" href="#6-computational-backups-bashing" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Have one reliable bash</div>
+<p>When synthetic ideas run out, coordinates always work, given time. Learn <strong>one</strong> method well: Cartesian, <strong>complex numbers</strong> or <strong>barycentric coordinates</strong>.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Complex numbers on the unit circle</div>
+<p>Put the circumcircle as the unit circle, so $|a|=|b|=|c|=1$ and $\bar a=1/a$.
+- Orthocentre: $h=a+b+c$ (circumcentre $0$).
+- A point $z$ lies on chord $ab$ iff $z+ab\,\bar z=a+b$.
+- Foot of the altitude from $a$ to $bc$: $\frac12\big(a+b+c-\frac{bc}a\big)$.
+- $z_1,z_2,z_3$ collinear iff $\frac{z_1-z_3}{z_2-z_3}$ is real; $AB\perp CD$ iff $\frac{a-b}{c-d}$ is purely imaginary.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Bash is plan B</div>
+<p>Bashing is reliable on medium problems but can become an unmanageable algebra marathon on hard ones. Spend the first part of your time looking for a synthetic idea; switch to a bash with a clear plan and enough time left.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>Geometry</strong> deck to drill the lemmas and formulas.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>In triangle $ABC$, $\angle A=60°$. Find $\angle BHC$ and $\angle BIC$ ($H$ orthocentre, $I$ incentre).</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\angle BHC=180°-60°=120°$ and $\angle BIC=90°+\frac{60°}2=120°$. (So $B,C,H,I$ are concyclic when $\angle A=60°$.)</p>
+</details>
+<ol start="2">
+<li>A point $P$ is 13 units from the centre of a circle of radius 5. Find the length of the tangent from $P$, and $PA\cdot PB$ for any secant $PAB$.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Power $=13^2-5^2=144$, so the tangent is $12$ and $PA\cdot PB=144$.</p>
+</details>
+<ol start="3">
+<li>Find the length of the median to the side of length 14 in the 13-14-15 triangle (sides 13 and 15 next to it).</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$d^2=\frac{2\cdot13^2+2\cdot15^2-14^2}{4}=\frac{338+450-196}{4}=148$, so $d=2\sqrt{37}\approx12.17$.</p>
+</details>
+<ol start="4">
+<li>Prove that the midpoints of the sides of any quadrilateral form a parallelogram.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>In quadrilateral $ABCD$ with midpoints $P,Q,R,S$ of $AB,BC,CD,DA$: $PQ$ and $SR$ are both midlines parallel to $AC$ with length $\frac12AC$ (in triangles $ABC$ and $ADC$). One pair of opposite sides is parallel and equal, so $PQRS$ is a parallelogram.</p>
+</details>
+<ol start="5">
+<li>With the circumcircle as the unit circle, show that the circumcentre, centroid and orthocentre are collinear.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$o=0$, $g=\frac{a+b+c}3$, $h=a+b+c=3g$. So $h$ is a real multiple of $g$ and all three lie on a line through $0$, with $OG:GH=1:2$.</p>
+</details>
+<ol start="6">
+<li>A cyclic quadrilateral has sides $AB=3$, $BC=4$, $CD=5$, $DA=6$ (in order). Using Ptolemy, what is the product of its diagonals $AC\cdot BD$?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$AC\cdot BD=AB\cdot CD+AD\cdot BC=3\cdot5+6\cdot4=39$.</p>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ul>
 <li>For every geometry problem: (1) draw an accurate figure, (2) <strong>guess</strong> the key concurrency/collinearity from the figure, (3) prove it synthetically, (4) as a backup, prove it with complex/barycentric bash.</li>
@@ -152,8 +332,19 @@
 <ul>
 <li>Proofs that only work for one configuration. Use directed angles.</li>
 <li>Over-relying on bash. It's a time sink on hard problems, so keep it as plan B.</li>
+</ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong>Euclidean Geometry in Mathematical Olympiads (EGMO), Evan Chen</strong> 💲. <em>The</em> olympiad geometry book. Part I (ch. 1–4) is essential, Part II for IMO-level. Some chapters are free on <a href="https://web.evanchen.cc/" target="_blank" rel="noopener">his website</a>.</li>
+<li><strong><a href="https://yufeizhao.com/olympiad/" target="_blank" rel="noopener">Yufei Zhao: Lemmas in Euclidean geometry, Cyclic quadrilaterals handouts</a></strong>.</li>
+<li><strong>Lemmas in Olympiad Geometry</strong>, Andreescu, Korsky &amp; Pohoata 💲 · <strong>Geometry Revisited</strong>, Coxeter &amp; Greitzer 💲 (classic).</li>
+<li><strong><a href="https://www.geogebra.org/geometry" target="_blank" rel="noopener">GeoGebra</a></strong>: draw every problem precisely. It's free.</li>
+</ul>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> Every skip-test item proved on paper · <input type="checkbox"> 20 shortlist G-problems attempted, with both a synthetic and a bash attempt for 5 of them</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../math-olympiad/04-combinatorics.html"><small>← Previous</small>Combinatorics</a><a class="pn next" href="../math-olympiad/06-contest-practice.html"><small>Next →</small>Contest Practice &amp; Solution Writing</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas-in-learning-order">Core ideas (in learning order)</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-angle-chasing-and-cyclic-quadrilaterals">1 · Angle chasing and cyclic quadrilaterals</a></li><li><a href="#2-triangle-centres-and-the-classic-lemmas">2 · Triangle centres and the classic lemmas</a></li><li><a href="#3-lengths-sines-cosines-ceva-menelaus-stewart-ptolemy">3 · Lengths: sines, cosines, Ceva, Menelaus, Stewart, Ptolemy</a></li><li><a href="#4-power-of-a-point-and-radical-axes">4 · Power of a point and radical axes</a></li><li><a href="#5-transformations">5 · Transformations</a></li><li><a href="#6-computational-backups-bashing">6 · Computational backups ("bashing")</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>
