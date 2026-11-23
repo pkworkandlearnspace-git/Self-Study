@@ -111,11 +111,22 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../physics-olympiad/index.html">Physics Olympiad</a> <span class="sep">›</span> <span>Experimental Physics</span></nav><article class="doc"><h1 id="07-experimental-physics">07 · Experimental Physics<a class="anchor" href="#07-experimental-physics" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 07</span><span>⏱ 2 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/physics-olympiad/07-experimental.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../physics-olympiad/index.html">Physics Olympiad</a> <span class="sep">›</span> <span>Experimental Physics</span></nav><article class="doc"><h1 id="07-experimental-physics">07 · Experimental Physics<a class="anchor" href="#07-experimental-physics" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 07</span><span>⏱ 5 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/physics-olympiad/07-experimental.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> earn the 20 experimental points. It's the most trainable part of the IPhO. · <strong>Time:</strong> ~2 h/week, ongoing</p>
 </blockquote>
-<p>👉 Interactive: <a href="interactive/linear-fit.html">Linear fit &amp; uncertainty tool</a></p>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>report a measurement with a correctly rounded <strong>uncertainty</strong>;</li>
+<li><strong>propagate</strong> uncertainties through any formula;</li>
+<li><strong>linearize</strong> a law so a straight-line graph gives the unknown constants;</li>
+<li>fit a straight line (least squares or max/min slope) and quote the slope's uncertainty;</li>
+<li>draw a graph that collects every available mark;</li>
+<li>design a measurement that minimises random and systematic error.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Propagate uncertainty for $g = 4\pi^2L/T^2$ given $\Delta L$ and $\Delta T$.</li>
@@ -124,34 +135,183 @@
 <li class="task"><input type="checkbox"> Explain systematic vs random error, and how to reduce each.</li>
 <li class="task"><input type="checkbox"> Explain why you should measure 20 oscillations instead of 1.</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h2 id="1-measurements-and-uncertainty">1 · Measurements and uncertainty<a class="anchor" href="#1-measurements-and-uncertainty" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Random and systematic errors</div>
 <ul>
-<li><strong>Uncertainty:</strong> report $x = \bar x \pm \Delta x$ with 1–2 significant figures in $\Delta x$, and the value rounded to match.<ul>
-<li>Sum/difference: absolute errors add in quadrature: $\Delta(a\pm b) = \sqrt{\Delta a^2+\Delta b^2}$.</li>
-<li>Product/power: relative errors add in quadrature: $\frac{\Delta f}{f} = \sqrt{\left(n\frac{\Delta a}{a}\right)^2 + \left(m\frac{\Delta b}{b}\right)^2}$ for $f = a^nb^m$.</li>
-<li>Repeated measurements: standard error of the mean $\sigma/\sqrt N$.</li>
+<li><strong>Random errors</strong> scatter repeated measurements around the true value (reaction time, reading fluctuations). Reduce them by <strong>repeating</strong> and averaging, or measuring a larger quantity (many periods at once).</li>
+<li><strong>Systematic errors</strong> shift every measurement the same way (a zero offset, a miscalibrated scale, parallax, heat loss). Repetition doesn't help; find and remove them by changing the method, calibrating, or measuring the offset.</li>
 </ul>
-</li>
-<li><strong>Linearization:</strong> transform the data so the theory predicts a straight line ($T^2$ vs $L$; $\ln I$ vs $x$; $\ln y$ vs $\ln x$). The slope/intercept then give the physical constants.</li>
-<li><strong>Graphing at IPhO (graded!):</strong> a title, labeled axes with units, sensible scales (the data fills ≥ ½ the page), error bars, a best-fit line, and the slope read off a large triangle.</li>
-<li><strong>Experimental design:</strong> measure many periods, vary over a wide range, repeat, spot outliers, control variables, and check for systematics (zero offset, parallax, timing reaction).</li>
-<li><strong>Read the problem's instructions on rounding and on which method to use.</strong> Points are given per step.</li>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Reporting a result</div>
+<p>Write $x=\bar x\pm\Delta x$ with units. Give $\Delta x$ to <strong>1–2 significant figures</strong> and round $\bar x$ to the same decimal place: $g=9.81\pm0.10$ m/s², not $9.8106\pm0.0998$.
+For $N$ repeated readings with standard deviation $\sigma$, the uncertainty of the mean is the <strong>standard error</strong> $\frac{\sigma}{\sqrt N}$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Propagating uncertainties (independent errors)</div>
+<ul>
+<li><strong>Sums and differences:</strong> absolute uncertainties add in quadrature: $\Delta(a\pm b)=\sqrt{(\Delta a)^2+(\Delta b)^2}$.</li>
+<li><strong>Products and powers:</strong> for $f=a^nb^m$, relative uncertainties add in quadrature:
+$$\frac{\Delta f}{f}=\sqrt{\Big(n\frac{\Delta a}a\Big)^2+\Big(m\frac{\Delta b}b\Big)^2}$$</li>
+<li><strong>General:</strong> $\Delta f=\sqrt{\sum_i\big(\frac{\partial f}{\partial x_i}\Delta x_i\big)^2}$.</li>
 </ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+<p>Some marking schemes accept simple addition of uncertainties (a worst case). Follow the task's instructions.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · $g$ from a pendulum</div>
+<p>$L=1.000\pm0.002$ m. Twenty oscillations timed as $40.12\pm0.2$ s (reaction time), so $T=2.006\pm0.010$ s. Then $g=\frac{4\pi^2L}{T^2}=9.811$ m/s², and
+$$\frac{\Delta g}g=\sqrt{(0.002)^2+(2\times0.005)^2}\approx0.0102\quad\Rightarrow\quad g=9.81\pm0.10\ \text{m/s}^2$$
+The period term dominates (its relative error counts <strong>twice</strong> because $T$ is squared), so improve the timing first.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Why time 20 oscillations, not 1</div>
+<p>Your reaction-time error (~0.1–0.2 s) happens once at the start and once at the end, whatever you time. Spread over 20 periods, it becomes 20× smaller per period. In general: <strong>measure the biggest quantity you can and divide</strong>.</p>
+</div>
+<h2 id="2-linearization">2 · Linearization<a class="anchor" href="#2-linearization" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Make theory predict a straight line</div>
+<p>Eyes and fits handle straight lines best. Transform the variables so the theory becomes $Y=mX+c$; the slope and intercept then give the physical constants, and curvature in the plot reveals that the model is wrong.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Standard linearizations</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Law</th>
+<th>Plot $Y$ against $X$</th>
+<th>Slope</th>
+<th>Intercept</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$T=2\pi\sqrt{L/g}$</td>
+<td>$T^2$ vs $L$</td>
+<td>$4\pi^2/g$</td>
+<td>$0$</td>
+</tr>
+<tr>
+<td>$I=I_0e^{-\mu x}$</td>
+<td>$\ln I$ vs $x$</td>
+<td>$-\mu$</td>
+<td>$\ln I_0$</td>
+</tr>
+<tr>
+<td>$y=ax^n$</td>
+<td>$\ln y$ vs $\ln x$</td>
+<td>$n$</td>
+<td>$\ln a$</td>
+</tr>
+<tr>
+<td>$\frac1f=\frac1u+\frac1v$</td>
+<td>$\frac1v$ vs $\frac1u$</td>
+<td>$-1$</td>
+<td>$\frac1f$</td>
+</tr>
+<tr>
+<td>$T-T_{\text{room}}=\Delta T_0e^{-t/\tau}$</td>
+<td>$\ln(T-T_{\text{room}})$ vs $t$</td>
+<td>$-\frac1\tau$</td>
+<td>$\ln\Delta T_0$</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Uncertainties change under transformations</div>
+<p>If you plot $\ln y$, its error bar is $\Delta(\ln y)=\frac{\Delta y}y$; if you plot $T^2$, it is $2T\Delta T$. Transform the error bars too.</p>
+</div>
+<h2 id="3-fitting-a-straight-line">3 · Fitting a straight line<a class="anchor" href="#3-fitting-a-straight-line" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Least squares (equal uncertainties in $y$)</div>
+<p>For points $(x_i,y_i)$, $i=1..N$, with $D=N\sum x_i^2-\big(\sum x_i\big)^2$:
+$$m=\frac{N\sum x_iy_i-\sum x_i\sum y_i}{D},\qquad c=\frac{\sum y_i\sum x_i^2-\sum x_i\sum x_iy_i}{D}$$
+With the scatter $\sigma_y^2=\frac1{N-2}\sum(y_i-mx_i-c)^2$:
+$$\Delta m=\sigma_y\sqrt{\frac ND},\qquad\Delta c=\sigma_y\sqrt{\frac{\sum x_i^2}{D}}$$</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · The max/min slope method (by hand)</div>
+<p>Draw the best line, then the steepest and shallowest lines that still pass through (almost) all error bars. The slope uncertainty is about half the difference of the extreme slopes. Quick and accepted at IPhO when no calculator fit is available.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/linear-fit.html">Linear fit &amp; uncertainty tool</a></div>
+<p>Enter or drag data points, compare the least-squares fit with the max/min lines, and watch the slope uncertainty shrink as you add points or widen the $x$ range.</p>
+</div>
+<h2 id="4-graphs-that-earn-every-mark">4 · Graphs that earn every mark<a class="anchor" href="#4-graphs-that-earn-every-mark" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · IPhO graph checklist</div>
+<ol>
+<li>A <strong>title</strong> and <strong>labelled axes with units</strong> (e.g. "$T^2$ (s²)").</li>
+<li><strong>Scales</strong> chosen so the data fill at least half of the page in both directions; simple scale steps (1, 2, 5 per division); the origin need not be included.</li>
+<li>Points plotted accurately, with <strong>error bars</strong> where meaningful.</li>
+<li>A <strong>best-fit line</strong> (not joining the dots).</li>
+<li>The slope read from a <strong>large triangle</strong> using points on the line (not data points), with its coordinates shown.</li>
+</ol>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Designing the experiment</div>
+<p>Take data over the <strong>widest range</strong> you can, with roughly even spacing in the variable you'll plot; take more points where things change fast; repeat key readings; note anything unusual; control the other variables; look for systematics (zero offsets, parallax, end effects, heating). <strong>Read the task's instructions on method and rounding</strong>: points are given per step.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>Experiment</strong> deck.</p>
+</div>
+<h2 id="5-home-experiments-cheap">5 · Home experiments (cheap)<a class="anchor" href="#5-home-experiments-cheap" title="Link to this section">#</a></h2>
+<ol>
+<li>Pendulum → $g$ to &lt; 1% (linearize $T^2$ vs $L$).</li>
+<li>CD/DVD as a diffraction grating with a laser pointer → track spacing (module 05).</li>
+<li>Cooling coffee cup → Newton's law of cooling (fit $\ln(T - T_{\text{room}})$ vs $t$).</li>
+<li>A bouncing ball → coefficient of restitution from the sound of the bounces (phone audio recorder): successive bounce times shrink by the factor $e$.</li>
+<li>A smartphone sensor app (e.g. <strong>phyphox</strong>) → acceleration, rotation, magnetic field, sound frequency.</li>
+</ol>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>A cube's side is measured as $2.00\pm0.02$ cm. Volume and its uncertainty?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$V=8.00$ cm³; $\frac{\Delta V}V=3\cdot\frac{0.02}{2.00}=3\%$, so $V=8.0\pm0.2$ cm³ (relative errors of a single variable raised to a power multiply by the power).</p>
+</details>
+<ol start="2">
+<li>You measure $R=\frac VI$ with $V=5.0\pm0.1$ V and $I=0.250\pm0.005$ A. Result?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$R=20.0$ Ω; $\frac{\Delta R}R=\sqrt{0.02^2+0.02^2}\approx2.8\%$: $R=20.0\pm0.6$ Ω.</p>
+</details>
+<ol start="3">
+<li>A capacitor discharges as $V=V_0e^{-t/RC}$. What graph do you plot to find $RC$, and how?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\ln V$ against $t$: a straight line with slope $-\frac1{RC}$, so $RC=-\frac1{\text{slope}}$.</p>
+</details>
+<ol start="4">
+<li>Five students time 10 swings: 15.2, 15.4, 15.1, 15.3, 15.5 s. Period and its uncertainty?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Mean 15.30 s, standard deviation ≈ 0.16 s, standard error ≈ $0.16/\sqrt5\approx0.07$ s. Per swing: $T=1.530\pm0.007$ s.</p>
+</details>
+<ol start="5">
+<li>Data seem to follow $y=ax^n$ but you don't know $n$. How do you find both $a$ and $n$?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Plot $\ln y$ against $\ln x$: the slope is $n$ and the intercept is $\ln a$.</p>
+</details>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
 <ul>
 <li>⭐ <strong>Past IPhO / APhO / EuPhO experimental problems</strong> with marking schemes (see <a href="resources.html">resources</a>). Practice the data-analysis parts even without the apparatus.</li>
 <li>⭐ <strong><a href="https://www.ioc.ee/~kalda/ipho/" target="_blank" rel="noopener">Kalda: Experimental study guide</a></strong>.</li>
 <li><strong>An Introduction to Error Analysis, John Taylor</strong> 💲: the standard text (ch. 1–8).</li>
 </ul>
-<h2 id="home-experiments-cheap">Home experiments (cheap)<a class="anchor" href="#home-experiments-cheap" title="Link to this section">#</a></h2>
-<ol>
-<li>Pendulum → $g$ to &lt; 1% (linearize $T^2$ vs $L$).</li>
-<li>CD/DVD as a diffraction grating with a laser pointer → track spacing.</li>
-<li>Cooling coffee cup → Newton's law of cooling (fit $\ln(T - T_{room})$ vs $t$).</li>
-<li>A bouncing ball → coefficient of restitution from the sound of the bounces (phone audio recorder).</li>
-<li>A smartphone sensor app (e.g. <strong>phyphox</strong>) → acceleration, rotation, magnetic field, sound frequency.</li>
-</ol></article><nav class="pager"><a class="pn prev" href="../physics-olympiad/06-modern-physics.html"><small>← Previous</small>Modern Physics</a><a class="pn next" href="../physics-olympiad/cheatsheet.html"><small>Next →</small>Cheatsheet</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#home-experiments-cheap">Home experiments (cheap)</a></li></ul></nav></aside>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> Every skip-test item done on paper · <input type="checkbox"> 3 home experiments written up with graphs and uncertainties</li>
+</ul></article><nav class="pager"><a class="pn prev" href="../physics-olympiad/06-modern-physics.html"><small>← Previous</small>Modern Physics</a><a class="pn next" href="../physics-olympiad/cheatsheet.html"><small>Next →</small>Cheatsheet</a></nav></main>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-measurements-and-uncertainty">1 · Measurements and uncertainty</a></li><li><a href="#2-linearization">2 · Linearization</a></li><li><a href="#3-fitting-a-straight-line">3 · Fitting a straight line</a></li><li><a href="#4-graphs-that-earn-every-mark">4 · Graphs that earn every mark</a></li><li><a href="#5-home-experiments-cheap">5 · Home experiments (cheap)</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

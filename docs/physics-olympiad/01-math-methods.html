@@ -111,10 +111,22 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../physics-olympiad/index.html">Physics Olympiad</a> <span class="sep">›</span> <span>Math Methods &amp; Estimation</span></nav><article class="doc"><h1 id="01-math-methods-estimation">01 · Math Methods &amp; Estimation<a class="anchor" href="#01-math-methods-estimation" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 01</span><span>⏱ 1 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/physics-olympiad/01-math-methods.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../physics-olympiad/index.html">Physics Olympiad</a> <span class="sep">›</span> <span>Math Methods &amp; Estimation</span></nav><article class="doc"><h1 id="01-math-methods-estimation">01 · Math Methods &amp; Estimation<a class="anchor" href="#01-math-methods-estimation" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 01</span><span>⏱ 6 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/physics-olympiad/01-math-methods.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> the mathematical moves olympiad physics uses constantly. · <strong>Time:</strong> 1–2 weeks (you're strong at math, so this is mostly about the <em>physics habits</em>)</p>
 </blockquote>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>get the form of an answer from <strong>dimensional analysis</strong>, and check every result with it;</li>
+<li>expand to first (or second) order in a small quantity and keep the right terms;</li>
+<li>make <strong>Fermi estimates</strong> to within a factor of a few;</li>
+<li>solve the ODEs that appear in every olympiad (decay, SHM, damped and driven oscillators, quadratic drag);</li>
+<li>use flux, Gauss's and Stokes' theorems as physical ideas, and let <strong>symmetry</strong> replace integrals;</li>
+<li>test answers with <strong>limiting cases</strong>, and analyse equilibria and their stability.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Use dimensional analysis to find the period of a pendulum and the speed of deep-water waves ($v\propto\sqrt{g\lambda}$).</li>
@@ -123,28 +135,224 @@
 <li class="task"><input type="checkbox"> Estimate the number of air molecules in your room, to within a factor of 3.</li>
 <li class="task"><input type="checkbox"> Compute the flux of a uniform field through a hemisphere using a symmetry argument, not an integral.</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h2 id="1-dimensional-analysis">1 · Dimensional analysis<a class="anchor" href="#1-dimensional-analysis" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Dimensions</div>
+<p>Every physical quantity has dimensions built from mass $M$, length $L$, time $T$ (plus current, temperature, …). Write $[Q]=M^aL^bT^c$. <strong>Both sides of an equation must have the same dimensions</strong>, and you can only add quantities of the same dimension. Arguments of $\sin$, $\exp$, $\ln$ must be dimensionless.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · The method</div>
+<ol>
+<li>List the quantities the answer can depend on.</li>
+<li>Write the answer as a product of their powers.</li>
+<li>Match the exponents of $M$, $L$, $T$ and solve.</li>
+</ol>
+<p>The result is correct up to a dimensionless constant (often of order 1). If more quantities than dimensions are involved, you get a dimensionless combination you can't fix this way (Buckingham π theorem).</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Period of a pendulum</div>
+<p>$T$ could depend on the mass $m$ [M], length $\ell$ [L] and $g$ [L T⁻²]. Try $T=m^a\ell^bg^c$: mass gives $a=0$; length gives $b+c=0$; time gives $-2c=1$. So $c=-\tfrac12$, $b=\tfrac12$: $T\propto\sqrt{\ell/g}$. (The exact small-angle result is $2\pi\sqrt{\ell/g}$.) Mass dropped out, which is itself a physical prediction.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Deep-water waves</div>
+<p>The speed can only depend on $g$ and the wavelength $\lambda$ (water density cancels: no other quantity contains mass). $[v]=LT^{-1}$, so $v\propto\sqrt{g\lambda}$. (The exact result is $\sqrt{g\lambda/2\pi}$: long ocean swells travel faster than short ripples.)</p>
+</div>
+<h2 id="2-small-quantity-expansions">2 · Small-quantity expansions<a class="anchor" href="#2-small-quantity-expansions" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Expansions to know instantly (for $|x|\ll1$)</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Expansion</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$(1+x)^n$</td>
+<td>$1+nx+\frac{n(n-1)}2x^2$</td>
+</tr>
+<tr>
+<td>$\sqrt{1+x}$</td>
+<td>$1+\frac x2-\frac{x^2}8$</td>
+</tr>
+<tr>
+<td>$\frac1{1+x}$</td>
+<td>$1-x+x^2$</td>
+</tr>
+<tr>
+<td>$e^x$</td>
+<td>$1+x+\frac{x^2}2$</td>
+</tr>
+<tr>
+<td>$\ln(1+x)$</td>
+<td>$x-\frac{x^2}2$</td>
+</tr>
+<tr>
+<td>$\sin x$</td>
+<td>$x-\frac{x^3}6$</td>
+</tr>
+<tr>
+<td>$\cos x$</td>
+<td>$1-\frac{x^2}2$</td>
+</tr>
+<tr>
+<td>$\tan x$</td>
+<td>$x+\frac{x^3}3$</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Keep the first non-vanishing order</div>
+<p>If the leading terms cancel, you must go one order further. Most olympiad tasks say "to first order in $\epsilon$": expand everything, collect terms, drop higher powers <strong>consistently</strong>.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Gravity a little above the ground</div>
+<p>$g(h)=\frac{GM}{(R+h)^2}=\frac{GM}{R^2}\big(1+\tfrac hR\big)^{-2}\approx g_0\big(1-\tfrac{2h}R\big)$. At $h=10$ km: a $0.3\%$ decrease.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Relativistic kinetic energy</div>
+<p>$(\gamma-1)mc^2$ with $\gamma=(1-v^2/c^2)^{-1/2}\approx1+\frac{v^2}{2c^2}+\frac{3v^4}{8c^4}$ gives $\frac12mv^2+\frac{3mv^4}{8c^2}$: Newton's formula plus the first correction.</p>
+</div>
+<h2 id="3-fermi-estimation">3 · Fermi estimation<a class="anchor" href="#3-fermi-estimation" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · How to estimate anything</div>
+<p>Break the quantity into factors you can each estimate within a factor of ~3; errors partly cancel. Write numbers as powers of 10. Always state the assumptions.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Air molecules in a room</div>
+<p>Room $\approx4\times5\times2.5\ \mathrm m=50\ \mathrm m^3$. Number density $n=\frac p{kT}=\frac{10^5}{1.38\times10^{-23}\cdot293}\approx2.5\times10^{25}\ \mathrm m^{-3}$. Total $\approx1.2\times10^{27}$ molecules.</p>
+</div>
+<h2 id="4-the-ode-toolkit">4 · The ODE toolkit<a class="anchor" href="#4-the-ode-toolkit" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · First-order equations</div>
 <ul>
-<li><strong>Dimensional analysis:</strong> write $[Q] = M^aL^bT^c\ldots$ and match exponents. It gives the answer up to a constant, and it's a quick check on every result.</li>
-<li><strong>Small-quantity expansions:</strong> $(1+x)^n\approx1+nx+\frac{n(n-1)}2x^2$. <strong>Keep the first non-vanishing order.</strong> Most IPhO tasks say "to first order in $\epsilon$".</li>
-<li><strong>Fermi estimation:</strong> break it into factors and get each within ×3.</li>
-<li><strong>ODEs you must solve instantly:</strong> exponential growth/decay, SHM, damped/driven oscillator, $\dot v = -kv^2$-type drag, separation of variables.</li>
-<li><strong>Vector calculus (light):</strong> gradient, divergence, curl as physical ideas. Gauss and Stokes theorems → Gauss's law and Ampère's law.</li>
-<li><strong>Symmetry first:</strong> before integrating, ask what symmetry makes the integral trivial.</li>
-<li><strong>Limiting cases:</strong> check every answer at $m\to0$, $\theta\to0$, $R\to\infty$, etc.</li>
-<li><strong>Graphical/numerical thinking:</strong> sketch functions, find fixed points, linearize around equilibria (stability = sign of the second derivative of the potential).</li>
+<li>$\dot x=-x/\tau$ → $x=x_0e^{-t/\tau}$ (decay, RC circuits, cooling).</li>
+<li>$\dot v=-kv^2$ (quadratic drag, no gravity) → separate variables: $\frac{dv}{v^2}=-k\,dt$ → $v=\frac{v_0}{1+kv_0t}$.</li>
+<li><strong>Separation of variables:</strong> write $\frac{dy}{dx}=f(x)g(y)$ as $\frac{dy}{g(y)}=f(x)dx$ and integrate both sides.</li>
 </ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · The damped harmonic oscillator</div>
+<p>$$\ddot x+2\gamma\dot x+\omega_0^2x=0$$
+Try $x=e^{st}$: $s=-\gamma\pm\sqrt{\gamma^2-\omega_0^2}$.
+- <strong>Underdamped</strong> ($\gamma&lt;\omega_0$): $x=e^{-\gamma t}\big(A\cos\omega_dt+B\sin\omega_dt\big)$, $\omega_d=\sqrt{\omega_0^2-\gamma^2}$.
+- <strong>Critically damped</strong> ($\gamma=\omega_0$): $x=(A+Bt)e^{-\gamma t}$, the fastest return without oscillating.
+- <strong>Overdamped</strong> ($\gamma&gt;\omega_0$): $x=Ae^{s_+t}+Be^{s_-t}$, both $s_\pm&lt;0$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · The driven oscillator and resonance</div>
+<p>For $\ddot x+2\gamma\dot x+\omega_0^2x=\frac{F_0}m\cos\omega t$, the steady state is $x=A\cos(\omega t-\delta)$ with
+$$A=\frac{F_0/m}{\sqrt{(\omega_0^2-\omega^2)^2+4\gamma^2\omega^2}},\qquad\tan\delta=\frac{2\gamma\omega}{\omega_0^2-\omega^2}$$
+The amplitude peaks near $\omega_0$; the <strong>quality factor</strong> $Q=\frac{\omega_0}{2\gamma}$ measures how sharp the peak is (≈ resonance frequency / width).</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/oscillator.html">Driven damped oscillator</a></div>
+<p>Switch between the three damping regimes, then drive it and sweep the frequency through resonance: watch the amplitude peak and the phase lag swing from 0 to 180°.</p>
+</div>
+<div class="box box-learn">
+<div class="box-title"><span class="box-ico">📚</span> Go deeper (optional)</div>
+<p>3Blue1Brown's lesson "<a href="https://www.3blue1brown.com/lessons/differential-equations" target="_blank" rel="noopener">Differential equations, studying the unsolvable</a>" uses the pendulum to show phase space and numerical solution.</p>
+</div>
+<h2 id="5-vector-calculus-as-physics">5 · Vector calculus as physics<a class="anchor" href="#5-vector-calculus-as-physics" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Gradient, divergence, curl</div>
+<ul>
+<li><strong>Gradient</strong> $\nabla f$: points in the direction of steepest increase of a scalar field (force $=-\nabla U$).</li>
+<li><strong>Divergence</strong> $\nabla\cdot\mathbf F$: net outflow per unit volume ("sources").</li>
+<li><strong>Curl</strong> $\nabla\times\mathbf F$: circulation per unit area ("swirl").</li>
+</ul>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Gauss's and Stokes' theorems</div>
+<p>$$\oint_S\mathbf F\cdot d\mathbf A=\int_V\nabla\cdot\mathbf F\,dV,\qquad\oint_C\mathbf F\cdot d\boldsymbol\ell=\int_S(\nabla\times\mathbf F)\cdot d\mathbf A$$
+They give <strong>Gauss's law</strong> and <strong>Ampère's law</strong> (module 04): flux through a closed surface counts the enclosed sources.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Flux through a hemisphere, without integrating</div>
+<p>A uniform field $\mathbf E$ points along the axis of a hemisphere of radius $R$. The hemisphere plus its flat base form a closed surface with no source inside, so the total flux is 0. The flux in through the base is $E\pi R^2$, so the flux out through the curved part is $E\pi R^2$.</p>
+</div>
+<h2 id="6-symmetry-limiting-cases-and-stability">6 · Symmetry, limiting cases and stability<a class="anchor" href="#6-symmetry-limiting-cases-and-stability" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Symmetry first</div>
+<p>Before integrating, ask what symmetry makes the problem trivial: a field that must point radially, a current that must be the same in symmetric branches, points that must have the same potential. Symmetry often reduces a page of calculus to one line.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Check limiting cases</div>
+<p>Every answer should behave sensibly when a parameter goes to 0 or ∞, when masses are equal, when an angle is 0 or 90°. A formula that gives a negative time, an infinite force at a harmless limit, or the wrong sign of a correction is wrong.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Equilibrium and small oscillations</div>
+<p>For a particle in a potential $U(x)$: equilibrium where $U'(x_0)=0$; <strong>stable</strong> if $U''(x_0)&gt;0$. Near a stable equilibrium, $U\approx U(x_0)+\frac12U''(x_0)(x-x_0)^2$, so the motion is SHM with
+$$\omega^2=\frac{U''(x_0)}m$$</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Small oscillations in a molecular potential</div>
+<p>$U(x)=\frac a{x^2}-\frac bx$ ($a,b&gt;0$). $U'=-\frac{2a}{x^3}+\frac b{x^2}=0$ gives $x_0=\frac{2a}b$. $U''(x_0)=\frac{6a}{x_0^4}-\frac{2b}{x_0^3}=\frac{b^4}{8a^3}&gt;0$: stable, with $\omega=\sqrt{\frac{b^4}{8a^3m}}$.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>Methods</strong> deck.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>Use dimensional analysis to find how the radius $R$ of a nuclear fireball depends on the released energy $E$, the time $t$ and the air density $\rho$ (G. I. Taylor's estimate).</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$R=E^a t^b\rho^c$: mass $a+c=0$; length $2a-3c=1$; time $-2a+b=0$. So $a=\frac15$, $c=-\frac15$, $b=\frac25$: $R\propto\big(\frac{Et^2}{\rho}\big)^{1/5}$.</p>
+</details>
+<ol start="2">
+<li>Expand $\frac{1}{\sqrt{1-x}}$ to second order.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$(1-x)^{-1/2}\approx1+\frac x2+\frac38x^2$.</p>
+</details>
+<ol start="3">
+<li>A ball dropped with quadratic air drag reaches terminal speed $v_t$. Write the equation of motion and $v_t$.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$m\dot v=mg-kv^2$; terminal speed when $\dot v=0$: $v_t=\sqrt{mg/k}$.</p>
+</details>
+<ol start="4">
+<li>An oscillator has $\omega_0=10\ \mathrm{s^{-1}}$ and $\gamma=1\ \mathrm{s^{-1}}$. Is it underdamped? Find $\omega_d$ and $Q$.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Yes ($\gamma&lt;\omega_0$). $\omega_d=\sqrt{100-1}\approx9.95\ \mathrm{s^{-1}}$, $Q=\frac{10}{2}=5$.</p>
+</details>
+<ol start="5">
+<li>Estimate how many times a human heart beats in a lifetime.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\sim70$ beats/min × $60\cdot24\cdot365\approx5\times10^5$ min/yr × 80 yr $\approx3\times10^9$ beats.</p>
+</details>
+<ol start="6">
+<li>A bead moves on a parabolic wire $y=kx^2$ in gravity. Find the frequency of small oscillations.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$U=mgkx^2$ near the bottom (the kinetic energy is $\frac12m\dot x^2$ to lowest order), so $U''=2mgk$ and $\omega=\sqrt{2gk}$.</p>
+</details>
+<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<ul>
+<li>Redo 10 textbook results using only dimensional analysis + one physical argument, and check them against the exact formula.</li>
+</ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
 <ul>
 <li>⭐ <strong><a href="https://knzhou.github.io/#handouts" target="_blank" rel="noopener">Kevin Zhou's handouts</a></strong>: start with the introductory/preliminary handout and <strong>M1</strong> (which covers the ODE toolkit). These are the best free olympiad physics materials.</li>
 <li><strong>Street-Fighting Mathematics, Sanjoy Mahajan</strong>: an open-access book (free PDF from MIT Press) on estimation and approximation.</li>
 <li><strong>Mathematical Methods for Physics and Engineering</strong>, Riley, Hobson &amp; Bence 💲: reference only.</li>
 </ul>
-<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
-<li>Redo 10 textbook results using only dimensional analysis + one physical argument, and check them against the exact formula.</li>
+<li class="task"><input type="checkbox"> Every skip-test item done on paper · <input type="checkbox"> you check units and limiting cases on every answer without being reminded</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../physics-olympiad/index.html"><small>← Previous</small>Overview</a><a class="pn next" href="../physics-olympiad/02-mechanics.html"><small>Next →</small>Mechanics</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-dimensional-analysis">1 · Dimensional analysis</a></li><li><a href="#2-small-quantity-expansions">2 · Small-quantity expansions</a></li><li><a href="#3-fermi-estimation">3 · Fermi estimation</a></li><li><a href="#4-the-ode-toolkit">4 · The ODE toolkit</a></li><li><a href="#5-vector-calculus-as-physics">5 · Vector calculus as physics</a></li><li><a href="#6-symmetry-limiting-cases-and-stability">6 · Symmetry, limiting cases and stability</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

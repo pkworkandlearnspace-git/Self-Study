@@ -111,11 +111,23 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../physics-olympiad/index.html">Physics Olympiad</a> <span class="sep">›</span> <span>Mechanics</span></nav><article class="doc"><h1 id="02-mechanics">02 · Mechanics<a class="anchor" href="#02-mechanics" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 02</span><span>⏱ 2 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/physics-olympiad/02-mechanics.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../physics-olympiad/index.html">Physics Olympiad</a> <span class="sep">›</span> <span>Mechanics</span></nav><article class="doc"><h1 id="02-mechanics">02 · Mechanics<a class="anchor" href="#02-mechanics" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 02</span><span>⏱ 8 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/physics-olympiad/02-mechanics.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> the backbone of every IPhO (often 1–2 of the 3 theory problems). · <strong>Time:</strong> 5–7 weeks</p>
 </blockquote>
-<p>👉 Interactive: <a href="interactive/orbits.html">Orbit simulator</a> · <a href="interactive/oscillator.html">Driven damped oscillator</a></p>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>solve kinematics problems with constraints and relative motion;</li>
+<li>draw free-body diagrams, use friction correctly, and work in <strong>non-inertial frames</strong>;</li>
+<li>choose the right <strong>conservation law</strong> (energy, momentum, angular momentum) before writing equations;</li>
+<li>handle <strong>rigid bodies</strong>: moments of inertia, torque, rolling, statics;</li>
+<li>find the frequency of any small oscillation, including <strong>normal modes</strong> of coupled systems;</li>
+<li>solve orbit problems with <strong>Kepler's laws</strong> and the effective potential;</li>
+<li>treat rockets and other variable-mass systems, and basic <strong>fluids</strong>.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> A ladder leans on a frictionless wall with floor friction μ. Find the minimum angle before it slips.</li>
@@ -125,24 +137,245 @@
 <li class="task"><input type="checkbox"> In a rotating frame, write down the centrifugal and Coriolis forces.</li>
 <li class="task"><input type="checkbox"> A rocket expels mass at relative speed $u$. Derive $\Delta v = u\ln(m_0/m_f)$.</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h2 id="1-kinematics">1 · Kinematics<a class="anchor" href="#1-kinematics" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Constant acceleration</div>
+<p>$$v=v_0+at,\qquad x=x_0+v_0t+\tfrac12at^2,\qquad v^2=v_0^2+2a(x-x_0)$$
+<strong>Projectile</strong> (launch speed $v_0$ at angle $\theta$, level ground, no air): time of flight $\frac{2v_0\sin\theta}g$, maximum height $\frac{v_0^2\sin^2\theta}{2g}$, range $R=\frac{v_0^2\sin2\theta}g$ (largest at $45°$).</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Relative motion and constraints</div>
+<p><strong>Relative velocity:</strong> $\mathbf v_{A\text{ rel }B}=\mathbf v_A-\mathbf v_B$. Many problems become easy in the right frame (e.g. two falling objects move uniformly relative to each other).
+<strong>Constraints</strong> link motions: an inextensible string keeps its length constant (differentiate the length to relate speeds); a rigid rod keeps the distance between its ends; <strong>rolling without slipping</strong> means the contact point is at rest: $v=\omega R$.</p>
+</div>
+<h2 id="2-forces-and-frames">2 · Forces and frames<a class="anchor" href="#2-forces-and-frames" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · The free-body diagram routine</div>
+<ol>
+<li>Isolate each body; draw <strong>every</strong> force acting on it (gravity, normal forces, tension, friction, springs).</li>
+<li>Choose axes that make the equations simple (along and perpendicular to an incline).</li>
+<li>Write $\sum\mathbf F=m\mathbf a$ for each body, plus the constraint equations.</li>
+<li>Count unknowns vs equations before solving.</li>
+</ol>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Friction</div>
+<p><strong>Static:</strong> $f\le\mu_sN$, as large as needed to prevent sliding (it can point either way). <strong>Kinetic:</strong> $f=\mu_kN$, opposing the relative sliding velocity. Assume a direction and let the sign of the answer tell you whether it was right.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · The ladder</div>
+<p>A uniform ladder of length $L$ and mass $m$ leans at angle $\theta$ to the floor against a frictionless wall; floor friction coefficient $\mu$. Forces: weight $mg$ at the middle, floor normal $N$ and friction $f$ at the foot, wall normal $N_w$ (horizontal) at the top.
+Vertical: $N=mg$. Horizontal: $f=N_w$. Torques about the foot: $N_wL\sin\theta=mg\frac L2\cos\theta$, so $N_w=\frac{mg}{2\tan\theta}$.
+No slipping needs $f\le\mu N$: $\frac1{2\tan\theta}\le\mu$, i.e. $\tan\theta\ge\frac1{2\mu}$. <strong>Minimum angle</strong> $\theta_{\min}=\arctan\frac1{2\mu}$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Non-inertial frames</div>
+<p>In a frame with acceleration $\mathbf A$, add the <strong>inertial force</strong> $-m\mathbf A$. In a frame rotating at constant angular velocity $\boldsymbol\omega$, add
+$$\mathbf F_{\text{centrifugal}}=m\omega^2\mathbf r_\perp\ \text{(outward from the axis)},\qquad\mathbf F_{\text{Coriolis}}=-2m\,\boldsymbol\omega\times\mathbf v$$
+where $\mathbf v$ is the velocity measured in the rotating frame. <em>Example:</em> the surface of water in a bucket spinning at $\omega$ is the paraboloid $z=\frac{\omega^2r^2}{2g}$ (effective potential $gz-\frac12\omega^2r^2$ is constant on it).</p>
+</div>
+<h2 id="3-energy-and-momentum">3 · Energy and momentum<a class="anchor" href="#3-energy-and-momentum" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Work and energy</div>
+<p>Work $W=\int\mathbf F\cdot d\mathbf r$. <strong>Work–energy theorem:</strong> net work = change in kinetic energy. For conservative forces $\mathbf F=-\nabla U$, mechanical energy $K+U$ is conserved. Common potentials: gravity near the ground $mgh$, spring $\frac12kx^2$, gravitation $-\frac{GMm}r$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Momentum and collisions</div>
+<p>With no external force, total momentum is conserved. In the <strong>centre-of-mass (CM) frame</strong> the total momentum is zero, which simplifies collisions.
+<strong>1D elastic collision</strong> (body 2 initially at rest):
+$$v_1'=\frac{m_1-m_2}{m_1+m_2}v_1,\qquad v_2'=\frac{2m_1}{m_1+m_2}v_1$$
+Equal masses swap velocities. In a perfectly <strong>inelastic</strong> collision the bodies stick; kinetic energy is lost but momentum is conserved. The <strong>coefficient of restitution</strong> $e$ = (separation speed)/(approach speed).</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Which law first?</div>
+<p>Ask <em>what is conserved</em> before writing $F=ma$. No external horizontal force → horizontal momentum. No non-conservative work → energy. No external torque about a point → angular momentum about it. A sudden collision with a pivot → angular momentum about the pivot (the pivot force has no torque there).</p>
+</div>
+<h2 id="4-rotation-and-rigid-bodies">4 · Rotation and rigid bodies<a class="anchor" href="#4-rotation-and-rigid-bodies" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Moments of inertia ($I=\sum m_ir_i^2$)</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Body (mass $M$)</th>
+<th>Axis</th>
+<th>$I$</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>thin rod, length $L$</td>
+<td>centre, perpendicular</td>
+<td>$\frac1{12}ML^2$</td>
+</tr>
+<tr>
+<td>thin rod</td>
+<td>end, perpendicular</td>
+<td>$\frac13ML^2$</td>
+</tr>
+<tr>
+<td>ring / thin hoop, radius $R$</td>
+<td>central axis</td>
+<td>$MR^2$</td>
+</tr>
+<tr>
+<td>solid disk / cylinder</td>
+<td>central axis</td>
+<td>$\frac12MR^2$</td>
+</tr>
+<tr>
+<td>solid sphere</td>
+<td>diameter</td>
+<td>$\frac25MR^2$</td>
+</tr>
+<tr>
+<td>thin spherical shell</td>
+<td>diameter</td>
+<td>$\frac23MR^2$</td>
+</tr>
+<tr>
+<td><strong>Parallel axis:</strong> $I=I_{\text{cm}}+Md^2$. <strong>Perpendicular axis</strong> (flat bodies): $I_z=I_x+I_y$.</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Rotational dynamics</div>
+<p>Torque $\boldsymbol\tau=\mathbf r\times\mathbf F$; angular momentum $\mathbf L=I\boldsymbol\omega$ (about a symmetry axis); $\boldsymbol\tau=\frac{d\mathbf L}{dt}$, so $\tau=I\alpha$ about a <strong>fixed axis or the CM</strong>. Kinetic energy of a rolling body: $K=\frac12Mv_{\text{cm}}^2+\frac12I_{\text{cm}}\omega^2$.
+<strong>Statics:</strong> $\sum\mathbf F=0$ and $\sum\boldsymbol\tau=0$ about <strong>any</strong> point; choose the point that eliminates the most unknown forces.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · A cylinder rolling down an incline, two ways</div>
+<p>Solid cylinder, mass $m$, radius $R$, incline angle $\theta$.
+<strong>Forces and torques:</strong> $ma=mg\sin\theta-f$ and $fR=I\alpha=\frac12mR^2\frac aR$, so $f=\frac12ma$. Then $\frac32ma=mg\sin\theta$: $a=\frac23g\sin\theta$.
+<strong>Energy:</strong> after dropping height $h$: $mgh=\frac12mv^2+\frac12\cdot\frac12mR^2\frac{v^2}{R^2}=\frac34mv^2$, so $v^2=\frac43gh$, which is constant acceleration $\frac23g\sin\theta$ along the slope ✓.
+In general $a=\frac{g\sin\theta}{1+I/(mR^2)}$: a hoop ($\frac12g\sin\theta$) loses to a disk, which loses to a solid sphere ($\frac57g\sin\theta$).</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Torques about an accelerating point</div>
+<p>$\tau=I\alpha$ holds about the CM or a fixed point. About an arbitrary accelerating point it needs an extra term. When in doubt, take torques about the CM.</p>
+</div>
+<h2 id="5-oscillations">5 · Oscillations<a class="anchor" href="#5-oscillations" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Small oscillations, general method</div>
+<p>Write the energy in terms of one coordinate $q$: $E=\frac12m_{\text{eff}}\dot q^2+U(q)$. Near a stable equilibrium:
+$$\omega^2=\frac{U''(q_0)}{m_{\text{eff}}}$$
+<em>Examples:</em> spring $\omega=\sqrt{k/m}$; simple pendulum $\sqrt{g/\ell}$; <strong>physical pendulum</strong> (pivot at distance $d$ from the CM) $\omega=\sqrt{\frac{mgd}{I_{\text{pivot}}}}$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Coupled oscillators and normal modes</div>
+<p>A <strong>normal mode</strong> is a motion where every part oscillates at the <strong>same</strong> frequency. Any motion is a superposition of normal modes. Find them by trying $x_i=A_i\cos\omega t$ and requiring a non-zero solution (a determinant = 0).</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Two masses, three springs</div>
+<p>Masses $m$ between walls, outer springs $k$, middle spring $k'$. <strong>In phase</strong> ($x_1=x_2$): the middle spring never stretches, $\omega_1=\sqrt{k/m}$. <strong>Out of phase</strong> ($x_1=-x_2$): each mass feels $k+2k'$, $\omega_2=\sqrt{\frac{k+2k'}m}$. Starting one mass alone produces <strong>beats</strong>: energy sloshes between the masses at frequency $\omega_2-\omega_1$.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/oscillator.html">Driven damped oscillator</a></div>
+<p>Drive the oscillator and find resonance; compare a high-$Q$ and a low-$Q$ system.</p>
+</div>
+<h2 id="6-gravitation-and-orbits">6 · Gravitation and orbits<a class="anchor" href="#6-gravitation-and-orbits" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Newton's gravitation and the shell theorem</div>
+<p>$F=\frac{GMm}{r^2}$, $U=-\frac{GMm}r$. A spherically symmetric body attracts outside points as if all its mass were at its centre; inside a uniform <strong>shell</strong> the force is zero.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Circular orbits, escape speed, Kepler III</div>
+<p>Circular orbit: $\frac{mv^2}r=\frac{GMm}{r^2}$ → $v=\sqrt{\frac{GM}r}$, period $T=\frac{2\pi r}v$, so
+$$T^2=\frac{4\pi^2}{GM}a^3\quad\text{(Kepler III, also for ellipses with semi-major axis }a)$$
+Escape speed (total energy 0): $v_{\text{esc}}=\sqrt{\frac{2GM}R}$. For Earth: $v_1\approx7.9$ km/s, $v_{\text{esc}}\approx11.2$ km/s.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Energy, effective potential, vis-viva</div>
+<p>Orbital energy $E=-\frac{GMm}{2a}$ (bound orbits). <strong>Vis-viva:</strong> $v^2=GM\big(\frac2r-\frac1a\big)$.
+Angular momentum $L=mr^2\dot\phi$ is conserved, so radial motion obeys an <strong>effective potential</strong>:
+$$U_{\text{eff}}(r)=-\frac{GMm}r+\frac{L^2}{2mr^2}$$
+The second term is a centrifugal barrier. Bound orbits ($E&lt;0$) oscillate between perihelion and aphelion; the minimum of $U_{\text{eff}}$ is the circular orbit.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Geostationary orbit</div>
+<p>Period = one sidereal day, $86\,164$ s. $r=\big(\frac{GMT^2}{4\pi^2}\big)^{1/3}\approx4.22\times10^7$ m, about $35\,800$ km above the surface.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/orbits.html">Orbit simulator</a></div>
+<p>Launch at different speeds from the same point: below $v_1$ (falls in), $v_1$ (circle), between $v_1$ and $v_{\text{esc}}$ (ellipse), above (escapes). Check Kepler III by comparing periods.</p>
+</div>
+<h2 id="7-variable-mass-rockets">7 · Variable mass: rockets<a class="anchor" href="#7-variable-mass-rockets" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · The rocket equation</div>
+<p>A rocket of mass $m$ ejects gas at speed $u$ <strong>relative to the rocket</strong>. In time $dt$ it loses $|dm|$; momentum conservation in the instantaneous rest frame gives $m\,dv=-u\,dm$. Integrating:
+$$\Delta v=u\ln\frac{m_0}{m_f}$$
+To double $\Delta v$ you must <strong>square</strong> the mass ratio, which is why rockets use stages.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · $F=\frac{dp}{dt}$ with changing mass</div>
+<p>Don't write $F=\frac{d(mv)}{dt}=m\dot v+\dot mv$ blindly: it depends on the frame and on the velocity of the mass being gained or lost. Always do momentum bookkeeping for the system over a short time $dt$.</p>
+</div>
+<h2 id="8-fluids">8 · Fluids<a class="anchor" href="#8-fluids" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Fluid statics and dynamics</div>
 <ul>
-<li><strong>Kinematics:</strong> projectiles, relative motion, constraints (strings, rods, rolling: $v = \omega R$).</li>
-<li><strong>Newton's laws:</strong> free-body diagrams. <strong>Choose axes wisely.</strong> Non-inertial frames add $-m\mathbf a_{frame}$, centrifugal $m\omega^2r$, and Coriolis $-2m\boldsymbol\omega\times\mathbf v$.</li>
-<li><strong>Conservation laws:</strong> energy (work–energy, potential energy), momentum (collisions, CM frame), angular momentum (central forces, a skater pulling in her arms). <strong>Ask which quantity is conserved before writing equations.</strong></li>
-<li><strong>Rigid bodies:</strong> moment of inertia (parallel/perpendicular axis theorems), torque $\boldsymbol\tau = \mathbf r\times\mathbf F$, $\tau = I\alpha$ about the CM or a fixed axis, rolling, the instantaneous axis of rotation, statics (Σ<strong>F</strong> = 0 and Σ<strong>τ</strong> = 0 about <em>any</em> point).</li>
-<li><strong>Oscillations:</strong> SHM, small-oscillation approximations, energy method, coupled oscillators and <strong>normal modes</strong>, damped/driven oscillators, resonance, the Q-factor.</li>
-<li><strong>Gravitation:</strong> Kepler's laws, the effective potential $U_{eff} = -\frac{GMm}{r}+\frac{L^2}{2mr^2}$, orbital energy $E = -\frac{GMm}{2a}$, the shell theorem.</li>
-<li><strong>Variable mass:</strong> rockets, chains, conveyor belts.</li>
-<li><strong>Fluids:</strong> hydrostatics, Archimedes, Bernoulli, continuity, surface tension (Laplace pressure $\Delta p = 2\sigma/R$), viscosity basics.</li>
-<li>💡 <strong>Lagrangian mechanics</strong> is optional at IPhO but often a shortcut for complicated constraints. Learn it after the Newtonian toolkit is solid.</li>
+<li><strong>Hydrostatics:</strong> $p=p_0+\rho gh$. <strong>Archimedes:</strong> buoyancy = weight of displaced fluid.</li>
+<li><strong>Continuity</strong> (incompressible): $A_1v_1=A_2v_2$.</li>
+<li><strong>Bernoulli</strong> (steady, incompressible, no viscosity, along a streamline): $p+\frac12\rho v^2+\rho gh=$ const. <em>Torricelli:</em> water leaves a hole at depth $h$ with $v=\sqrt{2gh}$.</li>
+<li><strong>Surface tension:</strong> the pressure inside a droplet exceeds outside by $\Delta p=\frac{2\sigma}R$; a soap bubble (two surfaces) by $\frac{4\sigma}R$.</li>
 </ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
-<ul>
-<li>⭐ <strong><a href="https://www.ioc.ee/~kalda/ipho/" target="_blank" rel="noopener">Jaan Kalda: Mechanics study guide</a></strong>: a compact list of "ideas" with olympiad problems. Built specifically for IPhO. Also see Kevin Zhou's mechanics (<strong>M</strong>) handouts.</li>
-<li>⭐ <strong>Introduction to Classical Mechanics, David Morin</strong> 💲: the best problem-based textbook. Ch. 1–9.</li>
-<li><strong>200 Puzzling Physics Problems</strong>, Gnädig, Honyek &amp; Riley 💲 · <strong>Problems in General Physics</strong>, Irodov (classic and hard).</li>
-</ul>
+</div>
+<h2 id="9-optional-lagrangian-mechanics">9 · Optional: Lagrangian mechanics<a class="anchor" href="#9-optional-lagrangian-mechanics" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Lagrangian method</div>
+<p>Choose generalised coordinates $q_i$ that respect the constraints, write $\mathcal L=K-U$, and use the Euler–Lagrange equations
+$$\frac{d}{dt}\frac{\partial\mathcal L}{\partial\dot q_i}=\frac{\partial\mathcal L}{\partial q_i}$$
+Constraint forces never appear. Not required at IPhO, but a powerful shortcut for complicated linkages. Learn it after the Newtonian toolkit is solid.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>Mechanics</strong> deck.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>A ball is thrown at $20$ m/s at $30°$ above level ground ($g=9.8$). Find its range and time of flight.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Time $=\frac{2\cdot20\cdot\sin30°}{9.8}\approx2.04$ s; range $=\frac{400\sin60°}{9.8}\approx35.3$ m.</p>
+</details>
+<ol start="2">
+<li>A solid sphere and a hoop race down the same incline from rest. Which wins, and what is the ratio of their accelerations?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>The sphere: $a=\frac{g\sin\theta}{1+2/5}=\frac57g\sin\theta$ vs the hoop's $\frac12g\sin\theta$. Ratio $\frac{5/7}{1/2}=\frac{10}7$.</p>
+</details>
+<ol start="3">
+<li>A uniform rod of length $L$ swings about one end. Find the period of small oscillations.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\omega^2=\frac{mg(L/2)}{mL^2/3}=\frac{3g}{2L}$, so $T=2\pi\sqrt{\frac{2L}{3g}}$.</p>
+</details>
+<ol start="4">
+<li>A satellite orbits at $r=2R_E$. How does its speed compare with one at $r=R_E$ (skimming the surface)?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$v\propto r^{-1/2}$, so it is slower by a factor $\sqrt2$: about $5.6$ km/s.</p>
+</details>
+<ol start="5">
+<li>A rocket with exhaust speed $3$ km/s must reach $\Delta v=9$ km/s in one stage. What mass ratio $m_0/m_f$ is needed?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$e^{9/3}=e^3\approx20$: 95% of the launch mass must be fuel.</p>
+</details>
+<ol start="6">
+<li>Water flows out of a hole 1.25 m below the surface of a wide tank. With what speed?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\sqrt{2\cdot9.8\cdot1.25}\approx4.9$ m/s.</p>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ul>
 <li>Solve every Kalda mechanics idea's associated problems. Then do 5 past IPhO mechanics problems under time pressure.</li>
@@ -151,8 +384,19 @@
 <ul>
 <li>Taking torques about a point that's accelerating (only the CM or a fixed point is safe for $\tau = I\alpha$).</li>
 <li>Forgetting friction can point either way. Assume a direction and let the sign tell you.</li>
+<li>Using energy conservation when friction or an inelastic collision dissipates energy.</li>
+</ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://www.ioc.ee/~kalda/ipho/" target="_blank" rel="noopener">Jaan Kalda: Mechanics study guide</a></strong>: a compact list of "ideas" with olympiad problems. Built specifically for IPhO. Also see Kevin Zhou's mechanics (<strong>M</strong>) handouts.</li>
+<li>⭐ <strong>Introduction to Classical Mechanics, David Morin</strong> 💲: the best problem-based textbook. Ch. 1–9.</li>
+<li><strong>200 Puzzling Physics Problems</strong>, Gnädig, Honyek &amp; Riley 💲 · <strong>Problems in General Physics</strong>, Irodov (classic and hard).</li>
+</ul>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> Every skip-test item done on paper · <input type="checkbox"> 5 past IPhO mechanics problems under time pressure</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../physics-olympiad/01-math-methods.html"><small>← Previous</small>Math Methods &amp; Estimation</a><a class="pn next" href="../physics-olympiad/03-thermo-stat.html"><small>Next →</small>Thermodynamics &amp; Statistical Physics</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-kinematics">1 · Kinematics</a></li><li><a href="#2-forces-and-frames">2 · Forces and frames</a></li><li><a href="#3-energy-and-momentum">3 · Energy and momentum</a></li><li><a href="#4-rotation-and-rigid-bodies">4 · Rotation and rigid bodies</a></li><li><a href="#5-oscillations">5 · Oscillations</a></li><li><a href="#6-gravitation-and-orbits">6 · Gravitation and orbits</a></li><li><a href="#7-variable-mass-rockets">7 · Variable mass: rockets</a></li><li><a href="#8-fluids">8 · Fluids</a></li><li><a href="#9-optional-lagrangian-mechanics">9 · Optional: Lagrangian mechanics</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

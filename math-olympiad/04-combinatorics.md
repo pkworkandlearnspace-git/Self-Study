@@ -46,7 +46,7 @@
 ## 2 · Inclusion–exclusion
 
 > [!FORMULA] Inclusion–exclusion principle
-> $$|A_1\cup\dots\cup A_n|=\sum_i|A_i|-\sum_{i<j}|A_i\cap A_j|+\sum_{i<j<k}|A_i\cap A_j\cap A_k|-\dots+(-1)^{n+1}|A_1\cap\dots\cap A_n|$$
+> $$\begin{aligned}|A_1\cup\dots\cup A_n|=&\sum_i|A_i|-\sum_{i<j}|A_i\cap A_j|+\sum_{i<j<k}|A_i\cap A_j\cap A_k|\\&-\dots+(-1)^{n+1}|A_1\cap\dots\cap A_n|\end{aligned}$$
 > Typically $A_i$ = "property $i$ fails", and you count the complement.
 
 > [!EXAMPLE] Derangements

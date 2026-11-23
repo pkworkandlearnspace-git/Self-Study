@@ -111,11 +111,21 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../physics-olympiad/index.html">Physics Olympiad</a> <span class="sep">›</span> <span>Waves &amp; Optics</span></nav><article class="doc"><h1 id="05-waves-optics">05 · Waves &amp; Optics<a class="anchor" href="#05-waves-optics" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 05</span><span>⏱ 1 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/physics-olympiad/05-waves-optics.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../physics-olympiad/index.html">Physics Olympiad</a> <span class="sep">›</span> <span>Waves &amp; Optics</span></nav><article class="doc"><h1 id="05-waves-optics">05 · Waves &amp; Optics<a class="anchor" href="#05-waves-optics" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 05</span><span>⏱ 6 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/physics-olympiad/05-waves-optics.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> interference, diffraction, and geometric optics. These show up in both the theory and the experiment. · <strong>Time:</strong> 2–3 weeks</p>
 </blockquote>
-<p>👉 Interactive: <a href="interactive/interference.html">Wave interference &amp; diffraction</a></p>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>describe travelling and standing waves, and compute wave speeds on strings and in air;</li>
+<li>predict <strong>interference</strong> patterns (double slit, thin films, Michelson) from path and phase differences;</li>
+<li>predict <strong>diffraction</strong> (single slit, grating) and the resolution limit of instruments;</li>
+<li>trace rays through lenses and mirrors, and use Snell's law and total internal reflection;</li>
+<li>handle polarization and the <strong>Doppler effect</strong>.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Derive the double-slit fringe spacing $\Delta y = \lambda L/d$.</li>
@@ -124,26 +134,150 @@
 <li class="task"><input type="checkbox"> Use the Doppler formula for a moving source and a moving observer (sound).</li>
 <li class="task"><input type="checkbox"> Find the resolving power of a telescope (Rayleigh criterion $1.22\lambda/D$).</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h2 id="1-waves">1 · Waves<a class="anchor" href="#1-waves" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Travelling waves</div>
+<p>$$y(x,t)=A\sin(kx-\omega t+\phi),\qquad k=\frac{2\pi}\lambda,\ \ \omega=2\pi f,\ \ v=\frac\omega k=f\lambda$$
+Every such wave solves the <strong>wave equation</strong> $\frac{\partial^2y}{\partial t^2}=v^2\frac{\partial^2y}{\partial x^2}$.
+Wave speeds: string $v=\sqrt{T/\mu}$ (tension / mass per length); sound in a gas $v=\sqrt{\gamma p/\rho}=\sqrt{\gamma RT/M}$ (≈ 343 m/s in air at 20 °C).</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Standing waves and beats</div>
+<p>Two equal waves travelling in opposite directions make a <strong>standing wave</strong> with fixed nodes. A string fixed at both ends (or a pipe open at both ends) supports $f_n=\frac{nv}{2L}$, $n=1,2,3,\dots$; a pipe closed at one end supports only odd harmonics $f_n=\frac{nv}{4L}$. Two tones of nearby frequencies $f_1,f_2$ produce <strong>beats</strong> at $|f_1-f_2|$.</p>
+</div>
+<h2 id="2-interference">2 · Interference<a class="anchor" href="#2-interference" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · The phase-difference rule</div>
+<p>Two coherent waves meeting at a point have phase difference
+$$\Delta\phi=\frac{2\pi}{\lambda}\Delta(\text{optical path})+\text{(reflection phase shifts)}$$
+Constructive when $\Delta\phi=2\pi m$, destructive when $\Delta\phi=(2m+1)\pi$. <strong>Optical path</strong> = $n\times$ geometric path. Reflection off a medium with <strong>higher</strong> refractive index adds a phase of $\pi$ (half a wavelength); off a lower one, nothing.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Double slit</div>
+<p>Slits separated by $d$, screen at distance $L\gg d$. The path difference to a point at angle $\theta$ is $d\sin\theta$, so bright fringes are at $d\sin\theta=m\lambda$. For small angles $y=L\tan\theta\approx L\theta$, giving fringe spacing
+$$\Delta y=\frac{\lambda L}d$$
+<em>Numbers:</em> $\lambda=600$ nm, $d=0.2$ mm, $L=1$ m: $\Delta y=3$ mm.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Thin films</div>
+<p>A soap film ($n=1.33$, thickness $t$) in air, light near normal incidence. Reflection at the top surface (air → film) gains $\pi$; at the bottom (film → air) it doesn't. The extra path is $2nt$. So <strong>constructive reflection</strong> needs $2nt=\big(m+\frac12\big)\lambda$. Thinnest film that strongly reflects 600 nm light: $t=\frac{\lambda}{4n}\approx113$ nm. (An anti-reflection coating on glass, with both reflections gaining $\pi$, uses $2nt=\frac\lambda2$ for destructive reflection.)</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Michelson interferometer and Newton's rings</div>
+<p>A <strong>Michelson interferometer</strong> splits a beam, sends the halves down two arms and recombines them; moving one mirror by $\frac\lambda2$ shifts the pattern by one fringe, so it measures lengths to a fraction of a wavelength. <strong>Newton's rings</strong> come from the air gap between a curved lens and a flat plate; the dark rings have radii $r_m=\sqrt{m\lambda R}$.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/interference.html">Wave interference &amp; diffraction</a></div>
+<p>Change the slit separation, slit width and wavelength, and watch the fringes and the single-slit envelope move exactly as the formulas say.</p>
+</div>
+<h2 id="3-diffraction">3 · Diffraction<a class="anchor" href="#3-diffraction" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Single slit and grating</div>
 <ul>
-<li><strong>Waves:</strong> $y = A\sin(kx - \omega t)$, $v = \omega/k = f\lambda$. The wave equation. String speed $v = \sqrt{T/\mu}$, sound speed. Standing waves and harmonics. Beats.</li>
-<li><strong>Superposition:</strong> phase difference $\Delta\phi = \frac{2\pi}{\lambda}\Delta(\text{path}) + $ reflection phase. Constructive at $\Delta\phi = 2\pi m$.</li>
-<li><strong>Interference:</strong> double slit, thin films (π phase shift on reflection off a higher-n medium), Newton's rings, Michelson interferometer.</li>
-<li><strong>Diffraction:</strong> single slit minima at $a\sin\theta = m\lambda$, diffraction grating maxima at $d\sin\theta = m\lambda$. Intensity = (single-slit envelope) × (multi-slit interference). Rayleigh criterion.</li>
-<li><strong>Geometric optics:</strong> Fermat's principle, Snell's law, total internal reflection, the thin lens/mirror equation $\frac1f = \frac1{d_o}+\frac1{d_i}$, magnification, optical instruments (telescope, microscope), prisms and dispersion.</li>
-<li><strong>Polarization:</strong> Malus's law $I = I_0\cos^2\theta$, Brewster's angle $\tan\theta_B = n_2/n_1$.</li>
-<li><strong>Doppler effect:</strong> sound $f' = f\frac{v \pm v_o}{v \mp v_s}$. Relativistic Doppler in module 06.</li>
+<li><strong>Single slit</strong> of width $a$: dark fringes at $a\sin\theta=m\lambda$ ($m=\pm1,\pm2,\dots$); the central maximum is twice as wide as the others.</li>
+<li><strong>Diffraction grating</strong> with line spacing $d$: sharp bright maxima at $d\sin\theta=m\lambda$.</li>
+<li>With several slits of finite width, intensity = (single-slit envelope) × (multi-slit interference pattern).</li>
 </ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · A CD as a grating</div>
+<p>CD tracks are spaced $d=1.6$ μm. A red laser ($\lambda=650$ nm) gives a first-order maximum at $\sin\theta=\frac{0.65}{1.6}$, $\theta\approx24°$. Measuring the angle lets you measure $d$ at home (module 07).</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Rayleigh criterion</div>
+<p>A circular aperture of diameter $D$ can just resolve two point sources separated by the angle
+$$\theta_{\min}\approx1.22\frac{\lambda}D$$
+<em>Example:</em> a 10 cm telescope at 550 nm: $\theta\approx6.7\times10^{-6}$ rad ≈ 1.4 arcseconds.</p>
+</div>
+<h2 id="4-geometric-optics">4 · Geometric optics<a class="anchor" href="#4-geometric-optics" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Reflection, refraction, total internal reflection</div>
+<p>Angle of incidence = angle of reflection. <strong>Snell's law:</strong> $n_1\sin\theta_1=n_2\sin\theta_2$. Going into a less dense medium, light is <strong>totally internally reflected</strong> beyond the critical angle $\sin\theta_c=\frac{n_2}{n_1}$ (glass → air with $n=1.5$: $\theta_c\approx41.8°$). Both laws follow from <strong>Fermat's principle</strong>: light takes the path of stationary travel time.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Thin lenses and mirrors</div>
+<p>$$\frac1f=\frac1{d_o}+\frac1{d_i},\qquad m=-\frac{d_i}{d_o}$$
+Sign convention (real-is-positive): $d_o&gt;0$ for a real object, $d_i&gt;0$ for a real image (on the far side of a lens, in front of a mirror); converging lens / concave mirror $f&gt;0$; a spherical mirror has $f=\frac R2$. Negative $m$ = inverted image.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · A converging lens</div>
+<p>$f=10$ cm, object at 15 cm: $\frac1{d_i}=\frac1{10}-\frac1{15}=\frac1{30}$, so $d_i=30$ cm (real image), $m=-2$ (inverted, twice as large). Object at 5 cm: $\frac1{d_i}=\frac1{10}-\frac15=-\frac1{10}$, $d_i=-10$ cm: a virtual, upright image magnified ×2 (a magnifying glass).</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Two-lens systems and instruments</div>
+<p>Apply the lens equation to each lens in turn: the image of the first is the object of the second (a "virtual object" if it lies beyond the second lens). Thin lenses in contact: $\frac1f=\frac1{f_1}+\frac1{f_2}$. A <strong>telescope</strong> (objective $f_o$, eyepiece $f_e$, separated by $f_o+f_e$) has angular magnification $\frac{f_o}{f_e}$. A <strong>prism</strong> disperses light because $n$ depends on wavelength.</p>
+</div>
+<figure class="video" data-yt="KTzGBJPuJwM" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/KTzGBJPuJwM/hqdefault.jpg)" aria-label="Play video: But why would light &quot;slow down&quot;? Visualizing Feynman&#x27;s lecture on the refractive index"><span class="video-btn">▶</span><span class="video-label">But why would light &quot;slow down&quot;? Visualizing Feynman&#x27;s lecture on the refractive index</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=KTzGBJPuJwM" target="_blank" rel="noopener">But why would light &quot;slow down&quot;? Visualizing Feynman&#x27;s lecture on the refractive index</a> · 3Blue1Brown · 29 min <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="5-polarization">5 · Polarization<a class="anchor" href="#5-polarization" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Malus's and Brewster's laws</div>
+<p>Light passing through a polarizer at angle $\theta$ to its polarization keeps intensity $I=I_0\cos^2\theta$ (<strong>Malus</strong>). Unpolarized light through one polarizer loses half its intensity. Reflected light is completely polarized at <strong>Brewster's angle</strong> $\tan\theta_B=\frac{n_2}{n_1}$ (air → glass: about $56°$).</p>
+</div>
+<h2 id="6-the-doppler-effect">6 · The Doppler effect<a class="anchor" href="#6-the-doppler-effect" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Doppler effect for sound</div>
+<p>$$f'=f\,\frac{v+v_o}{v-v_s}$$
+with $v$ the sound speed, $v_o$ the observer's speed <strong>towards</strong> the source and $v_s$ the source's speed <strong>towards</strong> the observer (use negative values for "away"). The relativistic Doppler effect for light is in module 06.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · A passing siren</div>
+<p>$f=700$ Hz, car at 30 m/s, $v=340$ m/s. Approaching: $700\cdot\frac{340}{310}\approx768$ Hz. Receding: $700\cdot\frac{340}{370}\approx643$ Hz.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>Waves/Optics</strong> deck.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>A guitar string 0.65 m long has fundamental 110 Hz. What is the wave speed on it?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$v=2Lf=2\cdot0.65\cdot110=143$ m/s.</p>
+</details>
+<ol start="2">
+<li>Green light (530 nm) falls on a grating with 600 lines/mm. At what angles are the first and second orders? Is there a third?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$d=1.667$ μm. $\sin\theta_1=0.318$ → $18.5°$; $\sin\theta_2=0.636$ → $39.5°$; $\sin\theta_3=0.954$ → $72.5°$, so yes, a third order exists (a fourth would need $\sin\theta&gt;1$).</p>
+</details>
+<ol start="3">
+<li>A fish looks up from under water ($n=1.33$). Within what angle from vertical can it see the sky?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\sin\theta_c=\frac1{1.33}$, $\theta_c\approx48.8°$: the sky appears compressed into a cone of half-angle ~49° ("Snell's window").</p>
+</details>
+<ol start="4">
+<li>Two polarizers at $60°$ to each other; unpolarized light of intensity $I_0$. Transmitted intensity?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\frac{I_0}2\cos^260°=\frac{I_0}8$.</p>
+</details>
+<ol start="5">
+<li>A concave mirror with $R=40$ cm forms an image of an object 30 cm away. Where and what kind?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$f=20$ cm: $\frac1{d_i}=\frac1{20}-\frac1{30}=\frac1{60}$, $d_i=60$ cm, real, inverted, $m=-2$.</p>
+</details>
+<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<ul>
+<li>Measure the track spacing of a CD/DVD with a laser pointer (diffraction grating). A classic home experiment for module 07, too.</li>
+</ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
 <ul>
 <li>⭐ <strong><a href="https://www.ioc.ee/~kalda/ipho/" target="_blank" rel="noopener">Kalda: Optics/waves material</a></strong> + Kevin Zhou's waves/optics handouts.</li>
 <li><strong>Optics, Eugene Hecht</strong> 💲 for reference · <strong><a href="https://www.falstad.com/ripple/" target="_blank" rel="noopener">Falstad wave simulations</a></strong> to play with ripples.</li>
 </ul>
-<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
-<li>Measure the track spacing of a CD/DVD with a laser pointer (diffraction grating). A classic home experiment for module 07, too.</li>
+<li class="task"><input type="checkbox"> Every skip-test item done on paper · <input type="checkbox"> CD track spacing measured at home</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../physics-olympiad/04-electromagnetism.html"><small>← Previous</small>Electromagnetism</a><a class="pn next" href="../physics-olympiad/06-modern-physics.html"><small>Next →</small>Modern Physics</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-waves">1 · Waves</a></li><li><a href="#2-interference">2 · Interference</a></li><li><a href="#3-diffraction">3 · Diffraction</a></li><li><a href="#4-geometric-optics">4 · Geometric optics</a></li><li><a href="#5-polarization">5 · Polarization</a></li><li><a href="#6-the-doppler-effect">6 · The Doppler effect</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

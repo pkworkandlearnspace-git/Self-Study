@@ -111,10 +111,22 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../physics-olympiad/index.html">Physics Olympiad</a> <span class="sep">›</span> <span>Electromagnetism</span></nav><article class="doc"><h1 id="04-electromagnetism">04 · Electromagnetism<a class="anchor" href="#04-electromagnetism" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 04</span><span>⏱ 1 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/physics-olympiad/04-electromagnetism.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../physics-olympiad/index.html">Physics Olympiad</a> <span class="sep">›</span> <span>Electromagnetism</span></nav><article class="doc"><h1 id="04-electromagnetism">04 · Electromagnetism<a class="anchor" href="#04-electromagnetism" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 04</span><span>⏱ 7 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/physics-olympiad/04-electromagnetism.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> fields, circuits, and induction at the level of IPhO's long problems. · <strong>Time:</strong> 5–7 weeks</p>
 </blockquote>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>compute electric fields and potentials with superposition and <strong>Gauss's law</strong>;</li>
+<li>solve conductor problems, including the <strong>method of images</strong>, and capacitor energy;</li>
+<li>analyse DC and AC <strong>circuits</strong>: Kirchhoff, Thevenin, infinite ladders, RC/RL/LC transients, complex impedance;</li>
+<li>compute magnetic fields with <strong>Biot–Savart and Ampère</strong>, and the motion of charges in $\mathbf E$ and $\mathbf B$;</li>
+<li>use <strong>Faraday's law</strong> for induced EMFs, inductance and magnetic energy;</li>
+<li>state Maxwell's equations and the basic properties of EM waves.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Use Gauss's law for the field of a uniformly charged sphere (inside and outside) and an infinite plane.</li>
@@ -124,28 +136,186 @@
 <li class="task"><input type="checkbox"> A rod slides on rails in a uniform B. Find the EMF, current, and terminal velocity.</li>
 <li class="task"><input type="checkbox"> Find the motion of a charged particle in uniform E ⟂ B (drift velocity $E/B$).</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h2 id="1-electrostatics">1 · Electrostatics<a class="anchor" href="#1-electrostatics" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Coulomb's law, field and potential</div>
+<p>$$\mathbf F=\frac{1}{4\pi\varepsilon_0}\frac{q_1q_2}{r^2}\hat{\mathbf r},\qquad\mathbf E=\frac{\mathbf F}{q},\qquad\mathbf E=-\nabla V,\qquad V=\frac{1}{4\pi\varepsilon_0}\frac qr$$
+$\frac1{4\pi\varepsilon_0}\approx8.99\times10^9$ N·m²/C². Fields and potentials of several charges <strong>add</strong> (superposition). Potential energy of a pair: $U=\frac{q_1q_2}{4\pi\varepsilon_0r}$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Gauss's law</div>
+<p>$$\oint_S\mathbf E\cdot d\mathbf A=\frac{Q_{\text{enc}}}{\varepsilon_0}$$
+Useful only with symmetry (spherical, cylindrical, planar), where $|\mathbf E|$ is constant on a well-chosen surface.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Three classic fields</div>
 <ul>
-<li><strong>Electrostatics:</strong> Coulomb, superposition, $\mathbf E = -\nabla V$. <strong>Gauss's law</strong> $\oint\mathbf E\cdot d\mathbf A = Q/\varepsilon_0$ (use symmetry!).</li>
-<li><strong>Conductors:</strong> E = 0 inside, the surface is an equipotential. <strong>Method of images</strong>. Capacitance, energy $\frac12CV^2$, energy density $\frac12\varepsilon_0E^2$.</li>
-<li><strong>Dielectrics:</strong> $\varepsilon_r$, polarization (qualitative/basic).</li>
-<li><strong>Circuits:</strong> Kirchhoff's laws, series/parallel, <strong>Thevenin equivalent</strong>, infinite ladders (self-similarity), RC/RL/LC/RLC transients, AC with complex impedance ($Z_L = i\omega L$, $Z_C = 1/(i\omega C)$), non-linear elements (diodes, graphically).</li>
-<li><strong>Magnetostatics:</strong> Lorentz force $q(\mathbf E + \mathbf v\times\mathbf B)$, Biot–Savart, <strong>Ampère's law</strong>, magnetic dipoles, the force on a current-carrying wire.</li>
-<li><strong>Induction:</strong> Faraday $\mathcal E = -d\Phi/dt$, Lenz's law, motional EMF $vBL$, self/mutual inductance, energy $\frac12LI^2$, eddy currents.</li>
-<li><strong>Maxwell's equations &amp; EM waves:</strong> displacement current, $c = 1/\sqrt{\mu_0\varepsilon_0}$, the Poynting vector, radiation pressure.</li>
-<li>🔭 <strong>Analogies:</strong> thermal circuits ↔ electric circuits; gravity ↔ electrostatics (Gauss).</li>
+<li><strong>Uniformly charged ball</strong> (charge $Q$, radius $R$): outside $E=\frac{Q}{4\pi\varepsilon_0r^2}$ (like a point charge); inside, the enclosed charge is $Q\frac{r^3}{R^3}$, so $E=\frac{Qr}{4\pi\varepsilon_0R^3}$, growing linearly from 0.</li>
+<li><strong>Infinite line</strong> (charge per length $\lambda$): cylinder of radius $r$: $E=\frac{\lambda}{2\pi\varepsilon_0r}$.</li>
+<li><strong>Infinite plane</strong> (charge per area $\sigma$): pillbox through the plane: $E=\frac{\sigma}{2\varepsilon_0}$ on each side, independent of distance.</li>
 </ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Electric dipole</div>
+<p>Charges $\pm q$ separated by $\mathbf d$: dipole moment $\mathbf p=q\mathbf d$. In a uniform field it feels torque $\boldsymbol\tau=\mathbf p\times\mathbf E$ and has energy $U=-\mathbf p\cdot\mathbf E$. Far away its field falls as $1/r^3$.</p>
+</div>
+<h2 id="2-conductors-and-capacitors">2 · Conductors and capacitors<a class="anchor" href="#2-conductors-and-capacitors" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Conductors in equilibrium</div>
+<p>Inside a conductor $\mathbf E=0$; any net charge sits on the surface; the whole conductor is an <strong>equipotential</strong>; just outside, $\mathbf E$ is perpendicular to the surface with magnitude $\frac\sigma{\varepsilon_0}$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Method of images</div>
+<p>Replace a conductor by fictitious charges that reproduce its boundary condition; by uniqueness the field outside is then correct. <strong>Point charge $q$ at distance $d$ from a grounded infinite plane:</strong> the image is $-q$ at the mirror point, so the attraction is
+$$F=\frac{1}{4\pi\varepsilon_0}\frac{q^2}{(2d)^2}=\frac{q^2}{16\pi\varepsilon_0d^2}$$
+(For a grounded sphere of radius $R$ and a charge at distance $a$ from its centre: image $-q\frac Ra$ at distance $\frac{R^2}a$.)</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Capacitance and energy</div>
+<p>$C=\frac QV$. Parallel plates: $C=\frac{\varepsilon_0\varepsilon_rA}d$. Energy stored $\frac12CV^2=\frac{Q^2}{2C}$, field energy density $u=\frac12\varepsilon_0E^2$. Capacitors in <strong>parallel add</strong>; in <strong>series</strong> their reciprocals add. A <strong>dielectric</strong> with relative permittivity $\varepsilon_r$ multiplies $C$ by $\varepsilon_r$.</p>
+</div>
+<h2 id="3-circuits">3 · Circuits<a class="anchor" href="#3-circuits" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Kirchhoff's laws and combinations</div>
+<p><strong>Junction rule:</strong> currents into a node sum to zero. <strong>Loop rule:</strong> voltage changes around a loop sum to zero. Resistors in series add; in parallel $\frac1R=\sum\frac1{R_i}$. Power $P=IV=I^2R=\frac{V^2}R$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Thevenin's theorem</div>
+<p>Any linear two-terminal network is equivalent to one EMF $\mathcal E_{\text{th}}$ (the open-circuit voltage) in series with one resistance $R_{\text{th}}$ (the resistance seen with sources switched off). Maximum power goes into a load $R=R_{\text{th}}$.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · An infinite ladder</div>
+<p>An infinite ladder of series resistors $R$ and shunt resistors $R$. Adding one more rung to the front doesn't change it (self-similarity): $R_{\text{eq}}=R+\frac{R\,R_{\text{eq}}}{R+R_{\text{eq}}}$. So $R_{\text{eq}}^2-RR_{\text{eq}}-R^2=0$, giving $R_{\text{eq}}=\frac{1+\sqrt5}2R\approx1.618R$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Transients</div>
+<ul>
+<li><strong>RC charging</strong> through $R$ from EMF $\mathcal E$: $Q(t)=C\mathcal E(1-e^{-t/RC})$, time constant $\tau=RC$.</li>
+<li><strong>RL:</strong> current rises as $I=\frac{\mathcal E}R(1-e^{-tR/L})$, $\tau=L/R$.</li>
+<li><strong>LC:</strong> charge oscillates at $\omega=\frac1{\sqrt{LC}}$; energy swaps between $\frac{Q^2}{2C}$ and $\frac12LI^2$ (like a spring and a mass).</li>
+<li><strong>RLC:</strong> a damped oscillator with $2\gamma=R/L$ (module 01).</li>
+</ul>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · AC circuits with complex impedance</div>
+<p>With $V,I\propto e^{i\omega t}$: $Z_R=R$, $Z_L=i\omega L$, $Z_C=\frac1{i\omega C}$; combine them exactly like resistors. $|Z|$ gives amplitudes, $\arg Z$ the phase. A series RLC circuit resonates at $\omega_0=\frac1{\sqrt{LC}}$, where $Z=R$. Average power $\bar P=I_{\text{rms}}V_{\text{rms}}\cos\phi$.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Non-linear elements</div>
+<p>Diodes and lamps don't obey $V=IR$. Solve graphically: draw the element's $I$–$V$ curve and the "load line" of the rest of the circuit; the intersection is the operating point.</p>
+</div>
+<h2 id="4-magnetic-fields">4 · Magnetic fields<a class="anchor" href="#4-magnetic-fields" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Lorentz force</div>
+<p>$$\mathbf F=q(\mathbf E+\mathbf v\times\mathbf B),\qquad\text{on a wire: }\ \mathbf F=I\boldsymbol\ell\times\mathbf B$$
+The magnetic force is perpendicular to $\mathbf v$, so it does <strong>no work</strong>. In a uniform $\mathbf B$ a charge circles with radius $r=\frac{mv}{qB}$ and angular frequency $\omega_c=\frac{qB}m$ (independent of speed).</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Crossed fields: drift</div>
+<p>In uniform $\mathbf E\perp\mathbf B$, a charge starting from rest moves on a cycloid whose centre drifts with velocity $\mathbf v_d=\frac{\mathbf E\times\mathbf B}{B^2}$, magnitude $\frac EB$, the same for every charge and mass. (In the frame moving at $\mathbf v_d$ the electric field vanishes, leaving pure circular motion.) A <strong>velocity selector</strong> passes only particles with $v=E/B$ undeflected.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Biot–Savart and Ampère</div>
+<p>$$d\mathbf B=\frac{\mu_0}{4\pi}\frac{I\,d\boldsymbol\ell\times\hat{\mathbf r}}{r^2},\qquad\oint\mathbf B\cdot d\boldsymbol\ell=\mu_0I_{\text{enc}}$$
+$\mu_0=4\pi\times10^{-7}$ T·m/A. Results to know:
+- long straight wire: $B=\frac{\mu_0I}{2\pi r}$ (10 A at 5 cm: $4\times10^{-5}$ T, about Earth's field);
+- centre of a circular loop of radius $R$: $B=\frac{\mu_0I}{2R}$;
+- long solenoid with $n$ turns per metre: $B=\mu_0nI$ inside, ≈ 0 outside.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Magnetic dipole</div>
+<p>A current loop has magnetic moment $\mathbf m=I\mathbf A$. In a field: torque $\boldsymbol\tau=\mathbf m\times\mathbf B$, energy $U=-\mathbf m\cdot\mathbf B$. A small magnet behaves the same way.</p>
+</div>
+<h2 id="5-induction">5 · Induction<a class="anchor" href="#5-induction" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Faraday's and Lenz's laws</div>
+<p>$$\mathcal E=-\frac{d\Phi_B}{dt},\qquad\Phi_B=\int\mathbf B\cdot d\mathbf A$$
+The induced current flows so as to <strong>oppose</strong> the change in flux (Lenz). <strong>Motional EMF:</strong> a rod of length $L$ moving at $v$ perpendicular to $\mathbf B$: $\mathcal E=BLv$.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · A rod on rails</div>
+<p>A rod of length $L$ slides on frictionless rails joined by a resistor $R$, in a uniform field $B$ perpendicular to the plane. A constant force $F$ pulls it. EMF $BLv$, current $I=\frac{BLv}R$, magnetic braking force $BIL=\frac{B^2L^2v}R$. <strong>Terminal velocity</strong> when the forces balance: $v_t=\frac{FR}{B^2L^2}$. Then all the work $Fv_t$ becomes heat $I^2R$ ✓ (energy check).</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Inductance and magnetic energy</div>
+<p>Self-inductance $L=\frac{\Phi}{I}$ (long solenoid: $L=\mu_0n^2A\ell$); EMF $-L\frac{dI}{dt}$. Energy $\frac12LI^2$, field energy density $\frac{B^2}{2\mu_0}$. <strong>Mutual inductance</strong> $M$ couples two circuits (transformers: $\frac{V_2}{V_1}=\frac{N_2}{N_1}$ for an ideal transformer).</p>
+</div>
+<h2 id="6-maxwells-equations-and-em-waves">6 · Maxwell's equations and EM waves<a class="anchor" href="#6-maxwells-equations-and-em-waves" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Maxwell's equations (integral form)</div>
+<p>$$\oint\mathbf E\cdot d\mathbf A=\frac{Q}{\varepsilon_0},\quad\oint\mathbf B\cdot d\mathbf A=0,\quad\oint\mathbf E\cdot d\boldsymbol\ell=-\frac{d\Phi_B}{dt},\quad\oint\mathbf B\cdot d\boldsymbol\ell=\mu_0I+\mu_0\varepsilon_0\frac{d\Phi_E}{dt}$$
+The last term (displacement current) makes changing electric fields create magnetic fields, which allows <strong>electromagnetic waves</strong> travelling at $c=\frac1{\sqrt{\mu_0\varepsilon_0}}\approx3.00\times10^8$ m/s with $E=cB$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Energy flow and radiation pressure</div>
+<p>The <strong>Poynting vector</strong> $\mathbf S=\frac1{\mu_0}\mathbf E\times\mathbf B$ gives power per area. A wave of intensity $I$ exerts pressure $\frac Ic$ when absorbed and $\frac{2I}c$ when reflected.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">🔭</span> Intuition · Analogies</div>
+<p>Gravity ↔ electrostatics (both inverse-square: Gauss's law works for both). Thermal circuits ↔ electric circuits (module 03). Mass–spring ↔ LC circuit.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>E&amp;M</strong> deck.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>A hollow conducting sphere of radius $R$ carries charge $Q$. Field at $r&lt;R$ and $r&gt;R$?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$0$ inside (no enclosed charge); $\frac{Q}{4\pi\varepsilon_0r^2}$ outside.</p>
+</details>
+<ol start="2">
+<li>Two capacitors, 2 μF and 3 μF, are in series across 10 V. Charge on each and total energy?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$C=\frac{2\cdot3}{5}=1.2$ μF, $Q=12$ μC on each, energy $\frac12CV^2=60$ μJ.</p>
+</details>
+<ol start="3">
+<li>An LC circuit has $L=1$ mH and $C=1$ μF. What is its resonant frequency?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\omega=\frac1{\sqrt{10^{-9}}}\approx3.16\times10^4$ rad/s, $f\approx5.0$ kHz.</p>
+</details>
+<ol start="4">
+<li>A proton ($m=1.67\times10^{-27}$ kg) moves at $10^6$ m/s perpendicular to a 1 T field. Radius?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$r=\frac{mv}{qB}=\frac{1.67\times10^{-21}}{1.6\times10^{-19}}\approx1.0$ cm.</p>
+</details>
+<ol start="5">
+<li>A square loop of side 10 cm sits in a field rising at 0.5 T/s, perpendicular to the loop, with resistance 2 Ω. Induced current?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\mathcal E=A\frac{dB}{dt}=0.01\cdot0.5=5$ mV; $I=2.5$ mA, flowing to oppose the increase.</p>
+</details>
+<ol start="6">
+<li>Twelve equal resistors $R$ form the edges of a cube. Resistance between opposite corners?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>By symmetry, current $I$ splits into 3, then each of those into 2 (6 edges carrying $I/6$), then recombines into 3. Path: $\frac I3R+\frac I6R+\frac I3R=\frac56IR$, so $R_{\text{eq}}=\frac56R$.</p>
+</details>
+<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<ul>
+<li>Solve 5 infinite/symmetric circuit puzzles. Derive the field of a uniformly magnetized sphere (stretch). Do 3 past IPhO E&amp;M problems.</li>
+</ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
 <ul>
 <li>⭐ <strong><a href="https://www.ioc.ee/~kalda/ipho/" target="_blank" rel="noopener">Kalda: Electricity &amp; Magnetism study guide</a></strong> + Kevin Zhou's E&amp;M (<strong>E</strong>) handouts.</li>
 <li>⭐ <strong>Electricity and Magnetism, Purcell &amp; Morin</strong> (3rd ed.) 💲: the olympiad-standard E&amp;M textbook.</li>
 <li><strong>Introduction to Electrodynamics, Griffiths</strong> 💲: ch. 1–7, for more mathematical depth.</li>
 </ul>
-<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
-<li>Solve 5 infinite/symmetric circuit puzzles. Derive the field of a uniformly magnetized sphere (stretch). Do 3 past IPhO E&amp;M problems.</li>
+<li class="task"><input type="checkbox"> Every skip-test item done on paper · <input type="checkbox"> 3 past IPhO E&amp;M problems</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../physics-olympiad/03-thermo-stat.html"><small>← Previous</small>Thermodynamics &amp; Statistical Physics</a><a class="pn next" href="../physics-olympiad/05-waves-optics.html"><small>Next →</small>Waves &amp; Optics</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-electrostatics">1 · Electrostatics</a></li><li><a href="#2-conductors-and-capacitors">2 · Conductors and capacitors</a></li><li><a href="#3-circuits">3 · Circuits</a></li><li><a href="#4-magnetic-fields">4 · Magnetic fields</a></li><li><a href="#5-induction">5 · Induction</a></li><li><a href="#6-maxwells-equations-and-em-waves">6 · Maxwell's equations and EM waves</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

@@ -111,10 +111,22 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../physics-olympiad/index.html">Physics Olympiad</a> <span class="sep">›</span> <span>Thermodynamics &amp; Statistical Physics</span></nav><article class="doc"><h1 id="03-thermodynamics-statistical-physics">03 · Thermodynamics &amp; Statistical Physics<a class="anchor" href="#03-thermodynamics-statistical-physics" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 03</span><span>⏱ 1 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/physics-olympiad/03-thermo-stat.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../physics-olympiad/index.html">Physics Olympiad</a> <span class="sep">›</span> <span>Thermodynamics &amp; Statistical Physics</span></nav><article class="doc"><h1 id="03-thermodynamics-statistical-physics">03 · Thermodynamics &amp; Statistical Physics<a class="anchor" href="#03-thermodynamics-statistical-physics" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 03</span><span>⏱ 6 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/physics-olympiad/03-thermo-stat.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> gases, heat engines, entropy, and the Boltzmann factor. · <strong>Time:</strong> 3–4 weeks</p>
 </blockquote>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>use the ideal gas law and <strong>kinetic theory</strong> (pressure from collisions, $v_{\text{rms}}$, equipartition);</li>
+<li>apply the <strong>first law</strong> to every standard process and compute work, heat and internal energy;</li>
+<li>use the <strong>second law</strong>: entropy, Carnot efficiency, refrigerators;</li>
+<li>use the <strong>Boltzmann factor</strong> (atmosphere, populations of energy levels);</li>
+<li>solve conduction and <strong>radiation</strong> problems (Stefan–Boltzmann, Wien), including Earth's temperature;</li>
+<li>handle phase changes and know what real-gas corrections do.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Derive the work done in isothermal and adiabatic expansions of an ideal gas.</li>
@@ -123,28 +135,205 @@
 <li class="task"><input type="checkbox"> Use the Boltzmann factor to find the isothermal atmosphere's density profile.</li>
 <li class="task"><input type="checkbox"> Use Stefan–Boltzmann to estimate Earth's equilibrium temperature.</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h2 id="1-the-ideal-gas-and-kinetic-theory">1 · The ideal gas and kinetic theory<a class="anchor" href="#1-the-ideal-gas-and-kinetic-theory" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Ideal gas law</div>
+<p>$$pV=nRT=NkT$$
+$R=8.314$ J/(mol·K), $k=1.381\times10^{-23}$ J/K, $N_A=6.022\times10^{23}$ mol⁻¹, $R=N_Ak$. Temperatures in <strong>kelvin</strong>.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Pressure from molecular collisions</div>
+<p>A molecule of mass $m$ bouncing off a wall transfers momentum $2mv_x$. Summing over $N$ molecules in volume $V$ (and using $\langle v_x^2\rangle=\frac13\langle v^2\rangle$ by symmetry):
+$$pV=\tfrac13Nm\langle v^2\rangle\quad\Rightarrow\quad\tfrac12m\langle v^2\rangle=\tfrac32kT,\qquad v_{\text{rms}}=\sqrt{\frac{3kT}m}$$</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Nitrogen at room temperature</div>
+<p>$m=28\times1.66\times10^{-27}$ kg, $T=300$ K: $v_{\text{rms}}=\sqrt{\frac{3\cdot1.38\times10^{-23}\cdot300}{4.65\times10^{-26}}}\approx517$ m/s, faster than sound (~347 m/s at 300 K), as you'd expect since sound is carried by molecular motion.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Equipartition</div>
+<p>In thermal equilibrium, every <strong>quadratic</strong> degree of freedom (a term like $\frac12mv_x^2$ or $\frac12kx^2$ in the energy) carries on average $\frac12kT$. So a gas with $f$ degrees of freedom has
+$$U=\frac f2nRT,\qquad C_V=\frac f2R\ \text{(per mole)}$$
+Monatomic: $f=3$. Diatomic at room temperature: $f=5$ (3 translation + 2 rotation; vibration is "frozen" until higher $T$).</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Maxwell distribution and mean free path</div>
+<p>Molecular speeds follow the <strong>Maxwell–Boltzmann distribution</strong>, peaking at $v_p=\sqrt{2kT/m}$, with mean $\bar v=\sqrt{8kT/\pi m}$ and $v_{\text{rms}}=\sqrt{3kT/m}$ ($v_p&lt;\bar v&lt;v_{\text{rms}}$). The <strong>mean free path</strong> between collisions is $\lambda=\frac1{\sqrt2\,n\sigma}$ ($n$ = number density, $\sigma$ = collision cross-section): about 70 nm in air at room conditions.</p>
+</div>
+<h2 id="2-the-first-law-and-thermodynamic-processes">2 · The first law and thermodynamic processes<a class="anchor" href="#2-the-first-law-and-thermodynamic-processes" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · First law</div>
+<p>$$\Delta U=Q-W,\qquad W=\int p\,dV$$
+$Q$ = heat <strong>into</strong> the gas, $W$ = work done <strong>by</strong> the gas. For an ideal gas $U$ depends only on $T$: $\Delta U=nC_V\Delta T$ for <strong>any</strong> process. Also $C_p-C_V=R$ and $\gamma=\frac{C_p}{C_V}$ ($\frac53$ monatomic, $\frac75$ diatomic).</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · The standard processes (ideal gas)</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Process</th>
+<th>Constant</th>
+<th>Work by gas $W$</th>
+<th>Heat $Q$</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>isochoric</td>
+<td>$V$</td>
+<td>$0$</td>
+<td>$nC_V\Delta T$</td>
+</tr>
+<tr>
+<td>isobaric</td>
+<td>$p$</td>
+<td>$p\Delta V$</td>
+<td>$nC_p\Delta T$</td>
+</tr>
+<tr>
+<td>isothermal</td>
+<td>$T$</td>
+<td>$nRT\ln\frac{V_2}{V_1}$</td>
+<td>$=W$</td>
+</tr>
+<tr>
+<td>adiabatic</td>
+<td>$pV^\gamma$ ($TV^{\gamma-1}$)</td>
+<td>$\frac{p_1V_1-p_2V_2}{\gamma-1}$</td>
+<td>$0$</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Isothermal vs adiabatic expansion</div>
+<p>One mole of a monatomic gas at 300 K doubles its volume. <strong>Isothermally:</strong> $W=RT\ln2=8.314\cdot300\cdot0.693\approx1.73$ kJ, all supplied as heat. <strong>Adiabatically:</strong> $T_2=T_1\cdot2^{1-\gamma}=300\cdot2^{-2/3}\approx189$ K, and $W=-\Delta U=\frac32R(300-189)\approx1.38$ kJ, paid from internal energy. The adiabat is steeper on a $p$–$V$ diagram, so it does less work.</p>
+</div>
+<h2 id="3-the-second-law-and-entropy">3 · The second law and entropy<a class="anchor" href="#3-the-second-law-and-entropy" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Entropy and the second law</div>
+<p>For a reversible process, $dS=\frac{\delta Q_{\text{rev}}}T$. <strong>Second law:</strong> the entropy of an isolated system never decreases; it stays constant only for reversible processes. Equivalently, heat never flows spontaneously from cold to hot, and no engine converts heat entirely into work. Entropy is a <strong>state function</strong>: compute $\Delta S$ along any convenient reversible path.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Entropy change of an ideal gas</div>
+<p>$$\Delta S=nC_V\ln\frac{T_2}{T_1}+nR\ln\frac{V_2}{V_1}$$
+<em>Free expansion into vacuum</em> (no work, no heat, $T$ unchanged) to double volume: $\Delta S=nR\ln2&gt;0$: irreversible.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Carnot efficiency</div>
+<p>A heat engine takes $Q_h$ from a hot reservoir at $T_h$, rejects $Q_c$ to $T_c$, and does work $W=Q_h-Q_c$. Its efficiency is
+$$\eta=\frac W{Q_h}\le1-\frac{T_c}{T_h}$$
+<strong>Proof:</strong> total entropy change per cycle is $-\frac{Q_h}{T_h}+\frac{Q_c}{T_c}\ge0$ (the gas returns to its state; only the reservoirs change). So $\frac{Q_c}{Q_h}\ge\frac{T_c}{T_h}$. Equality for a reversible (Carnot) cycle: two isotherms and two adiabats.
+<strong>Refrigerator:</strong> coefficient of performance $\text{COP}=\frac{Q_c}W\le\frac{T_c}{T_h-T_c}$.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · A power station</div>
+<p>Steam at 800 K, cooling water at 300 K: the Carnot limit is $1-\frac{300}{800}=62.5\%$. Real plants reach about 40%.</p>
+</div>
+<h2 id="4-the-boltzmann-factor">4 · The Boltzmann factor<a class="anchor" href="#4-the-boltzmann-factor" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Boltzmann factor</div>
+<p>In thermal equilibrium at temperature $T$, the probability of a state with energy $E$ is proportional to
+$$e^{-E/kT}$$
+Ratio of populations of two levels: $\frac{N_2}{N_1}=\frac{g_2}{g_1}e^{-(E_2-E_1)/kT}$ ($g$ = degeneracy). At room temperature $kT\approx\frac1{40}$ eV.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · The isothermal atmosphere</div>
+<p>A molecule at height $h$ has potential energy $mgh$, so $n(h)=n_0e^{-mgh/kT}=n_0e^{-h/H}$ with <strong>scale height</strong> $H=\frac{kT}{mg}$. For air ($m=29$ u) at 288 K: $H\approx8.4$ km. The same result follows from hydrostatics, $dp=-\rho g\,dh$, with $p=nkT$.</p>
+</div>
+<h2 id="5-heat-transfer">5 · Heat transfer<a class="anchor" href="#5-heat-transfer" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Conduction</div>
+<p><strong>Fourier's law:</strong> heat current $P=kA\frac{\Delta T}L$ through a slab (thermal conductivity $k$, area $A$, thickness $L$). <strong>Thermal resistance</strong> $R_{\text{th}}=\frac L{kA}$ combines like electrical resistance: in series they add, in parallel their reciprocals add ($\Delta T\leftrightarrow V$, $P\leftrightarrow I$).</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Radiation</div>
 <ul>
-<li><strong>Ideal gas:</strong> $pV = nRT$. Internal energy $U = \frac f2 nRT$ ($f$ = degrees of freedom). $C_p - C_V = R$, $\gamma = C_p/C_V$.</li>
-<li><strong>First law:</strong> $dU = \delta Q - p\,dV$. Processes: isobaric, isochoric, isothermal, adiabatic ($pV^\gamma$ = const), polytropic.</li>
-<li><strong>Second law &amp; entropy:</strong> $dS = \delta Q_{rev}/T$. The entropy of an isolated system never decreases. Carnot cycle, refrigerators, COP.</li>
-<li><strong>Kinetic theory:</strong> pressure from collisions, Maxwell speed distribution, mean free path $\lambda = \frac{1}{\sqrt2 n\sigma}$, effusion.</li>
-<li><strong>Boltzmann factor:</strong> $P \propto e^{-E/kT}$. Equipartition: $\frac12 kT$ per quadratic degree of freedom.</li>
-<li><strong>Heat transfer:</strong> conduction (Fourier's law, thermal resistance as in circuits), convection (qualitative), <strong>radiation</strong> (Stefan–Boltzmann $P = \sigma A T^4$, Wien's law $\lambda_{max}T = b$).</li>
-<li><strong>Phase transitions:</strong> latent heat, Clausius–Clapeyron (basic), vapor pressure and humidity.</li>
-<li><strong>Surface phenomena and real gases:</strong> van der Waals (qualitative).</li>
+<li><strong>Stefan–Boltzmann:</strong> a black body radiates $P=\sigma AT^4$, $\sigma=5.67\times10^{-8}$ W/(m²K⁴); a grey body $\varepsilon\sigma AT^4$.</li>
+<li><strong>Wien's displacement law:</strong> the spectrum peaks at $\lambda_{\max}=\frac bT$, $b=2.898\times10^{-3}$ m·K. (Sun ~5800 K → ~500 nm; human body ~310 K → ~9.4 μm.)</li>
 </ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Earth's equilibrium temperature</div>
+<p>Sunlight brings $S=1361$ W/m² onto Earth's cross-section $\pi R^2$; a fraction $a$ (albedo ≈ 0.3) is reflected. Earth radiates from its whole surface $4\pi R^2$:
+$$S(1-a)\pi R^2=4\pi R^2\sigma T^4\quad\Rightarrow\quad T=\Big(\frac{S(1-a)}{4\sigma}\Big)^{1/4}$$
+With $a=0.3$: $T\approx255$ K; with $a=0$: $\approx278$ K. The real mean surface temperature (~288 K) is higher because of the <strong>greenhouse effect</strong>.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Newton's law of cooling</div>
+<p>For small temperature differences with convection, $\frac{dT}{dt}=-\frac{T-T_{\text{env}}}\tau$, so $T-T_{\text{env}}$ decays exponentially.</p>
+</div>
+<h2 id="6-phase-changes-and-real-gases">6 · Phase changes and real gases<a class="anchor" href="#6-phase-changes-and-real-gases" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Latent heat and Clausius–Clapeyron</div>
+<p>Melting or boiling at constant $T$ absorbs $Q=mL$. The slope of the coexistence curve is
+$$\frac{dp}{dT}=\frac{L}{T\,\Delta v}$$
+($L$ per mole or per kg, $\Delta v$ the matching volume change). For vaporisation, treating the vapour as ideal and neglecting the liquid's volume: $\ln p\approx-\frac{L}{RT}+\text{const}$ ($L$ per mole).</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Humidity</div>
+<p><strong>Relative humidity</strong> = partial pressure of water vapour / saturated vapour pressure at that temperature. The <strong>dew point</strong> is the temperature at which the air would be saturated.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · van der Waals gas</div>
+<p>$$\Big(p+\frac{an^2}{V^2}\Big)(V-nb)=nRT$$
+$a$ accounts for attraction between molecules (lowers the pressure), $b$ for their finite size (excluded volume). It predicts a liquid–gas critical point qualitatively.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>Thermo</strong> deck.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>A diatomic ideal gas is compressed adiabatically to half its volume from 300 K. Final temperature?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$T_2=T_1\cdot2^{\gamma-1}=300\cdot2^{0.4}\approx396$ K.</p>
+</details>
+<ol start="2">
+<li>What is the maximum COP of a refrigerator keeping its inside at 4 °C in a 25 °C kitchen?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\frac{277}{298-277}=\frac{277}{21}\approx13$.</p>
+</details>
+<ol start="3">
+<li>1 kg of water at 0 °C is mixed with 1 kg at 100 °C. Final temperature, and is entropy created? ($c=4186$ J/(kg·K))</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>50 °C. $\Delta S=c\ln\frac{323}{273}+c\ln\frac{323}{373}=4186\ln\frac{323^2}{273\cdot373}\approx+101$ J/K $&gt;0$: irreversible.</p>
+</details>
+<ol start="4">
+<li>Two levels are separated by $0.1$ eV at $T=300$ K (same degeneracy). Population ratio?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$kT\approx0.0259$ eV, so $e^{-0.1/0.0259}\approx e^{-3.87}\approx0.021$.</p>
+</details>
+<ol start="5">
+<li>A wall is two layers: 10 cm brick ($k=0.6$) and 5 cm insulation ($k=0.04$), area 10 m², $\Delta T=20$ K. Heat loss?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$R=\frac{0.1}{0.6\cdot10}+\frac{0.05}{0.04\cdot10}=0.0167+0.125=0.142$ K/W, so $P=\frac{20}{0.142}\approx141$ W. The insulation dominates.</p>
+</details>
+<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<ul>
+<li>Draw p–V diagrams for 5 cycles and compute their efficiencies. Estimate Earth's temperature with and without albedo.</li>
+</ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
 <ul>
 <li>⭐ <strong><a href="https://www.ioc.ee/~kalda/ipho/" target="_blank" rel="noopener">Kalda: Thermodynamics study guide</a></strong> + Kevin Zhou's thermodynamics (<strong>T</strong>) handouts.</li>
 <li><strong>An Introduction to Thermal Physics, Daniel Schroeder</strong> 💲: excellent and readable (ch. 1–4, 6).</li>
 <li><strong>Fundamentals of Physics, Halliday/Resnick/Walker</strong> 💲: the basics, if you need them.</li>
 </ul>
-<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
-<li>Draw p–V diagrams for 5 cycles and compute their efficiencies. Estimate Earth's temperature with and without albedo.</li>
+<li class="task"><input type="checkbox"> Every skip-test item done on paper · <input type="checkbox"> 5 cycles analysed with efficiencies</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../physics-olympiad/02-mechanics.html"><small>← Previous</small>Mechanics</a><a class="pn next" href="../physics-olympiad/04-electromagnetism.html"><small>Next →</small>Electromagnetism</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-the-ideal-gas-and-kinetic-theory">1 · The ideal gas and kinetic theory</a></li><li><a href="#2-the-first-law-and-thermodynamic-processes">2 · The first law and thermodynamic processes</a></li><li><a href="#3-the-second-law-and-entropy">3 · The second law and entropy</a></li><li><a href="#4-the-boltzmann-factor">4 · The Boltzmann factor</a></li><li><a href="#5-heat-transfer">5 · Heat transfer</a></li><li><a href="#6-phase-changes-and-real-gases">6 · Phase changes and real gases</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>
