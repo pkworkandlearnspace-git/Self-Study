@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 · Machine Learning Fundamentals · Self-Study</title>
+<meta name="description" content="From the math and NumPy to transformers, LLMs, generative models and RL.">
+<script>try{var t=localStorage.getItem('ss-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script defer src="../assets/katex/katex.min.js"></script>
+<script defer src="../assets/katex/contrib/auto-render.min.js"></script>
+<script defer src="../assets/search-index.js"></script>
+<script defer src="../assets/site.js"></script>
+</head>
+<body data-root="../" data-page="deep-learning/03-ml-fundamentals.html">
+<a class="skip" href="#content">Skip to content</a>
+<div class="progress" aria-hidden="true"><div></div></div>
+<header class="topbar">
+  <button class="icon-btn menu-btn" aria-label="Open navigation" aria-expanded="false">☰</button>
+  <a class="brand" href="../index.html"><span class="brand-mark">📚</span>Self-Study</a>
+  <div class="search">
+    <input id="search" type="search" placeholder="Search all notes…  ( / )" autocomplete="off" aria-label="Search">
+    <div class="search-results" role="listbox" hidden></div>
+  </div>
+  <button class="icon-btn theme-btn" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+</header>
+<div class="shell">
+  <aside class="sidebar"><nav class="side-nav" aria-label="All pages">
+<a class="side-home" href="../index.html">🏠 Home</a>
+<a class="side-home" href="../tools.html">🎛️ All interactive tools</a>
+<details class="side-topic"><summary><span class="ico">🧮</span>Math Olympiad</summary><ul>
+<li><a href="../math-olympiad/index.html">Overview</a></li>
+<li><a href="../math-olympiad/01-problem-solving-proofs.html"><span class="num">01</span>Problem Solving &amp; Proof Writing</a></li>
+<li><a href="../math-olympiad/02-algebra.html"><span class="num">02</span>Algebra</a></li>
+<li><a href="../math-olympiad/03-number-theory.html"><span class="num">03</span>Number Theory</a></li>
+<li><a href="../math-olympiad/04-combinatorics.html"><span class="num">04</span>Combinatorics</a></li>
+<li><a href="../math-olympiad/05-geometry.html"><span class="num">05</span>Geometry</a></li>
+<li><a href="../math-olympiad/06-contest-practice.html"><span class="num">06</span>Contest Practice &amp; Solution Writing</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../math-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../math-olympiad/resources.html">Resources</a></li>
+<li><a href="../math-olympiad/progress.html">Progress log</a></li>
+<li><a href="../math-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">⚛️</span>Physics Olympiad</summary><ul>
+<li><a href="../physics-olympiad/index.html">Overview</a></li>
+<li><a href="../physics-olympiad/01-math-methods.html"><span class="num">01</span>Math Methods &amp; Estimation</a></li>
+<li><a href="../physics-olympiad/02-mechanics.html"><span class="num">02</span>Mechanics</a></li>
+<li><a href="../physics-olympiad/03-thermo-stat.html"><span class="num">03</span>Thermodynamics &amp; Statistical Physics</a></li>
+<li><a href="../physics-olympiad/04-electromagnetism.html"><span class="num">04</span>Electromagnetism</a></li>
+<li><a href="../physics-olympiad/05-waves-optics.html"><span class="num">05</span>Waves &amp; Optics</a></li>
+<li><a href="../physics-olympiad/06-modern-physics.html"><span class="num">06</span>Modern Physics</a></li>
+<li><a href="../physics-olympiad/07-experimental.html"><span class="num">07</span>Experimental Physics</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../physics-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../physics-olympiad/resources.html">Resources</a></li>
+<li><a href="../physics-olympiad/progress.html">Progress log</a></li>
+<li><a href="../physics-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">💻</span>Informatics Olympiad</summary><ul>
+<li><a href="../informatics-olympiad/index.html">Overview</a></li>
+<li><a href="../informatics-olympiad/01-cpp-for-cp.html"><span class="num">01</span>C++ for Competitive Programming</a></li>
+<li><a href="../informatics-olympiad/02-core-techniques.html"><span class="num">02</span>Complexity &amp; Core Techniques</a></li>
+<li><a href="../informatics-olympiad/03-data-structures.html"><span class="num">03</span>Data Structures</a></li>
+<li><a href="../informatics-olympiad/04-graphs-trees.html"><span class="num">04</span>Graphs &amp; Trees</a></li>
+<li><a href="../informatics-olympiad/05-dynamic-programming.html"><span class="num">05</span>Dynamic Programming</a></li>
+<li><a href="../informatics-olympiad/06-math-strings-geometry.html"><span class="num">06</span>Math, Strings &amp; Geometry</a></li>
+<li><a href="../informatics-olympiad/07-ioi-advanced.html"><span class="num">07</span>IOI Skills &amp; Advanced Topics</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../informatics-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../informatics-olympiad/resources.html">Resources</a></li>
+<li><a href="../informatics-olympiad/progress.html">Progress log</a></li>
+<li><a href="../informatics-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">🗣️</span>IELTS Academic</summary><ul>
+<li><a href="../ielts/index.html">Overview</a></li>
+<li><a href="../ielts/01-test-strategy.html"><span class="num">01</span>Test Strategy &amp; Scoring</a></li>
+<li><a href="../ielts/02-listening.html"><span class="num">02</span>Listening</a></li>
+<li><a href="../ielts/03-reading.html"><span class="num">03</span>Reading (Academic)</a></li>
+<li><a href="../ielts/04-writing-task1.html"><span class="num">04</span>Writing Task 1 (Academic)</a></li>
+<li><a href="../ielts/05-writing-task2.html"><span class="num">05</span>Writing Task 2</a></li>
+<li><a href="../ielts/06-speaking.html"><span class="num">06</span>Speaking</a></li>
+<li><a href="../ielts/07-vocab-grammar.html"><span class="num">07</span>Vocabulary &amp; Grammar for Band 7</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../ielts/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../ielts/resources.html">Resources</a></li>
+<li><a href="../ielts/progress.html">Progress log</a></li>
+<li><a href="../ielts/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic" open><summary><span class="ico">🧠</span>Deep Learning</summary><ul>
+<li><a href="../deep-learning/index.html">Overview</a></li>
+<li><a href="../deep-learning/01-math-for-dl.html"><span class="num">01</span>Math for Deep Learning</a></li>
+<li><a href="../deep-learning/02-python-numpy-tools.html"><span class="num">02</span>Python, NumPy &amp; Tools</a></li>
+<li><a class="active" aria-current="page" href="../deep-learning/03-ml-fundamentals.html"><span class="num">03</span>Machine Learning Fundamentals</a></li>
+<li><a href="../deep-learning/04-neural-nets-from-scratch.html"><span class="num">04</span>Neural Networks from Scratch</a></li>
+<li><a href="../deep-learning/05-pytorch-training.html"><span class="num">05</span>PyTorch &amp; the Craft of Training</a></li>
+<li><a href="../deep-learning/06-cnns-vision.html"><span class="num">06</span>CNNs &amp; Computer Vision</a></li>
+<li><a href="../deep-learning/07-sequences-rnns.html"><span class="num">07</span>Sequences, Embeddings &amp; RNNs</a></li>
+<li><a href="../deep-learning/08-transformers.html"><span class="num">08</span>Transformers</a></li>
+<li><a href="../deep-learning/09-llms.html"><span class="num">09</span>Large Language Models</a></li>
+<li><a href="../deep-learning/10-generative-models.html"><span class="num">10</span>Generative Models</a></li>
+<li><a href="../deep-learning/11-reinforcement-learning.html"><span class="num">11</span>Reinforcement Learning</a></li>
+<li><a href="../deep-learning/12-advanced-frontiers.html"><span class="num">12</span>Advanced Frontiers &amp; Specializations</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../deep-learning/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../deep-learning/resources.html">Resources</a></li>
+<li><a href="../deep-learning/progress.html">Progress log</a></li>
+<li><a href="../deep-learning/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<a class="side-home" href="../_template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
+</nav></aside>
+  <div class="scrim" hidden></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Machine Learning Fundamentals</span></nav><article class="doc"><h1 id="03-machine-learning-fundamentals">03 · Machine Learning Fundamentals<a class="anchor" href="#03-machine-learning-fundamentals" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 03</span><span>⏱ 6 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/03-ml-fundamentals.md" target="_blank" rel="noopener">View Markdown source</a></div>
+<blockquote>
+<p><strong>Goal:</strong> the concepts every DL model inherits: loss, generalization, evaluation. · <strong>Time:</strong> 20–30 h · <strong>Needs:</strong> 01, 02</p>
+</blockquote>
+<h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> Explain train / validation / test splits and why tuning on the test set is cheating.</li>
+<li class="task"><input type="checkbox"> Derive the logistic regression gradient. Explain why its loss is cross-entropy.</li>
+<li class="task"><input type="checkbox"> Explain the bias–variance trade-off, and how L2 regularization changes it.</li>
+<li class="task"><input type="checkbox"> For an imbalanced dataset (1% positive), explain why accuracy is misleading, and define precision, recall, F1, and ROC-AUC.</li>
+<li class="task"><input type="checkbox"> Explain k-fold cross-validation and data leakage, with an example.</li>
+<li class="task"><input type="checkbox"> Say what ROC-AUC measures as a probability, and why it doesn't change when the class balance changes but precision does.</li>
+</ul>
+<p>🎯 Not sure? Take the auto-graded <a href="interactive/foundations-quiz.html">Foundations Quiz</a> (filter by module) before deciding.</p>
+<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<ul>
+<li><strong>Learning = optimization + generalization.</strong> Fit training data (minimize empirical risk) and do well on unseen data. The second is the hard part.</li>
+<li><strong>Supervised setup:</strong> data $(x_i, y_i)$, model $f_\theta$, loss $\ell$, minimize $\frac1N\sum\ell(f_\theta(x_i), y_i)$.</li>
+<li><strong>Linear regression:</strong> $\hat y = \mathbf w^\top\mathbf x + b$, MSE loss, closed form $\mathbf w = (X^\top X)^{-1}X^\top\mathbf y$.</li>
+<li><strong>Logistic regression:</strong> $p(y{=}1\mid\mathbf x) = \sigma(\mathbf w^\top\mathbf x)$, binary cross-entropy loss, gradient $X^\top(\hat{\mathbf y}-\mathbf y)$ for the summed loss (divide by $N$ for the mean). The loss is convex in $\mathbf w$, so GD finds the global optimum (if the data are linearly separable, $\|\mathbf w\|\to\infty$ without regularization). <strong>A neural net is stacked logistic regressions.</strong></li>
+<li><strong>Softmax regression:</strong> the multi-class version, with categorical cross-entropy.</li>
+<li><strong>Generalization:</strong><ul>
+<li><strong>Underfitting</strong> (high bias): train error high. → Bigger model, more features, train longer.</li>
+<li><strong>Overfitting</strong> (high variance): train ≪ val error. → More data, regularization, augmentation, early stopping.</li>
+<li><strong>Decomposition (squared loss):</strong> expected test error $=\text{bias}^2+\text{variance}+\sigma^2_{\text{noise}}$. No model beats the noise term.</li>
+<li>Deep nets break the classic U-curve (<strong>double descent</strong>, see module 12), but the diagnosis above still guides practice.</li>
+<li>🎛️ <strong>See it:</strong> <a href="interactive/generalization-lab.html">Generalization Lab</a>: polynomial fits with train/val curves, plus a threshold/ROC/PR simulator.</li>
+</ul>
+</li>
+<li><strong>Regularization:</strong> L2/weight decay (Gaussian prior), L1 (sparsity), early stopping, and later dropout.</li>
+<li><strong>Evaluation:</strong> a held-out <strong>test set touched once</strong>. Use a <strong>validation set</strong> for decisions. Cross-validation for small data.</li>
+<li><strong>Metrics:</strong> accuracy, precision/recall/F1, ROC-AUC, confusion matrix (classification); MSE/MAE/$R^2$ (regression). <strong>ROC-AUC</strong> = probability a random positive is scored above a random negative; it ignores the threshold <em>and</em> the class balance. With rare positives, the <strong>precision–recall curve</strong> (and average precision) is more informative.</li>
+<li><strong>Data leakage:</strong> information from the test set or the future leaks into training (e.g. normalizing with statistics from all data). It's the #1 source of fake results.</li>
+<li><strong>Feature scaling:</strong> standardize inputs (mean 0, std 1). This matters for GD convergence (conditioning, from module 01).</li>
+<li><strong>Other classical models (know what they are, don't master them):</strong> k-NN, decision trees, random forests, <strong>gradient boosting (XGBoost/LightGBM)</strong>, SVM, k-means, PCA. Boosted trees are still the default for medium-sized <em>tabular</em> data (<a href="https://arxiv.org/abs/2207.08815" target="_blank" rel="noopener">Grinsztajn et al., 2022</a>), although tabular foundation models such as <a href="https://www.nature.com/articles/s41586-024-08328-6" target="_blank" rel="noopener">TabPFN (Nature, 2025)</a> now match or beat them on small datasets.</li>
+</ul>
+<h2 id="worked-examples">Worked examples<a class="anchor" href="#worked-examples" title="Link to this section">#</a></h2>
+<p><strong>1 · Logistic-regression gradient in three lines.</strong> One example, $z=\mathbf w^\top\mathbf x$, $p=\sigma(z)$, loss $\ell=-[y\log p+(1-y)\log(1-p)]$.
+Using $\sigma'(z)=\sigma(z)(1-\sigma(z))$: $\frac{\partial\ell}{\partial p}=-\frac yp+\frac{1-y}{1-p}$, so $\frac{\partial\ell}{\partial z}=\frac{\partial\ell}{\partial p}\,p(1-p)=p-y$, and $\nabla_{\mathbf w}\ell=(p-y)\mathbf x$. Stack the rows: $\nabla = X^\top(\hat{\mathbf y}-\mathbf y)$. Same "prediction minus target" form as linear regression. That isn't luck: both are GLMs with their canonical link.
+<em>Numbers:</em> $\mathbf x=(1,2)$, $\mathbf w=\mathbf 0$, $y=1$ → $p=0.5$, gradient $=(0.5-1)(1,2)=(-0.5,-1)$. A GD step increases both weights, pushing $p$ toward 1 ✓.</p>
+<p><strong>2 · The accuracy trap, in numbers.</strong> 1000 patients, 10 sick. A model flags 30 people, 8 of them sick.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>predicted sick</th>
+<th>predicted healthy</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>sick (10)</strong></td>
+<td>TP = 8</td>
+<td>FN = 2</td>
+</tr>
+<tr>
+<td><strong>healthy (990)</strong></td>
+<td>FP = 22</td>
+<td>TN = 968</td>
+</tr>
+</tbody>
+</table></div>
+<p>Accuracy $=976/1000=97.6\%$, which is <em>worse</em> than "everyone is healthy" (99%). But recall $=8/10=80\%$, precision $=8/30\approx27\%$, F1 $=2\cdot0.27\cdot0.8/(0.27+0.8)\approx0.40$. For screening, this model is useful and the baseline is useless. Accuracy hides that.</p>
+<p><strong>3 · Leakage you won't notice.</strong> You standardize features with the mean/std of the <em>whole</em> dataset, then split. The validation rows influenced the scaling, so the validation score is slightly optimistic. With feature selection on all data ("keep the 20 features most correlated with y") the effect can be huge: on pure noise you can get well-above-chance CV accuracy. Fix: put every fitted step inside the CV loop (<code>sklearn.pipeline.Pipeline</code>).</p>
+<pre><code class="language-mermaid">flowchart LR
+  D[All data] --&gt; S{split first}
+  S --&gt; TR[train]
+  S --&gt; VA[validation]
+  S --&gt; TE[test: touch once]
+  TR --&gt; F[&quot;fit scaler / features / model&quot;]
+  F --&gt;|transform only| VA
+  F --&gt;|transform only| TE
+  VA --&gt; H[choose hyperparameters]
+</code></pre>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>Train error 2%, validation error 15%. Train error 18%, validation error 19% (human-level ≈ 2%). Diagnose each and give two fixes.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>First: <strong>high variance</strong> (overfitting). More data, augmentation, regularization (weight decay, dropout), early stopping, or a smaller model. Second: <strong>high bias</strong> (underfitting; the gap to human level is 16 points). Bigger model, better features, train longer, less regularization.</p>
+</details>
+<ol start="2">
+<li>Prove that ROC-AUC doesn't change if you apply any strictly increasing function to the scores (e.g. sigmoid, or ×10).</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>AUC $=P(s(x^+)&gt;s(x^-))$ depends only on the <em>ranking</em> of scores, and a strictly increasing $g$ preserves every pairwise comparison. (So AUC also says nothing about calibration.)</p>
+</details>
+<ol start="3">
+<li>Why can't you get the logistic-regression weights in closed form like linear regression?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Setting $X^\top(\sigma(X\mathbf w)-\mathbf y)=0$ gives equations that are nonlinear in $\mathbf w$ (through $\sigma$). You solve them iteratively: gradient descent, or Newton's method (= IRLS), which uses the Hessian $X^\top SX$ with $S=\mathrm{diag}(p_i(1-p_i))$.</p>
+</details>
+<ol start="4">
+<li>You have 500 labelled examples. Describe 5-fold CV for choosing the L2 strength $\lambda$, then how you report the final number.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>First set aside a test set (e.g. 100). On the remaining 400: for each $\lambda$ on a log grid, train on 4 folds and validate on the 5th, rotating through all 5, and average the 5 scores. Pick the best $\lambda$, retrain on all 400, and evaluate <strong>once</strong> on the test set. (Or use nested CV if the data are too few for a test set.)</p>
+</details>
+<ol start="5">
+<li>A time-series model predicts tomorrow's sales. You shuffle the rows and do 5-fold CV, and it looks great. What's wrong?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Leakage from the future: training folds contain days after the validation days. Use a forward-chaining split (train on the past, validate on the next block), e.g. <code>TimeSeriesSplit</code>.</p>
+</details>
+<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://www.coursera.org/specializations/machine-learning-introduction" target="_blank" rel="noopener">Machine Learning Specialization (Andrew Ng, Coursera)</a></strong>: courses 1–2. Coursera's free-audit and financial-aid options change over time, so check the course page. You'll move fast. Or, if you prefer reading:</li>
+<li>⭐ (alt) <strong><a href="https://www.statlearning.com/" target="_blank" rel="noopener">An Introduction to Statistical Learning, with Python (ISLP)</a></strong>: free PDF, ch. 2–6, 8, 10, 12.</li>
+<li><strong><a href="https://cs229.stanford.edu/main_notes.pdf" target="_blank" rel="noopener">Stanford CS229 lecture notes</a></strong>: the math-heavy version, which suits you well (GLMs, the exponential family).</li>
+<li><strong><a href="https://scikit-learn.org/stable/user_guide.html" target="_blank" rel="noopener">scikit-learn user guide</a></strong>: the practical API and a great reference.</li>
+<li><strong><a href="https://developers.google.com/machine-learning/crash-course" target="_blank" rel="noopener">Google ML Crash Course</a></strong>: quick, interactive refresher.</li>
+</ul>
+<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<ol>
+<li><strong>Logistic regression from scratch in NumPy</strong> (gradient descent, no sklearn) on a binary dataset. Plot the loss curve and the decision boundary.</li>
+<li>Same dataset with <code>sklearn</code>: compare against yours, then run 5-fold cross-validation and a grid search over the regularization strength.</li>
+<li>A Kaggle "Getting Started" competition (Titanic or House Prices): full pipeline with a gradient-boosting baseline.</li>
+</ol>
+<h2 id="traps">Traps<a class="anchor" href="#traps" title="Link to this section">#</a></h2>
+<ul>
+<li>Celebrating 99% accuracy on a 99%-majority dataset.</li>
+<li>Fitting the scaler on all the data before splitting (leakage).</li>
+<li>Skipping baselines. <strong>Always</strong> compare against a trivial baseline (predict the mean or the majority class).</li>
+<li>Reporting the validation score you tuned on as your final result. It's optimistically biased. Report the untouched test score.</li>
+<li>Random splits on grouped or time-ordered data (same patient in train and val, future in train). Split by group or by time.</li>
+</ul>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> Scratch and sklearn logistic regression agree · <input type="checkbox"> you can explain every number on your confusion matrix</li>
+</ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/02-python-numpy-tools.html"><small>← Previous</small>Python, NumPy &amp; Tools</a><a class="pn next" href="../deep-learning/04-neural-nets-from-scratch.html"><small>Next →</small>Neural Networks from Scratch</a></nav></main>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#worked-examples">Worked examples</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
+</div>
+</body>
+</html>

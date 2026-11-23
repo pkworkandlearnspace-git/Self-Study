@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Orbit Simulator</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style> canvas { aspect-ratio: 1 / 1; } </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Physics Olympiad tools</a></header>
+  <h1>Orbit Simulator</h1>
+  <p class="lead">A planet starts at distance r₀ = 1 from a star (GM = 1). Set its launch speed as a multiple of the circular speed and watch Kepler's laws appear. The energy and angular momentum readouts should stay constant: that's your check that the numerical integrator is good (module 02).</p>
+  <div class="grid two">
+    <canvas id="cv" width="640" height="640" aria-label="Orbit animation"></canvas>
+    <div class="controls">
+      <label class="ctl">Launch speed v₀ / v<sub>circ</sub> = <span class="val" id="kv"></span><input type="range" id="k" min="0.3" max="1.6" step="0.01" value="1.2"></label>
+      <label class="ctl">Launch angle from tangent = <span class="val" id="angv"></span><input type="range" id="ang" min="-60" max="60" step="1" value="0"></label>
+      <label class="ctl">Zoom <input type="range" id="zoom" min="15" max="200" value="70"></label>
+      <label class="ctl">Simulation speed <input type="range" id="spd" min="1" max="60" value="15"></label>
+      <div class="row">
+        <button id="play" class="primary">Pause</button>
+        <button id="reset">Restart</button>
+        <label style="display:flex;gap:6px;align-items:center;font-size:14px"><input type="checkbox" id="areas" checked> Equal-area sectors</label>
+      </div>
+      <div class="row">
+        <button data-k="1">Circle</button><button data-k="1.2">Ellipse</button><button data-k="1.4142">Parabola (escape)</button><button data-k="1.55">Hyperbola</button>
+      </div>
+      <div class="card" id="stats"></div>
+    </div>
+  </div>
+  <h2>What to verify</h2>
+  <div class="card"><ol style="margin:0;padding-left:20px">
+    <li><b>Kepler II:</b> the shaded sectors are swept in equal times, so they have equal areas. That's angular momentum conservation.</li>
+    <li><b>Kepler III:</b> the measured period matches T = 2π√(a³/GM), with a = −GM/(2E).</li>
+    <li><b>Escape:</b> at v₀ = √2·v<sub>circ</sub>, E = 0 and the orbit becomes a parabola.</li>
+    <li><b>Eccentricity:</b> e = √(1 + 2EL²/(GM)²). At angle 0, the launch point is the periapsis (v₀ &gt; v<sub>circ</sub>) or apoapsis (v₀ &lt; v<sub>circ</sub>).</li>
+  </ol></div>
+  <footer class="foot">Part of the Self-Study repo · physics-olympiad/interactive · velocity-Verlet integrator, GM = 1</footer>
+</div>
+<script>
+const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+let s, running = true;
+
+function fitCanvas() {
+  const dpr = window.devicePixelRatio || 1, w = cv.clientWidth;
+  cv.width = w * dpr; cv.height = w * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+function reset() {
+  const k = +$("k").value, a = (+$("ang").value * Math.PI) / 180;
+  s = { x: 1, y: 0, vx: -k * Math.sin(a), vy: k * Math.cos(a), t: 0, trail: [[1, 0, 0]], periods: [], lastY: 0, sectors: [], secStart: 0, done: false };
+  $("kv").textContent = k.toFixed(2); $("angv").textContent = $("ang").value + "°";
+}
+function acc(x, y) { const r3 = Math.pow(x * x + y * y, 1.5); return [-x / r3, -y / r3]; }
+function step(dt) {
+  const [ax, ay] = acc(s.x, s.y);
+  s.vx += 0.5 * dt * ax; s.vy += 0.5 * dt * ay;
+  s.x += dt * s.vx; s.y += dt * s.vy;
+  const [bx, by] = acc(s.x, s.y);
+  s.vx += 0.5 * dt * bx; s.vy += 0.5 * dt * by;
+  s.t += dt;
+  if (s.lastY < 0 && s.y >= 0 && s.x > 0) s.periods.push(s.t); // crossing the +x axis upward
+  s.lastY = s.y;
+  const r = Math.hypot(s.x, s.y);
+  if (r > 80 || r < 0.02) s.done = true;
+}
+const SECTOR_DT = 0.6;
+function tick() {
+  if (running && !s.done) {
+    const n = +$("spd").value;
+    for (let i = 0; i < n * 10; i++) {
+      step(0.001);
+      if (i % 10 === 0) s.trail.push([s.x, s.y, s.t]);
+    }
+    if (s.trail.length > 6000) s.trail.splice(0, s.trail.length - 6000);
+  }
+  draw(); requestAnimationFrame(tick);
+}
+function draw() {
+  const W = cv.clientWidth, H = W, sc = +$("zoom").value, cx = W * 0.6, cy = H / 2;
+  const P = (x, y) => [cx + x * sc, cy - y * sc];
+  ctx.fillStyle = col("--surface"); ctx.fillRect(0, 0, W, H);
+  // grid rings
+  ctx.strokeStyle = col("--border"); ctx.lineWidth = 1;
+  for (let r = 1; r * sc < W; r++) { ctx.beginPath(); ctx.arc(cx, cy, r * sc, 0, 2 * Math.PI); ctx.stroke(); }
+  // equal-area sectors
+  if ($("areas").checked && s.trail.length > 2) {
+    const t0 = s.trail[0][2]; let block = [], idx = 0;
+    const flush = () => {
+      if (block.length < 2) return;
+      ctx.beginPath(); ctx.moveTo(cx, cy); block.forEach((p) => ctx.lineTo(...P(p[0], p[1]))); ctx.closePath();
+      ctx.fillStyle = idx % 2 ? col("--accent-soft") : "transparent"; ctx.fill();
+    };
+    for (const p of s.trail) {
+      const b = Math.floor((p[2] - t0) / SECTOR_DT);
+      if (b !== idx) { block.push(p); flush(); block = [p]; idx = b; } else block.push(p);
+    }
+  }
+  // trail
+  ctx.strokeStyle = col("--c2"); ctx.lineWidth = 2; ctx.beginPath();
+  s.trail.forEach((p, i) => { const q = P(p[0], p[1]); i ? ctx.lineTo(...q) : ctx.moveTo(...q); });
+  ctx.stroke();
+  // star & planet
+  ctx.fillStyle = col("--warn"); ctx.beginPath(); ctx.arc(cx, cy, 9, 0, 2 * Math.PI); ctx.fill();
+  const pp = P(s.x, s.y);
+  ctx.fillStyle = col("--accent"); ctx.beginPath(); ctx.arc(pp[0], pp[1], 6, 0, 2 * Math.PI); ctx.fill();
+  // velocity arrow
+  ctx.strokeStyle = col("--c3"); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(...pp); ctx.lineTo(pp[0] + s.vx * 40, pp[1] - s.vy * 40); ctx.stroke();
+  stats();
+}
+function stats() {
+  const r = Math.hypot(s.x, s.y), v2 = s.vx * s.vx + s.vy * s.vy;
+  const E = 0.5 * v2 - 1 / r, L = s.x * s.vy - s.y * s.vx;
+  const e = Math.sqrt(Math.max(0, 1 + 2 * E * L * L));
+  const a = E < 0 ? -1 / (2 * E) : Infinity;
+  const Tpred = E < 0 ? 2 * Math.PI * Math.sqrt(a ** 3) : null;
+  const Tmeas = s.periods.length >= 2 ? s.periods[s.periods.length - 1] - s.periods[s.periods.length - 2] : (s.periods.length === 1 ? s.periods[0] : null);
+  const type = Math.abs(E) < 0.004 ? "parabola (E ≈ 0)" : E > 0 ? "hyperbola (unbound)" : e < 0.01 ? "circle" : "ellipse";
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  $("stats").innerHTML =
+    row("Orbit type", type) +
+    row("Energy E = ½v² − 1/r", E.toFixed(5)) +
+    row("Angular momentum L", L.toFixed(5)) +
+    row("Eccentricity e", e.toFixed(4)) +
+    row("Semi-major axis a", isFinite(a) ? a.toFixed(3) : "∞") +
+    row("Period: Kepler III", Tpred ? Tpred.toFixed(3) : "—") +
+    row("Period: measured", Tmeas ? Tmeas.toFixed(3) : (E < 0 ? "after 1 orbit…" : "—")) +
+    row("time t", s.t.toFixed(2)) +
+    (s.done ? `<p class="note" style="margin:6px 0 0">${r > 1 ? "Escaped the view." : "Crashed into the star."} Press Restart.</p>` : "");
+}
+["k", "ang"].forEach((id) => $(id).addEventListener("input", reset));
+$("reset").addEventListener("click", reset);
+$("play").addEventListener("click", () => { running = !running; $("play").textContent = running ? "Pause" : "Play"; });
+document.querySelectorAll("[data-k]").forEach((b) => b.addEventListener("click", () => { $("k").value = b.dataset.k; $("ang").value = 0; reset(); }));
+window.addEventListener("resize", fitCanvas);
+fitCanvas(); reset(); tick();
+</script>
+</body>
+</html>

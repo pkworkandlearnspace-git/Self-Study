@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Attention & Sampling</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg.plot { aspect-ratio: 1 / 1; touch-action: none; }
+  svg text { font: 13px system-ui, sans-serif; fill: var(--text); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; }
+  .bars { display: grid; gap: 6px; }
+  .bars .b { display: grid; grid-template-columns: 80px 1fr 64px; gap: 8px; align-items: center; font-size: 14px; }
+  .bars .track { height: 16px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+  .bars .fill { height: 100%; background: var(--accent); transition: width .15s; }
+  .bars .fill.off { background: var(--border); }
+  .bars input[type=range] { width: 100%; }
+  .mask td { width: 38px; height: 30px; text-align: center; font-family: var(--mono); font-size: 11px; border: 1px solid var(--border); }
+  .mask th { font-size: 12px; color: var(--muted); font-weight: 500; padding: 2px 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a></header>
+  <h1>Attention & Sampling</h1>
+  <p class="lead">The two softmaxes at the heart of every LLM: <b>attention weights</b> = softmax(q·k / √d), and <b>next-token sampling</b> = softmax(logits / T). Drag the vectors and move the sliders (modules 08–09).</p>
+
+  <h2>1 · Scaled dot-product attention (2D toy)</h2>
+  <div class="grid two">
+    <svg class="plot" id="svg" viewBox="-200 -200 400 400" aria-label="Query and key vectors"></svg>
+    <div class="controls">
+      <p class="note" style="margin:0">Drag the <b style="color:var(--c2)">query q</b> and the <b style="color:var(--c1)">keys k₁…k₄</b>. Each key carries a value (a word). The output is the attention-weighted mix of values.</p>
+      <label class="ctl">Scale factor: pretend dimension d = <span class="val" id="dv"></span> (scores divided by √d)<input type="range" id="d" min="1" max="256" value="1"></label>
+      <label class="ctl">Vector length multiplier <span class="val" id="mv"></span><input type="range" id="mag" min="0.2" max="4" step="0.1" value="1"></label>
+      <div class="card bars" id="attn"></div>
+      <div class="callout" id="ainsight"></div>
+    </div>
+  </div>
+
+  <h2>2 · Causal mask</h2>
+  <div class="grid two">
+    <div class="card scroll-x" id="maskwrap"></div>
+    <div class="card note">Row <i>i</i> = the query at position <i>i</i>. Entries above the diagonal are set to −∞ <b>before</b> the softmax, so token <i>i</i> can only attend to tokens ≤ <i>i</i>. That lets one forward pass train all T next-token predictions in parallel. The numbers are random toy weights, but every row sums to 1.</div>
+  </div>
+
+  <h2>3 · Next-token sampling: temperature, top-k, top-p</h2>
+  <div class="grid two">
+    <div class="card bars" id="samp"></div>
+    <div class="controls">
+      <p class="note" style="margin:0">Context: <i>"The capital of France is …"</i>. Drag the logit sliders on the left to change the model's raw scores.</p>
+      <label class="ctl">Temperature T = <span class="val" id="tv"></span><input type="range" id="temp" min="0.05" max="3" step="0.05" value="1"></label>
+      <label class="ctl">top-k = <span class="val" id="kv"></span> (0 = off)<input type="range" id="topk" min="0" max="8" value="0"></label>
+      <label class="ctl">top-p = <span class="val" id="pv"></span><input type="range" id="topp" min="0.05" max="1" step="0.05" value="1"></label>
+      <div class="row"><button id="sample" class="primary">Sample 20 tokens</button></div>
+      <div class="card mono" id="drawn" style="min-height:48px;font-size:14px"></div>
+      <div class="card" id="sstats"></div>
+    </div>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const softmax = (z) => { const m = Math.max(...z.filter(isFinite)); const e = z.map((v) => (isFinite(v) ? Math.exp(v - m) : 0)); const s = e.reduce((a, b) => a + b, 0); return e.map((v) => v / s); };
+const NS = "http://www.w3.org/2000/svg";
+
+// ---------- Part 1 ----------
+let vecs = { q: [90, 40], k1: [120, 30], k2: [-60, 110], k3: [-100, -80], k4: [40, -130] };
+const vals = { k1: "cat", k2: "sat", k3: "on", k4: "mat" };
+let drag = null; const svg = $("svg");
+function mk(tag, at, txt) { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt != null) e.textContent = txt; svg.appendChild(e); return e; }
+function arrow(v, color, label, id) {
+  mk("line", { x1: 0, y1: 0, x2: v[0], y2: -v[1], stroke: color, "stroke-width": 3, "stroke-linecap": "round" });
+  const g = document.createElementNS(NS, "g"); g.setAttribute("data-id", id); g.style.cursor = "grab";
+  const c1 = document.createElementNS(NS, "circle"); c1.setAttribute("cx", v[0]); c1.setAttribute("cy", -v[1]); c1.setAttribute("r", 16); c1.setAttribute("fill", "transparent");
+  const c2 = document.createElementNS(NS, "circle"); c2.setAttribute("cx", v[0]); c2.setAttribute("cy", -v[1]); c2.setAttribute("r", 7); c2.setAttribute("fill", color);
+  g.append(c1, c2); svg.appendChild(g);
+  mk("text", { x: v[0] + 10, y: -v[1] - 10 }, label);
+}
+function part1() {
+  svg.innerHTML = "";
+  mk("circle", { cx: 0, cy: 0, r: 150, fill: "none", stroke: col("--border"), "stroke-dasharray": "4 4" });
+  mk("line", { x1: -195, y1: 0, x2: 195, y2: 0, stroke: col("--border") }); mk("line", { x1: 0, y1: -195, x2: 0, y2: 195, stroke: col("--border") });
+  const d = +$("d").value, mag = +$("mag").value, keys = ["k1", "k2", "k3", "k4"];
+  const sc = (v) => [(v[0] / 100) * mag, (v[1] / 100) * mag];
+  const q = sc(vecs.q);
+  // Real dot products of random d-dim vectors grow like √d. We simulate that by multiplying the 2D dot product by √d; scaled attention then divides it back out.
+  const raw = keys.map((k) => { const kk = sc(vecs[k]); return (q[0] * kk[0] + q[1] * kk[1]) * Math.sqrt(d); });
+  const scaledW = softmax(raw.map((s) => s / Math.sqrt(d))), unscaledW = softmax(raw);
+  keys.forEach((k, i) => arrow(vecs[k], col("--c1"), `k${i + 1} → "${vals[k]}"  (${(scaledW[i] * 100).toFixed(0)}%)`, k));
+  arrow(vecs.q, col("--c2"), "q", "q");
+  const row = (name, w, extra) => `<div class="b"><span>${name}</span><div class="track"><div class="fill" style="width:${(w * 100).toFixed(1)}%"></div></div><span class="mono">${(w * 100).toFixed(1)}%</span></div>`;
+  $("attn").innerHTML = `<b style="font-size:14px">Attention weights softmax(q·k/√d)</b>` + keys.map((k, i) => row(`"${vals[k]}"`, scaledW[i])).join("") +
+    `<b style="font-size:14px;margin-top:8px">Without the √d scaling, softmax(q·k)</b>` + keys.map((k, i) => row(`"${vals[k]}"`, unscaledW[i])).join("");
+  const ent = (w) => -w.reduce((s, p) => s + (p > 0 ? p * Math.log2(p) : 0), 0);
+  $("ainsight").innerHTML = `Entropy: scaled <b>${ent(scaledW).toFixed(2)}</b> bits vs unscaled <b>${ent(unscaledW).toFixed(2)}</b> bits (max 2). ` +
+    (d > 16 ? "With large d and no scaling, the softmax saturates to nearly one-hot, so gradients vanish. That's why we divide by √d." : "Raise d to see why the √d scaling matters.");
+  $("dv").textContent = d; $("mv").textContent = mag.toFixed(1);
+}
+function svgPt(e) { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; const r = p.matrixTransform(svg.getScreenCTM().inverse()); const len = Math.hypot(r.x, r.y), m = Math.min(1, 190 / len); return [r.x * m, -r.y * m]; }
+svg.addEventListener("pointerdown", (e) => { const g = e.target.closest("[data-id]"); if (g) { drag = g.dataset.id; svg.setPointerCapture(e.pointerId); } });
+svg.addEventListener("pointermove", (e) => { if (drag) { vecs[drag] = svgPt(e); part1(); } });
+svg.addEventListener("pointerup", () => (drag = null));
+["d", "mag"].forEach((id) => $(id).addEventListener("input", part1));
+
+// ---------- Part 2: causal mask ----------
+function part2() {
+  const toks = ["The", "cat", "sat", "on", "the", "mat"], n = toks.length;
+  let h = `<table class="mask"><tr><th></th>${toks.map((t) => `<th>${t}</th>`).join("")}</tr>`;
+  toks.forEach((t, i) => {
+    const w = softmax(toks.map((_, j) => (j <= i ? Math.random() * 3 : -Infinity)));
+    h += `<tr><th>${t}</th>${w.map((p, j) => j > i ? `<td style="background:var(--surface-2);color:var(--muted)">−∞</td>` : `<td style="background:rgba(${hexRgb(col("--c1"))},${0.15 + 0.85 * p});color:${p > 0.5 ? "#fff" : "inherit"}">${p.toFixed(2)}</td>`).join("")}</tr>`;
+  });
+  $("maskwrap").innerHTML = h + `</table><button id="reroll" style="margin-top:8px">Re-roll weights</button>`;
+  $("reroll").addEventListener("click", part2);
+}
+function hexRgb(h) { h = h.replace("#", ""); if (h.length === 3) h = h.split("").map((c) => c + c).join(""); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255].join(","); }
+
+// ---------- Part 3: sampling ----------
+const vocab = ["Paris", "a", "the", "located", "Lyon", "beautiful", "France", "London"];
+let logits = [6, 3.2, 2.8, 2.5, 1.8, 1.5, 0.6, 0.3];
+function probs() {
+  const T = +$("temp").value, k = +$("topk").value, p = +$("topp").value;
+  let pr = softmax(logits.map((l) => l / T));
+  const order = pr.map((v, i) => [v, i]).sort((a, b) => b[0] - a[0]);
+  const keep = new Set(); let cum = 0;
+  order.forEach(([v, i], r) => { if ((k === 0 || r < k) && (cum < p || r === 0)) { keep.add(i); cum += v; } });
+  const z = pr.map((v, i) => (keep.has(i) ? v : 0)), s = z.reduce((a, b) => a + b, 0);
+  return { pr: z.map((v) => v / s), keep, base: softmax(logits) };
+}
+function part3() {
+  const { pr, keep } = probs();
+  $("samp").innerHTML = `<b style="font-size:14px">Token · logit (drag) · final probability</b>` + vocab.map((w, i) => `<div class="b"><span>${w}</span><div><input type="range" min="-2" max="8" step="0.1" value="${logits[i]}" data-i="${i}" aria-label="logit for ${w}"><div class="track"><div class="fill ${keep.has(i) ? "" : "off"}" style="width:${(pr[i] * 100).toFixed(1)}%"></div></div></div><span class="mono">${(pr[i] * 100).toFixed(1)}%</span></div>`).join("");
+  $("samp").querySelectorAll("input").forEach((s) => s.addEventListener("input", () => { logits[+s.dataset.i] = +s.value; updateBars(); }));
+  stats3();
+}
+function updateBars() { const { pr, keep } = probs(); $("samp").querySelectorAll(".b").forEach((b, i) => { const f = b.querySelector(".fill"); f.style.width = (pr[i] * 100).toFixed(1) + "%"; f.classList.toggle("off", !keep.has(i)); b.querySelector(".mono").textContent = (pr[i] * 100).toFixed(1) + "%"; }); stats3(); }
+function stats3() {
+  const { pr, keep } = probs(), H = -pr.reduce((s, p) => s + (p > 0 ? p * Math.log2(p) : 0), 0);
+  $("tv").textContent = (+$("temp").value).toFixed(2); $("kv").textContent = $("topk").value; $("pv").textContent = (+$("topp").value).toFixed(2);
+  $("sstats").innerHTML = `<div class="stat"><span>Tokens allowed</span><b>${keep.size}/${vocab.length}</b></div><div class="stat"><span>Entropy</span><b>${H.toFixed(2)} bits</b></div><div class="stat"><span>P("Paris")</span><b>${(pr[0] * 100).toFixed(1)}%</b></div><p class="note" style="margin:6px 0 0">T → 0 gives greedy (argmax) decoding. T &gt; 1 flattens the distribution (🔭 a higher-temperature Boltzmann distribution). top-k and top-p cut off the long tail of unlikely tokens.</p>`;
+}
+$("sample").addEventListener("click", () => { const { pr } = probs(); const out = []; for (let n = 0; n < 20; n++) { let r = Math.random(), i = 0; while (i < pr.length - 1 && (r -= pr[i]) > 0) i++; out.push(vocab[i]); } $("drawn").textContent = out.join(" · "); });
+["temp", "topk", "topp"].forEach((id) => $(id).addEventListener("input", updateBars));
+
+part1(); part2(); part3();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { part1(); part2(); });
+</script>
+</body>
+</html>

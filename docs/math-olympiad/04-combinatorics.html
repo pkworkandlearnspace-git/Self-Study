@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · Combinatorics · Self-Study</title>
+<meta name="description" content="Proofs, algebra, number theory, combinatorics and geometry, from regional rounds to the IMO.">
+<script>try{var t=localStorage.getItem('ss-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script defer src="../assets/katex/katex.min.js"></script>
+<script defer src="../assets/katex/contrib/auto-render.min.js"></script>
+<script defer src="../assets/search-index.js"></script>
+<script defer src="../assets/site.js"></script>
+</head>
+<body data-root="../" data-page="math-olympiad/04-combinatorics.html">
+<a class="skip" href="#content">Skip to content</a>
+<div class="progress" aria-hidden="true"><div></div></div>
+<header class="topbar">
+  <button class="icon-btn menu-btn" aria-label="Open navigation" aria-expanded="false">☰</button>
+  <a class="brand" href="../index.html"><span class="brand-mark">📚</span>Self-Study</a>
+  <div class="search">
+    <input id="search" type="search" placeholder="Search all notes…  ( / )" autocomplete="off" aria-label="Search">
+    <div class="search-results" role="listbox" hidden></div>
+  </div>
+  <button class="icon-btn theme-btn" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+</header>
+<div class="shell">
+  <aside class="sidebar"><nav class="side-nav" aria-label="All pages">
+<a class="side-home" href="../index.html">🏠 Home</a>
+<a class="side-home" href="../tools.html">🎛️ All interactive tools</a>
+<details class="side-topic" open><summary><span class="ico">🧮</span>Math Olympiad</summary><ul>
+<li><a href="../math-olympiad/index.html">Overview</a></li>
+<li><a href="../math-olympiad/01-problem-solving-proofs.html"><span class="num">01</span>Problem Solving &amp; Proof Writing</a></li>
+<li><a href="../math-olympiad/02-algebra.html"><span class="num">02</span>Algebra</a></li>
+<li><a href="../math-olympiad/03-number-theory.html"><span class="num">03</span>Number Theory</a></li>
+<li><a class="active" aria-current="page" href="../math-olympiad/04-combinatorics.html"><span class="num">04</span>Combinatorics</a></li>
+<li><a href="../math-olympiad/05-geometry.html"><span class="num">05</span>Geometry</a></li>
+<li><a href="../math-olympiad/06-contest-practice.html"><span class="num">06</span>Contest Practice &amp; Solution Writing</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../math-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../math-olympiad/resources.html">Resources</a></li>
+<li><a href="../math-olympiad/progress.html">Progress log</a></li>
+<li><a href="../math-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">⚛️</span>Physics Olympiad</summary><ul>
+<li><a href="../physics-olympiad/index.html">Overview</a></li>
+<li><a href="../physics-olympiad/01-math-methods.html"><span class="num">01</span>Math Methods &amp; Estimation</a></li>
+<li><a href="../physics-olympiad/02-mechanics.html"><span class="num">02</span>Mechanics</a></li>
+<li><a href="../physics-olympiad/03-thermo-stat.html"><span class="num">03</span>Thermodynamics &amp; Statistical Physics</a></li>
+<li><a href="../physics-olympiad/04-electromagnetism.html"><span class="num">04</span>Electromagnetism</a></li>
+<li><a href="../physics-olympiad/05-waves-optics.html"><span class="num">05</span>Waves &amp; Optics</a></li>
+<li><a href="../physics-olympiad/06-modern-physics.html"><span class="num">06</span>Modern Physics</a></li>
+<li><a href="../physics-olympiad/07-experimental.html"><span class="num">07</span>Experimental Physics</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../physics-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../physics-olympiad/resources.html">Resources</a></li>
+<li><a href="../physics-olympiad/progress.html">Progress log</a></li>
+<li><a href="../physics-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">💻</span>Informatics Olympiad</summary><ul>
+<li><a href="../informatics-olympiad/index.html">Overview</a></li>
+<li><a href="../informatics-olympiad/01-cpp-for-cp.html"><span class="num">01</span>C++ for Competitive Programming</a></li>
+<li><a href="../informatics-olympiad/02-core-techniques.html"><span class="num">02</span>Complexity &amp; Core Techniques</a></li>
+<li><a href="../informatics-olympiad/03-data-structures.html"><span class="num">03</span>Data Structures</a></li>
+<li><a href="../informatics-olympiad/04-graphs-trees.html"><span class="num">04</span>Graphs &amp; Trees</a></li>
+<li><a href="../informatics-olympiad/05-dynamic-programming.html"><span class="num">05</span>Dynamic Programming</a></li>
+<li><a href="../informatics-olympiad/06-math-strings-geometry.html"><span class="num">06</span>Math, Strings &amp; Geometry</a></li>
+<li><a href="../informatics-olympiad/07-ioi-advanced.html"><span class="num">07</span>IOI Skills &amp; Advanced Topics</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../informatics-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../informatics-olympiad/resources.html">Resources</a></li>
+<li><a href="../informatics-olympiad/progress.html">Progress log</a></li>
+<li><a href="../informatics-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">🗣️</span>IELTS Academic</summary><ul>
+<li><a href="../ielts/index.html">Overview</a></li>
+<li><a href="../ielts/01-test-strategy.html"><span class="num">01</span>Test Strategy &amp; Scoring</a></li>
+<li><a href="../ielts/02-listening.html"><span class="num">02</span>Listening</a></li>
+<li><a href="../ielts/03-reading.html"><span class="num">03</span>Reading (Academic)</a></li>
+<li><a href="../ielts/04-writing-task1.html"><span class="num">04</span>Writing Task 1 (Academic)</a></li>
+<li><a href="../ielts/05-writing-task2.html"><span class="num">05</span>Writing Task 2</a></li>
+<li><a href="../ielts/06-speaking.html"><span class="num">06</span>Speaking</a></li>
+<li><a href="../ielts/07-vocab-grammar.html"><span class="num">07</span>Vocabulary &amp; Grammar for Band 7</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../ielts/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../ielts/resources.html">Resources</a></li>
+<li><a href="../ielts/progress.html">Progress log</a></li>
+<li><a href="../ielts/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">🧠</span>Deep Learning</summary><ul>
+<li><a href="../deep-learning/index.html">Overview</a></li>
+<li><a href="../deep-learning/01-math-for-dl.html"><span class="num">01</span>Math for Deep Learning</a></li>
+<li><a href="../deep-learning/02-python-numpy-tools.html"><span class="num">02</span>Python, NumPy &amp; Tools</a></li>
+<li><a href="../deep-learning/03-ml-fundamentals.html"><span class="num">03</span>Machine Learning Fundamentals</a></li>
+<li><a href="../deep-learning/04-neural-nets-from-scratch.html"><span class="num">04</span>Neural Networks from Scratch</a></li>
+<li><a href="../deep-learning/05-pytorch-training.html"><span class="num">05</span>PyTorch &amp; the Craft of Training</a></li>
+<li><a href="../deep-learning/06-cnns-vision.html"><span class="num">06</span>CNNs &amp; Computer Vision</a></li>
+<li><a href="../deep-learning/07-sequences-rnns.html"><span class="num">07</span>Sequences, Embeddings &amp; RNNs</a></li>
+<li><a href="../deep-learning/08-transformers.html"><span class="num">08</span>Transformers</a></li>
+<li><a href="../deep-learning/09-llms.html"><span class="num">09</span>Large Language Models</a></li>
+<li><a href="../deep-learning/10-generative-models.html"><span class="num">10</span>Generative Models</a></li>
+<li><a href="../deep-learning/11-reinforcement-learning.html"><span class="num">11</span>Reinforcement Learning</a></li>
+<li><a href="../deep-learning/12-advanced-frontiers.html"><span class="num">12</span>Advanced Frontiers &amp; Specializations</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../deep-learning/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../deep-learning/resources.html">Resources</a></li>
+<li><a href="../deep-learning/progress.html">Progress log</a></li>
+<li><a href="../deep-learning/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<a class="side-home" href="../_template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
+</nav></aside>
+  <div class="scrim" hidden></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../math-olympiad/index.html">Math Olympiad</a> <span class="sep">›</span> <span>Combinatorics</span></nav><article class="doc"><h1 id="04-combinatorics">04 · Combinatorics<a class="anchor" href="#04-combinatorics" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 04</span><span>⏱ 2 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/math-olympiad/04-combinatorics.md" target="_blank" rel="noopener">View Markdown source</a></div>
+<blockquote>
+<p><strong>Goal:</strong> the hardest and least formulaic IMO area. Build a toolkit, then lots of experience. · <strong>Time:</strong> 5–7 weeks (in rotation)</p>
+</blockquote>
+<h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> Count lattice paths from $(0,0)$ to $(m,n)$ and give a bijective proof of $\binom{n}{k}=\binom{n}{n-k}$.</li>
+<li class="task"><input type="checkbox"> Use stars and bars: the number of solutions of $x_1+\dots+x_k=n$ with $x_i\ge0$.</li>
+<li class="task"><input type="checkbox"> Inclusion–exclusion: count derangements $D_n$.</li>
+<li class="task"><input type="checkbox"> Double counting: prove $\sum_v \deg v = 2|E|$, and $\sum_k k\binom nk = n2^{n-1}$.</li>
+<li class="task"><input type="checkbox"> Game theory: find the winning positions in Nim.</li>
+<li class="task"><input type="checkbox"> Prove $R(3,3)=6$.</li>
+</ul>
+<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<ul>
+<li><strong>Counting:</strong> product/sum rule, permutations, $\binom nk$, stars and bars, <strong>inclusion–exclusion</strong>, <strong>bijections</strong> (count something else that is easier).</li>
+<li><strong>Double counting:</strong> count the same set two ways, e.g. pairs (person, club) by person and by club.</li>
+<li><strong>Recursion:</strong> set up $a_n$ in terms of smaller cases (tilings, paths). <strong>Catalan numbers</strong> $C_n=\frac1{n+1}\binom{2n}{n}$.</li>
+<li><strong>Generating functions:</strong> $\sum a_nx^n$ turns counting into algebra.</li>
+<li><strong>Pigeonhole, extremal, invariants, monovariants, coloring</strong> (from module 01) are <em>the</em> combinatorics weapons.</li>
+<li><strong>Graph theory:</strong> degrees, trees ($|E|=|V|-1$), bipartite ⟺ no odd cycle, Euler paths, Hall's marriage theorem, Turán's theorem, Ramsey.</li>
+<li><strong>Algorithms &amp; processes:</strong> "does the process end?" → find a monovariant (a bounded, strictly changing quantity).</li>
+<li><strong>Games:</strong> work backwards from end positions. <strong>Strategy stealing</strong>. Symmetry strategies. Nim and the Sprague–Grundy idea.</li>
+<li><strong>Combinatorial geometry:</strong> convex hulls, the extremal point, coloring the plane.</li>
+<li><strong>Probabilistic method:</strong> if a random object has expected bad count &lt; 1, then a good object exists.</li>
+<li><strong>Constructions:</strong> many problems ask for "the maximum" → you must give a <strong>construction</strong> <em>and</em> a <strong>bound</strong>. Two separate proofs.</li>
+</ul>
+<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://link.springer.com/book/10.1007/978-3-0348-0597-1" target="_blank" rel="noopener">Problem Solving Methods in Combinatorics, Pablo Soberón</a></strong> 💲: short, by technique, IMO-focused.</li>
+<li><strong><a href="https://yufeizhao.com/olympiad/" target="_blank" rel="noopener">Yufei Zhao's combinatorics handouts</a></strong> (e.g. "Combinatorics: a few techniques", double counting).</li>
+<li><strong>102 Combinatorial Problems</strong>, Andreescu &amp; Feng 💲 · <strong>Engel</strong> ch. on combinatorics · <strong><a href="https://web.evanchen.cc/handouts.html" target="_blank" rel="noopener">Evan Chen's handouts</a></strong>.</li>
+<li><strong><a href="https://artofproblemsolving.com/store" target="_blank" rel="noopener">AoPS: Intro / Intermediate Counting &amp; Probability</a></strong> 💲 for the basics.</li>
+</ul>
+<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<ul>
+<li>Solve <strong>C1–C4</strong> from the last 5–8 IMO Shortlists. Combinatorics gets better mostly with <em>volume</em>, so aim for 60+ problems.</li>
+</ul>
+<h2 id="traps">Traps<a class="anchor" href="#traps" title="Link to this section">#</a></h2>
+<ul>
+<li>Overcounting from treating identical objects as distinct (or the reverse).</li>
+<li>For max/min problems: giving only the construction or only the bound.</li>
+</ul></article><nav class="pager"><a class="pn prev" href="../math-olympiad/03-number-theory.html"><small>← Previous</small>Number Theory</a><a class="pn next" href="../math-olympiad/05-geometry.html"><small>Next →</small>Geometry</a></nav></main>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li></ul></nav></aside>
+</div>
+</body>
+</html>

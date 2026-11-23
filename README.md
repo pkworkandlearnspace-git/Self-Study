@@ -15,6 +15,8 @@ Each topic has one folder containing a **roadmap**, short **modules** you can sk
 | 🗣️ **IELTS Academic** | target band 7.0–7.5 | [`ielts/`](ielts/README.md) | band calculator, writing timer, speaking practice, flashcards |
 | 🧠 **Deep Learning** | beginner → research | [`deep-learning/`](deep-learning/README.md) | matrix map, broadcasting, generalization, backprop step-through, optimizers, NN playground, attention, flashcards |
 
+**Read it as a website:** open **[`docs/index.html`](docs/index.html)** in a browser (works offline), or turn on GitHub Pages (Settings → Pages → Deploy from a branch → `main`, folder `/docs`). The site has a sidebar for every topic, search across all notes, rendered math, dark mode, hide/show practice answers, and skip-test checkboxes that remember your ticks. After editing any Markdown, rebuild it with `pip install markdown && python3 site/build.py`.
+
 **Open the interactive tools:** download/clone the repo and open **[`index.html`](index.html)** in a browser. It links every tool, and everything works offline. (GitHub shows `.html` files as source code. To use them online, turn on GitHub Pages for this repo.)
 
 ---
@@ -47,6 +49,8 @@ Fill in the **Key dates** table at the top of each topic's `progress.md` first. 
 ## Repo layout
 ```
 Self-Study/
+├── docs/                     ← the generated website (open docs/index.html) — don't edit by hand
+├── site/                     ← website builder: build.py + CSS/JS (rebuild after editing notes)
 ├── index.html                ← hub for all interactive tools (open in a browser)
 ├── _shared/                  ← shared style + flashcard engine for the interactive pages
 ├── _template/                ← copy this to start a new topic

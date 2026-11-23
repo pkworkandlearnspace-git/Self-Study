@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IELTS Band Calculator</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  .skills { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .skill .big { font-size: 34px; }
+  .bar { height: 10px; border-radius: 99px; background: var(--surface-2); position: relative; overflow: hidden; margin-top: 8px; }
+  .bar > div { position: absolute; inset: 0 auto 0 0; background: var(--accent); }
+  .bar .tgt { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--c2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← IELTS tools</a></header>
+  <h1>IELTS Band Calculator</h1>
+  <p class="lead">Convert your raw Listening/Reading scores, add your Writing/Speaking estimates, and see the overall band with the official rounding. The orange marker is your target.</p>
+  <div class="row" style="margin-bottom:14px">
+    <label class="ctl">Target overall band <select id="target"><option>6.5</option><option selected>7</option><option>7.5</option><option>8</option></select></label>
+  </div>
+  <div class="skills">
+    <div class="card skill">
+      <b>Listening</b>
+      <label class="ctl">Raw score <span class="val" id="lrv"></span>/40<input type="range" id="lr" min="0" max="40" value="30"></label>
+      <div class="big" id="lb"></div><div class="bar"><div id="lbar"></div><span class="tgt" id="lt"></span></div>
+    </div>
+    <div class="card skill">
+      <b>Reading (Academic)</b>
+      <label class="ctl">Raw score <span class="val" id="rrv"></span>/40<input type="range" id="rr" min="0" max="40" value="30"></label>
+      <div class="big" id="rb"></div><div class="bar"><div id="rbar"></div><span class="tgt" id="rt"></span></div>
+    </div>
+    <div class="card skill">
+      <b>Writing</b>
+      <label class="ctl">Task 1 band <span class="val" id="w1v"></span><input type="range" id="w1" min="4" max="9" step="0.5" value="6.5"></label>
+      <label class="ctl">Task 2 band <span class="val" id="w2v"></span><input type="range" id="w2" min="4" max="9" step="0.5" value="7"></label>
+      <div class="big" id="wb"></div><div class="bar"><div id="wbar"></div><span class="tgt" id="wt"></span></div>
+      <p class="note" style="margin:6px 0 0">Task 2 counts double. This is an estimate: examiners score each task on 4 criteria.</p>
+    </div>
+    <div class="card skill">
+      <b>Speaking</b>
+      <label class="ctl">Band <span class="val" id="sv"></span><input type="range" id="s" min="4" max="9" step="0.5" value="7"></label>
+      <div class="big" id="sb"></div><div class="bar"><div id="sbar"></div><span class="tgt" id="st"></span></div>
+    </div>
+  </div>
+  <div class="grid two" style="margin-top:16px">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:baseline"><b>Overall band</b><span class="note" id="avg"></span></div>
+      <div class="big" id="overall" style="font-size:56px"></div>
+      <div id="verdict"></div>
+    </div>
+    <div class="card" id="need"></div>
+  </div>
+  <h2>Conversion tables used (approximate)</h2>
+  <div class="grid two">
+    <div class="card scroll-x"><table class="t" id="tbl"></table></div>
+    <div class="card note">Conversions vary slightly from test to test, because each version is equated for difficulty. The table follows commonly published official guidance. Overall rounding: average the four bands. A remainder of .25 rounds up to .5, .75 rounds up to the next whole band, and anything below rounds down (e.g. 6.125 → 6.0, 6.25 → 6.5, 6.75 → 7.0).</div>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · ielts/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+// [minRaw, band]
+const LIS = [[39, 9], [37, 8.5], [35, 8], [32, 7.5], [30, 7], [26, 6.5], [23, 6], [18, 5.5], [16, 5], [13, 4.5], [10, 4], [8, 3.5], [6, 3], [4, 2.5], [0, 0]];
+const REA = [[39, 9], [37, 8.5], [35, 8], [33, 7.5], [30, 7], [27, 6.5], [23, 6], [19, 5.5], [15, 5], [13, 4.5], [10, 4], [8, 3.5], [6, 3], [4, 2.5], [0, 0]];
+const band = (tbl, raw) => tbl.find(([m]) => raw >= m)[1];
+const roundOverall = (x) => Math.floor(x * 2 + 0.5) / 2;
+const halfRound = (x) => Math.round(x * 2) / 2;
+const pct = (b) => ((b - 4) / 5) * 100;
+
+function tableHTML() {
+  let h = "<tr><th>Band</th><th>Listening raw</th><th>Reading raw</th></tr>";
+  [9, 8.5, 8, 7.5, 7, 6.5, 6, 5.5, 5].forEach((b) => {
+    const rng = (T) => { const i = T.findIndex(([, bb]) => bb === b); const lo = T[i][0], hi = i === 0 ? 40 : T[i - 1][0] - 1; return lo === hi ? lo : `${lo}–${hi}`; };
+    h += `<tr><td><b>${b}</b></td><td>${rng(LIS)}</td><td>${rng(REA)}</td></tr>`;
+  });
+  $("tbl").innerHTML = h;
+}
+function update() {
+  const tgt = +$("target").value;
+  const L = band(LIS, +$("lr").value), R = band(REA, +$("rr").value);
+  const W = halfRound((+$("w1").value + 2 * +$("w2").value) / 3), S = +$("s").value;
+  $("lrv").textContent = $("lr").value; $("rrv").textContent = $("rr").value; $("w1v").textContent = $("w1").value; $("w2v").textContent = $("w2").value; $("sv").textContent = S;
+  const set = (id, b) => { $(id + "b").textContent = b.toFixed(1); $(id + "b").className = "big " + (b >= tgt ? "good" : b >= tgt - 0.5 ? "warn" : "bad"); $(id + "bar").style.width = Math.max(0, pct(b)) + "%"; $(id + "t").style.left = pct(tgt) + "%"; };
+  set("l", L); set("r", R); set("w", W); set("s", S);
+  const avg = (L + R + W + S) / 4, ov = roundOverall(avg);
+  $("avg").textContent = `average ${avg.toFixed(3)}`;
+  $("overall").textContent = ov.toFixed(1); $("overall").className = "big " + (ov >= tgt ? "good" : "bad");
+  const low = Math.min(L, R, W, S);
+  $("verdict").innerHTML = ov >= tgt ? `<p class="good"><b>On target.</b> ${low < tgt - 0.5 ? `But check the minimum per skill: your lowest is ${low.toFixed(1)}.` : ""}</p>` : `<p class="bad"><b>${(tgt - ov).toFixed(1)} below target.</b></p>`;
+  // what's needed: smallest raw in L/R to reach target holding others fixed
+  const need = (which) => {
+    for (let raw = 0; raw <= 40; raw++) {
+      const b = band(which === "L" ? LIS : REA, raw), o = roundOverall(((which === "L" ? b : L) + (which === "R" ? b : R) + W + S) / 4);
+      if (o >= tgt) return `${raw}/40 (band ${b})`;
+    }
+    return "not reachable alone";
+  };
+  const needBand = (which) => {
+    for (let b = 4; b <= 9; b += 0.5) { const o = roundOverall((L + R + (which === "W" ? b : W) + (which === "S" ? b : S)) / 4); if (o >= tgt) return b.toFixed(1); }
+    return "not reachable alone";
+  };
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  $("need").innerHTML = `<b>To reach ${tgt.toFixed(1)}, keeping the other skills fixed, you need:</b>` +
+    row("Listening raw ≥", need("L")) + row("Reading raw ≥", need("R")) + row("Writing band ≥", needBand("W")) + row("Speaking band ≥", needBand("S")) +
+    `<p class="note" style="margin:8px 0 0">Tip: raising your weakest skill is usually the cheapest half band.</p>`;
+}
+document.querySelectorAll("input, select").forEach((e) => e.addEventListener("input", update));
+tableHTML(); update();
+</script>
+</body>
+</html>

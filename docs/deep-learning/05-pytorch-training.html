@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 · PyTorch &amp; the Craft of Training · Self-Study</title>
+<meta name="description" content="From the math and NumPy to transformers, LLMs, generative models and RL.">
+<script>try{var t=localStorage.getItem('ss-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script defer src="../assets/katex/katex.min.js"></script>
+<script defer src="../assets/katex/contrib/auto-render.min.js"></script>
+<script defer src="../assets/search-index.js"></script>
+<script defer src="../assets/site.js"></script>
+</head>
+<body data-root="../" data-page="deep-learning/05-pytorch-training.html">
+<a class="skip" href="#content">Skip to content</a>
+<div class="progress" aria-hidden="true"><div></div></div>
+<header class="topbar">
+  <button class="icon-btn menu-btn" aria-label="Open navigation" aria-expanded="false">☰</button>
+  <a class="brand" href="../index.html"><span class="brand-mark">📚</span>Self-Study</a>
+  <div class="search">
+    <input id="search" type="search" placeholder="Search all notes…  ( / )" autocomplete="off" aria-label="Search">
+    <div class="search-results" role="listbox" hidden></div>
+  </div>
+  <button class="icon-btn theme-btn" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+</header>
+<div class="shell">
+  <aside class="sidebar"><nav class="side-nav" aria-label="All pages">
+<a class="side-home" href="../index.html">🏠 Home</a>
+<a class="side-home" href="../tools.html">🎛️ All interactive tools</a>
+<details class="side-topic"><summary><span class="ico">🧮</span>Math Olympiad</summary><ul>
+<li><a href="../math-olympiad/index.html">Overview</a></li>
+<li><a href="../math-olympiad/01-problem-solving-proofs.html"><span class="num">01</span>Problem Solving &amp; Proof Writing</a></li>
+<li><a href="../math-olympiad/02-algebra.html"><span class="num">02</span>Algebra</a></li>
+<li><a href="../math-olympiad/03-number-theory.html"><span class="num">03</span>Number Theory</a></li>
+<li><a href="../math-olympiad/04-combinatorics.html"><span class="num">04</span>Combinatorics</a></li>
+<li><a href="../math-olympiad/05-geometry.html"><span class="num">05</span>Geometry</a></li>
+<li><a href="../math-olympiad/06-contest-practice.html"><span class="num">06</span>Contest Practice &amp; Solution Writing</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../math-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../math-olympiad/resources.html">Resources</a></li>
+<li><a href="../math-olympiad/progress.html">Progress log</a></li>
+<li><a href="../math-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">⚛️</span>Physics Olympiad</summary><ul>
+<li><a href="../physics-olympiad/index.html">Overview</a></li>
+<li><a href="../physics-olympiad/01-math-methods.html"><span class="num">01</span>Math Methods &amp; Estimation</a></li>
+<li><a href="../physics-olympiad/02-mechanics.html"><span class="num">02</span>Mechanics</a></li>
+<li><a href="../physics-olympiad/03-thermo-stat.html"><span class="num">03</span>Thermodynamics &amp; Statistical Physics</a></li>
+<li><a href="../physics-olympiad/04-electromagnetism.html"><span class="num">04</span>Electromagnetism</a></li>
+<li><a href="../physics-olympiad/05-waves-optics.html"><span class="num">05</span>Waves &amp; Optics</a></li>
+<li><a href="../physics-olympiad/06-modern-physics.html"><span class="num">06</span>Modern Physics</a></li>
+<li><a href="../physics-olympiad/07-experimental.html"><span class="num">07</span>Experimental Physics</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../physics-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../physics-olympiad/resources.html">Resources</a></li>
+<li><a href="../physics-olympiad/progress.html">Progress log</a></li>
+<li><a href="../physics-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">💻</span>Informatics Olympiad</summary><ul>
+<li><a href="../informatics-olympiad/index.html">Overview</a></li>
+<li><a href="../informatics-olympiad/01-cpp-for-cp.html"><span class="num">01</span>C++ for Competitive Programming</a></li>
+<li><a href="../informatics-olympiad/02-core-techniques.html"><span class="num">02</span>Complexity &amp; Core Techniques</a></li>
+<li><a href="../informatics-olympiad/03-data-structures.html"><span class="num">03</span>Data Structures</a></li>
+<li><a href="../informatics-olympiad/04-graphs-trees.html"><span class="num">04</span>Graphs &amp; Trees</a></li>
+<li><a href="../informatics-olympiad/05-dynamic-programming.html"><span class="num">05</span>Dynamic Programming</a></li>
+<li><a href="../informatics-olympiad/06-math-strings-geometry.html"><span class="num">06</span>Math, Strings &amp; Geometry</a></li>
+<li><a href="../informatics-olympiad/07-ioi-advanced.html"><span class="num">07</span>IOI Skills &amp; Advanced Topics</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../informatics-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../informatics-olympiad/resources.html">Resources</a></li>
+<li><a href="../informatics-olympiad/progress.html">Progress log</a></li>
+<li><a href="../informatics-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">🗣️</span>IELTS Academic</summary><ul>
+<li><a href="../ielts/index.html">Overview</a></li>
+<li><a href="../ielts/01-test-strategy.html"><span class="num">01</span>Test Strategy &amp; Scoring</a></li>
+<li><a href="../ielts/02-listening.html"><span class="num">02</span>Listening</a></li>
+<li><a href="../ielts/03-reading.html"><span class="num">03</span>Reading (Academic)</a></li>
+<li><a href="../ielts/04-writing-task1.html"><span class="num">04</span>Writing Task 1 (Academic)</a></li>
+<li><a href="../ielts/05-writing-task2.html"><span class="num">05</span>Writing Task 2</a></li>
+<li><a href="../ielts/06-speaking.html"><span class="num">06</span>Speaking</a></li>
+<li><a href="../ielts/07-vocab-grammar.html"><span class="num">07</span>Vocabulary &amp; Grammar for Band 7</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../ielts/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../ielts/resources.html">Resources</a></li>
+<li><a href="../ielts/progress.html">Progress log</a></li>
+<li><a href="../ielts/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic" open><summary><span class="ico">🧠</span>Deep Learning</summary><ul>
+<li><a href="../deep-learning/index.html">Overview</a></li>
+<li><a href="../deep-learning/01-math-for-dl.html"><span class="num">01</span>Math for Deep Learning</a></li>
+<li><a href="../deep-learning/02-python-numpy-tools.html"><span class="num">02</span>Python, NumPy &amp; Tools</a></li>
+<li><a href="../deep-learning/03-ml-fundamentals.html"><span class="num">03</span>Machine Learning Fundamentals</a></li>
+<li><a href="../deep-learning/04-neural-nets-from-scratch.html"><span class="num">04</span>Neural Networks from Scratch</a></li>
+<li><a class="active" aria-current="page" href="../deep-learning/05-pytorch-training.html"><span class="num">05</span>PyTorch &amp; the Craft of Training</a></li>
+<li><a href="../deep-learning/06-cnns-vision.html"><span class="num">06</span>CNNs &amp; Computer Vision</a></li>
+<li><a href="../deep-learning/07-sequences-rnns.html"><span class="num">07</span>Sequences, Embeddings &amp; RNNs</a></li>
+<li><a href="../deep-learning/08-transformers.html"><span class="num">08</span>Transformers</a></li>
+<li><a href="../deep-learning/09-llms.html"><span class="num">09</span>Large Language Models</a></li>
+<li><a href="../deep-learning/10-generative-models.html"><span class="num">10</span>Generative Models</a></li>
+<li><a href="../deep-learning/11-reinforcement-learning.html"><span class="num">11</span>Reinforcement Learning</a></li>
+<li><a href="../deep-learning/12-advanced-frontiers.html"><span class="num">12</span>Advanced Frontiers &amp; Specializations</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../deep-learning/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../deep-learning/resources.html">Resources</a></li>
+<li><a href="../deep-learning/progress.html">Progress log</a></li>
+<li><a href="../deep-learning/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<a class="side-home" href="../_template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
+</nav></aside>
+  <div class="scrim" hidden></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>PyTorch &amp; the Craft of Training</span></nav><article class="doc"><h1 id="05-pytorch-the-craft-of-training">05 · PyTorch &amp; the Craft of Training<a class="anchor" href="#05-pytorch-the-craft-of-training" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 05</span><span>⏱ 6 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/05-pytorch-training.md" target="_blank" rel="noopener">View Markdown source</a></div>
+<blockquote>
+<p><strong>Goal:</strong> train any model reliably, and know what to do when it doesn't train. · <strong>Time:</strong> 20–30 h · <strong>Needs:</strong> 04</p>
+</blockquote>
+<h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> Write a full training loop from memory: <code>Dataset</code>/<code>DataLoader</code>, <code>nn.Module</code>, loss, optimizer, <code>zero_grad → backward → step</code>, eval with <code>torch.no_grad()</code> + <code>model.eval()</code>.</li>
+<li class="task"><input type="checkbox"> Explain SGD + momentum vs Adam vs <strong>AdamW</strong> (and why decoupled weight decay matters).</li>
+<li class="task"><input type="checkbox"> Explain what BatchNorm and LayerNorm normalize over, and the train/eval difference for BatchNorm.</li>
+<li class="task"><input type="checkbox"> Explain why a LR warmup + cosine decay schedule is standard.</li>
+<li class="task"><input type="checkbox"> Your loss is NaN at step 200. List five things to check.</li>
+<li class="task"><input type="checkbox"> Explain mixed precision (bf16/fp16) and gradient clipping.</li>
+<li class="task"><input type="checkbox"> Write the Adam update from memory, and explain why plain Adam + L2 is not the same as AdamW.</li>
+</ul>
+<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h3 id="pytorch-mechanics">PyTorch mechanics<a class="anchor" href="#pytorch-mechanics" title="Link to this section">#</a></h3>
+<ul>
+<li><strong>Tensor</strong> = a NumPy array + device (CPU/GPU) + autograd. <code>requires_grad=True</code> records ops into a graph.</li>
+<li><code>loss.backward()</code> fills <code>.grad</code>. The optimizer reads <code>.grad</code> to update parameters. <code>optimizer.zero_grad()</code> resets them.</li>
+<li><strong><code>nn.Module</code></strong>: define layers in <code>__init__</code> and compute in <code>forward</code>. Parameters register automatically.</li>
+<li><strong><code>Dataset</code> / <code>DataLoader</code></strong>: batching, shuffling, worker processes.</li>
+<li><strong>Modes:</strong> <code>model.train()</code> / <code>model.eval()</code> switch dropout and BatchNorm behavior. <code>torch.no_grad()</code> turns off graph building.</li>
+<li><strong>Devices:</strong> move the model <em>and</em> the data <code>.to(device)</code>. Most "device mismatch" errors come from this.</li>
+<li><strong><code>torch.compile(model)</code></strong> often speeds training up with a one-line change (it fuses ops into optimized kernels). The first steps are slow while it compiles.</li>
+</ul>
+<h3 id="optimizers">Optimizers<a class="anchor" href="#optimizers" title="Link to this section">#</a></h3>
+<ul>
+<li><strong>SGD + momentum:</strong> $v \leftarrow \beta v + g,\ \theta \leftarrow \theta - \eta v$ (heavy ball 🔭).</li>
+<li><strong>Adam:</strong> per-parameter adaptive step from running averages of $g$ and $g^2$:
+  $m\leftarrow\beta_1m+(1-\beta_1)g$, $v\leftarrow\beta_2v+(1-\beta_2)g^2$, $\hat m=m/(1-\beta_1^t)$, $\hat v=v/(1-\beta_2^t)$, $\theta\leftarrow\theta-\eta\,\hat m/(\sqrt{\hat v}+\epsilon)$. Defaults $\beta_1=0.9,\ \beta_2=0.999,\ \epsilon=10^{-8}$.</li>
+<li><strong>AdamW</strong> (<a href="https://arxiv.org/abs/1711.05101" target="_blank" rel="noopener">Loshchilov &amp; Hutter, 2019</a>): $\theta\leftarrow\theta-\eta\big(\hat m/(\sqrt{\hat v}+\epsilon)+\lambda\theta\big)$. The decay is applied <em>directly</em> to the weights. With plain Adam + L2, the penalty's gradient $\lambda\theta$ gets divided by $\sqrt{\hat v}$, so weights with large gradients are barely regularized. <strong>The default for transformers.</strong> Don't decay biases and norm gains.</li>
+<li><strong>LR is the #1 hyperparameter.</strong> Use warmup (stability early) + cosine/linear decay. LR range test to find a good value. 🎛️ Shape one in the <a href="interactive/lr-schedules.html">LR Schedule Designer</a> (it generates PyTorch code).</li>
+<li><strong>Batch size:</strong> larger means less gradient noise. Rules of thumb: scale the LR linearly with batch size for SGD (<a href="https://arxiv.org/abs/1706.02677" target="_blank" rel="noopener">Goyal et al., 2017</a>) and roughly with √ for Adam. Both stop working past a <em>critical batch size</em>, after which bigger batches stop speeding up training.</li>
+</ul>
+<h3 id="normalization-regularization">Normalization &amp; regularization<a class="anchor" href="#normalization-regularization" title="Link to this section">#</a></h3>
+<ul>
+<li><strong>BatchNorm:</strong> normalize each channel over the <em>batch</em> (and spatial positions, for CNNs). It uses running statistics at eval time. Common in CNNs, fragile with tiny batches.</li>
+<li><strong>LayerNorm / RMSNorm:</strong> normalize over the <em>features</em> of each example (token). Independent of batch size. Used in transformers; RMSNorm skips the mean subtraction. 🎛️ Click through them in the <a href="interactive/norm-explorer.html">Normalization Explorer</a>.</li>
+<li><strong>Residual connections</strong> $\mathbf x + F(\mathbf x)$ give gradients a highway. This is what makes deep nets trainable.</li>
+<li><strong>Dropout:</strong> randomly zero activations in training, which acts like an ensemble. <strong>Weight decay</strong>, <strong>data augmentation</strong>, <strong>early stopping</strong>, <strong>label smoothing</strong>.</li>
+</ul>
+<h3 id="debugging-recipe-from-karpathys-recipe">Debugging recipe (from Karpathy's "Recipe")<a class="anchor" href="#debugging-recipe-from-karpathys-recipe" title="Link to this section">#</a></h3>
+<ol>
+<li>Get to know the data: look at samples and label distributions.</li>
+<li>Build a dumb baseline, fix random seeds, check the <strong>initial loss</strong> (≈ $\ln(C)$ for $C$ classes).</li>
+<li><strong>Overfit a single batch</strong> to ~0 loss. If you can't, there's a bug.</li>
+<li>Then add regularization and scale up. Change <strong>one thing at a time</strong>.</li>
+<li>Track everything: loss curves (train and val), LR, gradient norms. Use <strong>Weights &amp; Biases</strong> or TensorBoard.</li>
+</ol>
+<p>🎛️ Practice reading curves in the <a href="interactive/training-doctor.html">Training Doctor</a>: 11 realistic failure modes to diagnose.</p>
+<h3 id="performance">Performance<a class="anchor" href="#performance" title="Link to this section">#</a></h3>
+<ul>
+<li><strong>Mixed precision</strong> (<code>torch.autocast</code>, prefer <strong>bf16</strong>) often gives up to ~2× speed on GPUs with tensor cores and roughly halves activation memory. bf16 has float32's exponent range, so it needs no loss scaling; fp16 needs <code>torch.amp.GradScaler</code> to avoid underflow/overflow.</li>
+<li><strong>Gradient clipping</strong> (clip by norm, e.g. 1.0) prevents explosions.</li>
+<li><strong>Gradient accumulation</strong> simulates a large batch on a small GPU.</li>
+<li><strong>Checkpointing:</strong> save model + optimizer + step so you can resume.</li>
+</ul>
+<h2 id="worked-examples">Worked examples<a class="anchor" href="#worked-examples" title="Link to this section">#</a></h2>
+<p><strong>1 · Adam's first step has size ≈ η, whatever the gradient's scale.</strong> Take one parameter, $g_1=0.01$. Then $m=0.1\cdot0.01=0.001$, $v=0.001\cdot10^{-4}=10^{-7}$, $\hat m=0.001/0.1=0.01$, $\hat v=10^{-7}/0.001=10^{-4}$, step $=\eta\cdot0.01/(0.01+10^{-8})\approx\eta$. With $g_1=100$ you get the same step. That's why Adam's LR is a <em>step size</em> in parameter units, it needs less tuning than SGD's, and it's why early steps can be too big without warmup.</p>
+<p><strong>2 · "Loss is NaN at step 200": the checklist.</strong></p>
+<pre><code class="language-mermaid">flowchart TD
+  A[NaN or inf loss] --&gt; B{&quot;NaN in the inputs or labels?&quot;}
+  B -- yes --&gt; B1[&quot;Fix data: assert torch.isfinite(x).all()&quot;]
+  B -- no --&gt; C{&quot;Loss rising before the NaN?&quot;}
+  C -- yes --&gt; C1[&quot;LR too high: lower it, add warmup, clip grads&quot;]
+  C -- no --&gt; D{&quot;Sudden, in fp16?&quot;}
+  D -- yes --&gt; D1[&quot;Overflow: use bf16 or a GradScaler&quot;]
+  D -- no --&gt; E[&quot;Unsafe op: log(0), sqrt(neg), x/0, exp(big).\nUse log_softmax, add eps, torch.autograd.set_detect_anomaly(True)&quot;]
+</code></pre>
+<p><strong>3 · Gradient accumulation (effective batch = 4 × 32 = 128).</strong></p>
+<pre><code class="language-python">accum = 4
+opt.zero_grad(set_to_none=True)
+for i, (x, y) in enumerate(loader):              # loader batch size 32
+    loss = loss_fn(model(x), y) / accum          # average over the 4 micro-batches
+    loss.backward()                              # grads add up in .grad
+    if (i + 1) % accum == 0:
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        opt.step(); sched.step()
+        opt.zero_grad(set_to_none=True)
+</code></pre>
+<p>Not identical to a real batch of 128 if the model has BatchNorm (its statistics still see 32 at a time).</p>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>You evaluate a CNN with BatchNorm and get 10% accuracy, though training accuracy was 95%. One line fixes it. Which?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p><code>model.eval()</code> before evaluating (and <code>model.train()</code> before training again). In train mode BatchNorm normalizes with the current test batch's statistics and dropout stays on. Also wrap evaluation in <code>torch.no_grad()</code> (or <code>torch.inference_mode()</code>) to save memory.</p>
+</details>
+<ol start="2">
+<li>AdamW with lr = 1e-3 and weight_decay = 0.1. By what factor does weight decay alone shrink a weight each step?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>PyTorch's AdamW multiplies the weight by $1-\eta\lambda = 1-10^{-4}$ per step. Over 10 000 steps that's $(1-10^{-4})^{10^4}\approx e^{-1}$ if nothing pushed back. The decay strength depends on the product $\eta\lambda$, so changing the LR also changes the effective regularization.</p>
+</details>
+<ol start="3">
+<li>Your training loss is a perfectly regular sawtooth and validation loss stays above ln C. What's wrong?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>The training data isn't shuffled (it's sorted by class): <code>DataLoader(..., shuffle=True)</code>.</p>
+</details>
+<ol start="4">
+<li>Why can't you overfit a single batch of 32 examples, and what does that tell you?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>A healthy model + pipeline should drive the loss on 32 fixed examples to ~0 within a few hundred steps. If it can't, the bug is in the code, not the hyperparameters: labels misaligned, a detached tensor (<code>.detach()</code>, <code>.item()</code>, NumPy round-trip) blocking gradients, wrong loss input (probabilities fed to <code>CrossEntropyLoss</code>, which expects logits), or the optimizer built on the wrong parameters.</p>
+</details>
+<ol start="5">
+<li><code>nn.CrossEntropyLoss()(torch.softmax(logits, -1), y)</code>: what's wrong?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p><code>CrossEntropyLoss</code> applies log-softmax internally and expects raw <strong>logits</strong>. Applying softmax first squashes the inputs to [0, 1], so gradients become tiny and training stalls. Pass <code>logits</code> directly.</p>
+</details>
+<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://d2l.ai/" target="_blank" rel="noopener">Dive into Deep Learning (d2l.ai)</a></strong>: free, PyTorch, math + code. Ch. 2–5, 8 (modern CNNs), 12 (optimization). Use it as your main textbook for modules 05–07.</li>
+<li>⭐ <strong><a href="https://karpathy.github.io/2019/04/25/recipe/" target="_blank" rel="noopener">A Recipe for Training Neural Networks (Karpathy)</a></strong>: read twice.</li>
+<li><strong><a href="https://udlbook.github.io/udlbook/" target="_blank" rel="noopener">Understanding Deep Learning (Simon Prince, 2023)</a></strong>: free, beautifully illustrated, and strong on theory. Ch. 6–9 (training, init, regularization). Your best <em>theory</em> companion.</li>
+<li><strong><a href="https://docs.pytorch.org/tutorials/beginner/basics/intro.html" target="_blank" rel="noopener">PyTorch: Learn the Basics</a></strong> + <strong><a href="https://www.learnpytorch.io/" target="_blank" rel="noopener">Zero to Mastery PyTorch</a></strong>.</li>
+<li><strong><a href="https://github.com/google-research/tuning_playbook" target="_blank" rel="noopener">Deep Learning Tuning Playbook (Google)</a></strong>: a systematic way to tune hyperparameters.</li>
+<li>Alt. top-down style: <strong><a href="https://course.fast.ai/" target="_blank" rel="noopener">fast.ai Practical Deep Learning</a></strong>. Great if you want quick wins before theory.</li>
+</ul>
+<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<ol>
+<li>Re-implement your MNIST MLP in PyTorch. Compare it to your NumPy version.</li>
+<li><strong>Fashion-MNIST/CIFAR-10 ablation study:</strong> run SGD vs Adam vs AdamW, ± BatchNorm, ± dropout, three LR schedules. Plot everything in W&amp;B and write a one-page conclusion.</li>
+<li>Deliberately break training (huge LR, no normalization, bad init, forgetting <code>zero_grad</code>) and record what each failure <em>looks like</em> on the curves.</li>
+</ol>
+<h2 id="traps">Traps<a class="anchor" href="#traps" title="Link to this section">#</a></h2>
+<ul>
+<li>Forgetting <code>model.eval()</code> → BatchNorm/dropout are wrong at test time.</li>
+<li>Calling <code>.item()</code> or moving tensors to the CPU every step slows everything down.</li>
+<li>Tuning ten things at once. You learn nothing from that.</li>
+<li>Passing probabilities (after softmax) to <code>CrossEntropyLoss</code>, which expects logits.</li>
+<li>Calling <code>sched.step()</code> per epoch for a schedule defined in steps (or vice versa). Plot the LR you actually used.</li>
+</ul>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> Training loop written from memory · <input type="checkbox"> ablation report done · <input type="checkbox"> you recognize failure modes from the loss curves alone</li>
+</ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/04-neural-nets-from-scratch.html"><small>← Previous</small>Neural Networks from Scratch</a><a class="pn next" href="../deep-learning/06-cnns-vision.html"><small>Next →</small>CNNs &amp; Computer Vision</a></nav></main>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a><ul><li><a href="#pytorch-mechanics">PyTorch mechanics</a></li><li><a href="#optimizers">Optimizers</a></li><li><a href="#normalization-regularization">Normalization &amp; regularization</a></li><li><a href="#debugging-recipe-from-karpathys-recipe">Debugging recipe (from Karpathy's "Recipe")</a></li><li><a href="#performance">Performance</a></li></ul></li><li><a href="#worked-examples">Worked examples</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
+</div>
+</body>
+</html>

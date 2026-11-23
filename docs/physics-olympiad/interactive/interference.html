@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wave Interference</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style> #field { aspect-ratio: 4 / 3; image-rendering: auto; } #screen { aspect-ratio: 2.4 / 1; } </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Physics Olympiad tools</a></header>
+  <h1>Wave Interference & Diffraction</h1>
+  <p class="lead">Part 1: two coherent point sources make ripples, and you can see the nodal lines form. Part 2: the far-field intensity of an N-slit grating with finite slit width (module 05).</p>
+
+  <h2>1 · Two-source ripple tank</h2>
+  <div class="grid two">
+    <canvas id="field" width="480" height="360" aria-label="Two-source wave field"></canvas>
+    <div class="controls">
+      <label class="ctl">Wavelength λ = <span class="val" id="lv"></span><input type="range" id="lam" min="8" max="60" value="24"></label>
+      <label class="ctl">Source separation d = <span class="val" id="dv"></span><input type="range" id="d" min="0" max="200" value="80"></label>
+      <label class="ctl">Phase difference Δφ = <span class="val" id="pv"></span><input type="range" id="ph" min="0" max="360" value="0"></label>
+      <div class="row"><button id="mode" class="active">Showing: instantaneous wave</button></div>
+      <div class="card" id="fstats"></div>
+      <p class="note">Nodal (dark) lines satisfy |r₁ − r₂| = (m + ½)λ for in-phase sources. They are hyperbolas with the sources as foci. The number of lines ≈ 2d/λ.</p>
+    </div>
+  </div>
+
+  <h2>2 · N-slit grating on a far screen</h2>
+  <canvas id="screen" width="960" height="400" aria-label="Grating intensity pattern"></canvas>
+  <div class="legend" style="margin:6px 0 12px"><span><i style="background:var(--c1)"></i>I(θ) total</span><span><i style="background:var(--c2)"></i>single-slit envelope (sin β / β)²</span></div>
+  <div class="grid two">
+    <div class="controls">
+      <label class="ctl">Number of slits N = <span class="val" id="nv"></span><input type="range" id="n" min="1" max="20" value="2"></label>
+      <label class="ctl">Slit spacing d = <span class="val" id="d2v"></span> λ<input type="range" id="d2" min="1" max="12" step="0.1" value="4"></label>
+      <label class="ctl">Slit width a = <span class="val" id="av"></span> λ<input type="range" id="a" min="0.1" max="4" step="0.05" value="1"></label>
+    </div>
+    <div class="card" id="gstats"></div>
+  </div>
+  <div class="callout" style="margin-top:14px">I(θ) = I₀ · (sin β / β)² · (sin Nα / (N sin α))², with α = π d sinθ / λ and β = π a sinθ / λ. Principal maxima: d sinθ = mλ. There are N − 2 small secondary maxima between them. A maximum goes missing when it lands on a single-slit zero (d/a an integer).</div>
+  <footer class="foot">Part of the Self-Study repo · physics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const hexToRgb = (h) => { h = h.replace("#", ""); if (h.length === 3) h = h.split("").map((c) => c + c).join(""); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+
+// ---------- Part 1: ripple tank ----------
+const fc = $("field"), fctx = fc.getContext("2d");
+const GW = 240, GH = 180; // simulation grid, upscaled to canvas
+const off = document.createElement("canvas"); off.width = GW; off.height = GH;
+const octx = off.getContext("2d"), img = octx.createImageData(GW, GH);
+let avg = false, t = 0;
+$("mode").addEventListener("click", () => { avg = !avg; $("mode").textContent = avg ? "Showing: time-averaged intensity" : "Showing: instantaneous wave"; });
+
+function drawField() {
+  const lam = +$("lam").value / 2, d = +$("d").value / 2, ph = (+$("ph").value * Math.PI) / 180;
+  $("lv").textContent = (+$("lam").value) + " px"; $("dv").textContent = (+$("d").value) + " px"; $("pv").textContent = $("ph").value + "°";
+  const k = (2 * Math.PI) / lam, w = 0.12;
+  const s1 = [GW / 2 - d / 2, GH * 0.15], s2 = [GW / 2 + d / 2, GH * 0.15];
+  const pos = hexToRgb(col("--c1") || "#2f6fde"), neg = hexToRgb(col("--c2") || "#d9622b"), bg = hexToRgb(col("--surface") || "#ffffff");
+  for (let y = 0; y < GH; y++) for (let x = 0; x < GW; x++) {
+    const r1 = Math.hypot(x - s1[0], y - s1[1]) + 1, r2 = Math.hypot(x - s2[0], y - s2[1]) + 1;
+    let v;
+    if (avg) { const dphi = k * (r1 - r2) - ph; v = Math.cos(dphi / 2) ** 2; } // normalized intensity, equal amplitudes
+    else v = (Math.cos(k * r1 - w * t) + Math.cos(k * r2 - w * t - ph)) / 2;
+    const i = 4 * (y * GW + x);
+    let c;
+    if (avg) c = bg.map((b, j) => b + (pos[j] - b) * v);
+    else c = v >= 0 ? bg.map((b, j) => b + (pos[j] - b) * v) : bg.map((b, j) => b + (neg[j] - b) * -v);
+    img.data[i] = c[0]; img.data[i + 1] = c[1]; img.data[i + 2] = c[2]; img.data[i + 3] = 255;
+  }
+  octx.putImageData(img, 0, 0);
+  const W = fc.clientWidth, H = W * 0.75, dpr = devicePixelRatio || 1;
+  if (fc.width !== Math.round(W * dpr)) { fc.width = W * dpr; fc.height = H * dpr; }
+  fctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  fctx.imageSmoothingEnabled = true; fctx.drawImage(off, 0, 0, W, H);
+  fctx.fillStyle = col("--text");
+  [s1, s2].forEach((s) => { fctx.beginPath(); fctx.arc((s[0] / GW) * W, (s[1] / GH) * H, 4, 0, 7); fctx.fill(); });
+  const dl = d / lam;
+  $("fstats").innerHTML = `<div class="stat"><span>d / λ</span><b>${dl.toFixed(2)}</b></div><div class="stat"><span>Nodal lines (in phase)</span><b>${ph === 0 ? 2 * Math.round(dl) : "shifted by Δφ"}</b></div><div class="stat"><span>Max order m (d sinθ = mλ)</span><b>${Math.floor(dl)}</b></div>`;
+  t += 1;
+  requestAnimationFrame(drawField);
+}
+
+// ---------- Part 2: grating ----------
+const sc = $("screen"), sctx = sc.getContext("2d");
+function grating(N, d, a, s) { // s = sinθ, lengths in units of λ
+  const al = Math.PI * d * s, be = Math.PI * a * s;
+  const env = Math.abs(be) < 1e-9 ? 1 : (Math.sin(be) / be) ** 2;
+  const sa = Math.sin(al);
+  const arr = Math.abs(sa) < 1e-9 ? 1 : (Math.sin(N * al) / (N * sa)) ** 2;
+  return [env * arr, env];
+}
+function drawScreen() {
+  const N = +$("n").value, d = +$("d2").value, a = Math.min(+$("a").value, d);
+  $("nv").textContent = N; $("d2v").textContent = d.toFixed(1); $("av").textContent = a.toFixed(2);
+  const dpr = devicePixelRatio || 1, W = sc.clientWidth, H = W / 2.4, pad = 26;
+  sc.width = W * dpr; sc.height = H * dpr; sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  sctx.fillStyle = col("--surface"); sctx.fillRect(0, 0, W, H);
+  const X = (s) => pad + ((s + 1) / 2) * (W - 2 * pad), Y = (v) => H - pad - v * (H - 2 * pad - 14);
+  sctx.strokeStyle = col("--border"); sctx.beginPath(); sctx.moveTo(pad, H - pad); sctx.lineTo(W - pad, H - pad); sctx.stroke();
+  sctx.fillStyle = col("--muted"); sctx.font = "12px system-ui";
+  [-1, -0.5, 0, 0.5, 1].forEach((s) => sctx.fillText(s, X(s) - 8, H - pad + 16)); sctx.fillText("sin θ", W - pad - 30, H - pad - 6);
+  // principal maxima marks
+  for (let m = -Math.floor(d); m <= Math.floor(d); m++) { const s = m / d; sctx.strokeStyle = col("--border"); sctx.setLineDash([3, 3]); sctx.beginPath(); sctx.moveTo(X(s), pad); sctx.lineTo(X(s), H - pad); sctx.stroke(); sctx.setLineDash([]); sctx.fillText("m=" + m, X(s) - 12, pad - 2); }
+  const plot = (k, color, w) => { sctx.strokeStyle = color; sctx.lineWidth = w; sctx.beginPath(); for (let i = 0; i <= 1600; i++) { const s = -1 + (2 * i) / 1600; const q = [X(s), Y(grating(N, d, a, s)[k])]; i ? sctx.lineTo(...q) : sctx.moveTo(...q); } sctx.stroke(); };
+  sctx.globalAlpha = 0.6; plot(1, col("--c2"), 1.5); sctx.globalAlpha = 1; plot(0, col("--c1"), 2);
+  // visual "screen" strip
+  for (let i = 0; i < W - 2 * pad; i++) { const s = -1 + (2 * i) / (W - 2 * pad); const v = Math.sqrt(grating(N, d, a, s)[0]); sctx.fillStyle = `rgba(${hexToRgb(col("--c1")).join(",")},${v})`; sctx.fillRect(pad + i, H - pad + 20, 1, 6); }
+  const ratio = d / a, missing = Math.abs(ratio - Math.round(ratio)) < 0.02 ? `orders m = ±${Math.round(ratio)}, ±${2 * Math.round(ratio)}, … are missing` : "none";
+  $("gstats").innerHTML = `<div class="stat"><span>Principal maxima visible</span><b>${2 * Math.floor(d) + 1}</b></div><div class="stat"><span>Secondary maxima between principals</span><b>${Math.max(0, N - 2)}</b></div><div class="stat"><span>Angular width of a principal max ∝</span><b>1 / (N d)</b></div><div class="stat"><span>Missing orders (d/a = ${ratio.toFixed(2)})</span><b style="text-align:right">${missing}</b></div>`;
+}
+["n", "d2", "a"].forEach((id) => $(id).addEventListener("input", drawScreen));
+window.addEventListener("resize", drawScreen);
+drawField(); drawScreen();
+</script>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Optimizer Landscape</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style> #land { aspect-ratio: 4 / 3; cursor: crosshair; } #loss { aspect-ratio: 2.6 / 1; } </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a></header>
+  <h1>Optimizer Landscape</h1>
+  <p class="lead">Race <b>SGD</b>, <b>Momentum</b>, and <b>Adam</b> on 2D loss surfaces. <b>Click the map</b> to choose a start point. Try a badly conditioned valley: that's the problem momentum and Adam were designed for (modules 01 and 05).</p>
+  <div class="grid two">
+    <div>
+      <canvas id="land" width="800" height="600" aria-label="Loss landscape with optimizer paths"></canvas>
+      <canvas id="loss" width="800" height="300" style="margin-top:10px" aria-label="Loss vs step"></canvas>
+      <div class="legend" style="margin-top:6px"><span><i style="background:var(--c1)"></i>SGD</span><span><i style="background:var(--c2)"></i>Momentum (β = 0.9)</span><span><i style="background:var(--c3)"></i>Adam (β₁ 0.9, β₂ 0.999)</span><span>bottom: log loss vs step</span></div>
+    </div>
+    <div class="controls">
+      <label class="ctl">Surface<select id="fn">
+        <option value="valley">Ill-conditioned valley ½(x² + κy²)</option>
+        <option value="rosen">Rosenbrock banana</option>
+        <option value="saddle">Saddle x² − y² (+ walls)</option>
+        <option value="multi">Many local minima</option>
+      </select></label>
+      <label class="ctl">Condition number κ (valley only) = <span class="val" id="kv"></span><input type="range" id="kappa" min="1" max="50" value="20"></label>
+      <label class="ctl">Learning rate η = <span class="val" id="lrv"></span><input type="range" id="lr" min="-3.5" max="0" step="0.05" value="-1.05"></label>
+      <label class="ctl">Gradient noise (mini-batch SGD) = <span class="val" id="nzv"></span><input type="range" id="noise" min="0" max="2" step="0.05" value="0"></label>
+      <div class="row">
+        <label><input type="checkbox" class="on" data-o="sgd" checked> SGD</label>
+        <label><input type="checkbox" class="on" data-o="mom" checked> Momentum</label>
+        <label><input type="checkbox" class="on" data-o="adam" checked> Adam</label>
+      </div>
+      <div class="row"><button class="primary" id="play">⏸ Pause</button><button id="restart">Restart</button></div>
+      <div class="card" id="stats"></div>
+      <div class="callout" id="insight"></div>
+    </div>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const L = $("land"), lctx = L.getContext("2d"), G = $("loss"), gctx = G.getContext("2d");
+const F = {
+  valley: { f: (x, y, k) => 0.5 * (x * x + k * y * y), g: (x, y, k) => [x, k * y], box: [-5, 5, -3.75, 3.75], start: [-4.5, 2.5], min: [0, 0], lr: -1.05 },
+  rosen: { f: (x, y) => (1 - x) ** 2 + 100 * (y - x * x) ** 2, g: (x, y) => [-2 * (1 - x) - 400 * x * (y - x * x), 200 * (y - x * x)], box: [-2, 2, -1, 3], start: [-1.5, 2.2], min: [1, 1], lr: -3.2 },
+  saddle: { f: (x, y) => x * x - y * y + 0.05 * y ** 4, g: (x, y) => [2 * x, -2 * y + 0.2 * y ** 3], box: [-3, 3, -4.5, 4.5], start: [-2.5, 0.02], min: [0, 3.16], lr: -1.6 },
+  multi: { f: (x, y) => 0.1 * (x * x + y * y) - Math.cos(2 * x) - Math.cos(2 * y) + 2, g: (x, y) => [0.2 * x + 2 * Math.sin(2 * x), 0.2 * y + 2 * Math.sin(2 * y)], box: [-6, 6, -4.5, 4.5], start: [-5, 3.8], min: [0, 0], lr: -1.3 },
+};
+let fn = "valley", start = null, runs = {}, playing = true, steps = 0, bg = null;
+const K = () => +$("kappa").value, LR = () => Math.pow(10, +$("lr").value);
+function fit(c, ctx, r) { const d = devicePixelRatio || 1, w = c.clientWidth; c.width = w * d; c.height = (w / r) * d; ctx.setTransform(d, 0, 0, d, 0, 0); }
+function toPx(x, y) { const b = F[fn].box, W = L.clientWidth, H = W * 0.75; return [((x - b[0]) / (b[1] - b[0])) * W, H - ((y - b[2]) / (b[3] - b[2])) * H]; }
+function fromPx(px, py) { const b = F[fn].box, W = L.clientWidth, H = W * 0.75; return [b[0] + (px / W) * (b[1] - b[0]), b[2] + ((H - py) / H) * (b[3] - b[2])]; }
+const gauss = () => Math.sqrt(-2 * Math.log(Math.random() + 1e-12)) * Math.cos(2 * Math.PI * Math.random());
+
+function renderBg() {
+  const W = L.clientWidth, H = W * 0.75, N = 160, M = 120, c = document.createElement("canvas"); c.width = N; c.height = M;
+  const cx = c.getContext("2d"), img = cx.createImageData(N, M), vals = [];
+  for (let j = 0; j < M; j++) for (let i = 0; i < N; i++) { const [x, y] = fromPx(((i + 0.5) / N) * W, ((j + 0.5) / M) * H); vals.push(Math.log(1 + F[fn].f(x, y, K()))); }
+  const lo = Math.min(...vals), hi = Math.max(...vals), dark = matchMedia("(prefers-color-scheme: dark)").matches;
+  vals.forEach((v, idx) => {
+    const t = (v - lo) / (hi - lo + 1e-9), band = Math.floor(t * 14) % 2;
+    const base = dark ? [30 + 90 * t, 32 + 60 * t, 60 + 40 * t] : [235 - 110 * t, 240 - 80 * t, 250 - 40 * t];
+    const k = band ? 0.94 : 1;
+    img.data.set([base[0] * k, base[1] * k, base[2] * k, 255], idx * 4);
+  });
+  cx.putImageData(img, 0, 0); bg = c;
+}
+function reset() {
+  const s = start || F[fn].start;
+  runs = { sgd: { p: [...s], path: [[...s]], loss: [] }, mom: { p: [...s], v: [0, 0], path: [[...s]], loss: [] }, adam: { p: [...s], m: [0, 0], v: [0, 0], path: [[...s]], loss: [] } };
+  steps = 0;
+}
+function stepAll() {
+  const lr = LR(), nz = +$("noise").value, k = K();
+  for (const name in runs) {
+    const r = runs[name]; if (!isFinite(r.p[0]) || Math.abs(r.p[0]) > 1e6) continue;
+    let g = F[fn].g(r.p[0], r.p[1], k);
+    if (nz > 0) g = [g[0] + nz * gauss(), g[1] + nz * gauss()];
+    if (name === "sgd") r.p = [r.p[0] - lr * g[0], r.p[1] - lr * g[1]];
+    else if (name === "mom") { r.v = [0.9 * r.v[0] + g[0], 0.9 * r.v[1] + g[1]]; r.p = [r.p[0] - lr * r.v[0], r.p[1] - lr * r.v[1]]; }
+    else {
+      const t = steps + 1;
+      r.m = [0.9 * r.m[0] + 0.1 * g[0], 0.9 * r.m[1] + 0.1 * g[1]]; r.v = [0.999 * r.v[0] + 0.001 * g[0] ** 2, 0.999 * r.v[1] + 0.001 * g[1] ** 2];
+      const mh = r.m.map((x) => x / (1 - 0.9 ** t)), vh = r.v.map((x) => x / (1 - 0.999 ** t));
+      r.p = [r.p[0] - (lr * mh[0]) / (Math.sqrt(vh[0]) + 1e-8), r.p[1] - (lr * mh[1]) / (Math.sqrt(vh[1]) + 1e-8)];
+    }
+    r.path.push([...r.p]); r.loss.push(F[fn].f(r.p[0], r.p[1], k));
+  }
+  steps++;
+}
+const colors = { sgd: "--c1", mom: "--c2", adam: "--c3" };
+function draw() {
+  const W = L.clientWidth, H = W * 0.75;
+  lctx.imageSmoothingEnabled = true; lctx.drawImage(bg, 0, 0, W, H);
+  const m = toPx(...F[fn].min); lctx.fillStyle = col("--text"); lctx.font = "16px system-ui"; lctx.fillText("★", m[0] - 6, m[1] + 6);
+  for (const name in runs) {
+    if (!document.querySelector(`[data-o=${name}]`).checked) continue;
+    const r = runs[name]; lctx.strokeStyle = col(colors[name]); lctx.lineWidth = 2; lctx.beginPath();
+    r.path.forEach((p, i) => { const q = toPx(...p); i ? lctx.lineTo(...q) : lctx.moveTo(...q); }); lctx.stroke();
+    const q = toPx(...r.p); lctx.fillStyle = col(colors[name]); lctx.beginPath(); lctx.arc(q[0], q[1], 5, 0, 7); lctx.fill();
+  }
+  // loss plot
+  const gw = G.clientWidth, gh = gw / 2.6; gctx.fillStyle = col("--surface"); gctx.fillRect(0, 0, gw, gh);
+  const all = Object.values(runs).flatMap((r) => r.loss).filter((v) => isFinite(v) && v > 0);
+  if (all.length) {
+    const lo = Math.log10(Math.max(1e-8, Math.min(...all))), hi = Math.log10(Math.max(...all)) + 0.1, n = Math.max(50, steps);
+    for (const name in runs) {
+      if (!document.querySelector(`[data-o=${name}]`).checked) continue;
+      gctx.strokeStyle = col(colors[name]); gctx.lineWidth = 2; gctx.beginPath();
+      runs[name].loss.forEach((v, i) => { if (!(v > 0) || !isFinite(v)) return; const x = 10 + (i / n) * (gw - 20), y = gh - 10 - ((Math.log10(Math.max(v, 1e-8)) - lo) / (hi - lo + 1e-9)) * (gh - 20); i ? gctx.lineTo(x, y) : gctx.moveTo(x, y); });
+      gctx.stroke();
+    }
+  }
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  const fmtL = (r) => { const v = r.loss[r.loss.length - 1]; return v === undefined ? "—" : !isFinite(v) || v > 1e6 ? '<span class="bad">diverged</span>' : v.toExponential(2); };
+  $("stats").innerHTML = row("Step", steps) + row("SGD loss", fmtL(runs.sgd)) + row("Momentum loss", fmtL(runs.mom)) + row("Adam loss", fmtL(runs.adam)) +
+    (fn === "valley" ? row("SGD stable if η <", (2 / Math.max(1, K())).toFixed(3) + " (= 2/λ_max)") : "");
+  $("kv").textContent = K(); $("lrv").textContent = LR().toPrecision(3); $("nzv").textContent = (+$("noise").value).toFixed(2);
+  $("insight").innerHTML = {
+    valley: "With large κ, SGD zig-zags across the steep direction and crawls along the flat one. Raise η past 2/κ and it diverges. Momentum averages out the zig-zag, and Adam rescales each coordinate.",
+    rosen: "The minimum ★ sits at (1, 1) inside a curved, flat-bottomed valley. Finding the valley is easy; moving along it is hard.",
+    saddle: "Start almost exactly on the ridge (y ≈ 0). Plain SGD lingers near the saddle point, while noise or momentum escapes faster. High-dimensional nets have many saddles.",
+    multi: "Non-convex: where you end up depends on the start point, the learning rate, and noise. Try gradient noise: sometimes it helps you hop out of a poor local minimum.",
+  }[fn];
+}
+function loop() { if (playing && steps < 4000) for (let i = 0; i < 2; i++) stepAll(); draw(); requestAnimationFrame(loop); }
+L.addEventListener("click", (e) => { const b = L.getBoundingClientRect(); start = fromPx(e.clientX - b.left, e.clientY - b.top); reset(); });
+$("fn").addEventListener("change", () => { fn = $("fn").value; start = null; $("lr").value = F[fn].lr; renderBg(); reset(); });
+$("kappa").addEventListener("input", () => { if (fn === "valley") { renderBg(); reset(); } });
+["lr", "noise"].forEach((id) => $(id).addEventListener("input", reset));
+$("restart").addEventListener("click", reset);
+$("play").addEventListener("click", () => { playing = !playing; $("play").textContent = playing ? "⏸ Pause" : "▶ Play"; });
+window.addEventListener("resize", () => { fit(L, lctx, 4 / 3); fit(G, gctx, 2.6); renderBg(); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", renderBg);
+fit(L, lctx, 4 / 3); fit(G, gctx, 2.6); renderBg(); reset(); loop();
+</script>
+</body>
+</html>

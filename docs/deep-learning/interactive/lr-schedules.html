@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LR Schedule Designer</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  #plot { aspect-ratio: 2.2 / 1; }
+  pre.code { background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; overflow-x: auto; font-size: 13px; line-height: 1.45; margin: 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Deep Learning tools</a><span class="note">Module 05 · PyTorch & training</span></header>
+  <h1>LR Schedule Designer</h1>
+  <p class="lead">The learning rate is the most important hyperparameter, and <i>how it changes over time</i> matters almost as much as its peak. Shape a schedule, compare it with the classics, and copy working PyTorch code.</p>
+  <div class="grid two">
+    <div>
+      <canvas id="plot" width="800" height="364" aria-label="Learning-rate schedule"></canvas>
+      <div class="legend" style="margin-top:6px" id="legend"></div>
+      <label class="ctl" style="margin-top:10px">Inspect step <span class="val" id="sv"></span><input type="range" id="step" min="0" max="1000" value="300"></label>
+    </div>
+    <div class="controls">
+      <label class="ctl">Schedule<select id="kind">
+        <option value="cosine">Warmup + cosine decay</option>
+        <option value="linear">Warmup + linear decay</option>
+        <option value="wsd">Warmup–stable–decay (WSD)</option>
+        <option value="step">Step decay (×0.1 at 50% and 75%)</option>
+        <option value="invsqrt">Inverse square root (original Transformer)</option>
+        <option value="constant">Constant (after warmup)</option>
+      </select></label>
+      <label class="ctl">Peak LR = <span class="val" id="pv"></span><input type="range" id="peak" min="-5" max="-1" step="0.05" value="-3.0"></label>
+      <label class="ctl">Total steps = <span class="val" id="tv"></span><input type="range" id="total" min="100" max="100000" step="100" value="10000"></label>
+      <label class="ctl">Warmup = <span class="val" id="wv"></span> of steps<input type="range" id="warm" min="0" max="0.3" step="0.005" value="0.05"></label>
+      <label class="ctl">Final LR = <span class="val" id="mv"></span> × peak<input type="range" id="minr" min="0" max="0.5" step="0.01" value="0.1"></label>
+      <label class="ctl" id="decwrap">WSD decay phase = last <span class="val" id="dv"></span> of steps<input type="range" id="dec" min="0.05" max="0.5" step="0.01" value="0.2"></label>
+      <label><input type="checkbox" id="cmp" checked> overlay the other schedules (faint)</label>
+      <div class="card" id="stats"></div>
+    </div>
+  </div>
+  <h2>PyTorch code</h2>
+  <pre class="code" id="code"></pre>
+  <div class="row" style="margin-top:8px"><button id="copy">Copy code</button><span class="note" id="copied"></span></div>
+  <h2>Why these shapes</h2>
+  <div class="card"><ul style="margin:0;padding-left:20px">
+    <li><b>Warmup:</b> at step 0 the weights are random and Adam's second-moment estimate is based on very few gradients, so full-size steps can blow up (this is the motivation behind RAdam, Liu et al. 2019). A short linear ramp (often 1–5% of training, or a few thousand steps for transformers) avoids early divergence.</li>
+    <li><b>Decay:</b> a large LR explores quickly but bounces around the bottom of the valley; shrinking it lets the parameters settle into the valley floor. That's why the loss often drops sharply as soon as the decay starts (very visible with WSD).</li>
+    <li><b>Cosine vs linear:</b> very similar in practice. Cosine spends longer near the peak and decays gently at the end.</li>
+    <li><b>WSD:</b> constant LR for most of training, then a short decay. You can branch off a decay from any checkpoint of the stable phase, so you don't have to fix the total step count in advance (used for MiniCPM and several later LLMs).</li>
+    <li><b>Step decay:</b> the classic ResNet/ImageNet recipe (÷10 at fixed epochs). Still fine for CNNs with SGD.</li>
+    <li><b>Inverse √t:</b> from "Attention Is All You Need": lr = d_model^−0.5 · min(t^−0.5, t · warmup^−1.5). Here it's rescaled so its peak equals the peak LR you set.</li>
+  </ul></div>
+  <footer class="foot">Part of the Self-Study repo · deep-learning/interactive · pairs with <code>05-pytorch-training.md</code></footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const NAMES = { cosine: "cosine", linear: "linear", wsd: "WSD", step: "step", invsqrt: "inv-sqrt", constant: "constant" };
+const COLORS = { cosine: "--c1", linear: "--c2", wsd: "--c3", step: "--c4", invsqrt: "--c5", constant: "--c6" };
+// multiplier in [0, 1] of the peak LR at step s
+function mult(kind, s, T, W, m, D) {
+  if (W > 0 && s < W && kind !== "invsqrt") return (s + 1) / W;
+  const p = Math.min(1, (s - W) / Math.max(1, T - W));
+  switch (kind) {
+    case "cosine": return m + (1 - m) * 0.5 * (1 + Math.cos(Math.PI * p));
+    case "linear": return m + (1 - m) * (1 - p);
+    case "constant": return 1;
+    case "step": return p < 0.5 ? 1 : p < 0.75 ? 0.1 : 0.01;
+    case "wsd": { const ds = T * (1 - D); return s < ds ? 1 : m + (1 - m) * (1 - (s - ds) / Math.max(1, T - ds)); }
+    case "invsqrt": { const w = Math.max(1, W), t = s + 1; return Math.min(Math.pow(t, -0.5), t * Math.pow(w, -1.5)) / Math.pow(w, -0.5); }
+  }
+}
+const P = () => ({ kind: $("kind").value, peak: Math.pow(10, +$("peak").value), T: +$("total").value, W: Math.round(+$("warm").value * +$("total").value), m: +$("minr").value, D: +$("dec").value });
+let ctx;
+function fit() { const c = $("plot"), d = devicePixelRatio || 1, w = c.clientWidth; c.width = w * d; c.height = (w / 2.2) * d; ctx = c.getContext("2d"); ctx.setTransform(d, 0, 0, d, 0, 0); }
+const fmtLR = (v) => v.toExponential(2);
+function draw() {
+  const p = P(), c = $("plot"), Wd = c.clientWidth, H = Wd / 2.2, L = 56, R = 10, T = 12, B = 26;
+  $("step").max = p.T; const s0 = Math.min(+$("step").value, p.T);
+  $("pv").textContent = fmtLR(p.peak); $("tv").textContent = p.T.toLocaleString(); $("wv").textContent = `${(+$("warm").value * 100).toFixed(1)}% (${p.W.toLocaleString()} steps)`;
+  $("mv").textContent = p.m.toFixed(2); $("dv").textContent = Math.round(p.D * 100) + "%"; $("sv").textContent = s0.toLocaleString();
+  $("decwrap").style.display = p.kind === "wsd" ? "" : "none";
+  ctx.fillStyle = col("--surface"); ctx.fillRect(0, 0, Wd, H);
+  const X = (s) => L + (s / p.T) * (Wd - L - R), Y = (v) => H - B - (v / 1.05) * (H - T - B);
+  ctx.strokeStyle = col("--border"); ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, H - B); ctx.lineTo(Wd - R, H - B); ctx.stroke();
+  ctx.fillStyle = col("--muted"); ctx.font = "11px system-ui";
+  [0, 0.25, 0.5, 0.75, 1].forEach((v) => { ctx.fillText(fmtLR(v * p.peak), 2, Y(v) + 4); ctx.strokeStyle = col("--surface-2"); ctx.beginPath(); ctx.moveTo(L, Y(v)); ctx.lineTo(Wd - R, Y(v)); ctx.stroke(); });
+  [0, 0.25, 0.5, 0.75, 1].forEach((f) => { ctx.textAlign = f === 1 ? "right" : f === 0 ? "left" : "center"; ctx.fillText(Math.round(f * p.T).toLocaleString(), X(f * p.T), H - 8); }); ctx.textAlign = "left";
+  if (p.W > 0) { ctx.fillStyle = col("--accent-soft"); ctx.fillRect(X(0), T, X(p.W) - X(0), H - T - B); ctx.fillStyle = col("--muted"); ctx.fillText("warmup", X(0) + 3, T + 12); }
+  const N = 400, curve = (kind, color, w, alpha) => { ctx.globalAlpha = alpha; ctx.strokeStyle = color; ctx.lineWidth = w; ctx.beginPath(); for (let i = 0; i <= N; i++) { const s = Math.round((i / N) * p.T), v = mult(kind, s, p.T, p.W, p.m, p.D); i ? ctx.lineTo(X(s), Y(v)) : ctx.moveTo(X(s), Y(v)); } ctx.stroke(); ctx.globalAlpha = 1; };
+  if ($("cmp").checked) Object.keys(NAMES).forEach((k) => k !== p.kind && curve(k, col(COLORS[k]), 1.5, 0.35));
+  curve(p.kind, col(COLORS[p.kind]), 3, 1);
+  const v0 = mult(p.kind, s0, p.T, p.W, p.m, p.D);
+  ctx.strokeStyle = col("--text"); ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(X(s0), T); ctx.lineTo(X(s0), H - B); ctx.stroke(); ctx.setLineDash([]);
+  ctx.fillStyle = col("--text"); ctx.beginPath(); ctx.arc(X(s0), Y(v0), 5, 0, 7); ctx.fill();
+  $("legend").innerHTML = Object.keys(NAMES).map((k) => `<span style="opacity:${k === p.kind ? 1 : $("cmp").checked ? 0.6 : 0.25}"><i style="background:var(${COLORS[k]})"></i>${NAMES[k]}</span>`).join("");
+  let area = 0; for (let s = 0; s < p.T; s++) area += mult(p.kind, s, p.T, p.W, p.m, p.D);
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  $("stats").innerHTML = row(`LR at step ${s0.toLocaleString()}`, fmtLR(v0 * p.peak)) + row("final LR", fmtLR(mult(p.kind, p.T - 1, p.T, p.W, p.m, p.D) * p.peak)) + row("mean LR / peak", (area / p.T).toFixed(3));
+  code(p);
+}
+function code(p) {
+  const head = `import math, torch\n\nopt = torch.optim.AdamW(model.parameters(), lr=${fmtLR(p.peak)}, betas=(0.9, 0.95), weight_decay=0.1)\ntotal_steps, warmup_steps = ${p.T}, ${p.W}\n`;
+  const body = {
+    cosine: `min_ratio = ${p.m}\ndef lr_lambda(step):            # multiplier of the peak LR\n    if step < warmup_steps:\n        return (step + 1) / warmup_steps\n    progress = min(1.0, (step - warmup_steps) / max(1, total_steps - warmup_steps))\n    return min_ratio + (1 - min_ratio) * 0.5 * (1 + math.cos(math.pi * progress))`,
+    linear: `min_ratio = ${p.m}\ndef lr_lambda(step):\n    if step < warmup_steps:\n        return (step + 1) / warmup_steps\n    progress = min(1.0, (step - warmup_steps) / max(1, total_steps - warmup_steps))\n    return min_ratio + (1 - min_ratio) * (1 - progress)`,
+    wsd: `min_ratio, decay_frac = ${p.m}, ${p.D}\ndecay_start = int(total_steps * (1 - decay_frac))\ndef lr_lambda(step):\n    if step < warmup_steps:\n        return (step + 1) / warmup_steps\n    if step < decay_start:\n        return 1.0\n    return min_ratio + (1 - min_ratio) * (1 - (step - decay_start) / max(1, total_steps - decay_start))`,
+    step: `def lr_lambda(step):\n    if step < warmup_steps:\n        return (step + 1) / warmup_steps\n    progress = (step - warmup_steps) / max(1, total_steps - warmup_steps)\n    return 1.0 if progress < 0.5 else 0.1 if progress < 0.75 else 0.01`,
+    invsqrt: `w = max(1, warmup_steps)\ndef lr_lambda(step):            # peak (=1.0) at step == warmup_steps\n    t = step + 1\n    return min(t ** -0.5, t * w ** -1.5) / w ** -0.5`,
+    constant: `def lr_lambda(step):\n    return (step + 1) / warmup_steps if step < warmup_steps else 1.0`,
+  }[p.kind];
+  const tail = `\nsched = torch.optim.lr_scheduler.LambdaLR(opt, lr_lambda)\n\nfor step, (x, y) in zip(range(total_steps), loader):\n    loss = loss_fn(model(x), y)\n    opt.zero_grad(set_to_none=True)\n    loss.backward()\n    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)\n    opt.step()\n    sched.step()               # once per optimizer step, after opt.step()`;
+  $("code").textContent = head + body.replace(/warmup_steps\n/, "warmup_steps\n") + tail;
+  if (p.W === 0 && p.kind !== "invsqrt") $("code").textContent = $("code").textContent.replace(/    if step < warmup_steps:\n        return \(step \+ 1\) \/ warmup_steps\n/, "").replace("return (step + 1) / warmup_steps if step < warmup_steps else 1.0", "return 1.0");
+}
+["kind", "peak", "total", "warm", "minr", "dec", "cmp", "step"].forEach((id) => $(id).addEventListener("input", draw));
+$("copy").onclick = async () => { try { await navigator.clipboard.writeText($("code").textContent); $("copied").textContent = "Copied ✓"; } catch (e) { $("copied").textContent = "Select the code and copy it manually."; } setTimeout(() => ($("copied").textContent = ""), 2000); };
+window.addEventListener("resize", () => { fit(); draw(); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+fit(); draw();
+</script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10 · Generative Models · Self-Study</title>
+<meta name="description" content="From the math and NumPy to transformers, LLMs, generative models and RL.">
+<script>try{var t=localStorage.getItem('ss-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script defer src="../assets/katex/katex.min.js"></script>
+<script defer src="../assets/katex/contrib/auto-render.min.js"></script>
+<script defer src="../assets/search-index.js"></script>
+<script defer src="../assets/site.js"></script>
+</head>
+<body data-root="../" data-page="deep-learning/10-generative-models.html">
+<a class="skip" href="#content">Skip to content</a>
+<div class="progress" aria-hidden="true"><div></div></div>
+<header class="topbar">
+  <button class="icon-btn menu-btn" aria-label="Open navigation" aria-expanded="false">☰</button>
+  <a class="brand" href="../index.html"><span class="brand-mark">📚</span>Self-Study</a>
+  <div class="search">
+    <input id="search" type="search" placeholder="Search all notes…  ( / )" autocomplete="off" aria-label="Search">
+    <div class="search-results" role="listbox" hidden></div>
+  </div>
+  <button class="icon-btn theme-btn" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+</header>
+<div class="shell">
+  <aside class="sidebar"><nav class="side-nav" aria-label="All pages">
+<a class="side-home" href="../index.html">🏠 Home</a>
+<a class="side-home" href="../tools.html">🎛️ All interactive tools</a>
+<details class="side-topic"><summary><span class="ico">🧮</span>Math Olympiad</summary><ul>
+<li><a href="../math-olympiad/index.html">Overview</a></li>
+<li><a href="../math-olympiad/01-problem-solving-proofs.html"><span class="num">01</span>Problem Solving &amp; Proof Writing</a></li>
+<li><a href="../math-olympiad/02-algebra.html"><span class="num">02</span>Algebra</a></li>
+<li><a href="../math-olympiad/03-number-theory.html"><span class="num">03</span>Number Theory</a></li>
+<li><a href="../math-olympiad/04-combinatorics.html"><span class="num">04</span>Combinatorics</a></li>
+<li><a href="../math-olympiad/05-geometry.html"><span class="num">05</span>Geometry</a></li>
+<li><a href="../math-olympiad/06-contest-practice.html"><span class="num">06</span>Contest Practice &amp; Solution Writing</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../math-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../math-olympiad/resources.html">Resources</a></li>
+<li><a href="../math-olympiad/progress.html">Progress log</a></li>
+<li><a href="../math-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">⚛️</span>Physics Olympiad</summary><ul>
+<li><a href="../physics-olympiad/index.html">Overview</a></li>
+<li><a href="../physics-olympiad/01-math-methods.html"><span class="num">01</span>Math Methods &amp; Estimation</a></li>
+<li><a href="../physics-olympiad/02-mechanics.html"><span class="num">02</span>Mechanics</a></li>
+<li><a href="../physics-olympiad/03-thermo-stat.html"><span class="num">03</span>Thermodynamics &amp; Statistical Physics</a></li>
+<li><a href="../physics-olympiad/04-electromagnetism.html"><span class="num">04</span>Electromagnetism</a></li>
+<li><a href="../physics-olympiad/05-waves-optics.html"><span class="num">05</span>Waves &amp; Optics</a></li>
+<li><a href="../physics-olympiad/06-modern-physics.html"><span class="num">06</span>Modern Physics</a></li>
+<li><a href="../physics-olympiad/07-experimental.html"><span class="num">07</span>Experimental Physics</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../physics-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../physics-olympiad/resources.html">Resources</a></li>
+<li><a href="../physics-olympiad/progress.html">Progress log</a></li>
+<li><a href="../physics-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">💻</span>Informatics Olympiad</summary><ul>
+<li><a href="../informatics-olympiad/index.html">Overview</a></li>
+<li><a href="../informatics-olympiad/01-cpp-for-cp.html"><span class="num">01</span>C++ for Competitive Programming</a></li>
+<li><a href="../informatics-olympiad/02-core-techniques.html"><span class="num">02</span>Complexity &amp; Core Techniques</a></li>
+<li><a href="../informatics-olympiad/03-data-structures.html"><span class="num">03</span>Data Structures</a></li>
+<li><a href="../informatics-olympiad/04-graphs-trees.html"><span class="num">04</span>Graphs &amp; Trees</a></li>
+<li><a href="../informatics-olympiad/05-dynamic-programming.html"><span class="num">05</span>Dynamic Programming</a></li>
+<li><a href="../informatics-olympiad/06-math-strings-geometry.html"><span class="num">06</span>Math, Strings &amp; Geometry</a></li>
+<li><a href="../informatics-olympiad/07-ioi-advanced.html"><span class="num">07</span>IOI Skills &amp; Advanced Topics</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../informatics-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../informatics-olympiad/resources.html">Resources</a></li>
+<li><a href="../informatics-olympiad/progress.html">Progress log</a></li>
+<li><a href="../informatics-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">🗣️</span>IELTS Academic</summary><ul>
+<li><a href="../ielts/index.html">Overview</a></li>
+<li><a href="../ielts/01-test-strategy.html"><span class="num">01</span>Test Strategy &amp; Scoring</a></li>
+<li><a href="../ielts/02-listening.html"><span class="num">02</span>Listening</a></li>
+<li><a href="../ielts/03-reading.html"><span class="num">03</span>Reading (Academic)</a></li>
+<li><a href="../ielts/04-writing-task1.html"><span class="num">04</span>Writing Task 1 (Academic)</a></li>
+<li><a href="../ielts/05-writing-task2.html"><span class="num">05</span>Writing Task 2</a></li>
+<li><a href="../ielts/06-speaking.html"><span class="num">06</span>Speaking</a></li>
+<li><a href="../ielts/07-vocab-grammar.html"><span class="num">07</span>Vocabulary &amp; Grammar for Band 7</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../ielts/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../ielts/resources.html">Resources</a></li>
+<li><a href="../ielts/progress.html">Progress log</a></li>
+<li><a href="../ielts/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic" open><summary><span class="ico">🧠</span>Deep Learning</summary><ul>
+<li><a href="../deep-learning/index.html">Overview</a></li>
+<li><a href="../deep-learning/01-math-for-dl.html"><span class="num">01</span>Math for Deep Learning</a></li>
+<li><a href="../deep-learning/02-python-numpy-tools.html"><span class="num">02</span>Python, NumPy &amp; Tools</a></li>
+<li><a href="../deep-learning/03-ml-fundamentals.html"><span class="num">03</span>Machine Learning Fundamentals</a></li>
+<li><a href="../deep-learning/04-neural-nets-from-scratch.html"><span class="num">04</span>Neural Networks from Scratch</a></li>
+<li><a href="../deep-learning/05-pytorch-training.html"><span class="num">05</span>PyTorch &amp; the Craft of Training</a></li>
+<li><a href="../deep-learning/06-cnns-vision.html"><span class="num">06</span>CNNs &amp; Computer Vision</a></li>
+<li><a href="../deep-learning/07-sequences-rnns.html"><span class="num">07</span>Sequences, Embeddings &amp; RNNs</a></li>
+<li><a href="../deep-learning/08-transformers.html"><span class="num">08</span>Transformers</a></li>
+<li><a href="../deep-learning/09-llms.html"><span class="num">09</span>Large Language Models</a></li>
+<li><a class="active" aria-current="page" href="../deep-learning/10-generative-models.html"><span class="num">10</span>Generative Models</a></li>
+<li><a href="../deep-learning/11-reinforcement-learning.html"><span class="num">11</span>Reinforcement Learning</a></li>
+<li><a href="../deep-learning/12-advanced-frontiers.html"><span class="num">12</span>Advanced Frontiers &amp; Specializations</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../deep-learning/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../deep-learning/resources.html">Resources</a></li>
+<li><a href="../deep-learning/progress.html">Progress log</a></li>
+<li><a href="../deep-learning/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<a class="side-home" href="../_template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
+</nav></aside>
+  <div class="scrim" hidden></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Generative Models</span></nav><article class="doc"><h1 id="10-generative-models">10 · Generative Models<a class="anchor" href="#10-generative-models" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 10</span><span>⏱ 3 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/10-generative-models.md" target="_blank" rel="noopener">View Markdown source</a></div>
+<blockquote>
+<p><strong>Goal:</strong> learn the four big ideas for modeling $p(x)$: autoregressive, VAE, GAN, diffusion/flow. · <strong>Time:</strong> 25–35 h · <strong>Needs:</strong> 01, 05</p>
+</blockquote>
+<p>🔭 This module is where physics pays off most: diffusion is Langevin dynamics, score matching is about gradients of log-densities, flow matching moves probability mass by ODEs (continuity equation), and energy-based models are Boltzmann distributions.</p>
+<h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> Derive the <strong>ELBO</strong>: $\log p(x) \ge \mathbb E_{q(z|x)}[\log p(x|z)] - D_{KL}(q(z|x)\,\|\,p(z))$.</li>
+<li class="task"><input type="checkbox"> Explain the <strong>reparameterization trick</strong> and why it's needed.</li>
+<li class="task"><input type="checkbox"> Write the GAN min-max objective. Explain mode collapse.</li>
+<li class="task"><input type="checkbox"> Describe the DDPM forward process $q(x_t\mid x_0)$ in closed form, and what the network predicts.</li>
+<li class="task"><input type="checkbox"> Explain classifier-free guidance.</li>
+<li class="task"><input type="checkbox"> Explain the idea of flow matching / rectified flow in one paragraph.</li>
+</ul>
+<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h3 id="the-landscape">The landscape<a class="anchor" href="#the-landscape" title="Link to this section">#</a></h3>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Family</th>
+<th>Idea</th>
+<th>Pros</th>
+<th>Cons</th>
+<th>Used in</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Autoregressive</strong></td>
+<td>$p(x)=\prod p(x_t\mid x_{&lt;t})$</td>
+<td>exact likelihood, simple</td>
+<td>slow sequential sampling</td>
+<td>GPT, audio LMs</td>
+</tr>
+<tr>
+<td><strong>VAE</strong></td>
+<td>latent $z$, maximize ELBO</td>
+<td>fast, smooth latent space</td>
+<td>blurry samples</td>
+<td>latent space for Stable Diffusion</td>
+</tr>
+<tr>
+<td><strong>GAN</strong></td>
+<td>generator vs discriminator game</td>
+<td>sharp, fast sampling</td>
+<td>unstable, mode collapse</td>
+<td>StyleGAN, super-resolution</td>
+</tr>
+<tr>
+<td><strong>Diffusion / flow</strong></td>
+<td>learn to reverse a noising process</td>
+<td>top quality, stable training</td>
+<td>many sampling steps</td>
+<td>Stable Diffusion, image/video/audio models</td>
+</tr>
+</tbody>
+</table></div>
+<h3 id="autoencoders-vaes">Autoencoders &amp; VAEs<a class="anchor" href="#autoencoders-vaes" title="Link to this section">#</a></h3>
+<ul>
+<li><strong>Autoencoder:</strong> encoder → bottleneck $z$ → decoder, trained to reconstruct. It compresses, but it isn't a generative model.</li>
+<li><strong>VAE:</strong> encoder outputs $q_\phi(z\mid x) = \mathcal N(\mu,\sigma^2)$, prior $p(z)=\mathcal N(0,I)$.<ul>
+<li>Loss = −ELBO = reconstruction + KL. <strong>Reparameterize</strong> $z = \mu + \sigma\odot\epsilon,\ \epsilon\sim\mathcal N(0,I)$ so gradients flow through the sampling step.</li>
+<li>🔭 The ELBO is the (negative) <strong>variational free energy</strong> from statistical mechanics.</li>
+</ul>
+</li>
+</ul>
+<h3 id="gans">GANs<a class="anchor" href="#gans" title="Link to this section">#</a></h3>
+<ul>
+<li>$\min_G\max_D\ \mathbb E[\log D(x)] + \mathbb E[\log(1 - D(G(z)))]$, a two-player game.</li>
+<li>Problems: unstable training, <strong>mode collapse</strong>. Fixes: WGAN (Wasserstein distance), spectral norm, StyleGAN tricks. Mostly displaced by diffusion, but the ideas live on (adversarial losses in VAE decoders, distillation).</li>
+</ul>
+<h3 id="diffusion-models-ddpm">Diffusion models (DDPM)<a class="anchor" href="#diffusion-models-ddpm" title="Link to this section">#</a></h3>
+<ul>
+<li><strong>Forward:</strong> gradually add Gaussian noise, $q(x_t\mid x_0) = \mathcal N(\sqrt{\bar\alpha_t}\,x_0,\ (1-\bar\alpha_t)I)$. So $x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,\epsilon$.</li>
+<li><strong>Train:</strong> a network $\epsilon_\theta(x_t, t)$ predicts the noise. Loss $\|\epsilon - \epsilon_\theta(x_t,t)\|^2$. <strong>Literally an MSE regression.</strong></li>
+<li><strong>Sample:</strong> start from pure noise and denoise step by step.</li>
+<li><strong>Score view:</strong> $\epsilon_\theta \propto -\nabla_x \log p_t(x)$ (the <strong>score</strong>). Sampling = <strong>Langevin dynamics</strong> / a reverse-time SDE (Song et al.). 🔭 Fokker–Planck, Brownian motion.</li>
+<li><strong>Speedups:</strong> DDIM (deterministic ODE sampling, fewer steps), consistency models, distillation.</li>
+<li><strong>Conditioning:</strong> text via cross-attention (CLIP/T5 embeddings). <strong>Classifier-free guidance:</strong> $\hat\epsilon = \epsilon_{uncond} + w(\epsilon_{cond} - \epsilon_{uncond})$.</li>
+<li><strong>Latent diffusion (Stable Diffusion):</strong> diffuse in a VAE's latent space → much cheaper. Backbone: U-Net → <strong>Diffusion Transformer (DiT)</strong> in modern models.</li>
+</ul>
+<h3 id="flow-matching-rectified-flow-current-state-of-the-art">Flow matching / rectified flow (current state of the art)<a class="anchor" href="#flow-matching-rectified-flow-current-state-of-the-art" title="Link to this section">#</a></h3>
+<ul>
+<li>Learn a velocity field $v_\theta(x,t)$ whose ODE $\dot x = v_\theta$ carries noise to data along (nearly) straight paths. With $x_0$ = noise and $x_1$ = data, interpolate linearly $x_t = (1-t)x_0 + t x_1$ and regress $v_\theta(x_t,t)$ onto $x_1 - x_0$. That's again a plain MSE.</li>
+<li>🔭 A continuity equation $\partial_t p + \nabla\cdot(p v) = 0$ is transporting probability mass. Used in Stable Diffusion 3, Flux, and many video models.</li>
+</ul>
+<h3 id="also-know">Also know<a class="anchor" href="#also-know" title="Link to this section">#</a></h3>
+<ul>
+<li><strong>Normalizing flows:</strong> invertible maps with exact likelihood via the change of variables $\log p(x) = \log p(z) + \log|\det \partial z/\partial x|$.</li>
+<li><strong>Energy-based models:</strong> $p(x) \propto e^{-E(x)}$ (🔭 Boltzmann). Hard to normalize, sampled with MCMC.</li>
+</ul>
+<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://udlbook.github.io/udlbook/" target="_blank" rel="noopener">Understanding Deep Learning (Prince)</a></strong> ch. 14–18 (unsupervised, GANs, flows, VAEs, diffusion). The clearest unified treatment, with notebooks.</li>
+<li>⭐ <strong><a href="https://diffusion.csail.mit.edu/" target="_blank" rel="noopener">MIT 6.S184: Introduction to Flow Matching and Diffusion Models</a></strong>: lecture notes + labs. Built on SDEs/ODEs, perfect for a physics mind.</li>
+<li><strong>Lilian Weng:</strong> <a href="https://lilianweng.github.io/posts/2021-07-11-diffusion-models/" target="_blank" rel="noopener">What are Diffusion Models?</a> · <a href="https://lilianweng.github.io/posts/2018-08-12-vae/" target="_blank" rel="noopener">From Autoencoder to Beta-VAE</a> · <a href="https://lilianweng.github.io/posts/2017-08-20-gan/" target="_blank" rel="noopener">From GAN to WGAN</a>.</li>
+<li><strong><a href="https://yang-song.net/blog/2021/score/" target="_blank" rel="noopener">Yang Song: Generative Modeling by Estimating Gradients of the Data Distribution</a></strong>: the score/SDE view.</li>
+<li><strong><a href="https://github.com/huggingface/diffusion-models-class" target="_blank" rel="noopener">Hugging Face Diffusion Models Course</a></strong> + the <code>diffusers</code> library.</li>
+<li>Papers: <a href="https://arxiv.org/abs/1312.6114" target="_blank" rel="noopener">VAE</a> · <a href="https://arxiv.org/abs/1406.2661" target="_blank" rel="noopener">GAN</a> · <a href="https://arxiv.org/abs/2006.11239" target="_blank" rel="noopener">DDPM</a> · <a href="https://arxiv.org/abs/2011.13456" target="_blank" rel="noopener">Score SDE</a> · <a href="https://arxiv.org/abs/2112.10752" target="_blank" rel="noopener">Latent Diffusion</a> · <a href="https://arxiv.org/abs/2207.12598" target="_blank" rel="noopener">CFG</a> · <a href="https://arxiv.org/abs/2212.09748" target="_blank" rel="noopener">DiT</a> · <a href="https://arxiv.org/abs/2210.02747" target="_blank" rel="noopener">Flow Matching</a>.</li>
+</ul>
+<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<ol>
+<li><strong>VAE on MNIST:</strong> visualize the 2D latent space and interpolate between digits.</li>
+<li><strong>DCGAN</strong> on a small image dataset. Observe instabilities and mode collapse.</li>
+<li><strong>DDPM from scratch</strong> (small U-Net) on MNIST/Fashion-MNIST, then add <strong>class conditioning + classifier-free guidance</strong>.</li>
+<li><strong>Flow matching on 2D toy data</strong> (e.g. moons → spiral), then on MNIST. Compare sampling steps with DDPM.</li>
+<li>Stretch: fine-tune Stable Diffusion with LoRA/DreamBooth on your own images using <code>diffusers</code>.</li>
+</ol>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> ELBO derived on paper · <input type="checkbox"> your DDPM generates recognizable digits · <input type="checkbox"> you can explain diffusion in both the noise-prediction and the score/SDE views</li>
+</ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/09-llms.html"><small>← Previous</small>Large Language Models</a><a class="pn next" href="../deep-learning/11-reinforcement-learning.html"><small>Next →</small>Reinforcement Learning</a></nav></main>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a><ul><li><a href="#the-landscape">The landscape</a></li><li><a href="#autoencoders-vaes">Autoencoders &amp; VAEs</a></li><li><a href="#gans">GANs</a></li><li><a href="#diffusion-models-ddpm">Diffusion models (DDPM)</a></li><li><a href="#flow-matching-rectified-flow-current-state-of-the-art">Flow matching / rectified flow (current state of the art)</a></li><li><a href="#also-know">Also know</a></li></ul></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
+</div>
+</body>
+</html>

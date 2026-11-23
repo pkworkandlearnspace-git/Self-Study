@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>IELTS Flashcards</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+<div class="wrap" style="max-width:760px">
+  <header class="top"><a class="back" href="index.html">← IELTS tools</a></header>
+  <h1>IELTS Flashcards</h1>
+  <p class="lead">Collocations, paraphrases, and band-7 phrases. Say a full example sentence using the answer before marking it as known.</p>
+  <div id="fc"></div>
+  <footer class="foot">Part of the Self-Study repo · ielts/interactive</footer>
+</div>
+<script>
+window.FLASHCARDS = { id: "ielts", cards: [
+  { deck: "Task 1 trends", q: "Two ways to say 'sales went up a lot'", a: "Sales rose sharply / increased dramatically.\nThere was a sharp rise / dramatic increase in sales." },
+  { deck: "Task 1 trends", q: "'Stayed the same' (3 ways)", a: "remained stable · levelled off · plateaued (at around 40%)" },
+  { deck: "Task 1 trends", q: "'Reached its highest point'", a: "peaked at … · reached a peak of … · hit a high of …" },
+  { deck: "Task 1 trends", q: "'Went up and down'", a: "fluctuated (between 20% and 30%) · was volatile" },
+  { deck: "Task 1 trends", q: "Approximations for 32%, 49%, 76%", a: "just under a third · roughly/nearly half · just over three quarters" },
+  { deck: "Task 1 trends", q: "Comparison: A is 60, B is 30", a: "A was twice as high as B · B was half that of A · A was considerably higher than B" },
+  { deck: "Task 1 trends", q: "Overview opener + contrast", a: "Overall, it is clear that X increased, whereas/while Y declined over the period." },
+  { deck: "Task 1 process/map", q: "Process language (voice + sequencers)", a: "Passive: 'the beans are dried'. Sequencers: First, Next, Subsequently, Once this has been done, Finally." },
+  { deck: "Task 1 process/map", q: "Map change verbs", a: "was demolished · was replaced by · was converted into · was extended · a new … was constructed to the north of …" },
+  { deck: "Linking", q: "Contrast without 'but' (4)", a: "However, … · Nevertheless, … · Whereas … · Although/Even though …" },
+  { deck: "Linking", q: "Cause → effect (4)", a: "Consequently, … · As a result, … · This leads to / results in … · Due to / Owing to …" },
+  { deck: "Linking", q: "Concession (admit the other side, then return)", a: "Admittedly, … Even so, … · While it is true that …, … · Granted, … but …" },
+  { deck: "Linking", q: "Giving examples (beyond 'for example')", a: "For instance, … · A case in point is … · This is exemplified by … · such as …" },
+  { deck: "Linking", q: "Reference words that improve cohesion", a: "this trend · such policies · these measures · the former / the latter · this, which …" },
+  { deck: "Task 2 phrases", q: "State a clear position (opinion essay)", a: "I strongly agree that … because … · I would argue that … · In my view, the benefits clearly outweigh …" },
+  { deck: "Task 2 phrases", q: "Partial agreement", a: "I agree to a certain extent… · While I accept that …, I believe … · This is true only up to a point." },
+  { deck: "Task 2 phrases", q: "Hedging (cautious claims)", a: "This may/might/could lead to … · It is likely that … · tends to · arguably" },
+  { deck: "Environment", q: "Reduce pollution: verb collocations", a: "curb / cut / reduce emissions · tackle / combat climate change · mitigate the effects of …" },
+  { deck: "Environment", q: "Energy collocations", a: "renewable energy sources · fossil fuels · carbon footprint · sustainable development · phase out coal" },
+  { deck: "Education", q: "Education collocations (4)", a: "rote learning · critical thinking skills · tertiary education · a well-rounded curriculum" },
+  { deck: "Education", q: "'Students who drop out'", a: "dropout rates · leave education early · fail to complete their studies" },
+  { deck: "Technology", q: "Technology collocations (4)", a: "a double-edged sword · the automation of jobs · digital literacy · data privacy concerns" },
+  { deck: "Technology", q: "'Technology improves life' (precise verbs)", a: "streamlines tasks · facilitates communication · enhances productivity · revolutionises industries" },
+  { deck: "Health", q: "Health collocations (4)", a: "a sedentary lifestyle · obesity rates · preventive healthcare · a balanced diet" },
+  { deck: "Work", q: "Work collocations (4)", a: "job security · a work–life balance · career prospects · remote working arrangements" },
+  { deck: "Government", q: "Government action verbs", a: "allocate funding to · impose a tax on · introduce legislation · subsidise · regulate" },
+  { deck: "Society", q: "'Gap between rich and poor'", a: "income inequality · the wealth gap · socio-economic disparities · disproportionately affects low-income groups" },
+  { deck: "Science", q: "Research collocations", a: "conduct research · groundbreaking discoveries · fund scientific research · practical applications · peer-reviewed studies" },
+  { deck: "Paraphrase", q: "Paraphrase: 'more and more people'", a: "an increasing/growing number of people · increasingly, people … · a rising proportion of the population" },
+  { deck: "Paraphrase", q: "Paraphrase: 'important'", a: "crucial · essential · vital · of paramount importance · plays a pivotal role" },
+  { deck: "Paraphrase", q: "Paraphrase: 'bad effect'", a: "a detrimental / adverse / harmful impact · has negative consequences for …" },
+  { deck: "Paraphrase", q: "Paraphrase: 'think' (3)", a: "believe · maintain · argue · hold the view that" },
+  { deck: "Paraphrase", q: "Word-form paraphrase: 'The economy grew quickly.'", a: "There was rapid economic growth. · Economic growth was rapid." },
+  { deck: "Grammar", q: "Uncountable nouns that IELTS candidates pluralise by mistake", a: "information · advice · research · equipment · knowledge · evidence · furniture (no -s)" },
+  { deck: "Grammar", q: "Fix: 'Many people thinks technology make life easy.'", a: "Many people think (that) technology makes life easier." },
+  { deck: "Grammar", q: "2nd conditional for a policy suggestion", a: "If governments invested more in public transport, fewer people would drive to work." },
+  { deck: "Grammar", q: "Cleft sentence for emphasis", a: "What concerns many experts is the speed of change. · It is the cost that discourages most people." },
+  { deck: "Grammar", q: "Nominalisation: 'Cities expanded rapidly, so pollution increased.'", a: "The rapid expansion of cities has led to an increase in pollution." },
+  { deck: "Speaking", q: "Buy time naturally (3)", a: "That's an interesting question… · Let me think… · I've never really thought about that, but …" },
+  { deck: "Speaking", q: "Idioms you can use naturally (band 7+)", a: "over the moon (very happy) · a piece of cake (easy) · it boils down to (the main point is) · in the long run" },
+  { deck: "Speaking", q: "Part 2: what to say if you run out of ideas", a: "Compare: 'Compared with…' · Hypothetical: 'If I could do it again, I'd…' · Feelings: 'Looking back, I realise…'" },
+  { deck: "Speaking", q: "Talking about general trends in Part 3", a: "Generally speaking, … · These days, people tend to … · In my country, it's becoming more common to …" },
+]};
+</script>
+<script src="../../_shared/flashcards.js"></script>
+</body>
+</html>

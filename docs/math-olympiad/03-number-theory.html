@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 · Number Theory · Self-Study</title>
+<meta name="description" content="Proofs, algebra, number theory, combinatorics and geometry, from regional rounds to the IMO.">
+<script>try{var t=localStorage.getItem('ss-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script defer src="../assets/katex/katex.min.js"></script>
+<script defer src="../assets/katex/contrib/auto-render.min.js"></script>
+<script defer src="../assets/search-index.js"></script>
+<script defer src="../assets/site.js"></script>
+</head>
+<body data-root="../" data-page="math-olympiad/03-number-theory.html">
+<a class="skip" href="#content">Skip to content</a>
+<div class="progress" aria-hidden="true"><div></div></div>
+<header class="topbar">
+  <button class="icon-btn menu-btn" aria-label="Open navigation" aria-expanded="false">☰</button>
+  <a class="brand" href="../index.html"><span class="brand-mark">📚</span>Self-Study</a>
+  <div class="search">
+    <input id="search" type="search" placeholder="Search all notes…  ( / )" autocomplete="off" aria-label="Search">
+    <div class="search-results" role="listbox" hidden></div>
+  </div>
+  <button class="icon-btn theme-btn" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+</header>
+<div class="shell">
+  <aside class="sidebar"><nav class="side-nav" aria-label="All pages">
+<a class="side-home" href="../index.html">🏠 Home</a>
+<a class="side-home" href="../tools.html">🎛️ All interactive tools</a>
+<details class="side-topic" open><summary><span class="ico">🧮</span>Math Olympiad</summary><ul>
+<li><a href="../math-olympiad/index.html">Overview</a></li>
+<li><a href="../math-olympiad/01-problem-solving-proofs.html"><span class="num">01</span>Problem Solving &amp; Proof Writing</a></li>
+<li><a href="../math-olympiad/02-algebra.html"><span class="num">02</span>Algebra</a></li>
+<li><a class="active" aria-current="page" href="../math-olympiad/03-number-theory.html"><span class="num">03</span>Number Theory</a></li>
+<li><a href="../math-olympiad/04-combinatorics.html"><span class="num">04</span>Combinatorics</a></li>
+<li><a href="../math-olympiad/05-geometry.html"><span class="num">05</span>Geometry</a></li>
+<li><a href="../math-olympiad/06-contest-practice.html"><span class="num">06</span>Contest Practice &amp; Solution Writing</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../math-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../math-olympiad/resources.html">Resources</a></li>
+<li><a href="../math-olympiad/progress.html">Progress log</a></li>
+<li><a href="../math-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">⚛️</span>Physics Olympiad</summary><ul>
+<li><a href="../physics-olympiad/index.html">Overview</a></li>
+<li><a href="../physics-olympiad/01-math-methods.html"><span class="num">01</span>Math Methods &amp; Estimation</a></li>
+<li><a href="../physics-olympiad/02-mechanics.html"><span class="num">02</span>Mechanics</a></li>
+<li><a href="../physics-olympiad/03-thermo-stat.html"><span class="num">03</span>Thermodynamics &amp; Statistical Physics</a></li>
+<li><a href="../physics-olympiad/04-electromagnetism.html"><span class="num">04</span>Electromagnetism</a></li>
+<li><a href="../physics-olympiad/05-waves-optics.html"><span class="num">05</span>Waves &amp; Optics</a></li>
+<li><a href="../physics-olympiad/06-modern-physics.html"><span class="num">06</span>Modern Physics</a></li>
+<li><a href="../physics-olympiad/07-experimental.html"><span class="num">07</span>Experimental Physics</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../physics-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../physics-olympiad/resources.html">Resources</a></li>
+<li><a href="../physics-olympiad/progress.html">Progress log</a></li>
+<li><a href="../physics-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">💻</span>Informatics Olympiad</summary><ul>
+<li><a href="../informatics-olympiad/index.html">Overview</a></li>
+<li><a href="../informatics-olympiad/01-cpp-for-cp.html"><span class="num">01</span>C++ for Competitive Programming</a></li>
+<li><a href="../informatics-olympiad/02-core-techniques.html"><span class="num">02</span>Complexity &amp; Core Techniques</a></li>
+<li><a href="../informatics-olympiad/03-data-structures.html"><span class="num">03</span>Data Structures</a></li>
+<li><a href="../informatics-olympiad/04-graphs-trees.html"><span class="num">04</span>Graphs &amp; Trees</a></li>
+<li><a href="../informatics-olympiad/05-dynamic-programming.html"><span class="num">05</span>Dynamic Programming</a></li>
+<li><a href="../informatics-olympiad/06-math-strings-geometry.html"><span class="num">06</span>Math, Strings &amp; Geometry</a></li>
+<li><a href="../informatics-olympiad/07-ioi-advanced.html"><span class="num">07</span>IOI Skills &amp; Advanced Topics</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../informatics-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../informatics-olympiad/resources.html">Resources</a></li>
+<li><a href="../informatics-olympiad/progress.html">Progress log</a></li>
+<li><a href="../informatics-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">🗣️</span>IELTS Academic</summary><ul>
+<li><a href="../ielts/index.html">Overview</a></li>
+<li><a href="../ielts/01-test-strategy.html"><span class="num">01</span>Test Strategy &amp; Scoring</a></li>
+<li><a href="../ielts/02-listening.html"><span class="num">02</span>Listening</a></li>
+<li><a href="../ielts/03-reading.html"><span class="num">03</span>Reading (Academic)</a></li>
+<li><a href="../ielts/04-writing-task1.html"><span class="num">04</span>Writing Task 1 (Academic)</a></li>
+<li><a href="../ielts/05-writing-task2.html"><span class="num">05</span>Writing Task 2</a></li>
+<li><a href="../ielts/06-speaking.html"><span class="num">06</span>Speaking</a></li>
+<li><a href="../ielts/07-vocab-grammar.html"><span class="num">07</span>Vocabulary &amp; Grammar for Band 7</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../ielts/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../ielts/resources.html">Resources</a></li>
+<li><a href="../ielts/progress.html">Progress log</a></li>
+<li><a href="../ielts/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">🧠</span>Deep Learning</summary><ul>
+<li><a href="../deep-learning/index.html">Overview</a></li>
+<li><a href="../deep-learning/01-math-for-dl.html"><span class="num">01</span>Math for Deep Learning</a></li>
+<li><a href="../deep-learning/02-python-numpy-tools.html"><span class="num">02</span>Python, NumPy &amp; Tools</a></li>
+<li><a href="../deep-learning/03-ml-fundamentals.html"><span class="num">03</span>Machine Learning Fundamentals</a></li>
+<li><a href="../deep-learning/04-neural-nets-from-scratch.html"><span class="num">04</span>Neural Networks from Scratch</a></li>
+<li><a href="../deep-learning/05-pytorch-training.html"><span class="num">05</span>PyTorch &amp; the Craft of Training</a></li>
+<li><a href="../deep-learning/06-cnns-vision.html"><span class="num">06</span>CNNs &amp; Computer Vision</a></li>
+<li><a href="../deep-learning/07-sequences-rnns.html"><span class="num">07</span>Sequences, Embeddings &amp; RNNs</a></li>
+<li><a href="../deep-learning/08-transformers.html"><span class="num">08</span>Transformers</a></li>
+<li><a href="../deep-learning/09-llms.html"><span class="num">09</span>Large Language Models</a></li>
+<li><a href="../deep-learning/10-generative-models.html"><span class="num">10</span>Generative Models</a></li>
+<li><a href="../deep-learning/11-reinforcement-learning.html"><span class="num">11</span>Reinforcement Learning</a></li>
+<li><a href="../deep-learning/12-advanced-frontiers.html"><span class="num">12</span>Advanced Frontiers &amp; Specializations</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../deep-learning/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../deep-learning/resources.html">Resources</a></li>
+<li><a href="../deep-learning/progress.html">Progress log</a></li>
+<li><a href="../deep-learning/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<a class="side-home" href="../_template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
+</nav></aside>
+  <div class="scrim" hidden></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../math-olympiad/index.html">Math Olympiad</a> <span class="sep">›</span> <span>Number Theory</span></nav><article class="doc"><h1 id="03-number-theory">03 · Number Theory<a class="anchor" href="#03-number-theory" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 03</span><span>⏱ 2 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/math-olympiad/03-number-theory.md" target="_blank" rel="noopener">View Markdown source</a></div>
+<blockquote>
+<p><strong>Goal:</strong> divisibility, modular arithmetic, orders, and Diophantine equations at IMO level. · <strong>Time:</strong> 4–6 weeks (in rotation)</p>
+</blockquote>
+<p>👉 Use the <strong><a href="interactive/modular-arithmetic.html">Modular arithmetic lab</a></strong> to <em>see</em> orders and primitive roots.</p>
+<h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> Prove there are infinitely many primes ≡ 3 (mod 4).</li>
+<li class="task"><input type="checkbox"> Use Fermat's little theorem to find $2^{100}\bmod 13$.</li>
+<li class="task"><input type="checkbox"> Show that if $\text{ord}_p(a)=d$ then $d\mid p-1$.</li>
+<li class="task"><input type="checkbox"> Use LTE to find $v_2(3^{2^{n}}-1)$.</li>
+<li class="task"><input type="checkbox"> Solve $x^2-2y^2=1$ in positive integers (Pell) and describe all solutions.</li>
+<li class="task"><input type="checkbox"> Find all $n$ with $n \mid 2^n - 1$.</li>
+</ul>
+<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<ul>
+<li><strong>Divisibility &amp; gcd:</strong> Euclid's algorithm, <strong>Bézout</strong> ($ax+by=\gcd(a,b)$), $\gcd(a^m-1,a^n-1)=a^{\gcd(m,n)}-1$.</li>
+<li><strong>Fundamental theorem of arithmetic.</strong> <strong>$p$-adic valuation</strong> $v_p(n)$: think of numbers as exponent vectors.</li>
+<li><strong>Modular arithmetic:</strong> inverses exist iff $\gcd(a,n)=1$. <strong>CRT:</strong> you can solve congruences modulo coprime moduli independently.</li>
+<li><strong>Fermat:</strong> $a^{p-1}\equiv1\pmod p$. <strong>Euler:</strong> $a^{\varphi(n)}\equiv1\pmod n$. <strong>Wilson:</strong> $(p-1)!\equiv-1\pmod p$.</li>
+<li><strong>Order:</strong> $\text{ord}_n(a)$ = the smallest $d$ with $a^d\equiv1$. <strong>Key lemma:</strong> $a^k\equiv1 \iff \text{ord}\mid k$. This is the most-used idea in olympiad NT.</li>
+<li><strong>Primitive roots</strong> exist mod $1, 2, 4, p^k, 2p^k$. So $(\mathbb Z/p)^\times$ is cyclic.</li>
+<li><strong>Quadratic residues:</strong> Legendre symbol, Euler's criterion $\left(\frac ap\right)\equiv a^{\frac{p-1}2}$, $-1$ is a QR mod $p$ iff $p\equiv1\pmod4$. Quadratic reciprocity.</li>
+<li><strong>Lifting The Exponent (LTE):</strong> for odd prime $p\mid a-b$, $p\nmid a,b$: $v_p(a^n-b^n)=v_p(a-b)+v_p(n)$. (Special rules for $p=2$.)</li>
+<li><strong>Legendre's formula:</strong> $v_p(n!)=\sum_{k\ge1}\lfloor n/p^k\rfloor$.</li>
+<li><strong>Zsigmondy's theorem</strong> (use with care; graders may want a proof): $a^n-b^n$ has a primitive prime divisor, apart from listed exceptions.</li>
+<li><strong>Diophantine equations:</strong> factor, work mod $m$ to rule out cases, bound sizes (inequalities!), use infinite descent, Pell equations, Vieta jumping.</li>
+<li><strong>Floor functions:</strong> write $x = \lfloor x\rfloor + \{x\}$. Hermite's identity.</li>
+</ul>
+<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong>Modern Olympiad Number Theory, Aditya Khurmi</strong>: a free PDF shared by the author on AoPS (search the title). Thorough and olympiad-focused.</li>
+<li><strong><a href="https://web.evanchen.cc/handouts.html" target="_blank" rel="noopener">Evan Chen's NT handouts</a></strong> (orders) · <strong><a href="https://yufeizhao.com/olympiad/" target="_blank" rel="noopener">Yufei Zhao: NT handouts</a></strong>.</li>
+<li><strong>Number Theory: Structures, Examples, and Problems</strong>, Andreescu &amp; Andrica 💲 · <strong>104 Number Theory Problems</strong>, Andreescu et al. 💲.</li>
+<li><strong><a href="https://artofproblemsolving.com/store" target="_blank" rel="noopener">AoPS: Introduction to Number Theory</a></strong> 💲 if you need the basics.</li>
+</ul>
+<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<ul>
+<li>Use the lab to find the order of every $a$ mod 13, then <em>prove</em> the pattern you see (the orders divide 12; there are exactly $\varphi(d)$ elements of order $d$).</li>
+<li>Solve N1–N4 from recent IMO Shortlists.</li>
+</ul>
+<h2 id="traps">Traps<a class="anchor" href="#traps" title="Link to this section">#</a></h2>
+<ul>
+<li>Dividing in congruences without checking that the inverse exists.</li>
+<li>Forgetting the $p=2$ special case of LTE and quadratic residues.</li>
+</ul></article><nav class="pager"><a class="pn prev" href="../math-olympiad/02-algebra.html"><small>← Previous</small>Algebra</a><a class="pn next" href="../math-olympiad/04-combinatorics.html"><small>Next →</small>Combinatorics</a></nav></main>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li></ul></nav></aside>
+</div>
+</body>
+</html>

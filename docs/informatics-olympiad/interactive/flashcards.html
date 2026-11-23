@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Informatics Olympiad Flashcards</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+</head>
+<body>
+<div class="wrap" style="max-width:760px">
+  <header class="top"><a class="back" href="index.html">← Informatics Olympiad tools</a></header>
+  <h1>Informatics Olympiad Flashcards</h1>
+  <p class="lead">"I see this constraint or pattern, so I reach for that technique." Pattern recognition is half of contest speed.</p>
+  <div id="fc"></div>
+  <footer class="foot">Part of the Self-Study repo · informatics-olympiad/interactive</footer>
+</div>
+<script>
+window.FLASHCARDS = { id: "informatics-olympiad", cards: [
+  { deck: "Constraints", q: "n ≤ 20. What complexity is allowed, and what technique does it suggest?", a: "O(2ⁿ·n): bitmask enumeration or bitmask DP. n ≤ 40 → meet in the middle." },
+  { deck: "Constraints", q: "n ≤ 500", a: "O(n³): Floyd–Warshall, interval DP, triple loops." },
+  { deck: "Constraints", q: "n ≤ 5000", a: "O(n²): quadratic DP, all pairs with a simple inner loop." },
+  { deck: "Constraints", q: "n ≤ 2·10⁵", a: "O(n log n): sorting, binary search, segment/Fenwick trees, Dijkstra." },
+  { deck: "Constraints", q: "n ≤ 10¹⁸", a: "O(log n) or O(√n): math, binary search on the answer, matrix exponentiation, digit DP." },
+  { deck: "Patterns", q: "\"Minimize the maximum\" / \"maximize the minimum\"", a: "Binary search on the answer with a greedy or BFS feasibility check." },
+  { deck: "Patterns", q: "Longest/shortest subarray with a monotone condition (positive numbers)", a: "Two pointers / sliding window, O(n)." },
+  { deck: "Patterns", q: "Next greater element for every index", a: "Monotonic stack, O(n)." },
+  { deck: "Patterns", q: "Sliding window maximum", a: "Monotonic deque of indices, O(n)." },
+  { deck: "Patterns", q: "Many range-add updates, then read the final array once", a: "A difference array, then a prefix sum. O(n + q)." },
+  { deck: "Patterns", q: "Dynamic connectivity with only merges (or deletions processed in reverse)", a: "DSU. Reverse the time to turn deletions into unions." },
+  { deck: "Patterns", q: "Count subarrays with sum = k", a: "Prefix sums + a hashmap counting the earlier prefix values (pref − k)." },
+  { deck: "Patterns", q: "Shortest path with edge weights 0 or 1", a: "0-1 BFS with a deque: push_front for 0-edges, push_back for 1-edges." },
+  { deck: "Patterns", q: "Subtree queries on a tree with updates", a: "Euler tour (tin/tout) so each subtree becomes a contiguous range, then a Fenwick/segment tree." },
+  { deck: "Patterns", q: "Path queries on a tree with updates", a: "Heavy-light decomposition + segment tree, O(log² n) per query." },
+  { deck: "Patterns", q: "Count paths of length k (or with a property) in a tree", a: "Centroid decomposition, O(n log n)–O(n log² n)." },
+  { deck: "Patterns", q: "Offline range queries 'number of distinct elements in [l, r]'", a: "Mo's algorithm O((n + q)√n), or sort by r + a Fenwick tree with last occurrences." },
+  { deck: "Patterns", q: "dp[i] = min_j (dp[j] + b[j]·a[i]) with monotone slopes", a: "Convex hull trick (deque) or a Li Chao tree. O(n) / O(n log n)." },
+  { deck: "Patterns", q: "Exactly k groups/segments, and the cost is convex in k", a: "The Aliens trick (Lagrangian relaxation): binary search a penalty λ per group." },
+  { deck: "Patterns", q: "Boolean constraints of the form (a ∨ b)", a: "2-SAT: an implication graph + SCC." },
+  { deck: "Data structures", q: "Fenwick tree: what does i & -i give?", a: "The lowest set bit of i, which is the length of the range that node i covers." },
+  { deck: "Data structures", q: "Segment tree: how many nodes can a range query combine?", a: "At most ~2 per level → O(log n) total (≤ 4 log n visited)." },
+  { deck: "Data structures", q: "Sparse table: why only idempotent operations for O(1) queries?", a: "The two overlapping power-of-two blocks are combined, so op(x, x) must equal x (min, max, gcd, but not sum)." },
+  { deck: "Data structures", q: "DSU: the two optimizations and the resulting complexity", a: "Path compression + union by size/rank → amortized α(n) (inverse Ackermann)." },
+  { deck: "Data structures", q: "Lazy propagation: when do you push?", a: "Before descending into the children (in both update and query), apply the pending tag to the children." },
+  { deck: "Graphs", q: "Why does Dijkstra fail with negative edges?", a: "A finalized node could later get a shorter path via a negative edge. Use Bellman–Ford (or SPFA, carefully)." },
+  { deck: "Graphs", q: "Detect a negative cycle", a: "Bellman–Ford: if the n-th relaxation round still improves something, there's a negative cycle." },
+  { deck: "Graphs", q: "Topological sort algorithms", a: "Kahn's algorithm (BFS on in-degree 0), or DFS reverse postorder. A cycle exists iff not all nodes get output." },
+  { deck: "Graphs", q: "MST algorithms", a: "Kruskal: sort the edges + DSU, O(m log m). Prim: heap, O(m log n)." },
+  { deck: "Graphs", q: "LCA with binary lifting", a: "up[k][v] = 2ᵏ-th ancestor. Lift the deeper node to equal depth, then lift both while the ancestors differ. O(log n)." },
+  { deck: "Graphs", q: "Tree diameter in O(n)", a: "BFS/DFS from any node to the farthest node u, then from u to the farthest node v. dist(u, v) is the diameter." },
+  { deck: "Graphs", q: "Bridges and articulation points", a: "DFS with tin[v] and low[v]. Edge (v, to) is a bridge iff low[to] > tin[v]." },
+  { deck: "DP", q: "0/1 knapsack in 1D: loop direction?", a: "Iterate w from W down to wt (so each item is used at most once). Unbounded: iterate upward." },
+  { deck: "DP", q: "LIS in O(n log n)", a: "Keep d[k] = the smallest tail of an increasing subsequence of length k+1. lower_bound for strict, upper_bound for non-strict." },
+  { deck: "DP", q: "The 5 steps for designing a DP", a: "State · transition · base case · computation order · where the answer is." },
+  { deck: "DP", q: "Bitmask TSP complexity", a: "dp[mask][v]: O(2ⁿ · n²) time, O(2ⁿ · n) memory." },
+  { deck: "DP", q: "Rerooting technique", a: "First DFS computes the subtree answers. The second DFS passes the 'outside' answer down, giving the answer for every root in O(n)." },
+  { deck: "DP", q: "Digit DP state", a: "(position, tight flag, [started flag], problem-specific info like sum mod k), going from the most significant digit." },
+  { deck: "Math/Strings", q: "Modular inverse of a mod prime p", a: "a^(p−2) mod p (Fermat), or extended Euclid when the modulus isn't prime." },
+  { deck: "Math/Strings", q: "nCr mod p for many queries", a: "Precompute fact[] and invfact[] up to N in O(N). Then C = fact[n]·invfact[r]·invfact[n−r]." },
+  { deck: "Math/Strings", q: "Prefix function π[i] (KMP)", a: "The length of the longest proper prefix of s[0..i] that is also a suffix. Find pattern matches via π on P + '#' + T." },
+  { deck: "Math/Strings", q: "Avoiding hash collisions", a: "Use a mod ~1e9+7 and a random base, or double hashing / mod 2⁶¹−1. Never use a fixed predictable base on Codeforces." },
+  { deck: "Math/Strings", q: "Orientation test of points a, b, c", a: "cross(b − a, c − a) > 0 means counter-clockwise. Use integers (long long) to avoid precision issues." },
+  { deck: "IOI", q: "First 30 minutes of an IOI day", a: "Read all 3 problems, list the subtasks and their points, and plan which partials to bank first." },
+  { deck: "IOI", q: "Why keep your brute-force solution?", a: "Stress testing (random small tests vs the fast solution) and guaranteed subtask points." },
+]};
+</script>
+<script src="../../_shared/flashcards.js"></script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>12 · Advanced Frontiers &amp; Specializations · Self-Study</title>
+<meta name="description" content="From the math and NumPy to transformers, LLMs, generative models and RL.">
+<script>try{var t=localStorage.getItem('ss-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script defer src="../assets/katex/katex.min.js"></script>
+<script defer src="../assets/katex/contrib/auto-render.min.js"></script>
+<script defer src="../assets/search-index.js"></script>
+<script defer src="../assets/site.js"></script>
+</head>
+<body data-root="../" data-page="deep-learning/12-advanced-frontiers.html">
+<a class="skip" href="#content">Skip to content</a>
+<div class="progress" aria-hidden="true"><div></div></div>
+<header class="topbar">
+  <button class="icon-btn menu-btn" aria-label="Open navigation" aria-expanded="false">☰</button>
+  <a class="brand" href="../index.html"><span class="brand-mark">📚</span>Self-Study</a>
+  <div class="search">
+    <input id="search" type="search" placeholder="Search all notes…  ( / )" autocomplete="off" aria-label="Search">
+    <div class="search-results" role="listbox" hidden></div>
+  </div>
+  <button class="icon-btn theme-btn" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+</header>
+<div class="shell">
+  <aside class="sidebar"><nav class="side-nav" aria-label="All pages">
+<a class="side-home" href="../index.html">🏠 Home</a>
+<a class="side-home" href="../tools.html">🎛️ All interactive tools</a>
+<details class="side-topic"><summary><span class="ico">🧮</span>Math Olympiad</summary><ul>
+<li><a href="../math-olympiad/index.html">Overview</a></li>
+<li><a href="../math-olympiad/01-problem-solving-proofs.html"><span class="num">01</span>Problem Solving &amp; Proof Writing</a></li>
+<li><a href="../math-olympiad/02-algebra.html"><span class="num">02</span>Algebra</a></li>
+<li><a href="../math-olympiad/03-number-theory.html"><span class="num">03</span>Number Theory</a></li>
+<li><a href="../math-olympiad/04-combinatorics.html"><span class="num">04</span>Combinatorics</a></li>
+<li><a href="../math-olympiad/05-geometry.html"><span class="num">05</span>Geometry</a></li>
+<li><a href="../math-olympiad/06-contest-practice.html"><span class="num">06</span>Contest Practice &amp; Solution Writing</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../math-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../math-olympiad/resources.html">Resources</a></li>
+<li><a href="../math-olympiad/progress.html">Progress log</a></li>
+<li><a href="../math-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">⚛️</span>Physics Olympiad</summary><ul>
+<li><a href="../physics-olympiad/index.html">Overview</a></li>
+<li><a href="../physics-olympiad/01-math-methods.html"><span class="num">01</span>Math Methods &amp; Estimation</a></li>
+<li><a href="../physics-olympiad/02-mechanics.html"><span class="num">02</span>Mechanics</a></li>
+<li><a href="../physics-olympiad/03-thermo-stat.html"><span class="num">03</span>Thermodynamics &amp; Statistical Physics</a></li>
+<li><a href="../physics-olympiad/04-electromagnetism.html"><span class="num">04</span>Electromagnetism</a></li>
+<li><a href="../physics-olympiad/05-waves-optics.html"><span class="num">05</span>Waves &amp; Optics</a></li>
+<li><a href="../physics-olympiad/06-modern-physics.html"><span class="num">06</span>Modern Physics</a></li>
+<li><a href="../physics-olympiad/07-experimental.html"><span class="num">07</span>Experimental Physics</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../physics-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../physics-olympiad/resources.html">Resources</a></li>
+<li><a href="../physics-olympiad/progress.html">Progress log</a></li>
+<li><a href="../physics-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">💻</span>Informatics Olympiad</summary><ul>
+<li><a href="../informatics-olympiad/index.html">Overview</a></li>
+<li><a href="../informatics-olympiad/01-cpp-for-cp.html"><span class="num">01</span>C++ for Competitive Programming</a></li>
+<li><a href="../informatics-olympiad/02-core-techniques.html"><span class="num">02</span>Complexity &amp; Core Techniques</a></li>
+<li><a href="../informatics-olympiad/03-data-structures.html"><span class="num">03</span>Data Structures</a></li>
+<li><a href="../informatics-olympiad/04-graphs-trees.html"><span class="num">04</span>Graphs &amp; Trees</a></li>
+<li><a href="../informatics-olympiad/05-dynamic-programming.html"><span class="num">05</span>Dynamic Programming</a></li>
+<li><a href="../informatics-olympiad/06-math-strings-geometry.html"><span class="num">06</span>Math, Strings &amp; Geometry</a></li>
+<li><a href="../informatics-olympiad/07-ioi-advanced.html"><span class="num">07</span>IOI Skills &amp; Advanced Topics</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../informatics-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../informatics-olympiad/resources.html">Resources</a></li>
+<li><a href="../informatics-olympiad/progress.html">Progress log</a></li>
+<li><a href="../informatics-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">🗣️</span>IELTS Academic</summary><ul>
+<li><a href="../ielts/index.html">Overview</a></li>
+<li><a href="../ielts/01-test-strategy.html"><span class="num">01</span>Test Strategy &amp; Scoring</a></li>
+<li><a href="../ielts/02-listening.html"><span class="num">02</span>Listening</a></li>
+<li><a href="../ielts/03-reading.html"><span class="num">03</span>Reading (Academic)</a></li>
+<li><a href="../ielts/04-writing-task1.html"><span class="num">04</span>Writing Task 1 (Academic)</a></li>
+<li><a href="../ielts/05-writing-task2.html"><span class="num">05</span>Writing Task 2</a></li>
+<li><a href="../ielts/06-speaking.html"><span class="num">06</span>Speaking</a></li>
+<li><a href="../ielts/07-vocab-grammar.html"><span class="num">07</span>Vocabulary &amp; Grammar for Band 7</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../ielts/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../ielts/resources.html">Resources</a></li>
+<li><a href="../ielts/progress.html">Progress log</a></li>
+<li><a href="../ielts/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic" open><summary><span class="ico">🧠</span>Deep Learning</summary><ul>
+<li><a href="../deep-learning/index.html">Overview</a></li>
+<li><a href="../deep-learning/01-math-for-dl.html"><span class="num">01</span>Math for Deep Learning</a></li>
+<li><a href="../deep-learning/02-python-numpy-tools.html"><span class="num">02</span>Python, NumPy &amp; Tools</a></li>
+<li><a href="../deep-learning/03-ml-fundamentals.html"><span class="num">03</span>Machine Learning Fundamentals</a></li>
+<li><a href="../deep-learning/04-neural-nets-from-scratch.html"><span class="num">04</span>Neural Networks from Scratch</a></li>
+<li><a href="../deep-learning/05-pytorch-training.html"><span class="num">05</span>PyTorch &amp; the Craft of Training</a></li>
+<li><a href="../deep-learning/06-cnns-vision.html"><span class="num">06</span>CNNs &amp; Computer Vision</a></li>
+<li><a href="../deep-learning/07-sequences-rnns.html"><span class="num">07</span>Sequences, Embeddings &amp; RNNs</a></li>
+<li><a href="../deep-learning/08-transformers.html"><span class="num">08</span>Transformers</a></li>
+<li><a href="../deep-learning/09-llms.html"><span class="num">09</span>Large Language Models</a></li>
+<li><a href="../deep-learning/10-generative-models.html"><span class="num">10</span>Generative Models</a></li>
+<li><a href="../deep-learning/11-reinforcement-learning.html"><span class="num">11</span>Reinforcement Learning</a></li>
+<li><a class="active" aria-current="page" href="../deep-learning/12-advanced-frontiers.html"><span class="num">12</span>Advanced Frontiers &amp; Specializations</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../deep-learning/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../deep-learning/resources.html">Resources</a></li>
+<li><a href="../deep-learning/progress.html">Progress log</a></li>
+<li><a href="../deep-learning/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<a class="side-home" href="../_template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
+</nav></aside>
+  <div class="scrim" hidden></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Advanced Frontiers &amp; Specializations</span></nav><article class="doc"><h1 id="12-advanced-frontiers-specializations">12 · Advanced Frontiers &amp; Specializations<a class="anchor" href="#12-advanced-frontiers-specializations" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 12</span><span>⏱ 4 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/12-advanced-frontiers.md" target="_blank" rel="noopener">View Markdown source</a></div>
+<blockquote>
+<p><strong>Goal:</strong> move from <em>student</em> to <em>researcher/engineer</em>: read papers, go deep in one area. · <strong>Time:</strong> open-ended · <strong>Needs:</strong> 08 (+ 10/11 for some tracks)</p>
+</blockquote>
+<p>There's no skip test here. Pick <strong>1–2 tracks</strong> that excite you and go deep, and treat the rest as awareness. Each track lists the core ideas and the ⭐ entry point.</p>
+<hr />
+<h2 id="how-to-read-papers-do-this-first">How to read papers (do this first)<a class="anchor" href="#how-to-read-papers-do-this-first" title="Link to this section">#</a></h2>
+<ul>
+<li><strong>Three passes</strong> (Keshav, <a href="https://web.stanford.edu/class/ee384m/Handouts/HowtoReadPaper.pdf" target="_blank" rel="noopener">"How to Read a Paper"</a>): (1) title/abstract/figures/conclusion, 10 min → (2) the main method, skipping proofs, 1 h → (3) re-derive and re-implement it.</li>
+<li><strong>Reimplement &gt; reread.</strong> The best way to understand a paper is to reproduce its key result at small scale.</li>
+<li>Find papers and code: <a href="https://arxiv.org/" target="_blank" rel="noopener">arXiv</a> (cs.LG, cs.CL, cs.CV), <a href="https://huggingface.co/papers" target="_blank" rel="noopener">Hugging Face Papers</a> (daily trending, with linked code), <a href="https://www.alphaxiv.org/" target="_blank" rel="noopener">alphaXiv</a> (discussion), and authors' blogs.</li>
+<li>Keep a <strong>paper log</strong> in <code>progress.md</code>: one line per paper (problem → idea → result → my doubt).</li>
+</ul>
+<hr />
+<h2 id="track-a-deep-learning-theory-great-fit-for-a-mathphysics-mind">Track A · Deep learning theory 🔭 (great fit for a math/physics mind)<a class="anchor" href="#track-a-deep-learning-theory-great-fit-for-a-mathphysics-mind" title="Link to this section">#</a></h2>
+<ul>
+<li><strong>Optimization landscape:</strong> saddle points, flat vs sharp minima, edge of stability.</li>
+<li><strong>Generalization puzzles:</strong> over-parameterized nets fit random labels yet generalize; <strong>double descent</strong>; <strong>grokking</strong>; implicit bias of SGD.</li>
+<li><strong>Infinite-width limits:</strong> <strong>Neural Tangent Kernel (NTK)</strong> (lazy regime ↔ kernel regression) vs <strong>μP / mean-field</strong> (feature learning). μP also lets you transfer hyperparameters across model sizes.</li>
+<li><strong>Scaling laws</strong> and statistical-physics approaches to learning.</li>
+<li>⭐ <strong><a href="https://udlbook.github.io/udlbook/" target="_blank" rel="noopener">Understanding Deep Learning (Prince)</a></strong> ch. 20 ("Why does deep learning work?") → <strong><a href="https://arxiv.org/abs/2106.10165" target="_blank" rel="noopener">The Principles of Deep Learning Theory (Roberts, Yaida &amp; Hanin)</a></strong> (literally effective field theory for neural nets; written by physicists).</li>
+<li>Also: <a href="https://www.bishopbook.com/" target="_blank" rel="noopener">Deep Learning, Bishop &amp; Bishop (2024)</a>, <a href="https://mjt.cs.illinois.edu/dlt/" target="_blank" rel="noopener">Telgarsky's Deep Learning Theory notes</a>.</li>
+</ul>
+<h2 id="track-b-mechanistic-interpretability-ai-safety">Track B · Mechanistic interpretability &amp; AI safety<a class="anchor" href="#track-b-mechanistic-interpretability-ai-safety" title="Link to this section">#</a></h2>
+<ul>
+<li>Reverse-engineer <em>how</em> networks compute: <strong>circuits</strong>, <strong>induction heads</strong>, <strong>superposition</strong> (more features than neurons), <strong>sparse autoencoders (SAEs)</strong> to extract interpretable features, attribution graphs.</li>
+<li>Safety: alignment, reward hacking, scalable oversight, evals for dangerous capabilities.</li>
+<li>⭐ <strong><a href="https://www.arena.education/" target="_blank" rel="noopener">ARENA curriculum</a></strong> (hands-on, free notebooks) + <strong><a href="https://github.com/TransformerLensOrg/TransformerLens" target="_blank" rel="noopener">TransformerLens</a></strong>.</li>
+<li>Read: <a href="https://transformer-circuits.pub/" target="_blank" rel="noopener">Transformer Circuits Thread</a> (A Mathematical Framework, Toy Models of Superposition, Scaling Monosemanticity), <a href="https://www.neelnanda.io/mechanistic-interpretability/getting-started" target="_blank" rel="noopener">Neel Nanda's getting-started guide</a>, <a href="https://bluedot.org/" target="_blank" rel="noopener">BlueDot Impact courses</a>.</li>
+</ul>
+<h2 id="track-c-scientific-ml-physics-informed-dl">Track C · Scientific ML &amp; physics-informed DL 🔭<a class="anchor" href="#track-c-scientific-ml-physics-informed-dl" title="Link to this section">#</a></h2>
+<ul>
+<li><strong>PINNs:</strong> put the PDE residual in the loss. <strong>Neural operators</strong> (FNO, DeepONet): learn maps between function spaces.</li>
+<li><strong>Equivariant networks:</strong> build symmetries (rotation, translation, permutation) into the architecture → molecules, particle physics. <strong>Geometric deep learning.</strong></li>
+<li><strong>Neural ODEs</strong>, Hamiltonian/Lagrangian neural networks (energy-conserving by construction).</li>
+<li>Applications: AlphaFold (proteins), weather (GraphCast), ML for particle physics and cosmology, molecular dynamics potentials.</li>
+<li>⭐ <strong><a href="https://geometricdeeplearning.com/" target="_blank" rel="noopener">Geometric Deep Learning (Bronstein et al.)</a></strong> (book + lectures) and <strong><a href="https://www.youtube.com/@Eigensteve" target="_blank" rel="noopener">Steve Brunton's Physics-Informed ML lectures (YouTube)</a></strong>. Also <a href="https://github.com/lululxvi/deepxde" target="_blank" rel="noopener">DeepXDE</a> for PINNs.</li>
+</ul>
+<h2 id="track-d-ml-systems-gpus-efficiency-where-your-c-shines">Track D · ML systems, GPUs &amp; efficiency 💻 (where your C++ shines)<a class="anchor" href="#track-d-ml-systems-gpus-efficiency-where-your-c-shines" title="Link to this section">#</a></h2>
+<ul>
+<li><strong>GPU fundamentals:</strong> SMs, warps, memory hierarchy (HBM → L2 → shared memory/SRAM → registers), memory-bound vs compute-bound, <strong>roofline model</strong>, arithmetic intensity.</li>
+<li><strong>Kernels:</strong> write CUDA (C++) and <strong>Triton</strong> (Python) kernels: tiled matmul, softmax, fused ops, FlashAttention.</li>
+<li><strong>Distributed training:</strong> data parallel (DDP), FSDP/ZeRO, tensor and pipeline parallelism. Communication collectives (all-reduce).</li>
+<li><strong>Efficiency:</strong> quantization (int8/int4, GPTQ/AWQ), pruning, distillation, speculative decoding, <code>torch.compile</code>.</li>
+<li>⭐ <strong><a href="https://www.elsevier.com/books/programming-massively-parallel-processors/hwu/978-0-323-91231-0" target="_blank" rel="noopener">Programming Massively Parallel Processors (Hwu, Kirk, El Hajj)</a></strong> + the <strong><a href="https://github.com/gpu-mode/lectures" target="_blank" rel="noopener">GPU MODE</a></strong> lecture series &amp; Discord.</li>
+<li>Also: <a href="https://jax-ml.github.io/scaling-book/" target="_blank" rel="noopener">How to Scale Your Model (Google DeepMind, JAX/TPU book)</a>, <a href="https://triton-lang.org/main/getting-started/tutorials/index.html" target="_blank" rel="noopener">Triton tutorials</a>, <a href="https://horace.io/brrr_intro.html" target="_blank" rel="noopener">Horace He: Making Deep Learning Go Brrrr</a>, <a href="https://huggingface.co/spaces/nanotron/ultrascale-playbook" target="_blank" rel="noopener">The Ultra-Scale Playbook</a>, <a href="https://github.com/karpathy/llm.c" target="_blank" rel="noopener">llm.c (Karpathy, GPT-2 in raw C/CUDA)</a>.</li>
+</ul>
+<h2 id="track-e-self-supervised-multimodal-representation-learning">Track E · Self-supervised, multimodal &amp; representation learning<a class="anchor" href="#track-e-self-supervised-multimodal-representation-learning" title="Link to this section">#</a></h2>
+<ul>
+<li><strong>Contrastive learning:</strong> SimCLR, MoCo. InfoNCE loss pulls positives together and pushes negatives apart.</li>
+<li><strong>Masked modeling:</strong> BERT (text), MAE (images). <strong>Self-distillation:</strong> DINO/DINOv2. <strong>JEPA</strong> (predict in latent space).</li>
+<li><strong>Multimodal:</strong> CLIP (image–text contrastive), vision-language models (LLaVA-style: vision encoder + projector + LLM), audio (Whisper), video.</li>
+<li>⭐ <strong><a href="https://lilianweng.github.io/posts/2021-05-31-contrastive/" target="_blank" rel="noopener">Lilian Weng: Contrastive Representation Learning</a></strong> + the <a href="https://arxiv.org/abs/2103.00020" target="_blank" rel="noopener">CLIP paper</a>. Course: <a href="https://cmu-multicomp-lab.github.io/mmml-course/fall2023/" target="_blank" rel="noopener">CMU Multimodal ML</a>.</li>
+</ul>
+<h2 id="track-f-graphs-beyond-transformer-architectures">Track F · Graphs &amp; beyond-transformer architectures<a class="anchor" href="#track-f-graphs-beyond-transformer-architectures" title="Link to this section">#</a></h2>
+<ul>
+<li><strong>GNNs:</strong> message passing $\mathbf h_v' = \phi(\mathbf h_v, \textstyle\bigoplus_{u\in N(v)}\psi(\mathbf h_u))$. GCN, GAT, graph transformers. Used for molecules, social networks, physics simulation.</li>
+<li><strong>State-space models:</strong> S4 → <strong>Mamba</strong> (selective SSM, linear-time sequence modeling). Hybrids with attention. 🔭 Discretized linear ODEs.</li>
+<li>⭐ <strong><a href="https://web.stanford.edu/class/cs224w/" target="_blank" rel="noopener">Stanford CS224W: ML with Graphs</a></strong> + <strong><a href="https://pytorch-geometric.readthedocs.io/" target="_blank" rel="noopener">PyTorch Geometric</a></strong>. For SSMs: <a href="https://srush.github.io/annotated-s4/" target="_blank" rel="noopener">The Annotated S4</a>, the <a href="https://arxiv.org/abs/2312.00752" target="_blank" rel="noopener">Mamba paper</a>.</li>
+</ul>
+<h2 id="track-g-other-frameworks-worth-knowing">Track G · Other frameworks worth knowing<a class="anchor" href="#track-g-other-frameworks-worth-knowing" title="Link to this section">#</a></h2>
+<ul>
+<li><strong>JAX</strong> (functional NumPy + <code>grad</code>/<code>jit</code>/<code>vmap</code>/<code>pmap</code>). Popular in research and on TPUs. Try it once you know PyTorch well: <a href="https://docs.jax.dev/" target="_blank" rel="noopener">JAX docs</a>.</li>
+</ul>
+<hr />
+<h2 id="becoming-a-contributor-high-school-senior-edition">Becoming a contributor (high-school senior edition)<a class="anchor" href="#becoming-a-contributor-high-school-senior-edition" title="Link to this section">#</a></h2>
+<ul>
+<li><strong>Portfolio:</strong> 3–5 polished GitHub projects with READMEs and results (e.g. GPT from scratch, a DDPM, a paper reproduction). These count more than certificates.</li>
+<li><strong>Competitions:</strong> the <strong><a href="https://ioai-official.org/" target="_blank" rel="noopener">International Olympiad in AI (IOAI)</a></strong> is a science olympiad <em>for high-school students</em>, so it's worth checking whether your country runs a national selection. Also <a href="https://www.kaggle.com/" target="_blank" rel="noopener">Kaggle</a> and <a href="https://www.aicrowd.com/" target="_blank" rel="noopener">AIcrowd</a>.</li>
+<li><strong>Write:</strong> blog your reimplementations. Teaching forces understanding (the Feynman technique).</li>
+<li><strong>Community:</strong> EleutherAI, GPU MODE, and Hugging Face Discords. Open-source contributions (docs, bug fixes) to <code>transformers</code>, <code>diffusers</code>, <code>TransformerLens</code>.</li>
+<li><strong>Research programs for students:</strong> look for summer research programs at universities, MATS / ARENA (safety), and reaching out to grad students with a concrete reproduction you've done.</li>
+</ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/11-reinforcement-learning.html"><small>← Previous</small>Reinforcement Learning</a><a class="pn next" href="../deep-learning/cheatsheet.html"><small>Next →</small>Cheatsheet</a></nav></main>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#how-to-read-papers-do-this-first">How to read papers (do this first)</a></li><li><a href="#track-a-deep-learning-theory-great-fit-for-a-mathphysics-mind">Track A · Deep learning theory 🔭 (great fit for a math/physics mind)</a></li><li><a href="#track-b-mechanistic-interpretability-ai-safety">Track B · Mechanistic interpretability &amp; AI safety</a></li><li><a href="#track-c-scientific-ml-physics-informed-dl">Track C · Scientific ML &amp; physics-informed DL 🔭</a></li><li><a href="#track-d-ml-systems-gpus-efficiency-where-your-c-shines">Track D · ML systems, GPUs &amp; efficiency 💻 (where your C++ shines)</a></li><li><a href="#track-e-self-supervised-multimodal-representation-learning">Track E · Self-supervised, multimodal &amp; representation learning</a></li><li><a href="#track-f-graphs-beyond-transformer-architectures">Track F · Graphs &amp; beyond-transformer architectures</a></li><li><a href="#track-g-other-frameworks-worth-knowing">Track G · Other frameworks worth knowing</a></li><li><a href="#becoming-a-contributor-high-school-senior-edition">Becoming a contributor (high-school senior edition)</a></li></ul></nav></aside>
+</div>
+</body>
+</html>

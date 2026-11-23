@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Graph Search Visualizer</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style> canvas { aspect-ratio: 3 / 2; cursor: crosshair; } </style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Informatics Olympiad tools</a></header>
+  <h1>Graph Search Visualizer</h1>
+  <p class="lead">A grid is an implicit graph (each cell connects to its 4 neighbours). Draw walls and heavy cells, then watch how each algorithm explores. Compare the <b>number of nodes visited</b> and whether the path is <b>optimal</b> (module 04).</p>
+  <div class="grid two">
+    <canvas id="cv" width="900" height="600" aria-label="Grid graph"></canvas>
+    <div class="controls">
+      <div><b style="font-size:14px">Algorithm</b>
+        <div class="row" id="algos" style="margin-top:6px">
+          <button data-a="bfs" class="active">BFS</button><button data-a="dfs">DFS</button><button data-a="dijkstra">Dijkstra</button><button data-a="astar">A*</button>
+        </div></div>
+      <div><b style="font-size:14px">Draw (click / drag on the grid)</b>
+        <div class="row" id="tools" style="margin-top:6px">
+          <button data-t="wall" class="active">Wall</button><button data-t="heavy">Heavy cell (cost 5)</button><button data-t="erase">Erase</button><button data-t="start">Move start</button><button data-t="end">Move target</button>
+        </div></div>
+      <label class="ctl">Speed <input type="range" id="speed" min="1" max="60" value="12"></label>
+      <div class="row"><button class="primary" id="run">▶ Run</button><button id="stepb">Step</button><button id="clearRun">Clear search</button><button id="maze">Random walls</button><button id="clearAll">Clear all</button></div>
+      <div class="card" id="stats"></div>
+      <div class="legend"><span><i style="background:var(--c2)"></i>start</span><span><i style="background:var(--c5)"></i>target</span><span><i style="background:var(--accent-soft)"></i>visited</span><span><i style="background:var(--c6)"></i>frontier</span><span><i style="background:var(--c3)"></i>path</span><span><i style="background:var(--warn)"></i>heavy</span></div>
+    </div>
+  </div>
+  <h2>What to notice</h2>
+  <div class="card"><ul style="margin:0;padding-left:20px">
+    <li><b>BFS</b> finds the fewest-edges path, but it <i>ignores</i> weights. Add heavy cells and watch it walk straight through them.</li>
+    <li><b>DFS</b> isn't a shortest-path algorithm at all. Its path is usually terrible, but its stack-like exploration is what you want for components, cycles, and topological order.</li>
+    <li><b>Dijkstra</b> expands in order of distance, so it's optimal with non-negative weights. It visits a "circle" of cost.</li>
+    <li><b>A*</b> = Dijkstra + the heuristic h = Manhattan distance. It's still optimal (h never overestimates) but visits far fewer cells.</li>
+  </ul></div>
+  <footer class="foot">Part of the Self-Study repo · informatics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const C = 36, R = 24, cv = $("cv"), ctx = cv.getContext("2d");
+let grid, start = [12, 3], end = [12, 32], algo = "bfs", tool = "wall";
+let search = null, running = false, painting = false;
+const WALL = 1, HEAVY = 2;
+
+function initGrid() { grid = Array.from({ length: R }, () => Array(C).fill(0)); }
+function fit() { const d = devicePixelRatio || 1, w = cv.clientWidth; cv.width = w * d; cv.height = (w / 1.5) * d; ctx.setTransform(d, 0, 0, d, 0, 0); }
+const key = (r, c) => r * C + c;
+const cost = (r, c) => (grid[r][c] === HEAVY ? 5 : 1);
+
+// simple binary heap
+class Heap { constructor() { this.a = []; } push(x) { const a = this.a; a.push(x); let i = a.length - 1; while (i > 0) { const p = (i - 1) >> 1; if (a[p][0] <= a[i][0]) break; [a[p], a[i]] = [a[i], a[p]]; i = p; } }
+  pop() { const a = this.a, top = a[0], last = a.pop(); if (a.length) { a[0] = last; let i = 0; for (;;) { const l = 2 * i + 1, r = l + 1; let m = i; if (l < a.length && a[l][0] < a[m][0]) m = l; if (r < a.length && a[r][0] < a[m][0]) m = r; if (m === i) break; [a[m], a[i]] = [a[i], a[m]]; i = m; } } return top; }
+  get size() { return this.a.length; } }
+
+function* runSearch(kind) {
+  const visited = new Set(), parent = new Map(), dist = new Map(), frontier = new Set();
+  const s = key(...start), t = key(...end);
+  const h = (r, c) => Math.abs(r - end[0]) + Math.abs(c - end[1]);
+  const nbrs = (r, c) => [[r - 1, c], [r, c + 1], [r + 1, c], [r, c - 1]].filter(([y, x]) => y >= 0 && x >= 0 && y < R && x < C && grid[y][x] !== WALL);
+  const state = { visited, frontier, path: [], cost: null, done: false };
+  dist.set(s, 0);
+  if (kind === "bfs" || kind === "dfs") {
+    const q = [start]; frontier.add(s); const seen = new Set([s]);
+    while (q.length) {
+      const [r, c] = kind === "bfs" ? q.shift() : q.pop(); const k = key(r, c);
+      frontier.delete(k);
+      if (kind === "dfs") { if (visited.has(k)) continue; }
+      visited.add(k);
+      if (k === t) break;
+      for (const [y, x] of nbrs(r, c)) {
+        const kk = key(y, x);
+        if (kind === "bfs") { if (seen.has(kk)) continue; seen.add(kk); parent.set(kk, k); q.push([y, x]); frontier.add(kk); }
+        else if (!visited.has(kk)) { parent.set(kk, k); q.push([y, x]); frontier.add(kk); }
+      }
+      yield state;
+    }
+  } else {
+    const pq = new Heap(); pq.push([kind === "astar" ? h(...start) : 0, 0, start]); frontier.add(s);
+    while (pq.size) {
+      const [, d, [r, c]] = pq.pop(); const k = key(r, c);
+      if (visited.has(k) || d > dist.get(k)) continue;
+      frontier.delete(k); visited.add(k);
+      if (k === t) break;
+      for (const [y, x] of nbrs(r, c)) {
+        const kk = key(y, x), nd = d + cost(y, x);
+        if (!dist.has(kk) || nd < dist.get(kk)) { dist.set(kk, nd); parent.set(kk, k); pq.push([nd + (kind === "astar" ? h(y, x) : 0), nd, [y, x]]); frontier.add(kk); }
+      }
+      yield state;
+    }
+  }
+  if (visited.has(t)) {
+    let k = t, total = 0; const path = [];
+    while (k !== undefined) { path.push(k); const r = Math.floor(k / C), c = k % C; if (k !== s) total += cost(r, c); k = parent.get(k); }
+    state.path = path.reverse(); state.cost = total;
+  }
+  state.done = true; frontier.clear();
+  yield state;
+}
+
+function draw(st) {
+  const W = cv.clientWidth, H = W / 1.5, cw = W / C, ch = H / R;
+  ctx.fillStyle = col("--surface"); ctx.fillRect(0, 0, W, H);
+  const pathSet = new Set(st ? st.path : []);
+  for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) {
+    const k = key(r, c); let f = null;
+    if (grid[r][c] === WALL) f = col("--text");
+    else if (pathSet.has(k)) f = col("--c3");
+    else if (st && st.frontier.has(k)) f = col("--c6");
+    else if (st && st.visited.has(k)) f = col("--accent-soft");
+    if (f) { ctx.fillStyle = f; ctx.fillRect(c * cw, r * ch, cw, ch); }
+    if (grid[r][c] === HEAVY) { ctx.fillStyle = col("--warn"); ctx.globalAlpha = pathSet.has(k) ? 0.9 : 0.55; ctx.fillRect(c * cw + cw * 0.2, r * ch + ch * 0.2, cw * 0.6, ch * 0.6); ctx.globalAlpha = 1; }
+  }
+  ctx.strokeStyle = col("--border"); ctx.lineWidth = 0.5; ctx.beginPath();
+  for (let c = 0; c <= C; c++) { ctx.moveTo(c * cw, 0); ctx.lineTo(c * cw, H); }
+  for (let r = 0; r <= R; r++) { ctx.moveTo(0, r * ch); ctx.lineTo(W, r * ch); }
+  ctx.stroke();
+  [[start, "--c2"], [end, "--c5"]].forEach(([p, v]) => { ctx.fillStyle = col(v); ctx.beginPath(); ctx.arc((p[1] + 0.5) * cw, (p[0] + 0.5) * ch, Math.min(cw, ch) * 0.4, 0, 7); ctx.fill(); });
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  $("stats").innerHTML = row("Algorithm", { bfs: "BFS (queue)", dfs: "DFS (stack)", dijkstra: "Dijkstra (min-heap)", astar: "A* (heap, h = Manhattan)" }[algo]) +
+    row("Cells visited", st ? st.visited.size : 0) + row("Frontier size", st ? st.frontier.size : 0) +
+    row("Path edges", st && st.done ? (st.path.length ? st.path.length - 1 : "no path") : "—") +
+    row("Path cost (heavy = 5)", st && st.done && st.cost !== null ? st.cost : "—");
+}
+
+let last = null;
+function stepOnce() { if (!search) search = runSearch(algo); const r = search.next(); if (!r.done) last = r.value; if (last && last.done) { running = false; $("run").textContent = "▶ Run"; } draw(last); }
+function loop() { if (running) for (let i = 0; i < +$("speed").value / 6 + 0.2; i++) { stepOnce(); if (!running) break; } requestAnimationFrame(loop); }
+function resetSearch() { search = null; last = null; running = false; $("run").textContent = "▶ Run"; draw(null); }
+
+function cellAt(e) { const b = cv.getBoundingClientRect(); return [Math.floor(((e.clientY - b.top) / b.height) * R), Math.floor(((e.clientX - b.left) / b.width) * C)]; }
+function paint(e) {
+  const [r, c] = cellAt(e); if (r < 0 || c < 0 || r >= R || c >= C) return;
+  const isSE = (p) => p[0] === r && p[1] === c;
+  if (tool === "start" && grid[r][c] !== WALL) start = [r, c];
+  else if (tool === "end" && grid[r][c] !== WALL) end = [r, c];
+  else if (!isSE(start) && !isSE(end)) grid[r][c] = tool === "wall" ? WALL : tool === "heavy" ? HEAVY : 0;
+  resetSearch();
+}
+cv.addEventListener("pointerdown", (e) => { painting = true; cv.setPointerCapture(e.pointerId); paint(e); });
+cv.addEventListener("pointermove", (e) => { if (painting && tool !== "start" && tool !== "end") paint(e); });
+cv.addEventListener("pointerup", () => { painting = false; });
+const group = (id, attr, set) => document.querySelectorAll(`#${id} button`).forEach((b) => b.addEventListener("click", () => { document.querySelectorAll(`#${id} button`).forEach((x) => x.classList.remove("active")); b.classList.add("active"); set(b.dataset[attr]); }));
+group("algos", "a", (v) => { algo = v; resetSearch(); });
+group("tools", "t", (v) => { tool = v; });
+$("run").addEventListener("click", () => { if (last && last.done) resetSearch(); running = !running; $("run").textContent = running ? "⏸ Pause" : "▶ Run"; });
+$("stepb").addEventListener("click", () => { running = false; $("run").textContent = "▶ Run"; stepOnce(); });
+$("clearRun").addEventListener("click", resetSearch);
+$("clearAll").addEventListener("click", () => { initGrid(); resetSearch(); });
+$("maze").addEventListener("click", () => { initGrid(); for (let r = 0; r < R; r++) for (let c = 0; c < C; c++) { const x = Math.random(); grid[r][c] = x < 0.25 ? WALL : x < 0.35 ? HEAVY : 0; } grid[start[0]][start[1]] = 0; grid[end[0]][end[1]] = 0; resetSearch(); });
+window.addEventListener("resize", () => { fit(); draw(last); });
+initGrid();
+for (let r = 4; r < 20; r++) grid[r][17] = WALL; for (let r = 8; r < 16; r++) grid[r][10] = HEAVY;
+fit(); draw(null); loop();
+</script>
+</body>
+</html>

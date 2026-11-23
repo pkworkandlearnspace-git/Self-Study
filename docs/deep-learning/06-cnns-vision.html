@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06 · CNNs &amp; Computer Vision · Self-Study</title>
+<meta name="description" content="From the math and NumPy to transformers, LLMs, generative models and RL.">
+<script>try{var t=localStorage.getItem('ss-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script defer src="../assets/katex/katex.min.js"></script>
+<script defer src="../assets/katex/contrib/auto-render.min.js"></script>
+<script defer src="../assets/search-index.js"></script>
+<script defer src="../assets/site.js"></script>
+</head>
+<body data-root="../" data-page="deep-learning/06-cnns-vision.html">
+<a class="skip" href="#content">Skip to content</a>
+<div class="progress" aria-hidden="true"><div></div></div>
+<header class="topbar">
+  <button class="icon-btn menu-btn" aria-label="Open navigation" aria-expanded="false">☰</button>
+  <a class="brand" href="../index.html"><span class="brand-mark">📚</span>Self-Study</a>
+  <div class="search">
+    <input id="search" type="search" placeholder="Search all notes…  ( / )" autocomplete="off" aria-label="Search">
+    <div class="search-results" role="listbox" hidden></div>
+  </div>
+  <button class="icon-btn theme-btn" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+</header>
+<div class="shell">
+  <aside class="sidebar"><nav class="side-nav" aria-label="All pages">
+<a class="side-home" href="../index.html">🏠 Home</a>
+<a class="side-home" href="../tools.html">🎛️ All interactive tools</a>
+<details class="side-topic"><summary><span class="ico">🧮</span>Math Olympiad</summary><ul>
+<li><a href="../math-olympiad/index.html">Overview</a></li>
+<li><a href="../math-olympiad/01-problem-solving-proofs.html"><span class="num">01</span>Problem Solving &amp; Proof Writing</a></li>
+<li><a href="../math-olympiad/02-algebra.html"><span class="num">02</span>Algebra</a></li>
+<li><a href="../math-olympiad/03-number-theory.html"><span class="num">03</span>Number Theory</a></li>
+<li><a href="../math-olympiad/04-combinatorics.html"><span class="num">04</span>Combinatorics</a></li>
+<li><a href="../math-olympiad/05-geometry.html"><span class="num">05</span>Geometry</a></li>
+<li><a href="../math-olympiad/06-contest-practice.html"><span class="num">06</span>Contest Practice &amp; Solution Writing</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../math-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../math-olympiad/resources.html">Resources</a></li>
+<li><a href="../math-olympiad/progress.html">Progress log</a></li>
+<li><a href="../math-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">⚛️</span>Physics Olympiad</summary><ul>
+<li><a href="../physics-olympiad/index.html">Overview</a></li>
+<li><a href="../physics-olympiad/01-math-methods.html"><span class="num">01</span>Math Methods &amp; Estimation</a></li>
+<li><a href="../physics-olympiad/02-mechanics.html"><span class="num">02</span>Mechanics</a></li>
+<li><a href="../physics-olympiad/03-thermo-stat.html"><span class="num">03</span>Thermodynamics &amp; Statistical Physics</a></li>
+<li><a href="../physics-olympiad/04-electromagnetism.html"><span class="num">04</span>Electromagnetism</a></li>
+<li><a href="../physics-olympiad/05-waves-optics.html"><span class="num">05</span>Waves &amp; Optics</a></li>
+<li><a href="../physics-olympiad/06-modern-physics.html"><span class="num">06</span>Modern Physics</a></li>
+<li><a href="../physics-olympiad/07-experimental.html"><span class="num">07</span>Experimental Physics</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../physics-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../physics-olympiad/resources.html">Resources</a></li>
+<li><a href="../physics-olympiad/progress.html">Progress log</a></li>
+<li><a href="../physics-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">💻</span>Informatics Olympiad</summary><ul>
+<li><a href="../informatics-olympiad/index.html">Overview</a></li>
+<li><a href="../informatics-olympiad/01-cpp-for-cp.html"><span class="num">01</span>C++ for Competitive Programming</a></li>
+<li><a href="../informatics-olympiad/02-core-techniques.html"><span class="num">02</span>Complexity &amp; Core Techniques</a></li>
+<li><a href="../informatics-olympiad/03-data-structures.html"><span class="num">03</span>Data Structures</a></li>
+<li><a href="../informatics-olympiad/04-graphs-trees.html"><span class="num">04</span>Graphs &amp; Trees</a></li>
+<li><a href="../informatics-olympiad/05-dynamic-programming.html"><span class="num">05</span>Dynamic Programming</a></li>
+<li><a href="../informatics-olympiad/06-math-strings-geometry.html"><span class="num">06</span>Math, Strings &amp; Geometry</a></li>
+<li><a href="../informatics-olympiad/07-ioi-advanced.html"><span class="num">07</span>IOI Skills &amp; Advanced Topics</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../informatics-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../informatics-olympiad/resources.html">Resources</a></li>
+<li><a href="../informatics-olympiad/progress.html">Progress log</a></li>
+<li><a href="../informatics-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">🗣️</span>IELTS Academic</summary><ul>
+<li><a href="../ielts/index.html">Overview</a></li>
+<li><a href="../ielts/01-test-strategy.html"><span class="num">01</span>Test Strategy &amp; Scoring</a></li>
+<li><a href="../ielts/02-listening.html"><span class="num">02</span>Listening</a></li>
+<li><a href="../ielts/03-reading.html"><span class="num">03</span>Reading (Academic)</a></li>
+<li><a href="../ielts/04-writing-task1.html"><span class="num">04</span>Writing Task 1 (Academic)</a></li>
+<li><a href="../ielts/05-writing-task2.html"><span class="num">05</span>Writing Task 2</a></li>
+<li><a href="../ielts/06-speaking.html"><span class="num">06</span>Speaking</a></li>
+<li><a href="../ielts/07-vocab-grammar.html"><span class="num">07</span>Vocabulary &amp; Grammar for Band 7</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../ielts/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../ielts/resources.html">Resources</a></li>
+<li><a href="../ielts/progress.html">Progress log</a></li>
+<li><a href="../ielts/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic" open><summary><span class="ico">🧠</span>Deep Learning</summary><ul>
+<li><a href="../deep-learning/index.html">Overview</a></li>
+<li><a href="../deep-learning/01-math-for-dl.html"><span class="num">01</span>Math for Deep Learning</a></li>
+<li><a href="../deep-learning/02-python-numpy-tools.html"><span class="num">02</span>Python, NumPy &amp; Tools</a></li>
+<li><a href="../deep-learning/03-ml-fundamentals.html"><span class="num">03</span>Machine Learning Fundamentals</a></li>
+<li><a href="../deep-learning/04-neural-nets-from-scratch.html"><span class="num">04</span>Neural Networks from Scratch</a></li>
+<li><a href="../deep-learning/05-pytorch-training.html"><span class="num">05</span>PyTorch &amp; the Craft of Training</a></li>
+<li><a class="active" aria-current="page" href="../deep-learning/06-cnns-vision.html"><span class="num">06</span>CNNs &amp; Computer Vision</a></li>
+<li><a href="../deep-learning/07-sequences-rnns.html"><span class="num">07</span>Sequences, Embeddings &amp; RNNs</a></li>
+<li><a href="../deep-learning/08-transformers.html"><span class="num">08</span>Transformers</a></li>
+<li><a href="../deep-learning/09-llms.html"><span class="num">09</span>Large Language Models</a></li>
+<li><a href="../deep-learning/10-generative-models.html"><span class="num">10</span>Generative Models</a></li>
+<li><a href="../deep-learning/11-reinforcement-learning.html"><span class="num">11</span>Reinforcement Learning</a></li>
+<li><a href="../deep-learning/12-advanced-frontiers.html"><span class="num">12</span>Advanced Frontiers &amp; Specializations</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../deep-learning/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../deep-learning/resources.html">Resources</a></li>
+<li><a href="../deep-learning/progress.html">Progress log</a></li>
+<li><a href="../deep-learning/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<a class="side-home" href="../_template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
+</nav></aside>
+  <div class="scrim" hidden></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>CNNs &amp; Computer Vision</span></nav><article class="doc"><h1 id="06-cnns-computer-vision">06 · CNNs &amp; Computer Vision<a class="anchor" href="#06-cnns-computer-vision" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 06</span><span>⏱ 2 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/06-cnns-vision.md" target="_blank" rel="noopener">View Markdown source</a></div>
+<blockquote>
+<p><strong>Goal:</strong> understand convolution, the classic architectures, and modern vision. · <strong>Time:</strong> 20–25 h · <strong>Needs:</strong> 05</p>
+</blockquote>
+<h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> Compute the output size of a conv: input 32, kernel 5, stride 2, padding 2.</li>
+<li class="task"><input type="checkbox"> Count the parameters of <code>Conv2d(64, 128, kernel_size=3)</code> and explain why it's tiny next to a dense layer.</li>
+<li class="task"><input type="checkbox"> Explain <strong>translation equivariance</strong>, <strong>weight sharing</strong>, and <strong>receptive field</strong>.</li>
+<li class="task"><input type="checkbox"> Explain why ResNet's skip connections made 100+ layer nets trainable.</li>
+<li class="task"><input type="checkbox"> Explain transfer learning: when to freeze, when to fine-tune.</li>
+<li class="task"><input type="checkbox"> Explain how a Vision Transformer (ViT) turns an image into tokens.</li>
+</ul>
+<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<ul>
+<li><strong>Convolution</strong> = sliding the same small filter everywhere. This builds in the <em>prior</em> that local patterns matter anywhere in the image.<ul>
+<li>Output size: $\lfloor (n + 2p - k)/s \rfloor + 1$. Params: $C_{in}\cdot C_{out}\cdot k^2 + C_{out}$.</li>
+<li>🔭 A convolution is the discrete version of what you know from Green's functions and signal filtering. In DL it's technically cross-correlation.</li>
+</ul>
+</li>
+<li><strong>Pooling / strided conv</strong> downsample, so the receptive field grows. <strong>Feature hierarchy:</strong> edges → textures → parts → objects.</li>
+<li><strong>Architecture timeline (know the <em>idea</em> of each):</strong><ul>
+<li><strong>LeNet</strong> (1998): conv + pool. <strong>AlexNet</strong> (2012): ReLU, GPU, dropout, the "ImageNet moment".</li>
+<li><strong>VGG</strong>: stacks of 3×3 convs. <strong>GoogLeNet/Inception</strong>: parallel branches, 1×1 convs.</li>
+<li><strong>ResNet</strong> (2015): $\mathbf y = \mathbf x + F(\mathbf x)$. <strong>The most important architecture idea in DL.</strong></li>
+<li><strong>MobileNet/EfficientNet</strong>: depthwise-separable convs, compound scaling.</li>
+<li><strong>ConvNeXt</strong> (2022): a CNN modernized with transformer-era training tricks.</li>
+<li><strong>ViT</strong> (2020): split the image into 16×16 patches → linear embeddings → transformer. Wins with enough data or pretraining.</li>
+</ul>
+</li>
+<li><strong>Data augmentation:</strong> flips, crops, color jitter, Mixup/CutMix, RandAugment. Often worth more than architecture changes.</li>
+<li><strong>Transfer learning:</strong> take an ImageNet-pretrained backbone and replace the head. Small data → freeze most layers. More data → fine-tune all at a low LR.</li>
+<li><strong>Tasks beyond classification:</strong><ul>
+<li><strong>Detection</strong> (boxes): two-stage (Faster R-CNN), one-stage (YOLO family), transformer-based (DETR).</li>
+<li><strong>Segmentation</strong> (pixels): <strong>U-Net</strong> (encoder-decoder + skip connections, also the backbone of diffusion models!), Mask R-CNN, SAM.</li>
+</ul>
+</li>
+<li><strong>Foundation vision models:</strong> CLIP (image–text), DINOv2 (self-supervised features), SAM (segment anything). Grab them from <code>timm</code> / Hugging Face.</li>
+</ul>
+<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://cs231n.stanford.edu/" target="_blank" rel="noopener">Stanford CS231n</a></strong>: <a href="https://cs231n.github.io/" target="_blank" rel="noopener">course notes</a> + lecture videos (YouTube) + <strong>assignments 1–2</strong>. A gold standard.</li>
+<li><strong>d2l.ai</strong> ch. 7–8 (CNNs, modern CNNs) and ch. 14 (computer vision).</li>
+<li><strong><a href="https://poloclub.github.io/cnn-explainer/" target="_blank" rel="noopener">CNN Explainer (interactive)</a></strong>: see a conv net run in your browser.</li>
+<li><strong><a href="https://distill.pub/2017/feature-visualization/" target="_blank" rel="noopener">Feature Visualization (Distill)</a></strong>: what CNN neurons actually detect.</li>
+<li><strong><a href="https://github.com/huggingface/pytorch-image-models" target="_blank" rel="noopener">PyTorch Image Models (timm)</a></strong>: pretrained models for transfer learning.</li>
+</ul>
+<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<ol>
+<li><strong>ResNet-18 from scratch</strong> on CIFAR-10. Target ≥ 93% with augmentation and a good LR schedule.</li>
+<li><strong>Transfer learning:</strong> fine-tune a pretrained model on a small custom dataset (e.g. 5 classes, ~100 photos each). Compare frozen vs full fine-tuning.</li>
+<li>Visualize filters, feature maps, and a saliency map / Grad-CAM for your model's predictions.</li>
+<li>Stretch: a small <strong>U-Net</strong> for segmentation (e.g. Oxford-IIIT Pets masks).</li>
+</ol>
+<h2 id="traps">Traps<a class="anchor" href="#traps" title="Link to this section">#</a></h2>
+<ul>
+<li>Off-by-one shape errors. Print shapes after every block while developing.</li>
+<li>Forgetting ImageNet normalization (mean/std) when using a pretrained model.</li>
+<li>Evaluating with train-time augmentation turned on.</li>
+</ul>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> ResNet on CIFAR-10 ≥ 93% · <input type="checkbox"> fine-tuned model works on your own photos</li>
+</ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/05-pytorch-training.html"><small>← Previous</small>PyTorch &amp; the Craft of Training</a><a class="pn next" href="../deep-learning/07-sequences-rnns.html"><small>Next →</small>Sequences, Embeddings &amp; RNNs</a></nav></main>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
+</div>
+</body>
+</html>

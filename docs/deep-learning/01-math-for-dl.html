@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 · Math for Deep Learning · Self-Study</title>
+<meta name="description" content="From the math and NumPy to transformers, LLMs, generative models and RL.">
+<script>try{var t=localStorage.getItem('ss-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script defer src="../assets/katex/katex.min.js"></script>
+<script defer src="../assets/katex/contrib/auto-render.min.js"></script>
+<script defer src="../assets/search-index.js"></script>
+<script defer src="../assets/site.js"></script>
+</head>
+<body data-root="../" data-page="deep-learning/01-math-for-dl.html">
+<a class="skip" href="#content">Skip to content</a>
+<div class="progress" aria-hidden="true"><div></div></div>
+<header class="topbar">
+  <button class="icon-btn menu-btn" aria-label="Open navigation" aria-expanded="false">☰</button>
+  <a class="brand" href="../index.html"><span class="brand-mark">📚</span>Self-Study</a>
+  <div class="search">
+    <input id="search" type="search" placeholder="Search all notes…  ( / )" autocomplete="off" aria-label="Search">
+    <div class="search-results" role="listbox" hidden></div>
+  </div>
+  <button class="icon-btn theme-btn" aria-label="Toggle dark mode" title="Toggle dark mode">◐</button>
+</header>
+<div class="shell">
+  <aside class="sidebar"><nav class="side-nav" aria-label="All pages">
+<a class="side-home" href="../index.html">🏠 Home</a>
+<a class="side-home" href="../tools.html">🎛️ All interactive tools</a>
+<details class="side-topic"><summary><span class="ico">🧮</span>Math Olympiad</summary><ul>
+<li><a href="../math-olympiad/index.html">Overview</a></li>
+<li><a href="../math-olympiad/01-problem-solving-proofs.html"><span class="num">01</span>Problem Solving &amp; Proof Writing</a></li>
+<li><a href="../math-olympiad/02-algebra.html"><span class="num">02</span>Algebra</a></li>
+<li><a href="../math-olympiad/03-number-theory.html"><span class="num">03</span>Number Theory</a></li>
+<li><a href="../math-olympiad/04-combinatorics.html"><span class="num">04</span>Combinatorics</a></li>
+<li><a href="../math-olympiad/05-geometry.html"><span class="num">05</span>Geometry</a></li>
+<li><a href="../math-olympiad/06-contest-practice.html"><span class="num">06</span>Contest Practice &amp; Solution Writing</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../math-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../math-olympiad/resources.html">Resources</a></li>
+<li><a href="../math-olympiad/progress.html">Progress log</a></li>
+<li><a href="../math-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">⚛️</span>Physics Olympiad</summary><ul>
+<li><a href="../physics-olympiad/index.html">Overview</a></li>
+<li><a href="../physics-olympiad/01-math-methods.html"><span class="num">01</span>Math Methods &amp; Estimation</a></li>
+<li><a href="../physics-olympiad/02-mechanics.html"><span class="num">02</span>Mechanics</a></li>
+<li><a href="../physics-olympiad/03-thermo-stat.html"><span class="num">03</span>Thermodynamics &amp; Statistical Physics</a></li>
+<li><a href="../physics-olympiad/04-electromagnetism.html"><span class="num">04</span>Electromagnetism</a></li>
+<li><a href="../physics-olympiad/05-waves-optics.html"><span class="num">05</span>Waves &amp; Optics</a></li>
+<li><a href="../physics-olympiad/06-modern-physics.html"><span class="num">06</span>Modern Physics</a></li>
+<li><a href="../physics-olympiad/07-experimental.html"><span class="num">07</span>Experimental Physics</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../physics-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../physics-olympiad/resources.html">Resources</a></li>
+<li><a href="../physics-olympiad/progress.html">Progress log</a></li>
+<li><a href="../physics-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">💻</span>Informatics Olympiad</summary><ul>
+<li><a href="../informatics-olympiad/index.html">Overview</a></li>
+<li><a href="../informatics-olympiad/01-cpp-for-cp.html"><span class="num">01</span>C++ for Competitive Programming</a></li>
+<li><a href="../informatics-olympiad/02-core-techniques.html"><span class="num">02</span>Complexity &amp; Core Techniques</a></li>
+<li><a href="../informatics-olympiad/03-data-structures.html"><span class="num">03</span>Data Structures</a></li>
+<li><a href="../informatics-olympiad/04-graphs-trees.html"><span class="num">04</span>Graphs &amp; Trees</a></li>
+<li><a href="../informatics-olympiad/05-dynamic-programming.html"><span class="num">05</span>Dynamic Programming</a></li>
+<li><a href="../informatics-olympiad/06-math-strings-geometry.html"><span class="num">06</span>Math, Strings &amp; Geometry</a></li>
+<li><a href="../informatics-olympiad/07-ioi-advanced.html"><span class="num">07</span>IOI Skills &amp; Advanced Topics</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../informatics-olympiad/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../informatics-olympiad/resources.html">Resources</a></li>
+<li><a href="../informatics-olympiad/progress.html">Progress log</a></li>
+<li><a href="../informatics-olympiad/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic"><summary><span class="ico">🗣️</span>IELTS Academic</summary><ul>
+<li><a href="../ielts/index.html">Overview</a></li>
+<li><a href="../ielts/01-test-strategy.html"><span class="num">01</span>Test Strategy &amp; Scoring</a></li>
+<li><a href="../ielts/02-listening.html"><span class="num">02</span>Listening</a></li>
+<li><a href="../ielts/03-reading.html"><span class="num">03</span>Reading (Academic)</a></li>
+<li><a href="../ielts/04-writing-task1.html"><span class="num">04</span>Writing Task 1 (Academic)</a></li>
+<li><a href="../ielts/05-writing-task2.html"><span class="num">05</span>Writing Task 2</a></li>
+<li><a href="../ielts/06-speaking.html"><span class="num">06</span>Speaking</a></li>
+<li><a href="../ielts/07-vocab-grammar.html"><span class="num">07</span>Vocabulary &amp; Grammar for Band 7</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../ielts/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../ielts/resources.html">Resources</a></li>
+<li><a href="../ielts/progress.html">Progress log</a></li>
+<li><a href="../ielts/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<details class="side-topic" open><summary><span class="ico">🧠</span>Deep Learning</summary><ul>
+<li><a href="../deep-learning/index.html">Overview</a></li>
+<li><a class="active" aria-current="page" href="../deep-learning/01-math-for-dl.html"><span class="num">01</span>Math for Deep Learning</a></li>
+<li><a href="../deep-learning/02-python-numpy-tools.html"><span class="num">02</span>Python, NumPy &amp; Tools</a></li>
+<li><a href="../deep-learning/03-ml-fundamentals.html"><span class="num">03</span>Machine Learning Fundamentals</a></li>
+<li><a href="../deep-learning/04-neural-nets-from-scratch.html"><span class="num">04</span>Neural Networks from Scratch</a></li>
+<li><a href="../deep-learning/05-pytorch-training.html"><span class="num">05</span>PyTorch &amp; the Craft of Training</a></li>
+<li><a href="../deep-learning/06-cnns-vision.html"><span class="num">06</span>CNNs &amp; Computer Vision</a></li>
+<li><a href="../deep-learning/07-sequences-rnns.html"><span class="num">07</span>Sequences, Embeddings &amp; RNNs</a></li>
+<li><a href="../deep-learning/08-transformers.html"><span class="num">08</span>Transformers</a></li>
+<li><a href="../deep-learning/09-llms.html"><span class="num">09</span>Large Language Models</a></li>
+<li><a href="../deep-learning/10-generative-models.html"><span class="num">10</span>Generative Models</a></li>
+<li><a href="../deep-learning/11-reinforcement-learning.html"><span class="num">11</span>Reinforcement Learning</a></li>
+<li><a href="../deep-learning/12-advanced-frontiers.html"><span class="num">12</span>Advanced Frontiers &amp; Specializations</a></li>
+<li class="side-sep">Reference</li>
+<li><a href="../deep-learning/cheatsheet.html">Cheatsheet</a></li>
+<li><a href="../deep-learning/resources.html">Resources</a></li>
+<li><a href="../deep-learning/progress.html">Progress log</a></li>
+<li><a href="../deep-learning/interactive/index.html">🎛️ Interactive tools</a></li>
+</ul></details>
+<a class="side-home" href="../_template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
+</nav></aside>
+  <div class="scrim" hidden></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Math for Deep Learning</span></nav><article class="doc"><h1 id="01-math-for-deep-learning">01 · Math for Deep Learning<a class="anchor" href="#01-math-for-deep-learning" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 01</span><span>⏱ 7 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/01-math-for-dl.md" target="_blank" rel="noopener">View Markdown source</a></div>
+<blockquote>
+<p><strong>Goal:</strong> the math DL actually uses and nothing more. · <strong>Time:</strong> 15–25 h · <strong>Needs:</strong> high-school calculus</p>
+</blockquote>
+<p>You're strong at math, so this module skips the basics. It covers three things school usually doesn't: <strong>linear algebra as geometry</strong>, <strong>matrix calculus</strong>, and <strong>probability/information theory for ML</strong>.</p>
+<h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> Explain matrix multiplication as a composition of linear maps, and what eigenvectors/SVD mean geometrically.</li>
+<li class="task"><input type="checkbox"> For $f(\mathbf{x}) = \mathbf{x}^\top A \mathbf{x}$, give $\nabla f$. For $L = \|X\mathbf{w}-\mathbf{y}\|^2$, give $\nabla_{\mathbf w} L$ and solve $\nabla L = 0$.</li>
+<li class="task"><input type="checkbox"> Explain the chain rule for a composition $f(g(h(x)))$ with vectors, using Jacobians.</li>
+<li class="task"><input type="checkbox"> Derive the MLE of a Gaussian's mean. Explain why minimizing MSE = maximizing Gaussian likelihood.</li>
+<li class="task"><input type="checkbox"> Define entropy, cross-entropy, and KL divergence, and say why $D_{KL} \ge 0$.</li>
+<li class="task"><input type="checkbox"> Explain why gradient descent with too large a step size diverges on $f(x)=\tfrac{a}{2}x^2$, and give the exact threshold.</li>
+<li class="task"><input type="checkbox"> Say why a rotation matrix has singular values $1, 1$ but no real eigenvectors, and why $\mathrm{softmax}(\mathbf z - \max_j z_j)$ is used in code.</li>
+</ul>
+<p>🎯 Not sure? Take the auto-graded <a href="interactive/foundations-quiz.html">Foundations Quiz</a> (filter by module) before deciding.</p>
+<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h3 id="linear-algebra-geometry-first">Linear algebra (geometry first)<a class="anchor" href="#linear-algebra-geometry-first" title="Link to this section">#</a></h3>
+<ul>
+<li><strong>Vectors</strong> are data points. <strong>Matrices</strong> are linear maps, and $AB$ means "apply $B$, then $A$".</li>
+<li><strong>Dot product</strong> $\mathbf a\cdot\mathbf b = \|\mathbf a\|\|\mathbf b\|\cos\theta$ measures similarity. It's the core of attention.</li>
+<li><strong>Rank</strong> = dimension of the column space (the <em>image</em> of the map) = number of nonzero singular values. A rank-deficient matrix squashes some direction to zero, so it can't be inverted. <strong>Low-rank</strong> ideas drive LoRA and compression.</li>
+<li><strong>Eigenvectors</strong> satisfy $A\mathbf v = \lambda\mathbf v$: directions the map only stretches. For symmetric $A$ they are orthogonal and $A = Q\Lambda Q^\top$ (spectral theorem). A rotation has no real eigenvectors; a shear has only one eigen-direction.</li>
+<li><strong>SVD</strong> $A = U\Sigma V^\top$ (<em>any</em> $A$, even non-square): rotate/reflect → scale by $\sigma_i \ge 0$ → rotate/reflect. The unit circle maps to an ellipse with semi-axes $\sigma_i$. This underlies PCA, low-rank approximation (Eckart–Young: the best rank-$k$ approximation keeps the top $k$ singular values), and conditioning $\kappa = \sigma_{\max}/\sigma_{\min}$. Also $|\det A| = \prod\sigma_i$.</li>
+<li>🎛️ <strong>See it:</strong> <a href="interactive/linear-maps.html">Matrix as a Map</a>: drag a matrix's columns and watch det, rank, eigenvectors, and the SVD steps.</li>
+<li><strong>Norms:</strong> $\|\cdot\|_2$ (weight decay), $\|\cdot\|_1$ (sparsity), Frobenius norm for matrices.</li>
+<li><strong>Shapes are everything.</strong> In DL, data is a batch matrix $X \in \mathbb{R}^{N\times d}$ (rows = examples).</li>
+</ul>
+<h3 id="calculus-matrix-calculus">Calculus → matrix calculus<a class="anchor" href="#calculus-matrix-calculus" title="Link to this section">#</a></h3>
+<ul>
+<li><strong>Gradient</strong> $\nabla f$ points uphill. It is the steepest-ascent direction, perpendicular to level sets.</li>
+<li><strong>Jacobian</strong> $J_{ij} = \partial y_i / \partial x_j$. <strong>Chain rule:</strong> $J_{f\circ g} = J_f \, J_g$. <strong>Backprop = the chain rule applied right-to-left</strong> (vector-Jacobian products).</li>
+<li><strong>Identities worth memorizing:</strong><ul>
+<li>$\nabla_{\mathbf x}(\mathbf a^\top\mathbf x) = \mathbf a$</li>
+<li>$\nabla_{\mathbf x}(\mathbf x^\top A\mathbf x) = (A+A^\top)\mathbf x$</li>
+<li>$\nabla_{\mathbf w}\|X\mathbf w-\mathbf y\|^2 = 2X^\top(X\mathbf w-\mathbf y)$</li>
+</ul>
+</li>
+<li><strong>Shape trick:</strong> the gradient of a scalar w.r.t. a matrix has the <em>same shape as that matrix</em>. Use this to check every derivation.</li>
+<li><strong>Hessian</strong> $H = \nabla^2 f$ gives curvature. A twice-differentiable $f$ is convex iff $H \succeq 0$ everywhere. For a convex quadratic, the condition number $\lambda_{\max}/\lambda_{\min}$ of $H$ sets how hard optimization is.</li>
+<li><strong>Taylor:</strong> $f(\mathbf x+\boldsymbol\delta) \approx f + \nabla f^\top\boldsymbol\delta + \tfrac12\boldsymbol\delta^\top H\boldsymbol\delta$. This is where every optimizer comes from.</li>
+</ul>
+<h3 id="optimization">Optimization<a class="anchor" href="#optimization" title="Link to this section">#</a></h3>
+<ul>
+<li><strong>Gradient descent:</strong> $\theta \leftarrow \theta - \eta\nabla L$. On a quadratic it's stable only if $\eta &lt; 2/\lambda_{\max}(H)$ (worked example below). 🎛️ Try it in the <a href="interactive/gradient-descent.html">Optimizer Landscape</a>.</li>
+<li>🔭 <strong>Physics:</strong> GD is an overdamped particle in potential $L$. <strong>Momentum</strong> is a heavy ball with friction. <strong>SGD noise</strong> acts like temperature.</li>
+<li><strong>Stochastic GD:</strong> gradients estimated on mini-batches: an unbiased but noisy estimate, far cheaper per step. The noise is widely believed to help generalization (it favors flatter minima), though this is still an active research question.</li>
+<li><strong>Lagrange multipliers</strong> show up in constrained derivations (e.g. max-entropy → softmax, SVMs).</li>
+</ul>
+<h3 id="probability-statistics">Probability &amp; statistics<a class="anchor" href="#probability-statistics" title="Link to this section">#</a></h3>
+<ul>
+<li><strong>Random variables, expectation, variance.</strong> Linearity: $\mathbb E[aX+bY]=a\mathbb E X+b\mathbb E Y$.</li>
+<li><strong>Bayes:</strong> $p(\theta\mid D) \propto p(D\mid\theta)\,p(\theta)$, i.e. posterior ∝ likelihood × prior.</li>
+<li><strong>Key distributions:</strong> Bernoulli/Categorical (classification), Gaussian (regression, noise, VAEs, diffusion).</li>
+<li><strong>Maximum likelihood (MLE):</strong> $\theta^* = \arg\max \sum_i \log p(x_i\mid\theta)$. Almost every DL loss is a negative log-likelihood:<ul>
+<li>Gaussian likelihood → <strong>MSE</strong>. Bernoulli/Categorical → <strong>cross-entropy</strong>.</li>
+</ul>
+</li>
+<li><strong>MAP</strong> = MLE + prior. A Gaussian prior is exactly <strong>L2 weight decay</strong>.</li>
+<li><strong>Monte Carlo:</strong> $\mathbb E_p[f] \approx \frac1N\sum f(x_i)$. Also the <strong>reparameterization trick</strong> $x=\mu+\sigma\epsilon$ (VAEs, diffusion).</li>
+</ul>
+<h3 id="information-theory">Information theory<a class="anchor" href="#information-theory" title="Link to this section">#</a></h3>
+<ul>
+<li><strong>Entropy</strong> $H(p) = -\sum p\log p$: average surprise. 🔭 Same form as Gibbs entropy.</li>
+<li><strong>Cross-entropy</strong> $H(p,q) = -\sum p\log q$: the classification loss.</li>
+<li><strong>KL divergence</strong> $D_{KL}(p\|q)=\sum p\log\frac{p}{q} = H(p,q)-H(p) \ge 0$ (Jensen). It's asymmetric.</li>
+<li><strong>Softmax</strong> $\sigma(\mathbf z)_i = e^{z_i}/\sum_j e^{z_j}$. 🔭 This is the Boltzmann distribution with energy $-z_i$ and temperature 1. The "temperature" in LLM sampling is literally $T$.</li>
+</ul>
+<h2 id="worked-examples">Worked examples<a class="anchor" href="#worked-examples" title="Link to this section">#</a></h2>
+<p><strong>1 · Gradient of least squares, with shapes.</strong> $L(\mathbf w)=\|X\mathbf w-\mathbf y\|^2$ with $X\in\mathbb R^{N\times d}$. Let $\mathbf r = X\mathbf w-\mathbf y$ ($N\times1$). Then $L=\mathbf r^\top\mathbf r$, $dL = 2\mathbf r^\top d\mathbf r = 2\mathbf r^\top X\,d\mathbf w$, so $\nabla_{\mathbf w}L = 2X^\top\mathbf r$ ($d\times1$ ✓ same shape as $\mathbf w$). Setting it to 0 gives the <strong>normal equations</strong> $X^\top X\mathbf w = X^\top\mathbf y$.
+<em>Numbers:</em> points $(0,1),(1,2),(2,2)$ with a bias column: $X$ has rows $(1,0),(1,1),(1,2)$ and $\mathbf y=(1,2,2)^\top$. Then $X^\top X$ has rows $(3,3),(3,5)$ and $X^\top\mathbf y=(5,6)^\top$, so $\mathbf w=(7/6,\ 1/2)$: the line $\hat y = 1.167 + 0.5x$.</p>
+<p><strong>2 · Why $\eta &lt; 2/\lambda_{\max}$.</strong> On $f(x)=\tfrac a2x^2$, GD gives $x_{t+1}=x_t-\eta a x_t=(1-\eta a)x_t$. This shrinks iff $|1-\eta a|&lt;1 \iff 0&lt;\eta&lt;2/a$. For $\eta a\in(1,2)$ it converges while <strong>oscillating</strong> (sign flips), and for $\eta a&gt;2$ it blows up. A quadratic in $d$ dimensions decouples along the eigenvectors of $H$, so the steepest direction ($\lambda_{\max}$) limits $\eta$, and the flattest ($\lambda_{\min}$) then converges at rate $1-\eta\lambda_{\min} \approx 1-2/\kappa$. That's why ill-conditioning is slow.</p>
+<p><strong>3 · MSE is Gaussian MLE.</strong> Model $y_i = f_\theta(x_i)+\varepsilon_i$, $\varepsilon_i\sim\mathcal N(0,\sigma^2)$. Then
+$-\log p(\mathbf y\mid X,\theta) = \sum_i \frac{(y_i-f_\theta(x_i))^2}{2\sigma^2} + \frac N2\log(2\pi\sigma^2)$.
+The second term doesn't depend on $\theta$, so maximizing likelihood = minimizing $\sum_i (y_i-f_\theta(x_i))^2$. Special case $f_\theta=\mu$: $\frac{d}{d\mu}=0$ gives $\hat\mu=\bar y$, the sample mean.</p>
+<p><strong>4 · $D_{KL}\ge 0$ (Gibbs' inequality).</strong> $-D_{KL}(p\|q)=\sum_x p(x)\log\frac{q(x)}{p(x)} \le \log\sum_x p(x)\frac{q(x)}{p(x)} = \log\sum_x q(x) \le \log 1 = 0$, by Jensen ($\log$ is concave). Equality iff $p=q$.</p>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>Give $\nabla_{\mathbf w}$ of the ridge loss $\|X\mathbf w-\mathbf y\|^2+\lambda\|\mathbf w\|^2$ and its minimizer.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$2X^\top(X\mathbf w-\mathbf y)+2\lambda\mathbf w = 0 \Rightarrow \mathbf w^*=(X^\top X+\lambda I)^{-1}X^\top\mathbf y$. The $+\lambda I$ makes the matrix invertible even when $X^\top X$ is singular, and improves its condition number.</p>
+</details>
+<ol start="2">
+<li>GD on $f(x,y)=x^2+10y^2$. What is the largest stable $\eta$? Roughly how many steps does the $x$-coordinate need to shrink by $e^{-1}$ at $\eta=0.09$?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$H=\mathrm{diag}(2,20)$, so $\eta&lt;2/20=0.1$. Along $x$: factor $1-0.09\cdot2=0.82$ per step, and $0.82^t=e^{-1}$ at $t=1/(-\ln 0.82)\approx5$ steps. Along $y$: factor $1-1.8=-0.8$, which oscillates but converges.</p>
+</details>
+<ol start="3">
+<li>Compute $D_{KL}(p\|q)$ and $D_{KL}(q\|p)$ for $p=\text{Bernoulli}(0.5)$, $q=\text{Bernoulli}(0.9)$ (natural log).</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$D_{KL}(p\|q)=0.5\ln\frac{0.5}{0.9}+0.5\ln\frac{0.5}{0.1}\approx 0.511$ nats. $D_{KL}(q\|p)=0.9\ln\frac{0.9}{0.5}+0.1\ln\frac{0.1}{0.5}\approx 0.368$ nats. Different, so KL is <strong>not</strong> symmetric (and not a distance).</p>
+</details>
+<ol start="4">
+<li>Show that $\mathrm{softmax}(\mathbf z+c\mathbf 1)=\mathrm{softmax}(\mathbf z)$. Why does every library compute softmax as $e^{z_i-\max_j z_j}/\sum_j e^{z_j-\max_j z_j}$?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$e^{z_i+c}/\sum_j e^{z_j+c} = e^c e^{z_i}/(e^c\sum_j e^{z_j})$. Subtracting the max makes every exponent $\le 0$, so nothing overflows (e.g. $e^{1000}$ = inf in float32), and the result is unchanged.</p>
+</details>
+<ol start="5">
+<li>MAP with prior $\mathbf w\sim\mathcal N(0,\tau^2 I)$ and Gaussian noise $\sigma^2$: which loss do you minimize?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$-\log p(\mathbf w\mid D) = \frac1{2\sigma^2}\|X\mathbf w-\mathbf y\|^2 + \frac1{2\tau^2}\|\mathbf w\|^2 + \text{const}$: ridge regression with $\lambda=\sigma^2/\tau^2$. A tighter prior (small $\tau$) means stronger weight decay.</p>
+</details>
+<ol start="6">
+<li>A matrix has singular values 10 and 0.01. What is its condition number, and what does it do to the unit circle?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\kappa=1000$. The circle becomes a very thin ellipse (semi-axes 10 and 0.01). Solving $A\mathbf x=\mathbf b$ can amplify relative errors in $\mathbf b$ by up to 1000×, and GD on $\|A\mathbf x-\mathbf b\|^2$ (Hessian condition number $\kappa^2=10^6$) crawls.</p>
+</details>
+<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://mml-book.github.io/" target="_blank" rel="noopener">Mathematics for Machine Learning</a></strong>, Deisenroth, Faisal &amp; Ong (free PDF). Read ch. 2–7 <em>selectively</em>. Skim what you know.</li>
+<li>⭐ <strong><a href="https://explained.ai/matrix-calculus/" target="_blank" rel="noopener">The Matrix Calculus You Need for Deep Learning</a></strong>, Parr &amp; Howard. A short article that's essential.</li>
+<li><strong><a href="https://www.3blue1brown.com/topics/linear-algebra" target="_blank" rel="noopener">3Blue1Brown: Essence of Linear Algebra</a></strong>: watch it once for geometric intuition (~3 h).</li>
+<li>Optional depth: <a href="https://ocw.mit.edu/courses/18-06sc-linear-algebra-fall-2011/" target="_blank" rel="noopener">MIT 18.06 (Strang)</a>, <a href="https://projects.iq.harvard.edu/stat110" target="_blank" rel="noopener">Harvard Stat 110 (Blitzstein)</a>, <a href="https://ocw.mit.edu/courses/18-s096-matrix-calculus-for-machine-learning-and-beyond-january-iap-2023/" target="_blank" rel="noopener">MIT 18.S096 Matrix Calculus for ML</a>.</li>
+</ul>
+<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<ol>
+<li>Derive $\nabla_{\mathbf w}$ for linear regression by hand. Then check it numerically with <strong>finite differences</strong> $\frac{f(w+h)-f(w-h)}{2h}$ in NumPy.</li>
+<li>Write PCA with <code>np.linalg.svd</code> on a toy 2D dataset and plot the principal axes.</li>
+<li>Simulate GD on $f(x,y)=x^2+10y^2$ with different $\eta$. Watch the oscillation and divergence, and relate it to the condition number.</li>
+</ol>
+<h2 id="traps">Traps<a class="anchor" href="#traps" title="Link to this section">#</a></h2>
+<ul>
+<li>Memorizing formulas without checking shapes → derive with shapes, then verify numerically.</li>
+<li>Confusing eigenvectors with singular vectors. They coincide only for symmetric positive semi-definite matrices.</li>
+<li>Treating KL as a distance. It's asymmetric, and $D_{KL}(p\|q)=\infty$ whenever $q=0$ somewhere $p&gt;0$.</li>
+<li>Computing $\log(\mathrm{softmax})$ in two steps. Use a fused log-softmax / log-sum-exp for stability.</li>
+<li>Over-studying math up front. Learn the rest <strong>just in time</strong> when a later module needs it.</li>
+</ul>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> Every skip-test item is answerable · <input type="checkbox"> gradient check passes to ~1e-6 relative error</li>
+</ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/index.html"><small>← Previous</small>Overview</a><a class="pn next" href="../deep-learning/02-python-numpy-tools.html"><small>Next →</small>Python, NumPy &amp; Tools</a></nav></main>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a><ul><li><a href="#linear-algebra-geometry-first">Linear algebra (geometry first)</a></li><li><a href="#calculus-matrix-calculus">Calculus → matrix calculus</a></li><li><a href="#optimization">Optimization</a></li><li><a href="#probability-statistics">Probability &amp; statistics</a></li><li><a href="#information-theory">Information theory</a></li></ul></li><li><a href="#worked-examples">Worked examples</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
+</div>
+</body>
+</html>
