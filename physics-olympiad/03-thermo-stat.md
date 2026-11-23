@@ -21,6 +21,7 @@
 ## Learn from
 - ⭐ **[Kalda: Thermodynamics study guide](https://www.ioc.ee/~kalda/ipho/)** + Kevin Zhou's thermodynamics (**T**) handouts.
 - **An Introduction to Thermal Physics, Daniel Schroeder** 💲: excellent and readable (ch. 1–4, 6).
+- 👉 Interactive: [Kinetic gas lab](interactive/gas.html). Watch Maxwell–Boltzmann emerge from equal speeds, and measure pressure and mean free path.
 - **Fundamentals of Physics, Halliday/Resnick/Walker** 💲: the basics, if you need them.
 
 ## Build
