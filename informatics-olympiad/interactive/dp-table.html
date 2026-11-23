@@ -51,7 +51,10 @@ function inputsHTML() {
 function setup() {
   playing = false; $("play").textContent = "▶ Play"; $("rec").textContent = REC[mode]; $("now").textContent = "Press Play or Step."; $("result").innerHTML = "";
   if (mode === "knap") {
-    const wt = $("w").value.split(",").map(Number).filter((x) => x > 0).slice(0, 8), va = $("v").value.split(",").map(Number).slice(0, wt.length);
+    // parse weights and values as pairs, so dropping a bad weight never shifts the values
+    const ws = $("w").value.split(",").map((x) => Number(x.trim())), vs = $("v").value.split(",").map((x) => Number(x.trim()));
+    const pairs = ws.map((w, k) => [w, vs[k]]).filter(([w, v]) => Number.isInteger(w) && w > 0 && Number.isFinite(v)).slice(0, 8);
+    const wt = pairs.map((q) => q[0]), va = pairs.map((q) => q[1]);
     const W = Math.max(1, Math.min(20, +$("cap").value));
     M = { kind: "knap", wt, va, W, rows: wt.length + 1, cols: W + 1, dp: [], dep: {} };
   } else {
