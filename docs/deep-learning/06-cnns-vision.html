@@ -252,6 +252,10 @@ $$n_{out} = \Big\lfloor\frac{n+2p-k}{s}\Big\rfloor+1 \qquad \#\text{params} = C_
 <p>$$\mathbf y = \mathrm{ReLU}\big(\mathbf x + F(\mathbf x)\big),\qquad F = \text{conv-BN-ReLU-conv-BN}$$
 Before ResNet, <em>adding</em> layers to a deep plain net made even the <strong>training</strong> error worse: optimization, not overfitting, was the problem. With the skip, a block can represent the identity trivially (set $F=0$), and gradients reach early layers through the "+" unchanged. <strong>The most important architecture idea in DL</strong>: transformers use the same trick (module 08).</p>
 </div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/norm-explorer.html">Normalization Explorer</a></div>
+<p>Every ResNet block uses BatchNorm. Highlight which numbers in a $(N, C, H, W)$ batch it averages over, and compare with LayerNorm and GroupNorm.</p>
+</div>
 <div class="box box-def">
 <div class="box-title"><span class="box-ico">📖</span> Definition · 1×1 convolutions and depthwise-separable convolutions</div>
 <p>A <strong>1×1 conv</strong> mixes channels at each pixel without looking at neighbours: a cheap way to change the channel count. A <strong>depthwise-separable</strong> conv splits a normal conv into a per-channel $k\times k$ conv (spatial) followed by a 1×1 conv (channels), cutting cost by roughly a factor of $k^2$. MobileNet and EfficientNet are built from them.</p>
@@ -308,6 +312,10 @@ How much a predicted box overlaps the true box (1 = perfect). A detection usuall
 <div class="box box-def">
 <div class="box-title"><span class="box-ico">📖</span> Definition · Vision foundation models</div>
 <p>Large pretrained models you can download and reuse: <strong>CLIP</strong> (images and text in a shared embedding space; zero-shot classification by comparing an image to text prompts), <strong>DINOv2</strong> (self-supervised features that work well for almost any task), <strong>SAM</strong> (segmentation). Get them from <code>timm</code> or Hugging Face.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>06 CNN</strong> deck and drill this chapter's key facts with spaced repetition, then do the practice questions below.</p>
 </div>
 <h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
 <ol>

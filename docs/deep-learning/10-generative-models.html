@@ -111,11 +111,22 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Generative Models</span></nav><article class="doc"><h1 id="10-generative-models">10 · Generative Models<a class="anchor" href="#10-generative-models" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 10</span><span>⏱ 3 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/10-generative-models.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Generative Models</span></nav><article class="doc"><h1 id="10-generative-models">10 · Generative Models<a class="anchor" href="#10-generative-models" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 10</span><span>⏱ 8 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/10-generative-models.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> learn the four big ideas for modeling $p(x)$: autoregressive, VAE, GAN, diffusion/flow. · <strong>Time:</strong> 25–35 h · <strong>Needs:</strong> 01, 05</p>
 </blockquote>
 <p>🔭 This module is where physics pays off most: diffusion is Langevin dynamics, score matching is about gradients of log-densities, flow matching moves probability mass by ODEs (continuity equation), and energy-based models are Boltzmann distributions.</p>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>compare the four families of generative models and say when each is used;</li>
+<li>derive the <strong>ELBO</strong>, explain the <strong>reparameterization trick</strong>, and train a VAE;</li>
+<li>write the <strong>GAN</strong> objective and explain mode collapse;</li>
+<li>explain <strong>diffusion models</strong> in both the noise-prediction and the score/SDE views, including classifier-free guidance and latent diffusion;</li>
+<li>explain <strong>flow matching</strong>, the current state of the art, in one paragraph.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Derive the <strong>ELBO</strong>: $\log p(x) \ge \mathbb E_{q(z|x)}[\log p(x|z)] - D_{KL}(q(z|x)\,\|\,p(z))$.</li>
@@ -125,8 +136,10 @@
 <li class="task"><input type="checkbox"> Explain classifier-free guidance.</li>
 <li class="task"><input type="checkbox"> Explain the idea of flow matching / rectified flow in one paragraph.</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
-<h3 id="the-landscape">The landscape<a class="anchor" href="#the-landscape" title="Link to this section">#</a></h3>
+<h2 id="1-what-a-generative-model-does">1 · What a generative model does<a class="anchor" href="#1-what-a-generative-model-does" title="Link to this section">#</a></h2>
+<p>A classifier learns $p(y\mid x)$. A <strong>generative model</strong> learns the data distribution $p(x)$ itself, so it can produce <strong>new samples</strong> that look like the training data (images, audio, text, molecules), and sometimes evaluate how likely a sample is.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · The four families</div>
 <div class="table-wrap"><table>
 <thead>
 <tr>
@@ -140,17 +153,17 @@
 <tbody>
 <tr>
 <td><strong>Autoregressive</strong></td>
-<td>$p(x)=\prod p(x_t\mid x_{&lt;t})$</td>
+<td>$p(x)=\prod_t p(x_t\mid x_{&lt;t})$</td>
 <td>exact likelihood, simple</td>
 <td>slow sequential sampling</td>
 <td>GPT, audio LMs</td>
 </tr>
 <tr>
 <td><strong>VAE</strong></td>
-<td>latent $z$, maximize ELBO</td>
+<td>latent $z$, maximize the ELBO</td>
 <td>fast, smooth latent space</td>
 <td>blurry samples</td>
-<td>latent space for Stable Diffusion</td>
+<td>the latent space of Stable Diffusion</td>
 </tr>
 <tr>
 <td><strong>GAN</strong></td>
@@ -168,49 +181,168 @@
 </tr>
 </tbody>
 </table></div>
-<h3 id="autoencoders-vaes">Autoencoders &amp; VAEs<a class="anchor" href="#autoencoders-vaes" title="Link to this section">#</a></h3>
+<p>Autoregressive models were covered in modules 07–09. This chapter covers the other three.</p>
+</div>
+<h2 id="2-autoencoders-and-vaes">2 · Autoencoders and VAEs<a class="anchor" href="#2-autoencoders-and-vaes" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Autoencoder</div>
+<p>An <strong>encoder</strong> compresses $x$ into a small code $z$ (the <strong>bottleneck</strong>); a <strong>decoder</strong> reconstructs $\hat x$ from $z$; train on reconstruction error. It learns compression, but it isn't a generative model: random codes $z$ decode to garbage, because nothing organizes the code space.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Variational autoencoder (VAE)</div>
+<p>Make the code space a probability distribution:</p>
 <ul>
-<li><strong>Autoencoder:</strong> encoder → bottleneck $z$ → decoder, trained to reconstruct. It compresses, but it isn't a generative model.</li>
-<li><strong>VAE:</strong> encoder outputs $q_\phi(z\mid x) = \mathcal N(\mu,\sigma^2)$, prior $p(z)=\mathcal N(0,I)$.<ul>
-<li>Loss = −ELBO = reconstruction + KL. <strong>Reparameterize</strong> $z = \mu + \sigma\odot\epsilon,\ \epsilon\sim\mathcal N(0,I)$ so gradients flow through the sampling step.</li>
-<li>🔭 The ELBO is the (negative) <strong>variational free energy</strong> from statistical mechanics.</li>
+<li><strong>prior</strong> $p(z)=\mathcal N(0,I)$: how we'll sample new codes;</li>
+<li><strong>encoder</strong> $q_\phi(z\mid x) = \mathcal N(\boldsymbol\mu_\phi(x),\ \mathrm{diag}\,\boldsymbol\sigma^2_\phi(x))$: a fuzzy region of code space for each input;</li>
+<li><strong>decoder</strong> $p_\theta(x\mid z)$: turns a code into data.</li>
 </ul>
-</li>
-</ul>
-<h3 id="gans">GANs<a class="anchor" href="#gans" title="Link to this section">#</a></h3>
-<ul>
-<li>$\min_G\max_D\ \mathbb E[\log D(x)] + \mathbb E[\log(1 - D(G(z)))]$, a two-player game.</li>
-<li>Problems: unstable training, <strong>mode collapse</strong>. Fixes: WGAN (Wasserstein distance), spectral norm, StyleGAN tricks. Mostly displaced by diffusion, but the ideas live on (adversarial losses in VAE decoders, distillation).</li>
-</ul>
-<h3 id="diffusion-models-ddpm">Diffusion models (DDPM)<a class="anchor" href="#diffusion-models-ddpm" title="Link to this section">#</a></h3>
-<ul>
-<li><strong>Forward:</strong> gradually add Gaussian noise, $q(x_t\mid x_0) = \mathcal N(\sqrt{\bar\alpha_t}\,x_0,\ (1-\bar\alpha_t)I)$. So $x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,\epsilon$.</li>
-<li><strong>Train:</strong> a network $\epsilon_\theta(x_t, t)$ predicts the noise. Loss $\|\epsilon - \epsilon_\theta(x_t,t)\|^2$. <strong>Literally an MSE regression.</strong></li>
-<li><strong>Sample:</strong> start from pure noise and denoise step by step.</li>
-<li><strong>Score view:</strong> $\epsilon_\theta \propto -\nabla_x \log p_t(x)$ (the <strong>score</strong>). Sampling = <strong>Langevin dynamics</strong> / a reverse-time SDE (Song et al.). 🔭 Fokker–Planck, Brownian motion.</li>
-<li><strong>Speedups:</strong> DDIM (deterministic ODE sampling, fewer steps), consistency models, distillation.</li>
-<li><strong>Conditioning:</strong> text via cross-attention (CLIP/T5 embeddings). <strong>Classifier-free guidance:</strong> $\hat\epsilon = \epsilon_{uncond} + w(\epsilon_{cond} - \epsilon_{uncond})$.</li>
-<li><strong>Latent diffusion (Stable Diffusion):</strong> diffuse in a VAE's latent space → much cheaper. Backbone: U-Net → <strong>Diffusion Transformer (DiT)</strong> in modern models.</li>
-</ul>
-<h3 id="flow-matching-rectified-flow-current-state-of-the-art">Flow matching / rectified flow (current state of the art)<a class="anchor" href="#flow-matching-rectified-flow-current-state-of-the-art" title="Link to this section">#</a></h3>
-<ul>
-<li>Learn a velocity field $v_\theta(x,t)$ whose ODE $\dot x = v_\theta$ carries noise to data along (nearly) straight paths. With $x_0$ = noise and $x_1$ = data, interpolate linearly $x_t = (1-t)x_0 + t x_1$ and regress $v_\theta(x_t,t)$ onto $x_1 - x_0$. That's again a plain MSE.</li>
-<li>🔭 A continuity equation $\partial_t p + \nabla\cdot(p v) = 0$ is transporting probability mass. Used in Stable Diffusion 3, Flux, and many video models.</li>
-</ul>
-<h3 id="also-know">Also know<a class="anchor" href="#also-know" title="Link to this section">#</a></h3>
-<ul>
-<li><strong>Normalizing flows:</strong> invertible maps with exact likelihood via the change of variables $\log p(x) = \log p(z) + \log|\det \partial z/\partial x|$.</li>
-<li><strong>Energy-based models:</strong> $p(x) \propto e^{-E(x)}$ (🔭 Boltzmann). Hard to normalize, sampled with MCMC.</li>
-</ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
-<ul>
-<li>⭐ <strong><a href="https://udlbook.github.io/udlbook/" target="_blank" rel="noopener">Understanding Deep Learning (Prince)</a></strong> ch. 14–18 (unsupervised, GANs, flows, VAEs, diffusion). The clearest unified treatment, with notebooks.</li>
-<li>⭐ <strong><a href="https://diffusion.csail.mit.edu/" target="_blank" rel="noopener">MIT 6.S184: Introduction to Flow Matching and Diffusion Models</a></strong>: lecture notes + labs. Built on SDEs/ODEs, perfect for a physics mind.</li>
-<li><strong>Lilian Weng:</strong> <a href="https://lilianweng.github.io/posts/2021-07-11-diffusion-models/" target="_blank" rel="noopener">What are Diffusion Models?</a> · <a href="https://lilianweng.github.io/posts/2018-08-12-vae/" target="_blank" rel="noopener">From Autoencoder to Beta-VAE</a> · <a href="https://lilianweng.github.io/posts/2017-08-20-gan/" target="_blank" rel="noopener">From GAN to WGAN</a>.</li>
-<li><strong><a href="https://yang-song.net/blog/2021/score/" target="_blank" rel="noopener">Yang Song: Generative Modeling by Estimating Gradients of the Data Distribution</a></strong>: the score/SDE view.</li>
-<li><strong><a href="https://github.com/huggingface/diffusion-models-class" target="_blank" rel="noopener">Hugging Face Diffusion Models Course</a></strong> + the <code>diffusers</code> library.</li>
-<li>Papers: <a href="https://arxiv.org/abs/1312.6114" target="_blank" rel="noopener">VAE</a> · <a href="https://arxiv.org/abs/1406.2661" target="_blank" rel="noopener">GAN</a> · <a href="https://arxiv.org/abs/2006.11239" target="_blank" rel="noopener">DDPM</a> · <a href="https://arxiv.org/abs/2011.13456" target="_blank" rel="noopener">Score SDE</a> · <a href="https://arxiv.org/abs/2112.10752" target="_blank" rel="noopener">Latent Diffusion</a> · <a href="https://arxiv.org/abs/2207.12598" target="_blank" rel="noopener">CFG</a> · <a href="https://arxiv.org/abs/2212.09748" target="_blank" rel="noopener">DiT</a> · <a href="https://arxiv.org/abs/2210.02747" target="_blank" rel="noopener">Flow Matching</a>.</li>
-</ul>
+<p>To generate, sample $z\sim\mathcal N(0,I)$ and decode.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · The ELBO (evidence lower bound)</div>
+<p>$$\log p_\theta(x) \;\ge\; \underbrace{\mathbb E_{q_\phi(z\mid x)}\big[\log p_\theta(x\mid z)\big]}_{\text{reconstruction}} \;-\; \underbrace{D_{KL}\big(q_\phi(z\mid x)\,\|\,p(z)\big)}_{\text{stay close to the prior}}$$
+Maximize the right-hand side over $\theta$ and $\phi$. The loss is −ELBO = reconstruction error + KL penalty.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Deriving the ELBO</div>
+<p>$\log p(x) = \log\int p(x,z)\,dz = \log\mathbb E_{q(z\mid x)}\Big[\frac{p(x,z)}{q(z\mid x)}\Big] \ge \mathbb E_{q}\Big[\log\frac{p(x\mid z)\,p(z)}{q(z\mid x)}\Big]$ by Jensen's inequality ($\log$ is concave) $= \mathbb E_q[\log p(x\mid z)] - D_{KL}(q(z\mid x)\,\|\,p(z))$. The gap is exactly $D_{KL}(q(z\mid x)\,\|\,p(z\mid x))$, so the bound is tight when the encoder matches the true posterior.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · KL between Gaussians (closed form)</div>
+<p>For one latent dimension:
+$$D_{KL}\big(\mathcal N(\mu,\sigma^2)\,\|\,\mathcal N(0,1)\big) = \tfrac12\big(\mu^2+\sigma^2-1-\log\sigma^2\big)$$
+Sum over dimensions. It is 0 only when $\mu=0,\sigma=1$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Reparameterization trick</div>
+<p>We need gradients of $\mathbb E_{z\sim q_\phi}[\cdot]$ with respect to $\phi$, but you can't backpropagate through "draw a random sample". Rewrite the sample as a deterministic function of the parameters plus independent noise:
+$$z = \boldsymbol\mu_\phi(x) + \boldsymbol\sigma_\phi(x)\odot\boldsymbol\epsilon,\qquad\boldsymbol\epsilon\sim\mathcal N(0,I)$$
+Now the randomness sits in $\boldsymbol\epsilon$, and gradients flow through $\boldsymbol\mu$ and $\boldsymbol\sigma$ normally.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">🔭</span> Intuition · Physics view</div>
+<p>The negative ELBO is the <strong>variational free energy</strong> of statistical mechanics: an "energy" term (reconstruction) minus an "entropy" term, minimized over a family of trial distributions.</p>
+</div>
+<h2 id="3-gans">3 · GANs<a class="anchor" href="#3-gans" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · The GAN game</div>
+<p>A <strong>generator</strong> $G$ turns noise $z$ into fake samples; a <strong>discriminator</strong> $D$ outputs the probability that its input is real. They play
+$$\min_G\max_D\ \mathbb E_{x\sim p_{\text{data}}}[\log D(x)] + \mathbb E_{z\sim p(z)}[\log(1-D(G(z)))]$$
+For a fixed $G$, the best discriminator is $D^*(x)=\frac{p_{\text{data}}(x)}{p_{\text{data}}(x)+p_G(x)}$, and the generator's objective then becomes (up to constants) the Jensen–Shannon divergence between $p_{\text{data}}$ and $p_G$.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Mode collapse and instability</div>
+<p>The generator can "win" by producing only a few kinds of convincing samples (<strong>mode collapse</strong>: e.g. only one digit). Training is a moving target for both players and can oscillate or diverge. Fixes: Wasserstein GANs (WGAN), spectral normalization, careful architectures (StyleGAN). GANs are mostly displaced by diffusion, but adversarial losses live on (sharper VAE decoders, distilling diffusion models into one-step generators).</p>
+</div>
+<h2 id="4-diffusion-models">4 · Diffusion models<a class="anchor" href="#4-diffusion-models" title="Link to this section">#</a></h2>
+<p>Idea: destroying data by adding noise is easy. <strong>Learn to undo it</strong>, one small step at a time. Then start from pure noise and run the undo process to create new data.</p>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Forward (noising) process</div>
+<p>Over $t=1..T$ (e.g. $T=1000$) add a little Gaussian noise with variance $\beta_t$. With $\alpha_t=1-\beta_t$ and $\bar\alpha_t=\prod_{s\le t}\alpha_s$, you can jump straight to any step:
+$$q(x_t\mid x_0) = \mathcal N\big(\sqrt{\bar\alpha_t}\,x_0,\ (1-\bar\alpha_t)I\big)\quad\Longleftrightarrow\quad x_t = \sqrt{\bar\alpha_t}\,x_0 + \sqrt{1-\bar\alpha_t}\,\boldsymbol\epsilon,\ \ \boldsymbol\epsilon\sim\mathcal N(0,I)$$
+As $t\to T$, $\bar\alpha_t\to0$ and $x_T$ is pure noise.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Training (DDPM)</div>
+<p>Pick a random image $x_0$, a random step $t$ and random noise $\boldsymbol\epsilon$; build $x_t$; train a network to <strong>predict the noise</strong>:
+$$\mathcal L = \big\|\boldsymbol\epsilon - \boldsymbol\epsilon_\theta(x_t, t)\big\|^2$$
+<strong>Literally an MSE regression.</strong> That simplicity and stability is why diffusion overtook GANs.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Sampling</div>
+<p>Start from $x_T\sim\mathcal N(0,I)$ and step backwards:
+$$x_{t-1} = \frac{1}{\sqrt{\alpha_t}}\Big(x_t - \frac{\beta_t}{\sqrt{1-\bar\alpha_t}}\,\boldsymbol\epsilon_\theta(x_t,t)\Big) + \sigma_t\,\mathbf z,\qquad \mathbf z\sim\mathcal N(0,I)$$
+Each step removes a little predicted noise and adds back a little fresh noise. Many steps (hundreds) are needed in the original form.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · The score view</div>
+<p>The <strong>score</strong> of a distribution is $\nabla_x\log p(x)$: the direction in which the data becomes more likely. The noise predictor is a scaled score estimate, $\boldsymbol\epsilon_\theta(x_t,t)\approx-\sqrt{1-\bar\alpha_t}\,\nabla_x\log p_t(x_t)$. Sampling then looks like <strong>Langevin dynamics</strong> (follow the score uphill plus noise) and can be written as a reverse-time stochastic differential equation (Song et al., 2021).</p>
+<p>🔭 Brownian motion forwards, a drift toward the data backwards; the densities evolve by a Fokker–Planck equation.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Faster sampling</div>
+<p><strong>DDIM</strong> turns sampling into a deterministic ODE that works with far fewer steps (e.g. 20–50). <strong>Distillation</strong> and <strong>consistency models</strong> train a student to jump in one to a few steps.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Classifier-free guidance (CFG)</div>
+<p>Train one network both with the condition $c$ (e.g. a text prompt) and without it (by randomly dropping $c$). At sampling time, extrapolate away from the unconditional prediction:
+$$\hat{\boldsymbol\epsilon} = \boldsymbol\epsilon_\theta(x_t,\varnothing) + w\big(\boldsymbol\epsilon_\theta(x_t,c)-\boldsymbol\epsilon_\theta(x_t,\varnothing)\big)$$
+$w=1$ is plain conditioning; $w&gt;1$ (e.g. 3–8) follows the prompt more closely at the cost of diversity.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Latent diffusion and DiT</div>
+<p>Running diffusion on full-resolution pixels is expensive. <strong>Latent diffusion</strong> (Stable Diffusion) first compresses images with a VAE (e.g. 512×512×3 → 64×64×4) and runs diffusion in that latent space; the VAE decoder turns the result back into pixels. Text conditions the denoiser through cross-attention on text-encoder embeddings (CLIP/T5). The denoiser was a U-Net (module 06); modern models use a <strong>Diffusion Transformer (DiT)</strong>.</p>
+</div>
+<figure class="video" data-yt="iv-5mZ_9CPY" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/iv-5mZ_9CPY/hqdefault.jpg)" aria-label="Play video: But how do AI images and videos actually work?"><span class="video-btn">▶</span><span class="video-label">But how do AI images and videos actually work?</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=iv-5mZ_9CPY" target="_blank" rel="noopener">But how do AI images and videos actually work?</a> · Welch Labs on 3Blue1Brown · 37 min <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="5-flow-matching-current-state-of-the-art">5 · Flow matching (current state of the art)<a class="anchor" href="#5-flow-matching-current-state-of-the-art" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Flow matching / rectified flow</div>
+<p>Learn a velocity field $v_\theta(x,t)$ so that following the ODE $\dot x = v_\theta(x,t)$ from $t=0$ to $1$ carries noise to data. Training is again a plain regression: take noise $x_0$, data $x_1$, a random $t$, the straight-line point $x_t = (1-t)\,x_0 + t\,x_1$, and minimize
+$$\mathcal L = \big\|v_\theta(x_t,t) - (x_1 - x_0)\big\|^2$$
+Paths are close to straight, so sampling needs few steps. Used in Stable Diffusion 3, Flux and many video models.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">🔭</span> Intuition · Physics view</div>
+<p>The density moves by a continuity equation, $\partial_t p + \nabla\cdot(p\,v)=0$: the network learns the velocity field that transports probability mass from the noise distribution to the data distribution.</p>
+</div>
+<h2 id="6-also-know">6 · Also know<a class="anchor" href="#6-also-know" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Normalizing flows</div>
+<p>Build $x = f(z)$ from a stack of <strong>invertible</strong> layers with easy Jacobian determinants. Then the exact likelihood follows from the change-of-variables formula:
+$$\log p(x) = \log p(z) + \log\Big|\det\frac{\partial z}{\partial x}\Big|,\qquad z=f^{-1}(x)$$</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Energy-based models</div>
+<p>$p(x) = e^{-E_\theta(x)}/Z$ with a learned energy $E_\theta$ (🔭 a Boltzmann distribution). Very flexible, but the normalizer $Z$ is intractable, so training and sampling rely on MCMC or score-based tricks.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>10 GenAI</strong> deck and drill this chapter's key facts with spaced repetition, then do the practice questions below.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>Compute $D_{KL}(\mathcal N(1, 0.5^2)\,\|\,\mathcal N(0,1))$ in one dimension.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\tfrac12(1+0.25-1-\ln0.25)=\tfrac12(0.25+1.386)\approx0.82$ nats.</p>
+</details>
+<ol start="2">
+<li>Why can't you just backpropagate through <code>z = torch.normal(mu, sigma)</code>, and how does the reparameterization fix it?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Sampling is not a differentiable function of <code>mu</code> and <code>sigma</code> (the gradient of a random draw is undefined). Writing <code>z = mu + sigma * eps</code> with <code>eps = torch.randn_like(mu)</code> makes <code>z</code> a smooth function of the parameters, and the randomness comes from an input that needs no gradient.</p>
+</details>
+<ol start="3">
+<li>With $\bar\alpha_t=0.25$, write $x_t$ in terms of $x_0$ and $\boldsymbol\epsilon$. How much of the signal is left?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$x_t=0.5\,x_0+\sqrt{0.75}\,\boldsymbol\epsilon\approx0.5\,x_0+0.866\,\boldsymbol\epsilon$. Half the amplitude (a quarter of the variance) of the original image remains.</p>
+</details>
+<ol start="4">
+<li>At the GAN optimum, $p_G=p_{\text{data}}$. What does the optimal discriminator output?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$D^*(x)=\frac{p}{p+p}=\tfrac12$ everywhere: it can't tell real from fake.</p>
+</details>
+<ol start="5">
+<li>CFG with $w=3$: the unconditional prediction is $0.2$ and the conditional one $0.5$ (one coordinate). What is the guided prediction?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$0.2+3(0.5-0.2)=1.1$: pushed well past the conditional prediction, in the direction the prompt points.</p>
+</details>
+<ol start="6">
+<li>In flow matching with $x_0=(0,0)$ (noise) and $x_1=(2,4)$ (data), what is $x_{0.25}$ and the regression target?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$x_{0.25}=0.75\,(0,0)+0.25\,(2,4)=(0.5,1)$; target $x_1-x_0=(2,4)$ (the same for every $t$ along this straight path).</p>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ol>
 <li><strong>VAE on MNIST:</strong> visualize the 2D latent space and interpolate between digits.</li>
@@ -219,11 +351,20 @@
 <li><strong>Flow matching on 2D toy data</strong> (e.g. moons → spiral), then on MNIST. Compare sampling steps with DDPM.</li>
 <li>Stretch: fine-tune Stable Diffusion with LoRA/DreamBooth on your own images using <code>diffusers</code>.</li>
 </ol>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://udlbook.github.io/udlbook/" target="_blank" rel="noopener">Understanding Deep Learning (Prince)</a></strong> ch. 14–18 (unsupervised, GANs, flows, VAEs, diffusion). The clearest unified treatment, with notebooks.</li>
+<li>⭐ <strong><a href="https://diffusion.csail.mit.edu/" target="_blank" rel="noopener">MIT 6.S184: Introduction to Flow Matching and Diffusion Models</a></strong>: lecture notes + labs. Built on SDEs/ODEs, perfect for a physics mind.</li>
+<li><strong>Lilian Weng:</strong> <a href="https://lilianweng.github.io/posts/2021-07-11-diffusion-models/" target="_blank" rel="noopener">What are Diffusion Models?</a> · <a href="https://lilianweng.github.io/posts/2018-08-12-vae/" target="_blank" rel="noopener">From Autoencoder to Beta-VAE</a> · <a href="https://lilianweng.github.io/posts/2017-08-20-gan/" target="_blank" rel="noopener">From GAN to WGAN</a>.</li>
+<li><strong><a href="https://yang-song.net/blog/2021/score/" target="_blank" rel="noopener">Yang Song: Generative Modeling by Estimating Gradients of the Data Distribution</a></strong>: the score/SDE view.</li>
+<li><strong><a href="https://github.com/huggingface/diffusion-models-class" target="_blank" rel="noopener">Hugging Face Diffusion Models Course</a></strong> + the <code>diffusers</code> library.</li>
+<li>Papers: <a href="https://arxiv.org/abs/1312.6114" target="_blank" rel="noopener">VAE</a> · <a href="https://arxiv.org/abs/1406.2661" target="_blank" rel="noopener">GAN</a> · <a href="https://arxiv.org/abs/2006.11239" target="_blank" rel="noopener">DDPM</a> · <a href="https://arxiv.org/abs/2011.13456" target="_blank" rel="noopener">Score SDE</a> · <a href="https://arxiv.org/abs/2112.10752" target="_blank" rel="noopener">Latent Diffusion</a> · <a href="https://arxiv.org/abs/2207.12598" target="_blank" rel="noopener">CFG</a> · <a href="https://arxiv.org/abs/2212.09748" target="_blank" rel="noopener">DiT</a> · <a href="https://arxiv.org/abs/2210.02747" target="_blank" rel="noopener">Flow Matching</a>.</li>
+</ul>
 <h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> ELBO derived on paper · <input type="checkbox"> your DDPM generates recognizable digits · <input type="checkbox"> you can explain diffusion in both the noise-prediction and the score/SDE views</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/09-llms.html"><small>← Previous</small>Large Language Models</a><a class="pn next" href="../deep-learning/11-reinforcement-learning.html"><small>Next →</small>Reinforcement Learning</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a><ul><li><a href="#the-landscape">The landscape</a></li><li><a href="#autoencoders-vaes">Autoencoders &amp; VAEs</a></li><li><a href="#gans">GANs</a></li><li><a href="#diffusion-models-ddpm">Diffusion models (DDPM)</a></li><li><a href="#flow-matching-rectified-flow-current-state-of-the-art">Flow matching / rectified flow (current state of the art)</a></li><li><a href="#also-know">Also know</a></li></ul></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-what-a-generative-model-does">1 · What a generative model does</a></li><li><a href="#2-autoencoders-and-vaes">2 · Autoencoders and VAEs</a></li><li><a href="#3-gans">3 · GANs</a></li><li><a href="#4-diffusion-models">4 · Diffusion models</a></li><li><a href="#5-flow-matching-current-state-of-the-art">5 · Flow matching (current state of the art)</a></li><li><a href="#6-also-know">6 · Also know</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

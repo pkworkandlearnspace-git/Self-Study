@@ -111,10 +111,22 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Large Language Models</span></nav><article class="doc"><h1 id="09-large-language-models">09 · Large Language Models<a class="anchor" href="#09-large-language-models" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 09</span><span>⏱ 4 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/09-llms.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Large Language Models</span></nav><article class="doc"><h1 id="09-large-language-models">09 · Large Language Models<a class="anchor" href="#09-large-language-models" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 09</span><span>⏱ 10 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/09-llms.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> understand the full LLM pipeline (data → pretraining → post-training → inference → evaluation) and be able to do each step at small scale. · <strong>Time:</strong> 25–40 h · <strong>Needs:</strong> 08</p>
 </blockquote>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>train a <strong>BPE tokenizer</strong> and explain the odd behaviours tokenization causes;</li>
+<li>explain pretraining, compute ($C\approx6ND$) and <strong>scaling laws</strong> (Chinchilla's ~20 tokens per parameter);</li>
+<li>walk through post-training: <strong>SFT → reward model → RLHF / DPO → RL for reasoning</strong>;</li>
+<li>fine-tune cheaply with <strong>LoRA / QLoRA</strong>;</li>
+<li>explain why inference is memory-bandwidth-bound, and the tricks that speed it up;</li>
+<li>choose between prompting, <strong>RAG</strong> and fine-tuning, and evaluate an LLM honestly.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Explain how BPE tokenization is trained, and give two LLM quirks it causes.</li>
@@ -125,58 +137,209 @@
 <li class="task"><input type="checkbox"> Explain RAG and when to use it instead of fine-tuning.</li>
 <li class="task"><input type="checkbox"> Explain why benchmark scores can mislead (contamination, saturation).</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
-<h3 id="data-tokenization">Data &amp; tokenization<a class="anchor" href="#data-tokenization" title="Link to this section">#</a></h3>
-<ul>
-<li><strong>BPE:</strong> start from bytes and repeatedly merge the most frequent adjacent pair → a vocabulary of ~32k–200k tokens.<ul>
-<li>Quirks: odd arithmetic (numbers split strangely), letter-counting failures, weaker non-English efficiency, and the space-before-word trick.</li>
-</ul>
-</li>
-<li><strong>Pretraining data:</strong> trillions of tokens of web text (filtered, deduplicated), code, books, math. <strong>Data quality &gt; data quantity</strong> (e.g. FineWeb-Edu).</li>
-</ul>
-<h3 id="pretraining">Pretraining<a class="anchor" href="#pretraining" title="Link to this section">#</a></h3>
-<ul>
-<li>Next-token cross-entropy on a decoder-only transformer. <strong>Loss in nats; perplexity</strong> $= e^{\text{loss}}$.</li>
-<li><strong>Scaling laws</strong> (Kaplan 2020, <strong>Chinchilla</strong> 2022): loss falls as a power law in parameters $N$, data $D$, and compute $C \approx 6ND$ FLOPs. Compute-optimal is about $D \approx 20N$ (modern models train far <em>past</em> this, because smaller models are cheaper to serve).</li>
-<li>🔭 Power laws, universality, and "emergence" debates resemble critical phenomena in statistical physics.</li>
-<li><strong>Architecture upgrades (Llama-style):</strong> RMSNorm, SwiGLU, RoPE, grouped-query attention (GQA), no biases. <strong>Mixture-of-Experts (MoE):</strong> each token activates only a few expert MLPs, so there are many params but cheap compute per token.</li>
-<li><strong>Systems:</strong> data/tensor/pipeline parallelism, FSDP/ZeRO, bf16, FlashAttention (see module 12).</li>
-</ul>
-<h3 id="post-training-turning-a-base-model-into-an-assistant">Post-training (turning a base model into an assistant)<a class="anchor" href="#post-training-turning-a-base-model-into-an-assistant" title="Link to this section">#</a></h3>
+<h2 id="1-tokenization">1 · Tokenization<a class="anchor" href="#1-tokenization" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Byte-pair encoding (BPE)</div>
+<p>A way to build a subword vocabulary from data:</p>
 <ol>
-<li><strong>SFT (supervised fine-tuning):</strong> train on (instruction, good response) pairs. Mostly teaches <em>format and behavior</em>.</li>
-<li><strong>Preference tuning:</strong><ul>
-<li><strong>RLHF:</strong> train a reward model on human comparisons → optimize the policy with <strong>PPO</strong> plus a KL penalty to the SFT model (see module 11).</li>
-<li><strong>DPO:</strong> optimizes preferences directly with a classification-style loss, no separate reward model or RL loop. Simpler, and very common.</li>
-</ul>
-</li>
-<li><strong>RL for reasoning:</strong> RL with <em>verifiable rewards</em> (math answers, unit tests) produces long chain-of-thought "thinking" models (e.g. GRPO, used by DeepSeek-R1). <strong>This is the research frontier.</strong>
-- <strong>Parameter-efficient fine-tuning:</strong> <strong>LoRA</strong> freezes $W$ and learns $W + BA$ with rank $r \ll d$ (≈0.1–1% of params). <strong>QLoRA</strong> = LoRA on a 4-bit-quantized base model, so it can run on a single consumer GPU.</li>
+<li>Start with the 256 possible <strong>bytes</strong> as tokens (so any text can be encoded).</li>
+<li>Count every pair of adjacent tokens in the training corpus.</li>
+<li><strong>Merge</strong> the most frequent pair into a new token and record the merge.</li>
+<li>Repeat until the vocabulary reaches the target size (~32k–200k tokens).</li>
 </ol>
-<h3 id="inference">Inference<a class="anchor" href="#inference" title="Link to this section">#</a></h3>
+<p>To encode new text, apply the recorded merges in order. Frequent words become single tokens; rare words split into pieces.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Two BPE merges</div>
+<p>Corpus: <code>low low low lower newest</code>. The most frequent adjacent pair is <code>l o</code> (4 times) → new token <code>lo</code>. Next, <code>lo w</code> (4 times) → <code>low</code>. Now "low" is one token, while "newest" is still split into smaller pieces.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Quirks caused by tokenization</div>
 <ul>
-<li><strong>Autoregressive decoding:</strong> one forward pass per token. The <strong>KV cache</strong> stores past keys and values so each step is $O(T)$, not $O(T^2)$.</li>
-<li>It's bottlenecked by <strong>memory bandwidth</strong> (reading the weights + cache each token), not FLOPs. Hence <strong>quantization</strong> (int8/int4), <strong>speculative decoding</strong>, batching (vLLM, PagedAttention).</li>
-<li><strong>Sampling:</strong> temperature, top-k, top-p (nucleus). Low $T$ = deterministic, high $T$ = creative.</li>
+<li><strong>Arithmetic and digits:</strong> numbers split into irregular chunks ("1234" might be "12" + "34"), making digit-level reasoning harder.</li>
+<li><strong>Spelling and letter counting:</strong> the model sees "strawberry" as a few tokens, not letters.</li>
+<li><strong>Other languages:</strong> text in languages under-represented in the tokenizer's training data costs more tokens per word (slower, more expensive, shorter effective context).</li>
+<li><strong>Spaces:</strong> "hello" and " hello" are different tokens.</li>
 </ul>
-<h3 id="using-extending-llms">Using &amp; extending LLMs<a class="anchor" href="#using-extending-llms" title="Link to this section">#</a></h3>
+</div>
+<figure class="video" data-yt="zduSFxRajkE" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/zduSFxRajkE/hqdefault.jpg)" aria-label="Play video: Let&#x27;s build the GPT Tokenizer"><span class="video-btn">▶</span><span class="video-label">Let&#x27;s build the GPT Tokenizer</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=zduSFxRajkE" target="_blank" rel="noopener">Let&#x27;s build the GPT Tokenizer</a> · Andrej Karpathy · 2 h 13 min <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="2-pretraining-and-scaling-laws">2 · Pretraining and scaling laws<a class="anchor" href="#2-pretraining-and-scaling-laws" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Pretraining</div>
+<p>Train a decoder-only transformer (module 08) with next-token cross-entropy on trillions of tokens of filtered and deduplicated web text, code, books and math. The result is a <strong>base model</strong>: it continues text, but it isn't yet a helpful assistant. <strong>Data quality matters more than data quantity</strong> (e.g. FineWeb-Edu keeps the most "educational" web pages).</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Training compute</div>
+<p>$$C \approx 6\,N\,D\ \text{FLOPs}$$
+for a model with $N$ parameters trained on $D$ tokens: about $2N$ FLOPs per token for the forward pass and $4N$ for the backward pass.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Scaling laws</div>
+<p>Loss falls smoothly as a <strong>power law</strong> in the number of parameters $N$, the amount of data $D$ and the compute $C$ (Kaplan et al., 2020). <strong>Chinchilla</strong> (Hoffmann et al., 2022) found that for a fixed compute budget, $N$ and $D$ should grow together, at roughly
+$$D \approx 20\,N\ \text{(tokens per parameter)}$$
+Modern models train far <em>past</em> this point, because a smaller model trained longer is cheaper to serve to millions of users.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Chinchilla's own numbers</div>
+<p>70B parameters × 1.4T tokens (= 20 tokens per parameter). Compute $\approx6\cdot70\times10^9\cdot1.4\times10^{12}\approx5.9\times10^{23}$ FLOPs. It beat the 280B-parameter Gopher, trained with the same compute on far fewer tokens.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">🔭</span> Intuition · Physics view</div>
+<p>Power laws, universality and debates about sudden "emergent" abilities look a lot like critical phenomena in statistical physics.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Llama-style architecture upgrades</div>
+<p>Compared with GPT-2: <strong>RMSNorm</strong> (module 05), <strong>SwiGLU</strong> MLPs, <strong>RoPE</strong> positions (module 08), <strong>grouped-query attention</strong> (fewer key/value heads, a smaller KV cache), and no bias terms. <strong>Mixture-of-Experts (MoE)</strong> layers replace one MLP with many "expert" MLPs and a router that sends each token to only a few of them: many parameters, but cheap compute per token.</p>
+</div>
+<div class="box box-note">
+<div class="box-title"><span class="box-ico">📝</span> Note · Systems</div>
+<p>Training at this scale needs data, tensor and pipeline parallelism, sharded optimizers (FSDP/ZeRO), bf16 and FlashAttention across thousands of GPUs (module 12).</p>
+</div>
+<h2 id="3-post-training-from-base-model-to-assistant">3 · Post-training: from base model to assistant<a class="anchor" href="#3-post-training-from-base-model-to-assistant" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Supervised fine-tuning (SFT)</div>
+<p>Continue training on (instruction, good response) pairs written or curated by people, with the loss applied only to the response tokens. SFT mostly teaches <strong>format and behaviour</strong> (answering, following instructions, chat turns), not new knowledge.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Reward model (Bradley–Terry)</div>
+<p>Collect comparisons: for a prompt $x$, people say which of two responses, $y_w$ (winner) or $y_l$ (loser), is better. Train a model $r_\phi(x,y)$ so that
+$$P(y_w\succ y_l) = \sigma\big(r_\phi(x,y_w)-r_\phi(x,y_l)\big),\qquad \mathcal L = -\log\sigma\big(r_\phi(x,y_w)-r_\phi(x,y_l)\big)$$</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · RLHF objective</div>
+<p>Optimize the policy (the LLM) $\pi_\theta$ to get high reward without drifting too far from the SFT model $\pi_{\text{ref}}$:
+$$\max_\theta\ \mathbb E_{y\sim\pi_\theta(\cdot\mid x)}\big[r_\phi(x,y)\big] - \beta\,D_{KL}\big(\pi_\theta(\cdot\mid x)\,\|\,\pi_{\text{ref}}(\cdot\mid x)\big)$$
+usually with <strong>PPO</strong> (module 11). The KL term stops the model from exploiting flaws in the reward model (<strong>reward hacking</strong>).</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · DPO (direct preference optimization)</div>
+<p>Skip the reward model and the RL loop: train directly on the preference pairs with a classification-style loss
+$$\mathcal L_{\text{DPO}} = -\log\sigma\Big(\beta\Big[\log\frac{\pi_\theta(y_w\mid x)}{\pi_{\text{ref}}(y_w\mid x)} - \log\frac{\pi_\theta(y_l\mid x)}{\pi_{\text{ref}}(y_l\mid x)}\Big]\Big)$$
+It raises the probability of preferred answers relative to the reference model and lowers the rejected ones. Simpler and very common.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · RL for reasoning (verifiable rewards)</div>
+<p>For tasks with checkable answers (math results, passing unit tests), reward the model only for being right and let RL discover long <strong>chain-of-thought</strong> reasoning on its own. <strong>GRPO</strong> (used by DeepSeek-R1) samples a group of answers per question and scores each relative to the group average, $A_i = (r_i-\text{mean})/\text{std}$, removing the need for a separate value network. <strong>This is the research frontier.</strong></p>
+</div>
+<h2 id="4-efficient-fine-tuning-lora-and-qlora">4 · Efficient fine-tuning: LoRA and QLoRA<a class="anchor" href="#4-efficient-fine-tuning-lora-and-qlora" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · LoRA (low-rank adaptation)</div>
+<p>Freeze the pretrained weight $W\in\mathbb R^{d\times k}$ and learn a low-rank update:
+$$W' = W + \frac{\alpha}{r}\,BA,\qquad B\in\mathbb R^{d\times r},\ A\in\mathbb R^{r\times k},\ r\ll d$$
+$B$ starts at zero, so training begins from the original model. Only $r(d+k)$ numbers are trained per matrix, and the optimizer state (Adam keeps two extra copies) shrinks by the same factor. After training, $BA$ can be merged into $W$, so inference costs nothing extra.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · How small is LoRA?</div>
+<p>A $4096\times4096$ projection has 16.8M weights. LoRA with $r=8$ trains $8\cdot(4096+4096)=65\,536$ of them: <strong>0.39%</strong>.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · QLoRA</div>
+<p>LoRA on top of a base model stored in <strong>4-bit</strong> precision. The frozen weights take a quarter of the 16-bit memory, so fine-tuning a 7B model fits on a single consumer GPU.</p>
+</div>
+<h2 id="5-inference">5 · Inference<a class="anchor" href="#5-inference" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Autoregressive decoding and the KV cache</div>
+<p>Generating $n$ tokens takes $n$ forward passes, one token at a time. The <strong>KV cache</strong> (module 08) stores past keys and values, so each step only processes the new token instead of the whole prefix.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Inference is memory-bandwidth-bound</div>
+<p>At batch size 1, each new token requires reading <strong>every weight</strong> (plus the KV cache) from GPU memory, but only does ~2 FLOPs per weight. GPUs can compute far faster than they can read memory, so memory bandwidth sets the speed.</p>
+<p><em>Rough numbers:</em> a 7B model in 16-bit is 14 GB. A GPU reading ~1 TB/s can stream it at most ~70 times per second, i.e. <strong>≲70 tokens/s</strong> for one sequence.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Speed-ups</div>
 <ul>
-<li><strong>Prompting:</strong> few-shot examples, chain-of-thought, structured outputs.</li>
-<li><strong>RAG:</strong> retrieve relevant documents (embeddings + vector search) and put them in the context. Use it for <em>knowledge</em>; use fine-tuning for <em>behavior/style</em>.</li>
-<li><strong>Agents &amp; tool use:</strong> the LLM calls functions/tools in a loop (code execution, search).</li>
-<li><strong>Evaluation:</strong> perplexity; benchmarks (MMLU, GSM8K, HumanEval, SWE-bench…); LLM-as-judge; <strong>always build your own task-specific eval</strong>. Watch for test-set contamination.</li>
-<li><strong>Safety &amp; alignment:</strong> jailbreaks, reward hacking, honesty, interpretability (module 12). This is a serious open problem worth caring about.</li>
+<li><strong>Quantization:</strong> store weights in 8 or 4 bits → less to read, faster and smaller (small quality loss).</li>
+<li><strong>Batching:</strong> serve many users at once; each weight read is shared across the batch. Systems like vLLM manage the KV cache in pages (PagedAttention).</li>
+<li><strong>Speculative decoding:</strong> a small fast model drafts several tokens; the big model checks them all in one pass and keeps the ones it agrees with. Exact same output distribution, fewer big-model steps.</li>
 </ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+</div>
+<h2 id="6-using-and-extending-llms">6 · Using and extending LLMs<a class="anchor" href="#6-using-and-extending-llms" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Prompting</div>
+<p>Give clear instructions and context, <strong>few-shot</strong> examples of the desired input→output, ask for step-by-step reasoning (<strong>chain-of-thought</strong>) on hard problems, and request <strong>structured output</strong> (e.g. JSON) when a program will read the answer.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Retrieval-augmented generation (RAG)</div>
+<ol>
+<li>Split your documents into chunks and <strong>embed</strong> each chunk (module 07).</li>
+<li>For a question, embed it and retrieve the most similar chunks (vector search).</li>
+<li>Put those chunks in the prompt and ask the model to answer from them, with citations.</li>
+</ol>
+<p><strong>Use RAG for knowledge</strong> (facts that change, private documents); <strong>use fine-tuning for behaviour</strong> (style, format, a skill).</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Agents and tool use</div>
+<p>The model can call <strong>tools</strong> (run code, search the web, query a database) by emitting a structured request; the program runs it and feeds the result back, in a loop until the task is done.</p>
+</div>
+<h2 id="7-evaluation-and-safety">7 · Evaluation and safety<a class="anchor" href="#7-evaluation-and-safety" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Evaluating LLMs</div>
 <ul>
-<li>⭐ <strong><a href="https://stanford-cs336.github.io/" target="_blank" rel="noopener">Stanford CS336: Language Modeling from Scratch</a></strong>: lectures + assignments (tokenizer, transformer, systems, scaling, data, alignment). The deepest modern course. Do it after nanoGPT.</li>
-<li>⭐ <strong>Karpathy:</strong> <a href="https://www.youtube.com/watch?v=zduSFxRajkE" target="_blank" rel="noopener">Let's build the GPT Tokenizer</a> · <a href="https://www.youtube.com/watch?v=7xTGNNLPyMI" target="_blank" rel="noopener">Deep Dive into LLMs like ChatGPT</a> · <a href="https://github.com/karpathy/nanochat" target="_blank" rel="noopener">nanochat</a> (a full ChatGPT-style pipeline, from tokenizer through SFT/RL to a web UI, in one small repo).</li>
-<li><strong><a href="https://huggingface.co/learn/llm-course" target="_blank" rel="noopener">Hugging Face LLM Course</a></strong>: the <code>transformers</code>, <code>datasets</code>, and PEFT ecosystem in practice.</li>
-<li><strong>Build a Large Language Model (From Scratch)</strong>, Sebastian Raschka (book + <a href="https://github.com/rasbt/LLMs-from-scratch" target="_blank" rel="noopener">repo</a>).</li>
-<li><strong><a href="https://huggingface.co/spaces/HuggingFaceTB/smol-training-playbook" target="_blank" rel="noopener">The Smol Training Playbook (HF)</a></strong> and <strong><a href="https://huggingface.co/spaces/nanotron/ultrascale-playbook" target="_blank" rel="noopener">The Ultra-Scale Playbook</a></strong>: how real LLMs get trained.</li>
-<li>Key papers (in order): GPT-2 → GPT-3 → Scaling Laws → Chinchilla → InstructGPT → LoRA → Llama → DPO → DeepSeek-R1. Links in <a href="resources.html#paper-reading-order">resources.md</a>.</li>
-<li>Stay current: <a href="https://magazine.sebastianraschka.com/" target="_blank" rel="noopener">Sebastian Raschka's newsletter</a>, <a href="https://lilianweng.github.io/" target="_blank" rel="noopener">Lilian Weng's blog</a>.</li>
+<li><strong>Perplexity</strong> on held-out text (for base models).</li>
+<li><strong>Benchmarks:</strong> MMLU (knowledge), GSM8K (math word problems), HumanEval / SWE-bench (code), and many more.</li>
+<li><strong>LLM-as-judge:</strong> a strong model grades outputs; cheap, but biased (e.g. toward longer answers).</li>
+<li><strong>Your own task-specific eval:</strong> the only number that tells you whether the model works for <em>your</em> use case. Always build one.</li>
 </ul>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Why benchmark scores mislead</div>
+<p><strong>Contamination:</strong> benchmark questions leak into the training data, so the model has seen the answers. <strong>Saturation:</strong> top models all score ~90%+, so the benchmark no longer separates them. Scores also depend heavily on prompt format.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Safety and alignment</div>
+<p>Jailbreaks, reward hacking, honesty and understanding what models are doing internally (interpretability, module 12) are serious open problems worth caring about.</p>
+</div>
+<figure class="video" data-yt="7xTGNNLPyMI" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/7xTGNNLPyMI/hqdefault.jpg)" aria-label="Play video: Deep Dive into LLMs like ChatGPT"><span class="video-btn">▶</span><span class="video-label">Deep Dive into LLMs like ChatGPT</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=7xTGNNLPyMI" target="_blank" rel="noopener">Deep Dive into LLMs like ChatGPT</a> · Andrej Karpathy · 3 h 31 min, the whole pipeline for a general audience <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>09 LLM</strong> deck and drill this chapter's key facts with spaced repetition, then do the practice questions below.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>Using $C\approx6ND$, how much compute does it take to train a 1B-parameter model Chinchilla-optimally?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$D\approx20N=20$B tokens. $C\approx6\cdot10^9\cdot2\times10^{10}=1.2\times10^{20}$ FLOPs.</p>
+</details>
+<ol start="2">
+<li>Why does SFT alone not make a model reliably prefer <em>better</em> answers among plausible ones?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>SFT only imitates the demonstrations; it never sees a comparison saying one answer is worse than another. Preference tuning (RLHF/DPO) uses those comparisons directly, so it can push down bad-but-plausible answers.</p>
+</details>
+<ol start="3">
+<li>A reward model gives $r(x,y_w)=2$ and $r(x,y_l)=0.5$. What probability does it assign to $y_w$ being preferred, and what is its loss?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\sigma(1.5)\approx0.82$; loss $=-\log0.82\approx0.20$.</p>
+</details>
+<ol start="4">
+<li>LoRA with $r=16$ on all four attention projections ($4096\times4096$) of 32 layers: how many trainable parameters?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Per matrix $16\cdot(4096+4096)=131\,072$; × 4 matrices × 32 layers $=16.8$M trainable parameters (vs ~7B in the model).</p>
+</details>
+<ol start="5">
+<li>Your company's assistant must answer questions about internal documents that change weekly. Fine-tuning or RAG?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>RAG: the knowledge changes often, must be up to date and citable. Fine-tune only if you also need a particular behaviour or format that prompting can't achieve.</p>
+</details>
+<ol start="6">
+<li>A 13B model in 4-bit precision, on a GPU with 1 TB/s of memory bandwidth. Rough upper bound on tokens/s at batch size 1?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$13\times10^9\cdot0.5$ bytes $=6.5$ GB per token, so at most $\approx1000/6.5\approx150$ tokens/s (ignoring the KV cache and overheads).</p>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ol>
 <li><strong>BPE tokenizer from scratch</strong> (train, encode, decode). Match GPT-2's tokenizer (<code>tiktoken</code>) output.</li>
@@ -191,11 +354,21 @@
 <li>Trusting public benchmarks over your own evals.</li>
 <li>Chasing every new model release. Fundamentals change slowly, so read papers selectively.</li>
 </ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://stanford-cs336.github.io/" target="_blank" rel="noopener">Stanford CS336: Language Modeling from Scratch</a></strong>: lectures + assignments (tokenizer, transformer, systems, scaling, data, alignment). The deepest modern course. Do it after nanoGPT.</li>
+<li>⭐ <strong>Karpathy:</strong> <a href="https://github.com/karpathy/nanochat" target="_blank" rel="noopener">nanochat</a> (a full ChatGPT-style pipeline, from tokenizer through SFT/RL to a web UI, in one small repo).</li>
+<li><strong><a href="https://huggingface.co/learn/llm-course" target="_blank" rel="noopener">Hugging Face LLM Course</a></strong>: the <code>transformers</code>, <code>datasets</code>, and PEFT ecosystem in practice.</li>
+<li><strong>Build a Large Language Model (From Scratch)</strong>, Sebastian Raschka (book + <a href="https://github.com/rasbt/LLMs-from-scratch" target="_blank" rel="noopener">repo</a>).</li>
+<li><strong><a href="https://huggingface.co/spaces/HuggingFaceTB/smol-training-playbook" target="_blank" rel="noopener">The Smol Training Playbook (HF)</a></strong> and <strong><a href="https://huggingface.co/spaces/nanotron/ultrascale-playbook" target="_blank" rel="noopener">The Ultra-Scale Playbook</a></strong>: how real LLMs get trained.</li>
+<li>Key papers (in order): GPT-2 → GPT-3 → Scaling Laws → Chinchilla → InstructGPT → LoRA → Llama → DPO → DeepSeek-R1. Links in <a href="resources.html#paper-reading-order">resources.md</a>.</li>
+<li>Stay current: <a href="https://magazine.sebastianraschka.com/" target="_blank" rel="noopener">Sebastian Raschka's newsletter</a>, <a href="https://lilianweng.github.io/" target="_blank" rel="noopener">Lilian Weng's blog</a>.</li>
+</ul>
 <h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Tokenizer matches tiktoken · <input type="checkbox"> LoRA fine-tune shows a measurable gain on your eval · <input type="checkbox"> you can explain the whole ChatGPT pipeline end to end</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/08-transformers.html"><small>← Previous</small>Transformers</a><a class="pn next" href="../deep-learning/10-generative-models.html"><small>Next →</small>Generative Models</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a><ul><li><a href="#data-tokenization">Data &amp; tokenization</a></li><li><a href="#pretraining">Pretraining</a></li><li><a href="#post-training-turning-a-base-model-into-an-assistant">Post-training (turning a base model into an assistant)</a></li><li><a href="#inference">Inference</a></li><li><a href="#using-extending-llms">Using &amp; extending LLMs</a></li></ul></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-tokenization">1 · Tokenization</a></li><li><a href="#2-pretraining-and-scaling-laws">2 · Pretraining and scaling laws</a></li><li><a href="#3-post-training-from-base-model-to-assistant">3 · Post-training: from base model to assistant</a></li><li><a href="#4-efficient-fine-tuning-lora-and-qlora">4 · Efficient fine-tuning: LoRA and QLoRA</a></li><li><a href="#5-inference">5 · Inference</a></li><li><a href="#6-using-and-extending-llms">6 · Using and extending LLMs</a></li><li><a href="#7-evaluation-and-safety">7 · Evaluation and safety</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

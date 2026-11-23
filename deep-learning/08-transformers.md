@@ -157,6 +157,9 @@ In module 07, a decoder *attended* to encoder states. **Self-attention** lets ev
 > [!TRY] [Attention Visualizer](interactive/attention.html)
 > Before you code, predict the attention matrix for a short sentence with and without the causal mask, then check.
 
+> [!TRY] [Flashcards](interactive/flashcards.html)
+> Choose the **08 Transformer** deck and drill this chapter's key facts with spaced repetition, then do the practice questions below.
+
 ## Practice (answers hidden)
 
 1. $X$ is $(B=8, T=128, d=512)$ with $h=8$ heads. What is the shape of $Q$ per head, of the score matrix, and of the output?

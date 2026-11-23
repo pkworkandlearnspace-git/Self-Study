@@ -8,6 +8,13 @@
 - **C++ is an advantage later.** GPU/CUDA programming (module 12) is where serious performance work happens, and C++ gets you there faster than most people.
 - **Code-first from day one.** You learn DL by *building* it, so every module ends with a project.
 
+> [!KEY] How each chapter works
+> Every module is a self-contained chapter: you can learn everything from the page without opening another source. Each section follows the same flow:
+>
+> 📖 **definitions** → 🧮 **formulas** → ✍️ **worked examples** → 🎛️ **try it** (an interactive tool, right where it helps) → ▶️ **videos** that play inside the page → 📚 optional books and courses for going deeper.
+>
+> Every chapter starts with a **skip test** and ends with **practice questions** (answers hidden), a **project to build**, common **traps**, and a **done when** checklist.
+
 ---
 
 ## The map

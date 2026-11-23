@@ -111,10 +111,21 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Reinforcement Learning</span></nav><article class="doc"><h1 id="11-reinforcement-learning">11 · Reinforcement Learning<a class="anchor" href="#11-reinforcement-learning" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 11</span><span>⏱ 3 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/11-reinforcement-learning.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Reinforcement Learning</span></nav><article class="doc"><h1 id="11-reinforcement-learning">11 · Reinforcement Learning<a class="anchor" href="#11-reinforcement-learning" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 11</span><span>⏱ 8 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/11-reinforcement-learning.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> learn the core ideas of RL, deep RL algorithms, and RL's role in modern LLMs. · <strong>Time:</strong> 25–35 h · <strong>Needs:</strong> 01, 05</p>
 </blockquote>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>define a Markov decision process, returns, policies and value functions;</li>
+<li>write the <strong>Bellman equations</strong> and solve small problems with value iteration;</li>
+<li>learn from experience with <strong>TD learning and Q-learning</strong>, and scale it up with <strong>DQN</strong>;</li>
+<li>derive the <strong>policy gradient</strong>, and explain baselines, actor-critic, GAE and <strong>PPO</strong>;</li>
+<li>explain how RL post-trains LLMs (RLHF, GRPO) and why reward hacking is a risk.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Define an MDP $(S, A, P, R, \gamma)$, return, policy, $V^\pi$, $Q^\pi$.</li>
@@ -124,43 +135,180 @@
 <li class="task"><input type="checkbox"> Derive the policy gradient $\nabla J = \mathbb E[\nabla\log\pi_\theta(a|s)\,A(s,a)]$. Explain why baselines reduce variance.</li>
 <li class="task"><input type="checkbox"> Explain PPO's clipped objective, and how RLHF/GRPO use it for LLMs.</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h2 id="1-the-reinforcement-learning-problem">1 · The reinforcement-learning problem<a class="anchor" href="#1-the-reinforcement-learning-problem" title="Link to this section">#</a></h2>
+<p>In supervised learning someone tells the model the right answer. In <strong>reinforcement learning (RL)</strong> an <strong>agent</strong> acts in an <strong>environment</strong> and only receives a <strong>reward</strong> signal saying how good things went, often much later. It must discover good behaviour by trial and error.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Markov decision process (MDP)</div>
+<p>An MDP is a tuple $(S, A, P, R, \gamma)$:</p>
 <ul>
-<li><strong>Setup:</strong> an agent observes state $s$, takes action $a$, gets reward $r$ and next state $s'$. Goal: maximize the expected <strong>return</strong> $G_t = \sum_k \gamma^k r_{t+k}$.</li>
-<li><strong>Value functions:</strong> $V^\pi(s) = \mathbb E_\pi[G_t\mid s]$, $Q^\pi(s,a) = \mathbb E_\pi[G_t\mid s,a]$. <strong>Advantage</strong> $A = Q - V$.</li>
-<li><strong>Bellman equation:</strong> $Q^*(s,a) = \mathbb E[r + \gamma\max_{a'}Q^*(s',a')]$. A recursive consistency condition. 🔭 Analogous to the principle of optimality / Hamilton–Jacobi–Bellman.</li>
-<li><strong>Dynamic programming</strong> (known model): value iteration, policy iteration.</li>
-<li><strong>Model-free, value-based:</strong><ul>
-<li><strong>TD learning:</strong> bootstrap from your own estimate, $V(s) \leftarrow V(s) + \alpha[r + \gamma V(s') - V(s)]$.</li>
-<li><strong>Q-learning:</strong> off-policy TD on $Q$. <strong>DQN</strong> (Atari, 2013/15) = Q-learning + a neural net + <strong>replay buffer</strong> + <strong>target network</strong>.</li>
+<li>$S$: states, $A$: actions;</li>
+<li>$P(s'\mid s,a)$: the probability of moving to $s'$ after taking $a$ in $s$;</li>
+<li>$R(s,a)$: the expected reward;</li>
+<li>$\gamma\in[0,1)$: the <strong>discount factor</strong>.</li>
 </ul>
-</li>
-<li><strong>Policy-based:</strong><ul>
-<li><strong>REINFORCE / policy gradient:</strong> increase the log-probability of actions with high advantage. Unbiased but high-variance → subtract a <strong>baseline</strong> $V(s)$.</li>
-<li><strong>Actor-critic:</strong> the actor = policy, the critic = value estimate. <strong>GAE</strong> for advantage estimation.</li>
-<li><strong>PPO:</strong> clip the policy ratio $r_t = \pi_\theta/\pi_{old}$ to $[1-\epsilon, 1+\epsilon]$ for stable updates. <strong>The workhorse algorithm.</strong></li>
-<li><strong>SAC:</strong> max-entropy RL for continuous control. 🔭 Free-energy / temperature again.</li>
-</ul>
-</li>
-<li><strong>Model-based RL:</strong> learn a world model and plan with it (MuZero, Dreamer). <strong>AlphaGo/AlphaZero</strong> = MCTS + policy/value nets + self-play.</li>
-<li><strong>RL ↔ LLMs:</strong><ul>
-<li><strong>RLHF:</strong> reward = a learned human-preference model. PPO + KL penalty to stay close to the SFT model.</li>
-<li><strong>RL with verifiable rewards:</strong> reward = a correct math answer or passing unit tests. <strong>GRPO</strong> drops the critic and uses group-relative advantages over several sampled answers. This is what produces "reasoning" models.</li>
-<li>Risk: <strong>reward hacking</strong>. The policy exploits flaws in the reward.</li>
-</ul>
-</li>
-<li><strong>Why RL is hard:</strong> sparse/delayed rewards, credit assignment, non-stationary data, high variance, and extreme sensitivity to hyperparameters and seeds.</li>
-</ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+<p><strong>Markov</strong> means the next state depends only on the current state and action, not on the earlier history. At each step: observe $s_t$, choose $a_t$, receive $r_t$ and $s_{t+1}$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Policy and return</div>
+<p>A <strong>policy</strong> $\pi(a\mid s)$ is the agent's behaviour: the probability of each action in each state. The <strong>return</strong> from time $t$ is the discounted sum of future rewards:
+$$G_t = r_t + \gamma r_{t+1} + \gamma^2 r_{t+2}+\dots = \sum_{k\ge0}\gamma^k r_{t+k}$$
+The goal is a policy that maximizes the expected return. $\gamma$ makes near rewards count more than far ones and keeps infinite sums finite.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · A return</div>
+<p>Rewards $1, 0, 2$ then nothing, $\gamma=0.9$: $G_0 = 1 + 0.9\cdot0 + 0.81\cdot2 = 2.62$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Exploration vs exploitation</div>
+<p>To do well you must <strong>exploit</strong> what you know (pick the best-looking action) but also <strong>explore</strong> (try others, which might be better). <strong>ε-greedy:</strong> with probability $\varepsilon$ take a random action, otherwise the greedy one; decay $\varepsilon$ over time.</p>
+</div>
+<figure class="video" data-yt="2pWv7GOvuf0" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/2pWv7GOvuf0/hqdefault.jpg)" aria-label="Play video: RL Course by David Silver, Lecture 1: Introduction to Reinforcement Learning"><span class="video-btn">▶</span><span class="video-label">RL Course by David Silver, Lecture 1: Introduction to Reinforcement Learning</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=2pWv7GOvuf0" target="_blank" rel="noopener">RL Course by David Silver, Lecture 1: Introduction to Reinforcement Learning</a> · David Silver (UCL / DeepMind), the first of 10 lectures <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="2-value-functions-and-the-bellman-equations">2 · Value functions and the Bellman equations<a class="anchor" href="#2-value-functions-and-the-bellman-equations" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Value functions and advantage</div>
+<p>$$V^\pi(s) = \mathbb E_\pi[G_t\mid s_t=s]\qquad Q^\pi(s,a) = \mathbb E_\pi[G_t\mid s_t=s,\,a_t=a]\qquad A^\pi(s,a)=Q^\pi(s,a)-V^\pi(s)$$
+$V$: how good is this state (following $\pi$)? $Q$: how good is this action here? The <strong>advantage</strong> $A$: how much better is this action than the policy's average?</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Bellman equations</div>
+<p><strong>Expectation</strong> (for a given policy): the value of a state is the immediate reward plus the discounted value of where you end up:
+$$V^\pi(s) = \sum_a\pi(a\mid s)\Big[R(s,a)+\gamma\sum_{s'}P(s'\mid s,a)\,V^\pi(s')\Big]$$
+<strong>Optimality</strong> (for the best policy):
+$$Q^*(s,a) = R(s,a) + \gamma\sum_{s'}P(s'\mid s,a)\,\max_{a'}Q^*(s',a')$$
+Once you know $Q^*$, the optimal policy is simply greedy: $\pi^*(s)=\arg\max_a Q^*(s,a)$. 🔭 The same principle of optimality underlies the Hamilton–Jacobi–Bellman equation in control.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Dynamic programming (when the model is known)</div>
+<p><strong>Value iteration:</strong> start with $V=0$ and repeatedly apply $V(s)\leftarrow\max_a\big[R(s,a)+\gamma\sum_{s'}P(s'\mid s,a)V(s')\big]$ until it stops changing. <strong>Policy iteration:</strong> alternate evaluating the current policy and making it greedy with respect to its values. Both need $P$ and $R$, which real problems rarely give you.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Value iteration on a tiny chain</div>
+<p>States A → B → goal. Moving right gives reward 0, except B → goal which gives 1. $\gamma=0.9$. After convergence: $V(B)=1$, $V(A)=0+0.9\cdot1=0.9$. Values "flow back" from the reward, discounted at each step.</p>
+</div>
+<h2 id="3-learning-from-experience-td-and-q-learning">3 · Learning from experience: TD and Q-learning<a class="anchor" href="#3-learning-from-experience-td-and-q-learning" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Temporal-difference (TD) learning</div>
+<p>After one step $(s, r, s')$, move $V(s)$ toward a <strong>bootstrapped</strong> target, using your own estimate of the next state:
+$$V(s)\leftarrow V(s)+\alpha\big[\underbrace{r+\gamma V(s')}_{\text{TD target}}-V(s)\big]$$
+The bracket is the <strong>TD error</strong> $\delta$. Unlike Monte Carlo (wait for the full return), TD learns after every step.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · One TD update</div>
+<p>$V(s)=0.5$, $r=1$, $\gamma=0.9$, $V(s')=2$, $\alpha=0.1$. Target $=1+1.8=2.8$, error $=2.3$, new $V(s)=0.5+0.23=0.73$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Q-learning</div>
+<p>$$Q(s,a)\leftarrow Q(s,a)+\alpha\Big[r+\gamma\max_{a'}Q(s',a')-Q(s,a)\Big]$$
+<strong>Off-policy:</strong> the target uses the best next action regardless of what the agent actually does next, so it learns $Q^*$ even while exploring with ε-greedy. (SARSA uses the action actually taken instead: on-policy.)</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Deep Q-network (DQN)</div>
+<p>Replace the table with a neural net $Q_\theta(s,a)$ (Atari from pixels, 2013/2015) and minimize $\big(r+\gamma\max_{a'}Q_{\bar\theta}(s',a')-Q_\theta(s,a)\big)^2$. Two tricks make it stable:</p>
 <ul>
-<li>⭐ <strong><a href="http://incompleteideas.net/book/the-book-2nd.html" target="_blank" rel="noopener">Sutton &amp; Barto: Reinforcement Learning, an Introduction (2nd ed.)</a></strong>: free. Ch. 1–6, 9, 13. <em>The</em> foundational text.</li>
-<li>⭐ <strong><a href="https://spinningup.openai.com/" target="_blank" rel="noopener">OpenAI Spinning Up in Deep RL</a></strong>: the bridge to deep RL. Read "Introduction to RL" parts 1–3, then the algorithm docs.</li>
-<li><strong><a href="https://www.davidsilver.uk/teaching/" target="_blank" rel="noopener">David Silver's RL course (UCL/DeepMind)</a></strong>: classic lectures that pair with Sutton &amp; Barto.</li>
-<li><strong><a href="https://huggingface.co/learn/deep-rl-course" target="_blank" rel="noopener">Hugging Face Deep RL Course</a></strong>: hands-on and free.</li>
-<li><strong><a href="https://github.com/vwxyzjn/cleanrl" target="_blank" rel="noopener">CleanRL</a></strong>: single-file, readable implementations to study. <strong><a href="https://gymnasium.farama.org/" target="_blank" rel="noopener">Gymnasium</a></strong> for environments.</li>
-<li><strong><a href="https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/" target="_blank" rel="noopener">The 37 Implementation Details of PPO</a></strong>: why your PPO doesn't work.</li>
-<li>Advanced: <a href="https://rail.eecs.berkeley.edu/deeprlcourse/" target="_blank" rel="noopener">UC Berkeley CS285 (Sergey Levine)</a>.</li>
+<li><strong>Replay buffer:</strong> store past transitions and train on random mini-batches of them, breaking the correlation between consecutive steps.</li>
+<li><strong>Target network</strong> $Q_{\bar\theta}$: a slowly updated copy used for the target, so the network isn't chasing its own moving prediction.</li>
 </ul>
+</div>
+<h2 id="4-policy-gradients">4 · Policy gradients<a class="anchor" href="#4-policy-gradients" title="Link to this section">#</a></h2>
+<p>Value-based methods struggle with continuous or huge action spaces. <strong>Policy-gradient</strong> methods instead parameterize the policy directly, $\pi_\theta(a\mid s)$ (e.g. a network outputting action probabilities), and do gradient ascent on the expected return $J(\theta)$.</p>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · The policy gradient theorem</div>
+<p>$$\nabla_\theta J(\theta) = \mathbb E_{\pi_\theta}\Big[\sum_t\nabla_\theta\log\pi_\theta(a_t\mid s_t)\;A_t\Big]$$
+<strong>Meaning:</strong> raise the log-probability of actions that turned out better than average ($A_t&gt;0$) and lower it for worse ones.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Where it comes from (the log-derivative trick)</div>
+<p>For a trajectory $\tau$ with probability $p_\theta(\tau)$ and return $R(\tau)$: $\nabla_\theta\mathbb E[R] = \int R\,\nabla_\theta p_\theta = \int R\,p_\theta\nabla_\theta\log p_\theta = \mathbb E[R\,\nabla_\theta\log p_\theta(\tau)]$. The environment's transition probabilities don't depend on $\theta$, so $\nabla_\theta\log p_\theta(\tau)=\sum_t\nabla_\theta\log\pi_\theta(a_t\mid s_t)$. No model of the environment needed.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · REINFORCE and baselines</div>
+<p><strong>REINFORCE</strong> uses the sampled return $G_t$ in place of $A_t$: unbiased but very noisy. Subtracting a <strong>baseline</strong> $b(s_t)$ that doesn't depend on the action (usually $V(s_t)$) keeps the gradient unbiased, because $\mathbb E[\nabla\log\pi\cdot b(s)]=b(s)\nabla\sum_a\pi(a\mid s)=0$, while greatly reducing variance.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Actor-critic and GAE</div>
+<p>The <strong>actor</strong> is the policy; the <strong>critic</strong> learns $V(s)$ to provide the baseline. <strong>Generalized advantage estimation</strong> blends one-step and long-horizon estimates:
+$$\delta_t = r_t+\gamma V(s_{t+1})-V(s_t),\qquad \hat A_t = \sum_{l\ge0}(\gamma\lambda)^l\,\delta_{t+l}$$
+$\lambda=0$: low variance, more bias; $\lambda=1$: Monte Carlo. $\lambda\approx0.95$ is typical.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · PPO (proximal policy optimization)</div>
+<p>With the probability ratio $r_t(\theta)=\pi_\theta(a_t\mid s_t)/\pi_{\text{old}}(a_t\mid s_t)$:
+$$L^{\text{CLIP}}(\theta)=\mathbb E_t\Big[\min\big(r_t\hat A_t,\ \mathrm{clip}(r_t,\,1-\epsilon,\,1+\epsilon)\,\hat A_t\big)\Big],\qquad\epsilon\approx0.2$$
+Collect a batch with the old policy, then take several gradient steps on it; the clip removes any incentive to move the policy too far in one update. Simple, robust: <strong>the workhorse algorithm</strong> of deep RL and RLHF.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Other important ideas</div>
+<ul>
+<li><strong>SAC</strong> (soft actor-critic): maximize reward <em>plus</em> policy entropy, for continuous control. 🔭 Free energy at a temperature again.</li>
+<li><strong>Model-based RL:</strong> learn a model of the environment and plan with it (Dreamer, MuZero).</li>
+<li><strong>AlphaGo / AlphaZero:</strong> Monte-Carlo tree search guided by policy and value networks, trained by self-play.</li>
+</ul>
+</div>
+<h2 id="5-rl-for-large-language-models">5 · RL for large language models<a class="anchor" href="#5-rl-for-large-language-models" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · The LLM as a policy</div>
+<p>State = the prompt plus the tokens so far; action = the next token; the episode ends when the answer is complete, and a <strong>reward</strong> scores the whole answer.</p>
+<ul>
+<li><strong>RLHF:</strong> reward from a learned human-preference model, optimized with PPO plus a KL penalty to the SFT model (module 09).</li>
+<li><strong>RL with verifiable rewards:</strong> reward = the math answer is correct, or the code passes the unit tests. <strong>GRPO</strong> samples a group of answers per prompt and uses each answer's reward relative to the group, $A_i=(r_i-\bar r)/\mathrm{std}(r)$, in a PPO-style update with no critic network. This is what produces "reasoning" models.</li>
+</ul>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Reward hacking</div>
+<p>The policy maximizes the reward you wrote, not the one you meant: e.g. a reward model that likes long answers gets padded answers; a test-based reward gets code that special-cases the tests. KL penalties, better reward models and careful evaluation are the defences.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Why RL is hard</div>
+<p>Sparse and delayed rewards (credit assignment), data that changes as the policy changes, high-variance gradients, and extreme sensitivity to hyperparameters and random seeds. Always run several seeds and compare against a known-good implementation.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>11 RL</strong> deck and drill this chapter's key facts with spaced repetition, then do the practice questions below.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>Rewards $0, 0, 0, 10$ (then the episode ends), $\gamma=0.9$. What is $G_0$? And with $\gamma=0.5$?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$0.9^3\cdot10=7.29$; $0.5^3\cdot10=1.25$. A smaller $\gamma$ makes the agent short-sighted.</p>
+</details>
+<ol start="2">
+<li>Q-learning: $Q(s,a)=2$, $r=-1$, $\gamma=0.9$, $\max_{a'}Q(s',a')=5$, $\alpha=0.5$. What is the new $Q(s,a)$?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Target $=-1+4.5=3.5$; error $=1.5$; new $Q=2+0.75=2.75$.</p>
+</details>
+<ol start="3">
+<li>Why does DQN need a replay buffer and a target network, when tabular Q-learning doesn't?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>With a neural net, updating on one transition changes $Q$ everywhere. Consecutive transitions are highly correlated (breaking the i.i.d. assumption of SGD), and the target moves every time the network updates, which can make learning oscillate or diverge. The buffer decorrelates the data; the frozen target stabilizes the regression target.</p>
+</details>
+<ol start="4">
+<li>Show that subtracting a baseline $b(s)$ doesn't bias the policy gradient.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\mathbb E_{a\sim\pi}[\nabla_\theta\log\pi_\theta(a\mid s)\,b(s)] = b(s)\sum_a\pi_\theta(a\mid s)\nabla_\theta\log\pi_\theta(a\mid s) = b(s)\nabla_\theta\sum_a\pi_\theta(a\mid s)=b(s)\nabla_\theta1=0$.</p>
+</details>
+<ol start="5">
+<li>In PPO with $\epsilon=0.2$, an action has $\hat A=+1$ and the ratio is already $1.5$. What is its contribution to the objective, and its gradient?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\min(1.5\cdot1,\ 1.2\cdot1)=1.2$. It's on the clipped branch, which is constant in $\theta$, so the gradient is 0: no further push to increase that action's probability in this update.</p>
+</details>
+<ol start="6">
+<li>GRPO samples four answers with rewards $1, 0, 0, 1$. What are the advantages?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Mean $0.5$, standard deviation $0.5$: advantages $+1, -1, -1, +1$. Correct answers are reinforced, incorrect ones discouraged, with no critic.</p>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ol>
 <li><strong>Tabular Q-learning</strong> on FrozenLake / CliffWalking. Visualize the value function.</li>
@@ -169,11 +317,21 @@
 <li>Stretch: a <strong>GRPO-style</strong> RL fine-tune of a tiny LM on arithmetic problems with a verifiable reward (<code>trl</code> has a <code>GRPOTrainer</code>).</li>
 <li>🔭 Fun: train an agent on a physics environment (MuJoCo via Gymnasium: Hopper, Ant).</li>
 </ol>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="http://incompleteideas.net/book/the-book-2nd.html" target="_blank" rel="noopener">Sutton &amp; Barto: Reinforcement Learning, an Introduction (2nd ed.)</a></strong>: free. Ch. 1–6, 9, 13. <em>The</em> foundational text.</li>
+<li>⭐ <strong><a href="https://spinningup.openai.com/" target="_blank" rel="noopener">OpenAI Spinning Up in Deep RL</a></strong>: the bridge to deep RL. Read "Introduction to RL" parts 1–3, then the algorithm docs.</li>
+<li><strong><a href="https://www.davidsilver.uk/teaching/" target="_blank" rel="noopener">David Silver's RL course (UCL/DeepMind)</a></strong>: classic lectures that pair with Sutton &amp; Barto (lecture 1 is embedded above).</li>
+<li><strong><a href="https://huggingface.co/learn/deep-rl-course" target="_blank" rel="noopener">Hugging Face Deep RL Course</a></strong>: hands-on and free.</li>
+<li><strong><a href="https://github.com/vwxyzjn/cleanrl" target="_blank" rel="noopener">CleanRL</a></strong>: single-file, readable implementations to study. <strong><a href="https://gymnasium.farama.org/" target="_blank" rel="noopener">Gymnasium</a></strong> for environments.</li>
+<li><strong><a href="https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/" target="_blank" rel="noopener">The 37 Implementation Details of PPO</a></strong>: why your PPO doesn't work.</li>
+<li>Advanced: <a href="https://rail.eecs.berkeley.edu/deeprlcourse/" target="_blank" rel="noopener">UC Berkeley CS285 (Sergey Levine)</a>.</li>
+</ul>
 <h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Your PPO solves LunarLander · <input type="checkbox"> you can explain how RL is used to post-train LLMs</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/10-generative-models.html"><small>← Previous</small>Generative Models</a><a class="pn next" href="../deep-learning/12-advanced-frontiers.html"><small>Next →</small>Advanced Frontiers &amp; Specializations</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-the-reinforcement-learning-problem">1 · The reinforcement-learning problem</a></li><li><a href="#2-value-functions-and-the-bellman-equations">2 · Value functions and the Bellman equations</a></li><li><a href="#3-learning-from-experience-td-and-q-learning">3 · Learning from experience: TD and Q-learning</a></li><li><a href="#4-policy-gradients">4 · Policy gradients</a></li><li><a href="#5-rl-for-large-language-models">5 · RL for large language models</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

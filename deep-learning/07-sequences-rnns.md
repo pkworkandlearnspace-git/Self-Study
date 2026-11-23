@@ -93,6 +93,9 @@ An RNN reads a sequence one step at a time, carrying a **hidden state** that sum
 > | top-k | sample only among the $k$ most likely tokens | cuts off the long tail of nonsense |
 > | top-p (nucleus) | sample among the smallest set whose probability sums to $p$ (e.g. 0.9) | adapts the cut-off to the model's confidence |
 
+> [!TRY] [Flashcards](interactive/flashcards.html)
+> Choose the **07 Seq** deck and drill this chapter's key facts with spaced repetition, then do the practice questions below.
+
 ## Practice (answers hidden)
 
 1. A model's average next-token cross-entropy on validation text is 1.2 nats. What is its perplexity, and how does it compare to uniform guessing over 65 characters?

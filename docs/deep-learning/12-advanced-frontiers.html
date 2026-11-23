@@ -111,70 +111,184 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Advanced Frontiers &amp; Specializations</span></nav><article class="doc"><h1 id="12-advanced-frontiers-specializations">12 · Advanced Frontiers &amp; Specializations<a class="anchor" href="#12-advanced-frontiers-specializations" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 12</span><span>⏱ 4 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/12-advanced-frontiers.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Advanced Frontiers &amp; Specializations</span></nav><article class="doc"><h1 id="12-advanced-frontiers-specializations">12 · Advanced Frontiers &amp; Specializations<a class="anchor" href="#12-advanced-frontiers-specializations" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 12</span><span>⏱ 8 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/12-advanced-frontiers.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> move from <em>student</em> to <em>researcher/engineer</em>: read papers, go deep in one area. · <strong>Time:</strong> open-ended · <strong>Needs:</strong> 08 (+ 10/11 for some tracks)</p>
 </blockquote>
-<p>There's no skip test here. Pick <strong>1–2 tracks</strong> that excite you and go deep, and treat the rest as awareness. Each track lists the core ideas and the ⭐ entry point.</p>
+<p>There's no skip test here. Pick <strong>1–2 tracks</strong> that excite you and go deep, and treat the rest as awareness. Each track explains its core ideas on this page, then gives the ⭐ entry point for going further.</p>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>read a research paper efficiently and reproduce its key result;</li>
+<li>explain the central idea of each frontier area in a few sentences (theory, interpretability, scientific ML, systems, self-supervised learning, graphs and state-space models);</li>
+<li>choose a specialization and know exactly where to start.</li>
+</ul>
+</div>
 <hr />
 <h2 id="how-to-read-papers-do-this-first">How to read papers (do this first)<a class="anchor" href="#how-to-read-papers-do-this-first" title="Link to this section">#</a></h2>
-<ul>
-<li><strong>Three passes</strong> (Keshav, <a href="https://web.stanford.edu/class/ee384m/Handouts/HowtoReadPaper.pdf" target="_blank" rel="noopener">"How to Read a Paper"</a>): (1) title/abstract/figures/conclusion, 10 min → (2) the main method, skipping proofs, 1 h → (3) re-derive and re-implement it.</li>
-<li><strong>Reimplement &gt; reread.</strong> The best way to understand a paper is to reproduce its key result at small scale.</li>
-<li>Find papers and code: <a href="https://arxiv.org/" target="_blank" rel="noopener">arXiv</a> (cs.LG, cs.CL, cs.CV), <a href="https://huggingface.co/papers" target="_blank" rel="noopener">Hugging Face Papers</a> (daily trending, with linked code), <a href="https://www.alphaxiv.org/" target="_blank" rel="noopener">alphaXiv</a> (discussion), and authors' blogs.</li>
-<li>Keep a <strong>paper log</strong> in <code>progress.md</code>: one line per paper (problem → idea → result → my doubt).</li>
-</ul>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · The three-pass method</div>
+<p>(Keshav, <a href="https://web.stanford.edu/class/ee384m/Handouts/HowtoReadPaper.pdf" target="_blank" rel="noopener">"How to Read a Paper"</a>)</p>
+<ol>
+<li><strong>10 minutes:</strong> title, abstract, figures, conclusion. What problem, what claim?</li>
+<li><strong>1 hour:</strong> the main method, skipping proofs. Could you explain it to a friend?</li>
+<li><strong>Re-derive and re-implement</strong> the key result at small scale.</li>
+</ol>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Reimplement &gt; reread</div>
+<p>The best way to understand a paper is to reproduce its key result at small scale. Keep a <strong>paper log</strong> in <code>progress.md</code>: one line per paper (problem → idea → result → my doubt).</p>
+</div>
+<div class="box box-learn">
+<div class="box-title"><span class="box-ico">📚</span> Go deeper (optional)</div>
+<p>Find papers and code: <a href="https://arxiv.org/" target="_blank" rel="noopener">arXiv</a> (cs.LG, cs.CL, cs.CV), <a href="https://huggingface.co/papers" target="_blank" rel="noopener">Hugging Face Papers</a> (daily trending, with linked code), <a href="https://www.alphaxiv.org/" target="_blank" rel="noopener">alphaXiv</a> (discussion), and authors' blogs.</p>
+</div>
 <hr />
-<h2 id="track-a-deep-learning-theory-great-fit-for-a-mathphysics-mind">Track A · Deep learning theory 🔭 (great fit for a math/physics mind)<a class="anchor" href="#track-a-deep-learning-theory-great-fit-for-a-mathphysics-mind" title="Link to this section">#</a></h2>
+<h2 id="track-a-deep-learning-theory">Track A · Deep learning theory 🔭<a class="anchor" href="#track-a-deep-learning-theory" title="Link to this section">#</a></h2>
+<p>A great fit for a math/physics mind: why does deep learning work at all?</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Generalization puzzles</div>
 <ul>
-<li><strong>Optimization landscape:</strong> saddle points, flat vs sharp minima, edge of stability.</li>
-<li><strong>Generalization puzzles:</strong> over-parameterized nets fit random labels yet generalize; <strong>double descent</strong>; <strong>grokking</strong>; implicit bias of SGD.</li>
-<li><strong>Infinite-width limits:</strong> <strong>Neural Tangent Kernel (NTK)</strong> (lazy regime ↔ kernel regression) vs <strong>μP / mean-field</strong> (feature learning). μP also lets you transfer hyperparameters across model sizes.</li>
-<li><strong>Scaling laws</strong> and statistical-physics approaches to learning.</li>
-<li>⭐ <strong><a href="https://udlbook.github.io/udlbook/" target="_blank" rel="noopener">Understanding Deep Learning (Prince)</a></strong> ch. 20 ("Why does deep learning work?") → <strong><a href="https://arxiv.org/abs/2106.10165" target="_blank" rel="noopener">The Principles of Deep Learning Theory (Roberts, Yaida &amp; Hanin)</a></strong> (literally effective field theory for neural nets; written by physicists).</li>
-<li>Also: <a href="https://www.bishopbook.com/" target="_blank" rel="noopener">Deep Learning, Bishop &amp; Bishop (2024)</a>, <a href="https://mjt.cs.illinois.edu/dlt/" target="_blank" rel="noopener">Telgarsky's Deep Learning Theory notes</a>.</li>
+<li>Over-parameterized networks can fit <strong>random labels</strong> perfectly, yet generalize on real data, so classical "count the parameters" bounds can't explain them.</li>
+<li><strong>Double descent:</strong> as model size grows, test error first follows the classic U-curve, peaks near the point where the model can <em>just</em> fit the training data, then falls again.</li>
+<li><strong>Grokking:</strong> on some small tasks, a network memorizes the training set and only much later, with continued training and weight decay, suddenly generalizes.</li>
+<li><strong>Implicit bias:</strong> gradient descent itself prefers certain solutions (e.g. low-norm or "flat" minima) among the many that fit the data.</li>
 </ul>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Neural tangent kernel (NTK)</div>
+<p>$$\Theta(\mathbf x,\mathbf x') = \nabla_\theta f_\theta(\mathbf x)\cdot\nabla_\theta f_\theta(\mathbf x')$$
+In the infinite-width limit with standard initialization, $\Theta$ stays fixed during training, and the network behaves like <strong>kernel regression</strong> (the "lazy" regime: features don't change). Real networks <em>do</em> learn features; the <strong>μP / mean-field</strong> parameterization keeps feature learning at large width and lets you transfer tuned hyperparameters from small to large models.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Optimization landscape</div>
+<p>High-dimensional losses have far more <strong>saddle points</strong> than bad local minima. Training often runs at the <strong>edge of stability</strong>, where the sharpness (largest Hessian eigenvalue, module 01) hovers around $2/\eta$.</p>
+</div>
+<div class="box box-learn">
+<div class="box-title"><span class="box-ico">📚</span> Go deeper (optional)</div>
+<p>⭐ <strong><a href="https://udlbook.github.io/udlbook/" target="_blank" rel="noopener">Understanding Deep Learning (Prince)</a></strong> ch. 20 ("Why does deep learning work?") → <strong><a href="https://arxiv.org/abs/2106.10165" target="_blank" rel="noopener">The Principles of Deep Learning Theory (Roberts, Yaida &amp; Hanin)</a></strong> (effective field theory for neural nets, written by physicists). Also: <a href="https://www.bishopbook.com/" target="_blank" rel="noopener">Deep Learning, Bishop &amp; Bishop (2024)</a>, <a href="https://mjt.cs.illinois.edu/dlt/" target="_blank" rel="noopener">Telgarsky's Deep Learning Theory notes</a>.</p>
+</div>
 <h2 id="track-b-mechanistic-interpretability-ai-safety">Track B · Mechanistic interpretability &amp; AI safety<a class="anchor" href="#track-b-mechanistic-interpretability-ai-safety" title="Link to this section">#</a></h2>
+<p>Reverse-engineer <em>how</em> a trained network computes, the way you'd reverse-engineer a compiled program.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Core concepts</div>
 <ul>
-<li>Reverse-engineer <em>how</em> networks compute: <strong>circuits</strong>, <strong>induction heads</strong>, <strong>superposition</strong> (more features than neurons), <strong>sparse autoencoders (SAEs)</strong> to extract interpretable features, attribution graphs.</li>
-<li>Safety: alignment, reward hacking, scalable oversight, evals for dangerous capabilities.</li>
-<li>⭐ <strong><a href="https://www.arena.education/" target="_blank" rel="noopener">ARENA curriculum</a></strong> (hands-on, free notebooks) + <strong><a href="https://github.com/TransformerLensOrg/TransformerLens" target="_blank" rel="noopener">TransformerLens</a></strong>.</li>
-<li>Read: <a href="https://transformer-circuits.pub/" target="_blank" rel="noopener">Transformer Circuits Thread</a> (A Mathematical Framework, Toy Models of Superposition, Scaling Monosemanticity), <a href="https://www.neelnanda.io/mechanistic-interpretability/getting-started" target="_blank" rel="noopener">Neel Nanda's getting-started guide</a>, <a href="https://bluedot.org/" target="_blank" rel="noopener">BlueDot Impact courses</a>.</li>
+<li><strong>Circuits:</strong> small subgraphs of a network (specific heads and neurons) that implement an understandable algorithm.</li>
+<li><strong>Induction heads:</strong> a two-head circuit in transformers that finds an earlier occurrence of the current token and copies what came next ("…A B … A → B"). It is a key mechanism of in-context learning.</li>
+<li><strong>Superposition:</strong> networks represent <strong>more features than they have neurons</strong> by storing them as nearly-orthogonal directions, so single neurons are often "polysemantic".</li>
+<li><strong>Attribution graphs:</strong> trace which features caused a given output.</li>
 </ul>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Sparse autoencoder (SAE)</div>
+<p>To pull interpretable features out of superposition, train an overcomplete autoencoder on a layer's activations $\mathbf x$ with a sparsity penalty:
+$$\mathbf f = \mathrm{ReLU}(W_e\mathbf x+\mathbf b_e),\qquad \mathcal L = \|\mathbf x - W_d\mathbf f\|^2 + \lambda\|\mathbf f\|_1$$
+Each column of $W_d$ is then a candidate "feature direction", often with a clear meaning.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Safety</div>
+<p>Alignment (getting systems to do what we intend), reward hacking (module 11), scalable oversight (supervising systems smarter than the supervisor), and evaluations for dangerous capabilities.</p>
+</div>
+<div class="box box-learn">
+<div class="box-title"><span class="box-ico">📚</span> Go deeper (optional)</div>
+<p>⭐ <strong><a href="https://www.arena.education/" target="_blank" rel="noopener">ARENA curriculum</a></strong> (hands-on, free notebooks) + <strong><a href="https://github.com/TransformerLensOrg/TransformerLens" target="_blank" rel="noopener">TransformerLens</a></strong>. Read: <a href="https://transformer-circuits.pub/" target="_blank" rel="noopener">Transformer Circuits Thread</a> (A Mathematical Framework, Toy Models of Superposition, Scaling Monosemanticity), <a href="https://www.neelnanda.io/mechanistic-interpretability/getting-started" target="_blank" rel="noopener">Neel Nanda's getting-started guide</a>, <a href="https://bluedot.org/" target="_blank" rel="noopener">BlueDot Impact courses</a>.</p>
+</div>
 <h2 id="track-c-scientific-ml-physics-informed-dl">Track C · Scientific ML &amp; physics-informed DL 🔭<a class="anchor" href="#track-c-scientific-ml-physics-informed-dl" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Physics-informed neural networks (PINNs)</div>
+<p>Fit a network $u_\theta(x,t)$ to a solution of a differential equation $\mathcal N[u]=0$ by putting the equation itself into the loss, evaluated at random "collocation" points:
+$$\mathcal L = \underbrace{\sum_i\big(u_\theta(x_i,t_i)-u_i\big)^2}_{\text{data / boundary conditions}} + \lambda\underbrace{\sum_j\big(\mathcal N[u_\theta](x_j,t_j)\big)^2}_{\text{PDE residual}}$$
+Derivatives in $\mathcal N$ come from autodiff.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Neural operators</div>
+<p>Learn a map between <strong>function spaces</strong> (e.g. from an initial condition to the solution at time $T$), so one trained model solves a whole family of PDE instances. Examples: Fourier Neural Operator (FNO), DeepONet.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Equivariance</div>
+<p>A network $f$ is <strong>equivariant</strong> to a group of transformations $g$ (rotations, translations, permutations) if
+$$f(g\cdot x) = g\cdot f(x)$$
+CNNs are translation-equivariant (module 06); equivariant GNNs build in rotations for molecules and particle physics. <strong>Geometric deep learning</strong> organizes architectures by their symmetries.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Energy-conserving and continuous-time models</div>
+<p><strong>Neural ODEs</strong> treat depth as continuous time, $\dot{\mathbf h}=f_\theta(\mathbf h,t)$. <strong>Hamiltonian / Lagrangian neural networks</strong> learn an energy function and derive the dynamics from it, so energy is conserved by construction. Applications: AlphaFold (proteins), GraphCast (weather), ML for particle physics and cosmology, molecular dynamics potentials.</p>
+</div>
+<div class="box box-learn">
+<div class="box-title"><span class="box-ico">📚</span> Go deeper (optional)</div>
+<p>⭐ <strong><a href="https://geometricdeeplearning.com/" target="_blank" rel="noopener">Geometric Deep Learning (Bronstein et al.)</a></strong> (book + lectures) and <strong><a href="https://www.youtube.com/@Eigensteve" target="_blank" rel="noopener">Steve Brunton's Physics-Informed ML lectures (YouTube)</a></strong>. Also <a href="https://github.com/lululxvi/deepxde" target="_blank" rel="noopener">DeepXDE</a> for PINNs.</p>
+</div>
+<h2 id="track-d-ml-systems-gpus-efficiency">Track D · ML systems, GPUs &amp; efficiency 💻<a class="anchor" href="#track-d-ml-systems-gpus-efficiency" title="Link to this section">#</a></h2>
+<p>Where your C++ shines.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · GPU fundamentals</div>
+<p>A GPU has many <strong>streaming multiprocessors (SMs)</strong>, each running groups of 32 threads (<strong>warps</strong>) in lockstep. Memory is a hierarchy, from large and slow to small and fast: HBM (GPU main memory) → L2 cache → shared memory/SRAM (per SM) → registers. Fast kernels keep data in the fast levels as long as possible.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Roofline model</div>
+<p><strong>Arithmetic intensity</strong> $I$ = FLOPs performed per byte moved from memory. Then
+$$\text{attainable FLOP/s} = \min\big(\text{peak FLOP/s},\ \text{memory bandwidth}\times I\big)$$
+Low-intensity operations (element-wise ops, LLM decoding at batch 1, module 09) are <strong>memory-bound</strong>; large matrix multiplications are <strong>compute-bound</strong>. Kernel fusion and FlashAttention raise intensity.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Distributed training</div>
 <ul>
-<li><strong>PINNs:</strong> put the PDE residual in the loss. <strong>Neural operators</strong> (FNO, DeepONet): learn maps between function spaces.</li>
-<li><strong>Equivariant networks:</strong> build symmetries (rotation, translation, permutation) into the architecture → molecules, particle physics. <strong>Geometric deep learning.</strong></li>
-<li><strong>Neural ODEs</strong>, Hamiltonian/Lagrangian neural networks (energy-conserving by construction).</li>
-<li>Applications: AlphaFold (proteins), weather (GraphCast), ML for particle physics and cosmology, molecular dynamics potentials.</li>
-<li>⭐ <strong><a href="https://geometricdeeplearning.com/" target="_blank" rel="noopener">Geometric Deep Learning (Bronstein et al.)</a></strong> (book + lectures) and <strong><a href="https://www.youtube.com/@Eigensteve" target="_blank" rel="noopener">Steve Brunton's Physics-Informed ML lectures (YouTube)</a></strong>. Also <a href="https://github.com/lululxvi/deepxde" target="_blank" rel="noopener">DeepXDE</a> for PINNs.</li>
+<li><strong>Data parallel (DDP):</strong> every GPU holds the whole model and a different slice of the batch; gradients are averaged with an <strong>all-reduce</strong>.</li>
+<li><strong>FSDP / ZeRO:</strong> shard parameters, gradients and optimizer state across GPUs to fit bigger models.</li>
+<li><strong>Tensor parallel:</strong> split individual matrix multiplications across GPUs. <strong>Pipeline parallel:</strong> put different layers on different GPUs.</li>
 </ul>
-<h2 id="track-d-ml-systems-gpus-efficiency-where-your-c-shines">Track D · ML systems, GPUs &amp; efficiency 💻 (where your C++ shines)<a class="anchor" href="#track-d-ml-systems-gpus-efficiency-where-your-c-shines" title="Link to this section">#</a></h2>
-<ul>
-<li><strong>GPU fundamentals:</strong> SMs, warps, memory hierarchy (HBM → L2 → shared memory/SRAM → registers), memory-bound vs compute-bound, <strong>roofline model</strong>, arithmetic intensity.</li>
-<li><strong>Kernels:</strong> write CUDA (C++) and <strong>Triton</strong> (Python) kernels: tiled matmul, softmax, fused ops, FlashAttention.</li>
-<li><strong>Distributed training:</strong> data parallel (DDP), FSDP/ZeRO, tensor and pipeline parallelism. Communication collectives (all-reduce).</li>
-<li><strong>Efficiency:</strong> quantization (int8/int4, GPTQ/AWQ), pruning, distillation, speculative decoding, <code>torch.compile</code>.</li>
-<li>⭐ <strong><a href="https://www.elsevier.com/books/programming-massively-parallel-processors/hwu/978-0-323-91231-0" target="_blank" rel="noopener">Programming Massively Parallel Processors (Hwu, Kirk, El Hajj)</a></strong> + the <strong><a href="https://github.com/gpu-mode/lectures" target="_blank" rel="noopener">GPU MODE</a></strong> lecture series &amp; Discord.</li>
-<li>Also: <a href="https://jax-ml.github.io/scaling-book/" target="_blank" rel="noopener">How to Scale Your Model (Google DeepMind, JAX/TPU book)</a>, <a href="https://triton-lang.org/main/getting-started/tutorials/index.html" target="_blank" rel="noopener">Triton tutorials</a>, <a href="https://horace.io/brrr_intro.html" target="_blank" rel="noopener">Horace He: Making Deep Learning Go Brrrr</a>, <a href="https://huggingface.co/spaces/nanotron/ultrascale-playbook" target="_blank" rel="noopener">The Ultra-Scale Playbook</a>, <a href="https://github.com/karpathy/llm.c" target="_blank" rel="noopener">llm.c (Karpathy, GPT-2 in raw C/CUDA)</a>.</li>
-</ul>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Efficiency techniques</div>
+<p>Quantization (int8/int4, GPTQ/AWQ), pruning, distillation into smaller models, speculative decoding (module 09), <code>torch.compile</code>, and custom kernels in <strong>CUDA</strong> (C++) or <strong>Triton</strong> (Python): tiled matmul, fused softmax, FlashAttention.</p>
+</div>
+<div class="box box-learn">
+<div class="box-title"><span class="box-ico">📚</span> Go deeper (optional)</div>
+<p>⭐ <strong><a href="https://www.elsevier.com/books/programming-massively-parallel-processors/hwu/978-0-323-91231-0" target="_blank" rel="noopener">Programming Massively Parallel Processors (Hwu, Kirk, El Hajj)</a></strong> + the <strong><a href="https://github.com/gpu-mode/lectures" target="_blank" rel="noopener">GPU MODE</a></strong> lecture series &amp; Discord. Also: <a href="https://jax-ml.github.io/scaling-book/" target="_blank" rel="noopener">How to Scale Your Model (Google DeepMind, JAX/TPU book)</a>, <a href="https://triton-lang.org/main/getting-started/tutorials/index.html" target="_blank" rel="noopener">Triton tutorials</a>, <a href="https://horace.io/brrr_intro.html" target="_blank" rel="noopener">Horace He: Making Deep Learning Go Brrrr</a>, <a href="https://huggingface.co/spaces/nanotron/ultrascale-playbook" target="_blank" rel="noopener">The Ultra-Scale Playbook</a>, <a href="https://github.com/karpathy/llm.c" target="_blank" rel="noopener">llm.c (Karpathy, GPT-2 in raw C/CUDA)</a>.</p>
+</div>
 <h2 id="track-e-self-supervised-multimodal-representation-learning">Track E · Self-supervised, multimodal &amp; representation learning<a class="anchor" href="#track-e-self-supervised-multimodal-representation-learning" title="Link to this section">#</a></h2>
-<ul>
-<li><strong>Contrastive learning:</strong> SimCLR, MoCo. InfoNCE loss pulls positives together and pushes negatives apart.</li>
-<li><strong>Masked modeling:</strong> BERT (text), MAE (images). <strong>Self-distillation:</strong> DINO/DINOv2. <strong>JEPA</strong> (predict in latent space).</li>
-<li><strong>Multimodal:</strong> CLIP (image–text contrastive), vision-language models (LLaVA-style: vision encoder + projector + LLM), audio (Whisper), video.</li>
-<li>⭐ <strong><a href="https://lilianweng.github.io/posts/2021-05-31-contrastive/" target="_blank" rel="noopener">Lilian Weng: Contrastive Representation Learning</a></strong> + the <a href="https://arxiv.org/abs/2103.00020" target="_blank" rel="noopener">CLIP paper</a>. Course: <a href="https://cmu-multicomp-lab.github.io/mmml-course/fall2023/" target="_blank" rel="noopener">CMU Multimodal ML</a>.</li>
-</ul>
+<p>Learn useful representations without labels, by inventing a prediction task from the data itself.</p>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Contrastive learning (InfoNCE)</div>
+<p>Make two augmented views of the same example (a positive pair) close in embedding space and different examples far apart:
+$$\mathcal L_i = -\log\frac{\exp(\mathrm{sim}(\mathbf z_i,\mathbf z_i^+)/\tau)}{\sum_{k}\exp(\mathrm{sim}(\mathbf z_i,\mathbf z_k)/\tau)}$$
+$\mathrm{sim}$ is cosine similarity, $\tau$ a temperature, and the sum runs over the positive and all negatives in the batch. It is a softmax classification: "which of these is my partner?" (SimCLR, MoCo.) <strong>CLIP</strong> applies the same loss to matching images with their captions.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Other self-supervised objectives</div>
+<p><strong>Masked modelling:</strong> hide parts of the input and predict them (BERT for text, MAE for images). <strong>Self-distillation:</strong> a student network matches a slowly updated teacher on different views (DINO / DINOv2). <strong>JEPA:</strong> predict the <em>representation</em> of a hidden part rather than its pixels.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Multimodal models</div>
+<p>Vision-language models (LLaVA-style) connect a vision encoder to an LLM through a small projector, so image patches become tokens the LLM can read. Similar recipes give audio (Whisper) and video models.</p>
+</div>
+<div class="box box-learn">
+<div class="box-title"><span class="box-ico">📚</span> Go deeper (optional)</div>
+<p>⭐ <strong><a href="https://lilianweng.github.io/posts/2021-05-31-contrastive/" target="_blank" rel="noopener">Lilian Weng: Contrastive Representation Learning</a></strong> + the <a href="https://arxiv.org/abs/2103.00020" target="_blank" rel="noopener">CLIP paper</a>. Course: <a href="https://cmu-multicomp-lab.github.io/mmml-course/fall2023/" target="_blank" rel="noopener">CMU Multimodal ML</a>.</p>
+</div>
 <h2 id="track-f-graphs-beyond-transformer-architectures">Track F · Graphs &amp; beyond-transformer architectures<a class="anchor" href="#track-f-graphs-beyond-transformer-architectures" title="Link to this section">#</a></h2>
-<ul>
-<li><strong>GNNs:</strong> message passing $\mathbf h_v' = \phi(\mathbf h_v, \textstyle\bigoplus_{u\in N(v)}\psi(\mathbf h_u))$. GCN, GAT, graph transformers. Used for molecules, social networks, physics simulation.</li>
-<li><strong>State-space models:</strong> S4 → <strong>Mamba</strong> (selective SSM, linear-time sequence modeling). Hybrids with attention. 🔭 Discretized linear ODEs.</li>
-<li>⭐ <strong><a href="https://web.stanford.edu/class/cs224w/" target="_blank" rel="noopener">Stanford CS224W: ML with Graphs</a></strong> + <strong><a href="https://pytorch-geometric.readthedocs.io/" target="_blank" rel="noopener">PyTorch Geometric</a></strong>. For SSMs: <a href="https://srush.github.io/annotated-s4/" target="_blank" rel="noopener">The Annotated S4</a>, the <a href="https://arxiv.org/abs/2312.00752" target="_blank" rel="noopener">Mamba paper</a>.</li>
-</ul>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Graph neural networks (message passing)</div>
+<p>Each node updates its vector from its own state and an aggregate (sum, mean or max, written $\bigoplus$) of messages from its neighbours $N(v)$:
+$$\mathbf h_v' = \phi\Big(\mathbf h_v,\ \bigoplus_{u\in N(v)}\psi(\mathbf h_u)\Big)$$
+Stack $k$ layers and each node sees its $k$-hop neighbourhood. Variants: GCN, GAT (attention over neighbours), graph transformers. Used for molecules, social networks and physics simulation.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · State-space models (SSMs)</div>
+<p>A linear recurrence, discretized from a continuous linear ODE:
+$$\mathbf h_t = \bar A\,\mathbf h_{t-1}+\bar B\,\mathbf x_t,\qquad \mathbf y_t = C\,\mathbf h_t$$
+Because it is linear, it can be computed in parallel during training (as a convolution or a parallel scan) and as a cheap recurrence during generation: <strong>linear</strong> in sequence length, unlike attention's $T^2$. <strong>Mamba</strong> makes $\bar A,\bar B,C$ depend on the input (a <em>selective</em> SSM), so it can choose what to remember. Hybrids mix SSM and attention layers. 🔭 Discretized linear ODEs.</p>
+</div>
+<div class="box box-learn">
+<div class="box-title"><span class="box-ico">📚</span> Go deeper (optional)</div>
+<p>⭐ <strong><a href="https://web.stanford.edu/class/cs224w/" target="_blank" rel="noopener">Stanford CS224W: ML with Graphs</a></strong> + <strong><a href="https://pytorch-geometric.readthedocs.io/" target="_blank" rel="noopener">PyTorch Geometric</a></strong>. For SSMs: <a href="https://srush.github.io/annotated-s4/" target="_blank" rel="noopener">The Annotated S4</a>, the <a href="https://arxiv.org/abs/2312.00752" target="_blank" rel="noopener">Mamba paper</a>.</p>
+</div>
 <h2 id="track-g-other-frameworks-worth-knowing">Track G · Other frameworks worth knowing<a class="anchor" href="#track-g-other-frameworks-worth-knowing" title="Link to this section">#</a></h2>
-<ul>
-<li><strong>JAX</strong> (functional NumPy + <code>grad</code>/<code>jit</code>/<code>vmap</code>/<code>pmap</code>). Popular in research and on TPUs. Try it once you know PyTorch well: <a href="https://docs.jax.dev/" target="_blank" rel="noopener">JAX docs</a>.</li>
-</ul>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · JAX</div>
+<p>NumPy with composable function transformations: <code>grad</code> (derivatives), <code>jit</code> (compile with XLA), <code>vmap</code> (automatic batching) and <code>pmap</code>/sharding (multiple devices). Functional style: models are pure functions of their parameters. Popular in research and on TPUs. Try it once you know PyTorch well: <a href="https://docs.jax.dev/" target="_blank" rel="noopener">JAX docs</a>.</p>
+</div>
 <hr />
 <h2 id="becoming-a-contributor-high-school-senior-edition">Becoming a contributor (high-school senior edition)<a class="anchor" href="#becoming-a-contributor-high-school-senior-edition" title="Link to this section">#</a></h2>
 <ul>
@@ -184,7 +298,7 @@
 <li><strong>Community:</strong> EleutherAI, GPU MODE, and Hugging Face Discords. Open-source contributions (docs, bug fixes) to <code>transformers</code>, <code>diffusers</code>, <code>TransformerLens</code>.</li>
 <li><strong>Research programs for students:</strong> look for summer research programs at universities, MATS / ARENA (safety), and reaching out to grad students with a concrete reproduction you've done.</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/11-reinforcement-learning.html"><small>← Previous</small>Reinforcement Learning</a><a class="pn next" href="../deep-learning/cheatsheet.html"><small>Next →</small>Cheatsheet</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#how-to-read-papers-do-this-first">How to read papers (do this first)</a></li><li><a href="#track-a-deep-learning-theory-great-fit-for-a-mathphysics-mind">Track A · Deep learning theory 🔭 (great fit for a math/physics mind)</a></li><li><a href="#track-b-mechanistic-interpretability-ai-safety">Track B · Mechanistic interpretability &amp; AI safety</a></li><li><a href="#track-c-scientific-ml-physics-informed-dl">Track C · Scientific ML &amp; physics-informed DL 🔭</a></li><li><a href="#track-d-ml-systems-gpus-efficiency-where-your-c-shines">Track D · ML systems, GPUs &amp; efficiency 💻 (where your C++ shines)</a></li><li><a href="#track-e-self-supervised-multimodal-representation-learning">Track E · Self-supervised, multimodal &amp; representation learning</a></li><li><a href="#track-f-graphs-beyond-transformer-architectures">Track F · Graphs &amp; beyond-transformer architectures</a></li><li><a href="#track-g-other-frameworks-worth-knowing">Track G · Other frameworks worth knowing</a></li><li><a href="#becoming-a-contributor-high-school-senior-edition">Becoming a contributor (high-school senior edition)</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#how-to-read-papers-do-this-first">How to read papers (do this first)</a></li><li><a href="#track-a-deep-learning-theory">Track A · Deep learning theory 🔭</a></li><li><a href="#track-b-mechanistic-interpretability-ai-safety">Track B · Mechanistic interpretability &amp; AI safety</a></li><li><a href="#track-c-scientific-ml-physics-informed-dl">Track C · Scientific ML &amp; physics-informed DL 🔭</a></li><li><a href="#track-d-ml-systems-gpus-efficiency">Track D · ML systems, GPUs &amp; efficiency 💻</a></li><li><a href="#track-e-self-supervised-multimodal-representation-learning">Track E · Self-supervised, multimodal &amp; representation learning</a></li><li><a href="#track-f-graphs-beyond-transformer-architectures">Track F · Graphs &amp; beyond-transformer architectures</a></li><li><a href="#track-g-other-frameworks-worth-knowing">Track G · Other frameworks worth knowing</a></li><li><a href="#becoming-a-contributor-high-school-senior-edition">Becoming a contributor (high-school senior edition)</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

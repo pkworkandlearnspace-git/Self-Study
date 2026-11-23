@@ -86,6 +86,9 @@ Convolutional networks (CNNs) build both facts into the architecture.
 > $$\mathbf y = \mathrm{ReLU}\big(\mathbf x + F(\mathbf x)\big),\qquad F = \text{conv-BN-ReLU-conv-BN}$$
 > Before ResNet, *adding* layers to a deep plain net made even the **training** error worse: optimization, not overfitting, was the problem. With the skip, a block can represent the identity trivially (set $F=0$), and gradients reach early layers through the "+" unchanged. **The most important architecture idea in DL**: transformers use the same trick (module 08).
 
+> [!TRY] [Normalization Explorer](interactive/norm-explorer.html)
+> Every ResNet block uses BatchNorm. Highlight which numbers in a $(N, C, H, W)$ batch it averages over, and compare with LayerNorm and GroupNorm.
+
 > [!DEF] 1×1 convolutions and depthwise-separable convolutions
 > A **1×1 conv** mixes channels at each pixel without looking at neighbours: a cheap way to change the channel count. A **depthwise-separable** conv splits a normal conv into a per-channel $k\times k$ conv (spatial) followed by a 1×1 conv (channels), cutting cost by roughly a factor of $k^2$. MobileNet and EfficientNet are built from them.
 
@@ -133,6 +136,9 @@ Convolutional networks (CNNs) build both facts into the architecture.
 
 > [!DEF] Vision foundation models
 > Large pretrained models you can download and reuse: **CLIP** (images and text in a shared embedding space; zero-shot classification by comparing an image to text prompts), **DINOv2** (self-supervised features that work well for almost any task), **SAM** (segmentation). Get them from `timm` or Hugging Face.
+
+> [!TRY] [Flashcards](interactive/flashcards.html)
+> Choose the **06 CNN** deck and drill this chapter's key facts with spaced repetition, then do the practice questions below.
 
 ## Practice (answers hidden)
 
