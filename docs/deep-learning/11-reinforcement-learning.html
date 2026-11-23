@@ -167,7 +167,7 @@ The goal is a policy that maximizes the expected return. $\gamma$ makes near rew
 <h2 id="2-value-functions-and-the-bellman-equations">2 · Value functions and the Bellman equations<a class="anchor" href="#2-value-functions-and-the-bellman-equations" title="Link to this section">#</a></h2>
 <div class="box box-def">
 <div class="box-title"><span class="box-ico">📖</span> Definition · Value functions and advantage</div>
-<p>$$V^\pi(s) = \mathbb E_\pi[G_t\mid s_t=s]\qquad Q^\pi(s,a) = \mathbb E_\pi[G_t\mid s_t=s,\,a_t=a]\qquad A^\pi(s,a)=Q^\pi(s,a)-V^\pi(s)$$
+<p>$$\begin{aligned} V^\pi(s) &amp;= \mathbb E_\pi[G_t\mid s_t=s]\\ Q^\pi(s,a) &amp;= \mathbb E_\pi[G_t\mid s_t=s,\,a_t=a]\\ A^\pi(s,a) &amp;= Q^\pi(s,a)-V^\pi(s)\end{aligned}$$
 $V$: how good is this state (following $\pi$)? $Q$: how good is this action here? The <strong>advantage</strong> $A$: how much better is this action than the policy's average?</p>
 </div>
 <div class="box box-formula">

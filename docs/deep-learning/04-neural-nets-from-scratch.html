@@ -155,7 +155,7 @@ An <strong>MLP</strong> stacks layers: the output of one is the input of the nex
 <div class="box box-formula">
 <div class="box-title"><span class="box-ico">🧮</span> Formula · Forward pass of a 2-layer MLP (batch form)</div>
 <p>For a batch $X$ of $N$ examples with $D$ features, $H$ hidden units and $C$ classes:
-$$Z_1 = XW_1^\top + \mathbf b_1\;(N\times H)\quad A_1 = \mathrm{ReLU}(Z_1)\quad Z_2 = A_1W_2^\top + \mathbf b_2\;(N\times C)\quad P = \mathrm{softmax}(Z_2)$$
+$$\begin{aligned} Z_1 &amp;= XW_1^\top + \mathbf b_1 &amp;&amp; (N\times H)\\ A_1 &amp;= \mathrm{ReLU}(Z_1) &amp;&amp; (N\times H)\\ Z_2 &amp;= A_1W_2^\top + \mathbf b_2 &amp;&amp; (N\times C)\\ P &amp;= \mathrm{softmax}(Z_2) &amp;&amp; (N\times C)\end{aligned}$$
 $$L = -\frac1N\sum_{n=1}^N\log P_{n,\,y_n}$$
 Parameter count: $W_1$ has $H\cdot D$, $\mathbf b_1$ has $H$, $W_2$ has $C\cdot H$, $\mathbf b_2$ has $C$.</p>
 </div>

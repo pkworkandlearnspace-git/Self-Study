@@ -142,8 +142,10 @@
 <div class="box box-def">
 <div class="box-title"><span class="box-ico">📖</span> Definition · Queries, keys and values</div>
 <p>From each token's vector $\mathbf x_t$, compute three vectors with learned matrices:
-$$\mathbf q_t = W_Q\mathbf x_t\ (\text{what am I looking for?}),\quad \mathbf k_t = W_K\mathbf x_t\ (\text{what do I contain?}),\quad \mathbf v_t = W_V\mathbf x_t\ (\text{what do I pass on?})$$
-Token $t$ compares its query with every key (dot product = similarity, module 01), turns the scores into weights with softmax, and takes the weighted average of the values.</p>
+- <strong>query</strong> $\mathbf q_t = W_Q\mathbf x_t$: what am I looking for?
+- <strong>key</strong> $\mathbf k_t = W_K\mathbf x_t$: what do I contain?
+- <strong>value</strong> $\mathbf v_t = W_V\mathbf x_t$: what do I pass on?</p>
+<p>Token $t$ compares its query with every key (dot product = similarity, module 01), turns the scores into weights with softmax, and takes the weighted average of the values.</p>
 </div>
 <div class="box box-formula">
 <div class="box-title"><span class="box-ico">🧮</span> Formula · Scaled dot-product attention</div>

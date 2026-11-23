@@ -26,7 +26,10 @@ In module 07, a decoder *attended* to encoder states. **Self-attention** lets ev
 
 > [!DEF] Queries, keys and values
 > From each token's vector $\mathbf x_t$, compute three vectors with learned matrices:
-> $$\mathbf q_t = W_Q\mathbf x_t\ (\text{what am I looking for?}),\quad \mathbf k_t = W_K\mathbf x_t\ (\text{what do I contain?}),\quad \mathbf v_t = W_V\mathbf x_t\ (\text{what do I pass on?})$$
+> - **query** $\mathbf q_t = W_Q\mathbf x_t$: what am I looking for?
+> - **key** $\mathbf k_t = W_K\mathbf x_t$: what do I contain?
+> - **value** $\mathbf v_t = W_V\mathbf x_t$: what do I pass on?
+>
 > Token $t$ compares its query with every key (dot product = similarity, module 01), turns the scores into weights with softmax, and takes the weighted average of the values.
 
 > [!FORMULA] Scaled dot-product attention

@@ -402,3 +402,8 @@ a:hover { color: var(--accent-ink); text-decoration-thickness: 2px; }
 /* Mermaid diagrams */
 .doc pre.mermaid { background: var(--surface); text-align: center; padding: 18px; font-family: var(--sans); }
 .doc pre.mermaid svg { max-width: 100%; height: auto; }
+
+/* long inline code (e.g. torch.nn.utils.clip_grad_norm_) may wrap on small screens */
+.doc :not(pre) > code { overflow-wrap: anywhere; }
+/* keep KaTeX's hidden MathML inside its own box (otherwise it can widen the page from inside scrolling tables) */
+.katex { position: relative; }

@@ -48,7 +48,7 @@ In supervised learning someone tells the model the right answer. In **reinforcem
 ## 2 · Value functions and the Bellman equations
 
 > [!DEF] Value functions and advantage
-> $$V^\pi(s) = \mathbb E_\pi[G_t\mid s_t=s]\qquad Q^\pi(s,a) = \mathbb E_\pi[G_t\mid s_t=s,\,a_t=a]\qquad A^\pi(s,a)=Q^\pi(s,a)-V^\pi(s)$$
+> $$\begin{aligned} V^\pi(s) &= \mathbb E_\pi[G_t\mid s_t=s]\\ Q^\pi(s,a) &= \mathbb E_\pi[G_t\mid s_t=s,\,a_t=a]\\ A^\pi(s,a) &= Q^\pi(s,a)-V^\pi(s)\end{aligned}$$
 > $V$: how good is this state (following $\pi$)? $Q$: how good is this action here? The **advantage** $A$: how much better is this action than the policy's average?
 
 > [!FORMULA] Bellman equations
