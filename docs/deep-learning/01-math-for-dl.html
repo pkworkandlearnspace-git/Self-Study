@@ -111,11 +111,21 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Math for Deep Learning</span></nav><article class="doc"><h1 id="01-math-for-deep-learning">01 · Math for Deep Learning<a class="anchor" href="#01-math-for-deep-learning" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 01</span><span>⏱ 7 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/01-math-for-dl.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Math for Deep Learning</span></nav><article class="doc"><h1 id="01-math-for-deep-learning">01 · Math for Deep Learning<a class="anchor" href="#01-math-for-deep-learning" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 01</span><span>⏱ 21 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/01-math-for-dl.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> the math DL actually uses and nothing more. · <strong>Time:</strong> 15–25 h · <strong>Needs:</strong> high-school calculus</p>
 </blockquote>
-<p>You're strong at math, so this module skips the basics. It covers three things school usually doesn't: <strong>linear algebra as geometry</strong>, <strong>matrix calculus</strong>, and <strong>probability/information theory for ML</strong>.</p>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>read a matrix as a <strong>map</strong> that moves space, and explain rank, determinant, eigenvectors and the SVD in pictures;</li>
+<li>take <strong>gradients of vector and matrix expressions</strong> and check them with shapes;</li>
+<li>explain <strong>why gradient descent works</strong> and exactly when it blows up;</li>
+<li>explain why almost every loss in DL is a <strong>negative log-likelihood</strong>, and what entropy, cross-entropy and KL divergence measure.</li>
+</ul>
+<p><strong>How to use this chapter:</strong> each section teaches one idea in the same order: explanation → 📖 definitions → 🧮 formulas → ✍️ example → 🎛️ try it → 📚 optional video/reading. Everything you need is on this page; the videos and books are there only if you want a second explanation.</p>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Explain matrix multiplication as a composition of linear maps, and what eigenvectors/SVD mean geometrically.</li>
@@ -127,66 +137,433 @@
 <li class="task"><input type="checkbox"> Say why a rotation matrix has singular values $1, 1$ but no real eigenvectors, and why $\mathrm{softmax}(\mathbf z - \max_j z_j)$ is used in code.</li>
 </ul>
 <p>🎯 Not sure? Take the auto-graded <a href="interactive/foundations-quiz.html">Foundations Quiz</a> (filter by module) before deciding.</p>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
-<h3 id="linear-algebra-geometry-first">Linear algebra (geometry first)<a class="anchor" href="#linear-algebra-geometry-first" title="Link to this section">#</a></h3>
+<h2 id="1-vectors-data-as-arrows">1 · Vectors: data as arrows<a class="anchor" href="#1-vectors-data-as-arrows" title="Link to this section">#</a></h2>
+<p>In deep learning, <strong>everything is a vector</strong>: an image is a long list of pixel values, a word is a list of 768 numbers (its <em>embedding</em>), and the network's parameters are one giant vector. So we need two views of a vector at once:</p>
 <ul>
-<li><strong>Vectors</strong> are data points. <strong>Matrices</strong> are linear maps, and $AB$ means "apply $B$, then $A$".</li>
-<li><strong>Dot product</strong> $\mathbf a\cdot\mathbf b = \|\mathbf a\|\|\mathbf b\|\cos\theta$ measures similarity. It's the core of attention.</li>
-<li><strong>Rank</strong> = dimension of the column space (the <em>image</em> of the map) = number of nonzero singular values. A rank-deficient matrix squashes some direction to zero, so it can't be inverted. <strong>Low-rank</strong> ideas drive LoRA and compression.</li>
-<li><strong>Eigenvectors</strong> satisfy $A\mathbf v = \lambda\mathbf v$: directions the map only stretches. For symmetric $A$ they are orthogonal and $A = Q\Lambda Q^\top$ (spectral theorem). A rotation has no real eigenvectors; a shear has only one eigen-direction.</li>
-<li><strong>SVD</strong> $A = U\Sigma V^\top$ (<em>any</em> $A$, even non-square): rotate/reflect → scale by $\sigma_i \ge 0$ → rotate/reflect. The unit circle maps to an ellipse with semi-axes $\sigma_i$. This underlies PCA, low-rank approximation (Eckart–Young: the best rank-$k$ approximation keeps the top $k$ singular values), and conditioning $\kappa = \sigma_{\max}/\sigma_{\min}$. Also $|\det A| = \prod\sigma_i$.</li>
-<li>🎛️ <strong>See it:</strong> <a href="interactive/linear-maps.html">Matrix as a Map</a>: drag a matrix's columns and watch det, rank, eigenvectors, and the SVD steps.</li>
-<li><strong>Norms:</strong> $\|\cdot\|_2$ (weight decay), $\|\cdot\|_1$ (sparsity), Frobenius norm for matrices.</li>
-<li><strong>Shapes are everything.</strong> In DL, data is a batch matrix $X \in \mathbb{R}^{N\times d}$ (rows = examples).</li>
+<li><strong>a list of numbers</strong> $\mathbf x = (x_1, \dots, x_d)$, which is how the computer stores it, and</li>
+<li><strong>an arrow (or point) in $d$-dimensional space</strong>, which is how you reason about it.</li>
 </ul>
-<h3 id="calculus-matrix-calculus">Calculus → matrix calculus<a class="anchor" href="#calculus-matrix-calculus" title="Link to this section">#</a></h3>
+<p>You can't picture 768 dimensions, but everything you see in 2D and 3D (lengths, angles, projections) works the same way in high dimensions. Draw it in 2D, then trust the algebra.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Vector, dimension</div>
+<p>A <strong>vector</strong> $\mathbf x \in \mathbb R^d$ is an ordered list of $d$ real numbers. $d$ is its <strong>dimension</strong>. Vectors are added component by component, $(\mathbf x+\mathbf y)_i = x_i + y_i$, and scaled by a number, $(c\mathbf x)_i = c\,x_i$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Dot product</div>
+<p>The <strong>dot product</strong> of two vectors of the same dimension multiplies matching entries and adds them up:
+$$\mathbf a\cdot\mathbf b = \mathbf a^\top\mathbf b = \sum_{i=1}^{d} a_i b_i$$
+Geometrically it equals $\|\mathbf a\|\,\|\mathbf b\|\cos\theta$, where $\theta$ is the angle between the arrows. It is large and positive when they point the same way, zero when they are perpendicular (<strong>orthogonal</strong>), and negative when they point apart.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Norms (length)</div>
+<p>A <strong>norm</strong> measures the size of a vector.</p>
 <ul>
-<li><strong>Gradient</strong> $\nabla f$ points uphill. It is the steepest-ascent direction, perpendicular to level sets.</li>
-<li><strong>Jacobian</strong> $J_{ij} = \partial y_i / \partial x_j$. <strong>Chain rule:</strong> $J_{f\circ g} = J_f \, J_g$. <strong>Backprop = the chain rule applied right-to-left</strong> (vector-Jacobian products).</li>
-<li><strong>Identities worth memorizing:</strong><ul>
-<li>$\nabla_{\mathbf x}(\mathbf a^\top\mathbf x) = \mathbf a$</li>
-<li>$\nabla_{\mathbf x}(\mathbf x^\top A\mathbf x) = (A+A^\top)\mathbf x$</li>
-<li>$\nabla_{\mathbf w}\|X\mathbf w-\mathbf y\|^2 = 2X^\top(X\mathbf w-\mathbf y)$</li>
+<li><strong>L2 (Euclidean) norm:</strong> $\|\mathbf x\|_2 = \sqrt{\sum_i x_i^2} = \sqrt{\mathbf x^\top\mathbf x}$, the ordinary length of the arrow.</li>
+<li><strong>L1 norm:</strong> $\|\mathbf x\|_1 = \sum_i |x_i|$. Penalizing it pushes entries to exactly zero (sparsity).</li>
+<li><strong>Frobenius norm</strong> of a matrix: $\|A\|_F = \sqrt{\sum_{ij} A_{ij}^2}$, the L2 norm of all entries.</li>
 </ul>
-</li>
-<li><strong>Shape trick:</strong> the gradient of a scalar w.r.t. a matrix has the <em>same shape as that matrix</em>. Use this to check every derivation.</li>
-<li><strong>Hessian</strong> $H = \nabla^2 f$ gives curvature. A twice-differentiable $f$ is convex iff $H \succeq 0$ everywhere. For a convex quadratic, the condition number $\lambda_{\max}/\lambda_{\min}$ of $H$ sets how hard optimization is.</li>
-<li><strong>Taylor:</strong> $f(\mathbf x+\boldsymbol\delta) \approx f + \nabla f^\top\boldsymbol\delta + \tfrac12\boldsymbol\delta^\top H\boldsymbol\delta$. This is where every optimizer comes from.</li>
-</ul>
-<h3 id="optimization">Optimization<a class="anchor" href="#optimization" title="Link to this section">#</a></h3>
+<p>A <strong>unit vector</strong> has length 1. Any nonzero $\mathbf x$ becomes one after dividing by its length: $\hat{\mathbf x} = \mathbf x/\|\mathbf x\|$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Cosine similarity</div>
+<p>$$\cos\theta = \frac{\mathbf a\cdot\mathbf b}{\|\mathbf a\|\,\|\mathbf b\|} \in [-1, 1]$$
+This is how embeddings are compared ("are these two sentences about the same thing?"), and the dot product $\mathbf q\cdot\mathbf k$ is the core of <strong>attention</strong> in transformers (module 08).</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Dot product and angle</div>
+<p>$\mathbf a=(3,4)$, $\mathbf b=(4,3)$. Then $\mathbf a\cdot\mathbf b = 12+12 = 24$, $\|\mathbf a\|=\|\mathbf b\|=5$, so $\cos\theta = 24/25 = 0.96$ and $\theta\approx 16°$: almost the same direction. For $\mathbf c=(-4,3)$: $\mathbf a\cdot\mathbf c = -12+12 = 0$, so $\mathbf a\perp\mathbf c$.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Shapes are everything</div>
+<p>In code, a <strong>batch</strong> of $N$ examples with $d$ features each is stored as a matrix $X \in \mathbb R^{N\times d}$: <strong>one row per example</strong>. Most bugs in DL are shape bugs, so get into the habit of writing the shape next to every symbol.</p>
+</div>
+<h2 id="2-matrices-functions-that-move-space">2 · Matrices: functions that move space<a class="anchor" href="#2-matrices-functions-that-move-space" title="Link to this section">#</a></h2>
+<p>A matrix is not just a table of numbers. A matrix $A \in \mathbb R^{m\times n}$ <strong>is a function</strong>: it takes a vector $\mathbf x\in\mathbb R^n$ and returns $A\mathbf x\in\mathbb R^m$. These functions are special: they keep straight lines straight and keep the origin fixed. Such functions are called <strong>linear maps</strong>.</p>
+<p>The single most useful fact: <strong>the columns of $A$ tell you where the basis vectors land.</strong> In 2D, the first column is where $\hat{\mathbf e}_1=(1,0)$ goes and the second column is where $\hat{\mathbf e}_2=(0,1)$ goes. Since every vector is a combination $x_1\hat{\mathbf e}_1 + x_2\hat{\mathbf e}_2$, its image is the same combination of the columns:</p>
+<p>$$A\mathbf x = x_1\,\mathbf a_1 + x_2\,\mathbf a_2 \qquad(\mathbf a_j = \text{column } j)$$</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Linear map</div>
+<p>A function $f$ is <strong>linear</strong> if $f(\mathbf x+\mathbf y) = f(\mathbf x)+f(\mathbf y)$ and $f(c\mathbf x) = c f(\mathbf x)$. Every linear map from $\mathbb R^n$ to $\mathbb R^m$ can be written as multiplication by an $m\times n$ matrix, and vice versa.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Matrix–vector and matrix–matrix product</div>
+<p>$$(A\mathbf x)_i = \sum_j A_{ij}x_j \qquad (AB)_{ij} = \sum_k A_{ik}B_{kj}$$
+Shapes: $(m\times n)(n\times p) = (m\times p)$. The inner sizes must match.</p>
+<p><strong>Meaning:</strong> $AB$ is the map "apply $B$ first, then $A$" (composition, read right to left). That's why $AB \ne BA$ in general: rotating then stretching is not the same as stretching then rotating.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · A shear, then a scaling</div>
+<p>$B=\begin{pmatrix}1&amp;1\\0&amp;1\end{pmatrix}$ (shear: pushes the top sideways), $A=\begin{pmatrix}2&amp;0\\0&amp;1\end{pmatrix}$ (stretch $x$ by 2).
+$AB=\begin{pmatrix}2&amp;2\\0&amp;1\end{pmatrix}$ but $BA=\begin{pmatrix}2&amp;1\\0&amp;1\end{pmatrix}$. Check on $\hat{\mathbf e}_2=(0,1)$: shear sends it to $(1,1)$ and the stretch then gives $(2,1)$, the second column of $AB$. ✓</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Transpose, identity, inverse</div>
 <ul>
-<li><strong>Gradient descent:</strong> $\theta \leftarrow \theta - \eta\nabla L$. On a quadratic it's stable only if $\eta &lt; 2/\lambda_{\max}(H)$ (worked example below). 🎛️ Try it in the <a href="interactive/gradient-descent.html">Optimizer Landscape</a>.</li>
-<li>🔭 <strong>Physics:</strong> GD is an overdamped particle in potential $L$. <strong>Momentum</strong> is a heavy ball with friction. <strong>SGD noise</strong> acts like temperature.</li>
-<li><strong>Stochastic GD:</strong> gradients estimated on mini-batches: an unbiased but noisy estimate, far cheaper per step. The noise is widely believed to help generalization (it favors flatter minima), though this is still an active research question.</li>
-<li><strong>Lagrange multipliers</strong> show up in constrained derivations (e.g. max-entropy → softmax, SVMs).</li>
+<li>The <strong>transpose</strong> $A^\top$ swaps rows and columns: $(A^\top)_{ij} = A_{ji}$. Rule: $(AB)^\top = B^\top A^\top$.</li>
+<li>The <strong>identity</strong> $I$ has 1s on the diagonal and 0 elsewhere; $I\mathbf x = \mathbf x$.</li>
+<li>A square matrix $A$ is <strong>invertible</strong> if there is $A^{-1}$ with $A^{-1}A = AA^{-1} = I$: the map can be undone. $(AB)^{-1} = B^{-1}A^{-1}$.</li>
 </ul>
-<h3 id="probability-statistics">Probability &amp; statistics<a class="anchor" href="#probability-statistics" title="Link to this section">#</a></h3>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · A neural-network layer is a matrix (plus a bend)</div>
+<p>A dense layer computes $\mathbf h = \phi(W\mathbf x + \mathbf b)$: a linear map $W$, a shift $\mathbf b$, then a nonlinear function $\phi$ applied to each entry. Stacking layers without $\phi$ would collapse to a single matrix ($W_2W_1$ is just another matrix), which is why the nonlinearity is essential (module 04).</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/linear-maps.html">Matrix as a Map</a></div>
+<p>Drag the two column vectors and watch the grid deform. Try: a rotation, a shear, a matrix whose columns are parallel (the plane collapses to a line), and swapping the columns (orientation flips, so the determinant turns negative).</p>
+</div>
+<figure class="video" data-yt="PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab" data-list="1"><button type="button" class="video-play" aria-label="Play video: Essence of Linear Algebra (full series)"><span class="video-btn">▶</span><span class="video-label">Playlist · Essence of Linear Algebra (full series)</span></button><figcaption>▶️ <a href="https://www.youtube.com/playlist?list=PLZHQObOWTQDPD3MizzM2xVFitgF8hE_ab" target="_blank" rel="noopener">Essence of Linear Algebra (full series)</a> · 3Blue1Brown · ~3 h, chapters 1–4 cover this section <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="3-rank-determinant-and-solving-equations">3 · Rank, determinant and solving equations<a class="anchor" href="#3-rank-determinant-and-solving-equations" title="Link to this section">#</a></h2>
+<p>When does a matrix lose information? Look at what it does to space.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Span, linear independence</div>
+<p>The <strong>span</strong> of some vectors is everything you can build from them with scaled sums. Vectors are <strong>linearly independent</strong> if none of them is a combination of the others, i.e. $c_1\mathbf v_1+\dots+c_k\mathbf v_k = \mathbf 0$ only when every $c_i=0$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Column space, null space, rank</div>
 <ul>
-<li><strong>Random variables, expectation, variance.</strong> Linearity: $\mathbb E[aX+bY]=a\mathbb E X+b\mathbb E Y$.</li>
-<li><strong>Bayes:</strong> $p(\theta\mid D) \propto p(D\mid\theta)\,p(\theta)$, i.e. posterior ∝ likelihood × prior.</li>
-<li><strong>Key distributions:</strong> Bernoulli/Categorical (classification), Gaussian (regression, noise, VAEs, diffusion).</li>
-<li><strong>Maximum likelihood (MLE):</strong> $\theta^* = \arg\max \sum_i \log p(x_i\mid\theta)$. Almost every DL loss is a negative log-likelihood:<ul>
-<li>Gaussian likelihood → <strong>MSE</strong>. Bernoulli/Categorical → <strong>cross-entropy</strong>.</li>
+<li><strong>Column space</strong> (image) of $A$: the span of its columns = every possible output $A\mathbf x$.</li>
+<li><strong>Null space</strong> (kernel): every $\mathbf x$ with $A\mathbf x = \mathbf 0$, the directions that get squashed to nothing.</li>
+<li><strong>Rank:</strong> the dimension of the column space = the number of linearly independent columns.</li>
 </ul>
-</li>
-<li><strong>MAP</strong> = MLE + prior. A Gaussian prior is exactly <strong>L2 weight decay</strong>.</li>
-<li><strong>Monte Carlo:</strong> $\mathbb E_p[f] \approx \frac1N\sum f(x_i)$. Also the <strong>reparameterization trick</strong> $x=\mu+\sigma\epsilon$ (VAEs, diffusion).</li>
-</ul>
-<h3 id="information-theory">Information theory<a class="anchor" href="#information-theory" title="Link to this section">#</a></h3>
+<p>An $m\times n$ matrix has <strong>full rank</strong> if its rank is $\min(m,n)$. Otherwise it is <strong>rank-deficient</strong>: some direction is crushed, and that information is gone for good.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Rank–nullity theorem</div>
+<p>For $A\in\mathbb R^{m\times n}$:
+$$\operatorname{rank}(A) + \dim\operatorname{null}(A) = n$$
+Every input dimension either survives (counts toward rank) or is crushed (counts toward the null space).</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Determinant</div>
+<p>For a square matrix, $\det A$ is the factor by which $A$ scales <strong>area</strong> (2D) or <strong>volume</strong> (3D+). A negative sign means the map flips orientation (like a mirror).
+$$\det\begin{pmatrix}a&amp;b\\c&amp;d\end{pmatrix} = ad-bc \qquad \det(AB)=\det A\,\det B$$
+$\det A = 0$ exactly when $A$ squashes space into a lower dimension, i.e. when $A$ is <strong>not invertible</strong>.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · 2×2 inverse</div>
+<p>$$\begin{pmatrix}a&amp;b\\c&amp;d\end{pmatrix}^{-1} = \frac{1}{ad-bc}\begin{pmatrix}d&amp;-b\\-c&amp;a\end{pmatrix}$$
+In code you almost never form $A^{-1}$; you call <code>np.linalg.solve(A, b)</code> to solve $A\mathbf x=\mathbf b$, which is faster and more accurate.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · A rank-1 matrix</div>
+<p>$A=\begin{pmatrix}1&amp;2\\2&amp;4\end{pmatrix}$. The second column is twice the first, so the column space is the line through $(1,2)$: rank 1. $\det A = 4-4 = 0$. The null space is the line through $(2,-1)$, because $A(2,-1)^\top = (0,0)^\top$. Rank–nullity: $1 + 1 = 2$ ✓.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Why DL cares about rank</div>
+<p><strong>Low-rank</strong> structure is everywhere: <strong>LoRA</strong> fine-tunes a big model by learning a weight update $\Delta W = BA$ that is a product of two thin matrices (rank $r \ll d$), and compression methods replace a matrix by a low-rank approximation (section 4).</p>
+</div>
+<div class="box box-learn">
+<div class="box-title"><span class="box-ico">📚</span> Go deeper (optional)</div>
 <ul>
-<li><strong>Entropy</strong> $H(p) = -\sum p\log p$: average surprise. 🔭 Same form as Gibbs entropy.</li>
-<li><strong>Cross-entropy</strong> $H(p,q) = -\sum p\log q$: the classification loss.</li>
-<li><strong>KL divergence</strong> $D_{KL}(p\|q)=\sum p\log\frac{p}{q} = H(p,q)-H(p) \ge 0$ (Jensen). It's asymmetric.</li>
-<li><strong>Softmax</strong> $\sigma(\mathbf z)_i = e^{z_i}/\sum_j e^{z_j}$. 🔭 This is the Boltzmann distribution with energy $-z_i$ and temperature 1. The "temperature" in LLM sampling is literally $T$.</li>
+<li>3Blue1Brown lessons: <a href="https://www.3blue1brown.com/topics/linear-algebra" target="_blank" rel="noopener">Linear algebra topic page</a>, especially "<a href="https://www.3blue1brown.com/lessons/inverse-matrices" target="_blank" rel="noopener">Inverse matrices, column space and null space</a>".</li>
+<li>⭐ <a href="https://mml-book.github.io/" target="_blank" rel="noopener">Mathematics for Machine Learning</a>, ch. 2 (free PDF).</li>
 </ul>
-<h2 id="worked-examples">Worked examples<a class="anchor" href="#worked-examples" title="Link to this section">#</a></h2>
-<p><strong>1 · Gradient of least squares, with shapes.</strong> $L(\mathbf w)=\|X\mathbf w-\mathbf y\|^2$ with $X\in\mathbb R^{N\times d}$. Let $\mathbf r = X\mathbf w-\mathbf y$ ($N\times1$). Then $L=\mathbf r^\top\mathbf r$, $dL = 2\mathbf r^\top d\mathbf r = 2\mathbf r^\top X\,d\mathbf w$, so $\nabla_{\mathbf w}L = 2X^\top\mathbf r$ ($d\times1$ ✓ same shape as $\mathbf w$). Setting it to 0 gives the <strong>normal equations</strong> $X^\top X\mathbf w = X^\top\mathbf y$.
-<em>Numbers:</em> points $(0,1),(1,2),(2,2)$ with a bias column: $X$ has rows $(1,0),(1,1),(1,2)$ and $\mathbf y=(1,2,2)^\top$. Then $X^\top X$ has rows $(3,3),(3,5)$ and $X^\top\mathbf y=(5,6)^\top$, so $\mathbf w=(7/6,\ 1/2)$: the line $\hat y = 1.167 + 0.5x$.</p>
-<p><strong>2 · Why $\eta &lt; 2/\lambda_{\max}$.</strong> On $f(x)=\tfrac a2x^2$, GD gives $x_{t+1}=x_t-\eta a x_t=(1-\eta a)x_t$. This shrinks iff $|1-\eta a|&lt;1 \iff 0&lt;\eta&lt;2/a$. For $\eta a\in(1,2)$ it converges while <strong>oscillating</strong> (sign flips), and for $\eta a&gt;2$ it blows up. A quadratic in $d$ dimensions decouples along the eigenvectors of $H$, so the steepest direction ($\lambda_{\max}$) limits $\eta$, and the flattest ($\lambda_{\min}$) then converges at rate $1-\eta\lambda_{\min} \approx 1-2/\kappa$. That's why ill-conditioning is slow.</p>
-<p><strong>3 · MSE is Gaussian MLE.</strong> Model $y_i = f_\theta(x_i)+\varepsilon_i$, $\varepsilon_i\sim\mathcal N(0,\sigma^2)$. Then
-$-\log p(\mathbf y\mid X,\theta) = \sum_i \frac{(y_i-f_\theta(x_i))^2}{2\sigma^2} + \frac N2\log(2\pi\sigma^2)$.
+</div>
+<h2 id="4-eigenvectors-and-the-svd">4 · Eigenvectors and the SVD<a class="anchor" href="#4-eigenvectors-and-the-svd" title="Link to this section">#</a></h2>
+<p>Most vectors change direction when a matrix acts on them. A few special ones don't.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Eigenvector, eigenvalue</div>
+<p>A nonzero vector $\mathbf v$ is an <strong>eigenvector</strong> of a square matrix $A$ if
+$$A\mathbf v = \lambda\mathbf v$$
+for some number $\lambda$, its <strong>eigenvalue</strong>. The map only stretches $\mathbf v$ (by $\lambda$; flipping it if $\lambda&lt;0$) without turning it. Eigenvalues are the roots of $\det(A-\lambda I) = 0$.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Eigenvalues of a 2×2 matrix</div>
+<p>$A=\begin{pmatrix}2&amp;1\\1&amp;2\end{pmatrix}$. $\det(A-\lambda I) = (2-\lambda)^2-1 = 0 \Rightarrow \lambda = 3$ or $1$.
+For $\lambda=3$: $(A-3I)\mathbf v = 0$ gives $\mathbf v = (1,1)$. For $\lambda=1$: $\mathbf v=(1,-1)$. They are perpendicular, because $A$ is symmetric (next box).
+A <strong>rotation</strong> by 90° has no real eigenvectors: every arrow turns. A <strong>shear</strong> has only one eigen-direction (the one it slides along).</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Spectral theorem (symmetric matrices)</div>
+<p>If $A = A^\top$, it has real eigenvalues and <strong>orthogonal</strong> eigenvectors, and
+$$A = Q\Lambda Q^\top$$
+where the columns of $Q$ are unit eigenvectors and $\Lambda$ is diagonal with the eigenvalues. In words: a symmetric matrix just stretches space along perpendicular axes. Covariance matrices and Hessians (section 5) are symmetric.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Positive (semi-)definite</div>
+<p>A symmetric $A$ is <strong>positive semi-definite</strong> ($A\succeq 0$) if $\mathbf x^\top A\mathbf x \ge 0$ for all $\mathbf x$, equivalently all eigenvalues $\ge 0$. <strong>Positive definite</strong> ($A\succ0$) means strictly $&gt;0$. Covariance matrices are always PSD.</p>
+</div>
+<p>Eigenvectors only exist for square matrices, and even then may be missing or not perpendicular. The <strong>singular value decomposition</strong> fixes all of that: it works for <em>every</em> matrix.</p>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Singular value decomposition (SVD)</div>
+<p>Any $A\in\mathbb R^{m\times n}$ can be written
+$$A = U\Sigma V^\top$$
+- $V$ ($n\times n$, orthogonal): a rotation/reflection of the input space,
+- $\Sigma$ ($m\times n$, diagonal): stretches by the <strong>singular values</strong> $\sigma_1\ge\sigma_2\ge\dots\ge0$,
+- $U$ ($m\times m$, orthogonal): a rotation/reflection of the output space.</p>
+<p><strong>Picture:</strong> rotate → scale each axis → rotate. The unit circle becomes an ellipse whose semi-axes have lengths $\sigma_i$.</p>
+<p>Useful facts: rank = number of nonzero $\sigma_i$ · $|\det A| = \prod_i\sigma_i$ (square $A$) · $\|A\|_2 = \sigma_{\max}$ · $\sigma_i(A)^2$ are the eigenvalues of $A^\top A$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Condition number</div>
+<p>$\kappa(A) = \sigma_{\max}/\sigma_{\min}$. It measures how "stretched" the ellipse is. A large $\kappa$ (ill-conditioned) means small input errors can become large output errors, and gradient descent becomes slow (section 6).</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Best low-rank approximation (Eckart–Young)</div>
+<p>Keep only the top $k$ singular values: $A_k = \sum_{i=1}^{k}\sigma_i\mathbf u_i\mathbf v_i^\top$. No other rank-$k$ matrix is closer to $A$ (in Frobenius or spectral norm). The error is $\|A-A_k\|_F = \sqrt{\sum_{i&gt;k}\sigma_i^2}$.</p>
+<p><strong>PCA</strong> is exactly this, applied to centered data $X$: the top right-singular vectors $\mathbf v_i$ are the directions of greatest variance.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Eigenvectors ≠ singular vectors</div>
+<p>They coincide only for symmetric positive semi-definite matrices. A rotation has singular values $1,1$ (it doesn't stretch anything) but no real eigenvectors (it turns everything).</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/linear-maps.html">Matrix as a Map</a></div>
+<p>Turn on the eigenvector and SVD overlays. Make the matrix symmetric and watch the eigenvectors become perpendicular; make it a rotation and watch them disappear while the SVD still works.</p>
+</div>
+<div class="box box-learn">
+<div class="box-title"><span class="box-ico">📚</span> Go deeper (optional)</div>
+<ul>
+<li>3Blue1Brown: "<a href="https://www.3blue1brown.com/lessons/eigenvalues" target="_blank" rel="noopener">Eigenvectors and eigenvalues</a>" (chapter 14 of the series above).</li>
+<li>⭐ <a href="https://mml-book.github.io/" target="_blank" rel="noopener">Mathematics for Machine Learning</a>, ch. 4 (matrix decompositions) and ch. 10 (PCA).</li>
+<li>Optional depth: <a href="https://ocw.mit.edu/courses/18-06sc-linear-algebra-fall-2011/" target="_blank" rel="noopener">MIT 18.06, Gilbert Strang</a>.</li>
+</ul>
+</div>
+<h2 id="5-derivatives-gradients-and-jacobians">5 · Derivatives, gradients and Jacobians<a class="anchor" href="#5-derivatives-gradients-and-jacobians" title="Link to this section">#</a></h2>
+<p>Training a network means nudging millions of parameters to reduce a loss. To know which way to nudge, we need derivatives of a <strong>scalar</strong> (the loss) with respect to <strong>vectors and matrices</strong> (the parameters).</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Partial derivative and gradient</div>
+<p>For $f:\mathbb R^d\to\mathbb R$, the <strong>partial derivative</strong> $\partial f/\partial x_i$ is the ordinary derivative in $x_i$ with every other variable held fixed. The <strong>gradient</strong> collects them into a vector of the same shape as $\mathbf x$:
+$$\nabla f(\mathbf x) = \left(\frac{\partial f}{\partial x_1},\dots,\frac{\partial f}{\partial x_d}\right)$$
+It points in the direction of <strong>steepest increase</strong>, its length is the slope in that direction, and it is perpendicular to the level sets (contour lines) of $f$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Jacobian</div>
+<p>For a vector-valued $\mathbf f:\mathbb R^n\to\mathbb R^m$, the <strong>Jacobian</strong> is the $m\times n$ matrix of all partial derivatives:
+$$J_{ij} = \frac{\partial f_i}{\partial x_j}$$
+It is the best <em>linear</em> approximation of $\mathbf f$ near a point: $\mathbf f(\mathbf x+\boldsymbol\delta)\approx\mathbf f(\mathbf x)+J\boldsymbol\delta$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Chain rule with vectors</div>
+<p>For a composition $\mathbf f\circ\mathbf g$:
+$$J_{\mathbf f\circ\mathbf g}(\mathbf x) = J_{\mathbf f}(\mathbf g(\mathbf x))\;J_{\mathbf g}(\mathbf x)$$
+Jacobians multiply, just like the 1D rule $(f\circ g)' = f'(g(x))\,g'(x)$. A network is a long composition $L(f_n(\cdots f_1(\mathbf x)))$, so its gradient is a long product of Jacobians. <strong>Backpropagation</strong> computes this product right-to-left starting from the scalar loss, as cheap vector–Jacobian products (module 04).</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Identities worth memorizing</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Function</th>
+<th>Gradient w.r.t. $\mathbf x$ (or $\mathbf w$)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$\mathbf a^\top\mathbf x$</td>
+<td>$\mathbf a$</td>
+</tr>
+<tr>
+<td>$\mathbf x^\top A\mathbf x$</td>
+<td>$(A+A^\top)\mathbf x$ (= $2A\mathbf x$ if $A$ symmetric)</td>
+</tr>
+<tr>
+<td>$\|\mathbf x\|^2$</td>
+<td>$2\mathbf x$</td>
+</tr>
+<tr>
+<td>$\|X\mathbf w-\mathbf y\|^2$</td>
+<td>$2X^\top(X\mathbf w-\mathbf y)$</td>
+</tr>
+<tr>
+<td>$\mathrm{softmax}$ then cross-entropy, w.r.t. logits $\mathbf z$</td>
+<td>$\hat{\mathbf y}-\mathbf y$</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · The shape trick</div>
+<p>The gradient of a scalar with respect to a matrix $W$ has <strong>the same shape as $W$</strong>. If your derived gradient has a different shape, it's wrong. Use shapes to decide where transposes go: e.g. in $\nabla_{\mathbf w}\|X\mathbf w-\mathbf y\|^2$ the residual is $N\times1$ and the answer must be $d\times1$, so it has to be $X^\top(\cdot)$.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Gradient of least squares, with shapes</div>
+<p>$L(\mathbf w)=\|X\mathbf w-\mathbf y\|^2$ with $X\in\mathbb R^{N\times d}$. Let $\mathbf r = X\mathbf w-\mathbf y$ ($N\times1$). Then $L=\mathbf r^\top\mathbf r$, $dL = 2\mathbf r^\top d\mathbf r = 2\mathbf r^\top X\,d\mathbf w$, so $\nabla_{\mathbf w}L = 2X^\top\mathbf r$ ($d\times1$ ✓ same shape as $\mathbf w$). Setting it to 0 gives the <strong>normal equations</strong> $X^\top X\mathbf w = X^\top\mathbf y$.</p>
+<p><em>Numbers:</em> points $(0,1),(1,2),(2,2)$ with a bias column: $X$ has rows $(1,0),(1,1),(1,2)$ and $\mathbf y=(1,2,2)^\top$. Then $X^\top X$ has rows $(3,3),(3,5)$ and $X^\top\mathbf y=(5,6)^\top$, so $\mathbf w=(7/6,\ 1/2)$: the line $\hat y = 1.167 + 0.5x$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Hessian and second-order Taylor expansion</div>
+<p>The <strong>Hessian</strong> $H = \nabla^2 f$ is the matrix of second derivatives, $H_{ij}=\partial^2 f/\partial x_i\partial x_j$. It is symmetric and describes <strong>curvature</strong>.
+$$f(\mathbf x+\boldsymbol\delta) \approx f(\mathbf x) + \nabla f^\top\boldsymbol\delta + \tfrac12\boldsymbol\delta^\top H\boldsymbol\delta$$
+Every optimizer comes from this expansion: gradient descent uses only the first-order term; Newton's method also uses $H$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Convex function</div>
+<p>$f$ is <strong>convex</strong> if the straight line between any two points of its graph lies on or above the graph. For twice-differentiable $f$: convex $\iff H\succeq 0$ everywhere. Convex functions have no bad local minima. Linear and logistic regression losses are convex; neural-network losses are <strong>not</strong>, yet gradient descent still works well in practice.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Check gradients numerically</div>
+<p>Always verify a hand-derived gradient with <strong>finite differences</strong>: $\frac{f(w+h)-f(w-h)}{2h}$ with $h\approx10^{-5}$ (in float64). The relative error should be around $10^{-6}$ or smaller.</p>
+</div>
+<figure class="video" data-yt="YG15m2VwSjA" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/YG15m2VwSjA/hqdefault.jpg)" aria-label="Play video: Visualizing the chain rule and product rule"><span class="video-btn">▶</span><span class="video-label">Visualizing the chain rule and product rule</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=YG15m2VwSjA" target="_blank" rel="noopener">Visualizing the chain rule and product rule</a> · 3Blue1Brown · 16 min <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<div class="box box-learn">
+<div class="box-title"><span class="box-ico">📚</span> Go deeper (optional)</div>
+<ul>
+<li>⭐ <a href="https://explained.ai/matrix-calculus/" target="_blank" rel="noopener">The Matrix Calculus You Need for Deep Learning</a>, Parr &amp; Howard: a short, essential article.</li>
+<li><a href="https://mml-book.github.io/" target="_blank" rel="noopener">Mathematics for Machine Learning</a>, ch. 5 (vector calculus).</li>
+<li>Optional depth: <a href="https://ocw.mit.edu/courses/18-s096-matrix-calculus-for-machine-learning-and-beyond-january-iap-2023/" target="_blank" rel="noopener">MIT 18.S096 Matrix Calculus for ML</a>.</li>
+</ul>
+</div>
+<h2 id="6-optimization-gradient-descent">6 · Optimization: gradient descent<a class="anchor" href="#6-optimization-gradient-descent" title="Link to this section">#</a></h2>
+<p>The gradient points uphill, so to minimize a loss $L(\theta)$ we repeatedly step downhill.</p>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Gradient descent (GD)</div>
+<p>$$\theta_{t+1} = \theta_t - \eta\,\nabla L(\theta_t)$$
+$\eta&gt;0$ is the <strong>learning rate</strong> (step size). Too small: painfully slow. Too large: the iterates overshoot and diverge.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Why $\eta &lt; 2/\lambda_{\max}$</div>
+<p>On $f(x)=\tfrac a2x^2$, GD gives $x_{t+1}=x_t-\eta a x_t=(1-\eta a)x_t$. This shrinks iff $|1-\eta a|&lt;1 \iff 0&lt;\eta&lt;2/a$. For $\eta a\in(1,2)$ it converges while <strong>oscillating</strong> (sign flips), and for $\eta a&gt;2$ it blows up.</p>
+<p>A quadratic in $d$ dimensions decouples along the eigenvectors of $H$, so the steepest direction ($\lambda_{\max}$) limits $\eta$, and the flattest ($\lambda_{\min}$) then converges at rate $1-\eta\lambda_{\min} \approx 1-2/\kappa$. That's why ill-conditioning (large $\kappa=\lambda_{\max}/\lambda_{\min}$) is slow.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Stochastic gradient descent (SGD) and mini-batches</div>
+<p>Computing $\nabla L$ over the whole dataset is expensive. <strong>SGD</strong> instead estimates it on a small random <strong>mini-batch</strong> $B$ of examples:
+$$\theta \leftarrow \theta - \eta\,\frac{1}{|B|}\sum_{i\in B}\nabla\ell_i(\theta)$$
+The estimate is unbiased but noisy, and each step is far cheaper. The noise is widely believed to help generalization (it favors flatter minima), though this is still an active research question.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Momentum</div>
+<p>Keep a running velocity $\mathbf v \leftarrow \beta\mathbf v + \nabla L$, then step $\theta\leftarrow\theta-\eta\mathbf v$ (typically $\beta=0.9$). It averages out zig-zags across a narrow valley and speeds up along its floor. Adam (module 05) adds a per-parameter step size on top.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">🔭</span> Intuition · Physics view</div>
+<p>GD is an overdamped particle sliding down the potential $L$. <strong>Momentum</strong> is a heavy ball with friction. <strong>SGD noise</strong> acts like temperature, jiggling the ball out of sharp, narrow holes.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Lagrange multipliers (constrained optimization)</div>
+<p>To optimize $f(\mathbf x)$ subject to $g(\mathbf x)=0$, solve $\nabla f = \mu\nabla g$ together with the constraint. At the optimum, the level set of $f$ just touches the constraint surface. It shows up in derivations such as "maximum entropy ⇒ softmax" and SVMs.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/gradient-descent.html">Optimizer Landscape</a></div>
+<p>Pick a narrow valley and raise the learning rate until GD starts to oscillate, then diverges. Then switch on momentum and Adam and compare the paths.</p>
+</div>
+<figure class="video" data-yt="PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi" data-list="1"><button type="button" class="video-play" aria-label="Play video: Neural networks (series)"><span class="video-btn">▶</span><span class="video-label">Playlist · Neural networks (series)</span></button><figcaption>▶️ <a href="https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi" target="_blank" rel="noopener">Neural networks (series)</a> · 3Blue1Brown · chapter 2 is &quot;Gradient descent, how neural networks learn&quot; <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="7-probability-and-statistics">7 · Probability and statistics<a class="anchor" href="#7-probability-and-statistics" title="Link to this section">#</a></h2>
+<p>A model's output is best read as a <strong>probability distribution</strong>, and training is about making the observed data probable.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Random variable, distribution</div>
+<p>A <strong>random variable</strong> $X$ is a quantity whose value is uncertain. A <strong>discrete</strong> one has a probability mass function $p(x)=P(X=x)$ with $\sum_x p(x)=1$. A <strong>continuous</strong> one has a density $p(x)\ge0$ with $\int p(x)\,dx = 1$ (probabilities are areas under it).</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Expectation and variance</div>
+<p>$$\mathbb E[X] = \sum_x x\,p(x) \;\Big(\text{or }\int x\,p(x)\,dx\Big) \qquad \mathrm{Var}(X) = \mathbb E\big[(X-\mathbb E X)^2\big] = \mathbb E[X^2]-(\mathbb E X)^2$$
+<strong>Linearity</strong> always holds: $\mathbb E[aX+bY] = a\,\mathbb E X + b\,\mathbb E Y$. For <strong>independent</strong> variables, variances add: $\mathrm{Var}(X+Y)=\mathrm{Var}X+\mathrm{Var}Y$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Conditional probability and independence</div>
+<p>$P(A\mid B) = P(A,B)/P(B)$: the probability of $A$ once you know $B$ happened. $A$ and $B$ are <strong>independent</strong> if $P(A,B)=P(A)P(B)$, i.e. knowing one tells you nothing about the other.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Bayes' rule</div>
+<p>$$p(\theta\mid D) = \frac{p(D\mid\theta)\,p(\theta)}{p(D)} \;\propto\; \underbrace{p(D\mid\theta)}_{\text{likelihood}}\;\underbrace{p(\theta)}_{\text{prior}}$$
+The <strong>posterior</strong> (belief after seeing data $D$) is proportional to likelihood × prior.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · A medical test</div>
+<p>A disease affects 1% of people. A test catches 90% of cases and has a 9% false-positive rate. You test positive. $P(\text{sick}\mid+) = \frac{0.9\cdot0.01}{0.9\cdot0.01 + 0.09\cdot0.99} = \frac{0.009}{0.0981}\approx 9\%$. The low prior dominates, so most positives are false alarms.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Key distributions</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Distribution</th>
+<th>Probability</th>
+<th>Mean / variance</th>
+<th>Used for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bernoulli($p$)</td>
+<td>$p^x(1-p)^{1-x}$, $x\in\{0,1\}$</td>
+<td>$p$ / $p(1-p)$</td>
+<td>binary classification</td>
+</tr>
+<tr>
+<td>Categorical($\mathbf p$)</td>
+<td>$p_k$ for class $k$</td>
+<td>—</td>
+<td>multi-class classification</td>
+</tr>
+<tr>
+<td>Gaussian $\mathcal N(\mu,\sigma^2)$</td>
+<td>$\frac{1}{\sqrt{2\pi\sigma^2}}e^{-(x-\mu)^2/2\sigma^2}$</td>
+<td>$\mu$ / $\sigma^2$</td>
+<td>regression noise, VAEs, diffusion</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Maximum likelihood (MLE) and MAP</div>
+<p>Given data $x_1,\dots,x_N$ and a model $p(x\mid\theta)$, <strong>MLE</strong> picks the parameters that make the data most probable:
+$$\theta^* = \arg\max_\theta\sum_i\log p(x_i\mid\theta)$$
+(logs turn the product of probabilities into a sum). <strong>MAP</strong> adds a prior: maximize $\sum_i\log p(x_i\mid\theta)+\log p(\theta)$.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Almost every DL loss is a negative log-likelihood</div>
+<ul>
+<li>Gaussian likelihood → <strong>mean squared error</strong> (example below).</li>
+<li>Bernoulli / Categorical likelihood → <strong>cross-entropy</strong> (section 8).</li>
+<li>A Gaussian prior on the weights → <strong>L2 weight decay</strong> (practice 5).</li>
+</ul>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · MSE is Gaussian MLE</div>
+<p>Model $y_i = f_\theta(x_i)+\varepsilon_i$, $\varepsilon_i\sim\mathcal N(0,\sigma^2)$. Then
+$$-\log p(\mathbf y\mid X,\theta) = \sum_i \frac{(y_i-f_\theta(x_i))^2}{2\sigma^2} + \frac N2\log(2\pi\sigma^2)$$
 The second term doesn't depend on $\theta$, so maximizing likelihood = minimizing $\sum_i (y_i-f_\theta(x_i))^2$. Special case $f_\theta=\mu$: $\frac{d}{d\mu}=0$ gives $\hat\mu=\bar y$, the sample mean.</p>
-<p><strong>4 · $D_{KL}\ge 0$ (Gibbs' inequality).</strong> $-D_{KL}(p\|q)=\sum_x p(x)\log\frac{q(x)}{p(x)} \le \log\sum_x p(x)\frac{q(x)}{p(x)} = \log\sum_x q(x) \le \log 1 = 0$, by Jensen ($\log$ is concave). Equality iff $p=q$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Monte Carlo and the reparameterization trick</div>
+<p>Expectations can be estimated by sampling: $\mathbb E_p[f(X)] \approx \frac1N\sum_{i=1}^N f(x_i)$ with $x_i\sim p$. To sample from $\mathcal N(\mu,\sigma^2)$ in a way gradients can flow through, write $x=\mu+\sigma\epsilon$ with $\epsilon\sim\mathcal N(0,1)$ (used in VAEs and diffusion, module 10).</p>
+</div>
+<figure class="video" data-yt="HZGCoVF3YvM" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/HZGCoVF3YvM/hqdefault.jpg)" aria-label="Play video: Bayes theorem, the geometry of changing beliefs"><span class="video-btn">▶</span><span class="video-label">Bayes theorem, the geometry of changing beliefs</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=HZGCoVF3YvM" target="_blank" rel="noopener">Bayes theorem, the geometry of changing beliefs</a> · 3Blue1Brown · 15 min <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<div class="box box-learn">
+<div class="box-title"><span class="box-ico">📚</span> Go deeper (optional)</div>
+<ul>
+<li><a href="https://mml-book.github.io/" target="_blank" rel="noopener">Mathematics for Machine Learning</a>, ch. 6 (probability) and ch. 8–9 (models, linear regression as MLE).</li>
+<li>Optional depth: <a href="https://projects.iq.harvard.edu/stat110" target="_blank" rel="noopener">Harvard Stat 110 (Blitzstein)</a>.</li>
+</ul>
+</div>
+<h2 id="8-information-theory-entropy-cross-entropy-kl">8 · Information theory: entropy, cross-entropy, KL<a class="anchor" href="#8-information-theory-entropy-cross-entropy-kl" title="Link to this section">#</a></h2>
+<p>Information theory measures <strong>surprise</strong>. An event with probability $p$ carries $-\log p$ units of surprise: certain events ($p=1$) carry none, rare events carry a lot. With natural logs the unit is the <em>nat</em>; with $\log_2$ it is the <em>bit</em>.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Entropy</div>
+<p>$$H(p) = -\sum_x p(x)\log p(x)$$
+the <strong>average surprise</strong> of a distribution. It is largest for the uniform distribution ($\log K$ for $K$ outcomes) and 0 when one outcome is certain. 🔭 Same form as the Gibbs entropy in statistical physics.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Cross-entropy</div>
+<p>$$H(p,q) = -\sum_x p(x)\log q(x)$$
+the average surprise when reality follows $p$ but you predict with $q$. <strong>This is the classification loss:</strong> with a one-hot label $p$ (all mass on the true class $c$) it reduces to $-\log q(c)$, the negative log-probability your model gave to the correct answer.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · KL divergence</div>
+<p>$$D_{KL}(p\,\|\,q) = \sum_x p(x)\log\frac{p(x)}{q(x)} = H(p,q) - H(p) \;\ge\; 0$$
+the <em>extra</em> surprise from using $q$ instead of the truth $p$. It is zero only when $p=q$. It is <strong>not symmetric</strong> ($D_{KL}(p\|q)\ne D_{KL}(q\|p)$), so it is not a distance. Since $H(p)$ is fixed by the data, minimizing cross-entropy = minimizing KL to the data.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · $D_{KL}\ge 0$ (Gibbs' inequality)</div>
+<p>$-D_{KL}(p\|q)=\sum_x p(x)\log\frac{q(x)}{p(x)} \le \log\sum_x p(x)\frac{q(x)}{p(x)} = \log\sum_x q(x) \le \log 1 = 0$, by Jensen's inequality ($\log$ is concave). Equality iff $p=q$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Softmax (with temperature)</div>
+<p>A network outputs raw scores (<strong>logits</strong>) $\mathbf z$. Softmax turns them into probabilities:
+$$\sigma(\mathbf z)_i = \frac{e^{z_i/T}}{\sum_j e^{z_j/T}}$$
+🔭 This is the Boltzmann distribution with energy $-z_i$ and temperature $T$. $T\to0$ picks the max; large $T$ flattens toward uniform. The "temperature" setting in LLM sampling is literally this $T$.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Compute softmax and log-softmax stably</div>
+<p>$e^{1000}$ overflows to <code>inf</code> in float32. Since softmax is unchanged by subtracting a constant, libraries compute $e^{z_i-\max_j z_j}$. For the loss, use a fused <strong>log-softmax / log-sum-exp</strong> ($\log\sum_j e^{z_j} = m + \log\sum_j e^{z_j-m}$ with $m=\max_j z_j$) instead of <code>log(softmax(z))</code>.</p>
+</div>
 <h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
 <ol>
 <li>Give $\nabla_{\mathbf w}$ of the ridge loss $\|X\mathbf w-\mathbf y\|^2+\lambda\|\mathbf w\|^2$ and its minimizer.</li>
@@ -230,13 +607,27 @@ The second term doesn't depend on $\theta$, so maximizing likelihood = minimizin
 <summary>Answer</summary>
 <p>$\kappa=1000$. The circle becomes a very thin ellipse (semi-axes 10 and 0.01). Solving $A\mathbf x=\mathbf b$ can amplify relative errors in $\mathbf b$ by up to 1000×, and GD on $\|A\mathbf x-\mathbf b\|^2$ (Hessian condition number $\kappa^2=10^6$) crawls.</p>
 </details>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
-<ul>
-<li>⭐ <strong><a href="https://mml-book.github.io/" target="_blank" rel="noopener">Mathematics for Machine Learning</a></strong>, Deisenroth, Faisal &amp; Ong (free PDF). Read ch. 2–7 <em>selectively</em>. Skim what you know.</li>
-<li>⭐ <strong><a href="https://explained.ai/matrix-calculus/" target="_blank" rel="noopener">The Matrix Calculus You Need for Deep Learning</a></strong>, Parr &amp; Howard. A short article that's essential.</li>
-<li><strong><a href="https://www.3blue1brown.com/topics/linear-algebra" target="_blank" rel="noopener">3Blue1Brown: Essence of Linear Algebra</a></strong>: watch it once for geometric intuition (~3 h).</li>
-<li>Optional depth: <a href="https://ocw.mit.edu/courses/18-06sc-linear-algebra-fall-2011/" target="_blank" rel="noopener">MIT 18.06 (Strang)</a>, <a href="https://projects.iq.harvard.edu/stat110" target="_blank" rel="noopener">Harvard Stat 110 (Blitzstein)</a>, <a href="https://ocw.mit.edu/courses/18-s096-matrix-calculus-for-machine-learning-and-beyond-january-iap-2023/" target="_blank" rel="noopener">MIT 18.S096 Matrix Calculus for ML</a>.</li>
-</ul>
+<ol start="7">
+<li>$A=\begin{pmatrix}3&amp;0\\0&amp;0\end{pmatrix}$. What are its rank, determinant, column space and null space?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Rank 1, $\det A=0$. Column space: the $x$-axis (every output is $(3x_1, 0)$). Null space: the $y$-axis (anything $(0, x_2)$ maps to zero). Rank–nullity: $1+1=2$ ✓.</p>
+</details>
+<ol start="8">
+<li>Find the eigenvalues of $\begin{pmatrix}4&amp;1\\2&amp;3\end{pmatrix}$.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\det(A-\lambda I) = (4-\lambda)(3-\lambda)-2 = \lambda^2-7\lambda+10 = (\lambda-5)(\lambda-2)$, so $\lambda=5$ and $\lambda=2$. Check: their sum $7$ equals the trace and their product $10$ equals the determinant.</p>
+</details>
+<ol start="9">
+<li>A classifier gives the true class probability 0.8 on one example and 0.05 on another. What is the cross-entropy loss on each (natural log)?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$-\ln 0.8\approx0.22$ and $-\ln0.05\approx3.0$. Confident wrong answers are punished heavily: the loss grows without bound as the probability of the true class goes to 0.</p>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ol>
 <li>Derive $\nabla_{\mathbf w}$ for linear regression by hand. Then check it numerically with <strong>finite differences</strong> $\frac{f(w+h)-f(w-h)}{2h}$ in NumPy.</li>
@@ -251,11 +642,17 @@ The second term doesn't depend on $\theta$, so maximizing likelihood = minimizin
 <li>Computing $\log(\mathrm{softmax})$ in two steps. Use a fused log-softmax / log-sum-exp for stability.</li>
 <li>Over-studying math up front. Learn the rest <strong>just in time</strong> when a later module needs it.</li>
 </ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<p>Everything above is self-contained. Use these if you want a second explanation or more exercises:
+- ⭐ <strong><a href="https://mml-book.github.io/" target="_blank" rel="noopener">Mathematics for Machine Learning</a></strong>, Deisenroth, Faisal &amp; Ong (free PDF). Read ch. 2–7 <em>selectively</em>. Skim what you know.
+- ⭐ <strong><a href="https://explained.ai/matrix-calculus/" target="_blank" rel="noopener">The Matrix Calculus You Need for Deep Learning</a></strong>, Parr &amp; Howard.
+- <strong><a href="https://www.3blue1brown.com/topics/linear-algebra" target="_blank" rel="noopener">3Blue1Brown: Essence of Linear Algebra</a></strong>: the geometric intuition, ~3 h (embedded in section 2).
+- Optional depth: <a href="https://ocw.mit.edu/courses/18-06sc-linear-algebra-fall-2011/" target="_blank" rel="noopener">MIT 18.06 (Strang)</a>, <a href="https://projects.iq.harvard.edu/stat110" target="_blank" rel="noopener">Harvard Stat 110 (Blitzstein)</a>, <a href="https://ocw.mit.edu/courses/18-s096-matrix-calculus-for-machine-learning-and-beyond-january-iap-2023/" target="_blank" rel="noopener">MIT 18.S096 Matrix Calculus for ML</a>.</p>
 <h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Every skip-test item is answerable · <input type="checkbox"> gradient check passes to ~1e-6 relative error</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/index.html"><small>← Previous</small>Overview</a><a class="pn next" href="../deep-learning/02-python-numpy-tools.html"><small>Next →</small>Python, NumPy &amp; Tools</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a><ul><li><a href="#linear-algebra-geometry-first">Linear algebra (geometry first)</a></li><li><a href="#calculus-matrix-calculus">Calculus → matrix calculus</a></li><li><a href="#optimization">Optimization</a></li><li><a href="#probability-statistics">Probability &amp; statistics</a></li><li><a href="#information-theory">Information theory</a></li></ul></li><li><a href="#worked-examples">Worked examples</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-vectors-data-as-arrows">1 · Vectors: data as arrows</a></li><li><a href="#2-matrices-functions-that-move-space">2 · Matrices: functions that move space</a></li><li><a href="#3-rank-determinant-and-solving-equations">3 · Rank, determinant and solving equations</a></li><li><a href="#4-eigenvectors-and-the-svd">4 · Eigenvectors and the SVD</a></li><li><a href="#5-derivatives-gradients-and-jacobians">5 · Derivatives, gradients and Jacobians</a></li><li><a href="#6-optimization-gradient-descent">6 · Optimization: gradient descent</a></li><li><a href="#7-probability-and-statistics">7 · Probability and statistics</a></li><li><a href="#8-information-theory-entropy-cross-entropy-kl">8 · Information theory: entropy, cross-entropy, KL</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

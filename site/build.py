@@ -86,8 +86,75 @@ def fix_nested_lists(text: str) -> str:
     return "\n".join(out)
 
 
+BOXES = {
+    # type: (css class, icon, default label)
+    "GOAL": ("goal", "🎯", "What you'll learn"),
+    "DEF": ("def", "📖", "Definition"),
+    "FORMULA": ("formula", "🧮", "Formula"),
+    "KEY": ("key", "💡", "Key idea"),
+    "INTUITION": ("key", "🔭", "Intuition"),
+    "EXAMPLE": ("example", "✍️", "Worked example"),
+    "WARN": ("warn", "⚠️", "Common mistake"),
+    "TRY": ("try", "🎛️", "Try it"),
+    "CODE": ("code", "💻", "In code"),
+    "LEARN": ("learn", "📚", "Go deeper (optional)"),
+    "NOTE": ("note", "📝", "Note"),
+}
+BOX_START = re.compile(r"^>\s*\[!([A-Z]+)\]\s*(.*)$")
+
+
+def video_html(spec: str) -> str:
+    """`> [!VIDEO] id | Title | channel · length` -> click-to-play YouTube embed."""
+    parts = [s.strip() for s in spec.split("|")]
+    vid, title = parts[0], (parts[1] if len(parts) > 1 else "Video")
+    meta = parts[2] if len(parts) > 2 else ""
+    is_list = vid.startswith("PL")
+    watch = (f"https://www.youtube.com/playlist?list={vid}" if is_list
+             else f"https://www.youtube.com/watch?v={vid}")
+    thumb = "" if is_list else f' style="background-image:url(https://i.ytimg.com/vi/{vid}/hqdefault.jpg)"'
+    t = html.escape(title)
+    return (f'<figure class="video" data-yt="{vid}" data-list="{1 if is_list else 0}">'
+            f'<button type="button" class="video-play"{thumb} aria-label="Play video: {t}">'
+            f'<span class="video-btn">▶</span><span class="video-label">{"Playlist · " if is_list else ""}{t}</span></button>'
+            f'<figcaption>▶️ <a href="{watch}" target="_blank" rel="noopener">{t}</a>'
+            f'{" · " + html.escape(meta) if meta else ""} <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>')
+
+
+def expand_boxes(text: str) -> str:
+    """Turn GitHub-style `> [!TYPE] Title` blockquotes into styled learning blocks."""
+    lines, out, i, in_fence = text.split("\n"), [], 0, False
+    while i < len(lines):
+        line = lines[i]
+        if line.lstrip().startswith("```"):
+            in_fence = not in_fence
+        m = None if in_fence else BOX_START.match(line)
+        if not m or (m.group(1) not in BOXES and m.group(1) != "VIDEO"):
+            out.append(line)
+            i += 1
+            continue
+        kind, title = m.group(1), m.group(2).strip()
+        body = []
+        i += 1
+        while i < len(lines) and lines[i].startswith(">"):
+            body.append(re.sub(r"^> ?", "", lines[i]))
+            i += 1
+        if kind == "VIDEO":
+            out += ["", video_html(title), ""]
+            for b in body:  # extra VIDEO lines: "> [!VIDEO] ..." are separate boxes; plain lines are captions
+                if b.strip():
+                    out.append(f'<p class="video-note">{html.escape(b.strip())}</p>')
+            continue
+        cls, icon, label = BOXES[kind]
+        heading = f"{label} · {title}" if title else label
+        out += ["", f'<div class="box box-{cls}" markdown="1">',
+                f'<div class="box-title" markdown="span"><span class="box-ico">{icon}</span> {heading}</div>',
+                "", *body, "", "</div>", ""]
+    return "\n".join(out)
+
+
 def render_markdown(text: str) -> tuple[str, list[dict]]:
     text = fix_nested_lists(text)
+    text = expand_boxes(text)
     text = re.sub(r"<details>", '<details markdown="1">', text)
     text, store = protect_math(text)
     md = markdown.Markdown(
@@ -105,7 +172,7 @@ def render_markdown(text: str) -> tuple[str, list[dict]]:
     # Scrollable tables on small screens
     body = body.replace("<table>", '<div class="table-wrap"><table>').replace("</table>", "</table></div>")
     # Make external links open in a new tab
-    body = re.sub(r'<a href="(https?://[^"]+)"', r'<a href="\1" target="_blank" rel="noopener"', body)
+    body = re.sub(r'<a href="(https?://[^"]+)"(?![^>]*target=)', r'<a href="\1" target="_blank" rel="noopener"', body)
     return body, md.toc_tokens
 
 

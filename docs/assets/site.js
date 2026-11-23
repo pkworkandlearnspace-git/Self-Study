@@ -61,7 +61,7 @@
     const io = new IntersectionObserver((entries) => {
       entries.forEach((en) => (en.isIntersecting ? visible.add(en.target) : visible.delete(en.target)));
       let best = null;
-      map.forEach((a, el) => { if (el.getBoundingClientRect().top < 140) best = a; });
+      map.forEach((a, el) => { if (el.getBoundingClientRect().top < 200) best = a; });
       if (!best && visible.size) best = map.get([...visible][0]);
       tocLinks.forEach((a) => a.classList.toggle("active", a === best));
     }, { rootMargin: "-60px 0px -60% 0px" });
@@ -91,6 +91,22 @@
       setTimeout(() => (btn.textContent = "Copy"), 1400);
     });
     pre.appendChild(btn);
+  });
+
+  /* ---------- click-to-play YouTube embeds ---------- */
+  $$(".video").forEach((fig) => {
+    const btn = $(".video-play", fig);
+    if (!btn) return;
+    btn.addEventListener("click", () => {
+      const id = fig.dataset.yt, list = fig.dataset.list === "1";
+      const f = document.createElement("iframe");
+      f.src = "https://www.youtube-nocookie.com/embed/" + (list ? "videoseries?list=" + id + "&autoplay=1" : id + "?autoplay=1&rel=0");
+      f.title = btn.getAttribute("aria-label") || "Video";
+      f.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen";
+      f.allowFullscreen = true;
+      f.referrerPolicy = "strict-origin-when-cross-origin";
+      btn.replaceWith(f);
+    });
   });
 
   /* ---------- open <details> that contain a linked anchor ---------- */
