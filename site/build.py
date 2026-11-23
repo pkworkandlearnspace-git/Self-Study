@@ -169,6 +169,9 @@ def render_markdown(text: str) -> tuple[str, list[dict]]:
                   (" checked" if m.group(1).lower() == "x" else ""), body)
     body = re.sub(r"(·\s*)\[( |x)\]\s*", lambda m: m.group(1) + '<input type="checkbox"%s> ' %
                   (" checked" if m.group(2) == "x" else ""), body)
+    # Mermaid diagrams: ```mermaid fences become <pre class="mermaid"> for the browser to draw
+    body = re.sub(r'<pre><code class="language-mermaid">(.*?)</code></pre>',
+                  r'<pre class="mermaid">\1</pre>', body, flags=re.S)
     # Scrollable tables on small screens
     body = body.replace("<table>", '<div class="table-wrap"><table>').replace("</table>", "</table></div>")
     # Make external links open in a new tab
@@ -284,6 +287,8 @@ def layout(*, title: str, root: str, current: str, pages: list[dict], main: str,
         katex = (f'<link rel="stylesheet" href="{k}katex.min.css">\n'
                  f'<script defer src="{k}katex.min.js"></script>\n'
                  f'<script defer src="{k}contrib/auto-render.min.js"></script>')
+    if 'class="mermaid"' in main:  # Mermaid 11.4.1, bundled; only loaded on pages with diagrams
+        katex += f'\n<script defer src="{root}assets/mermaid/mermaid.min.js"></script>'
     return f"""<!doctype html>
 <html lang="en">
 <head>

@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
 <script defer src="../assets/katex/katex.min.js"></script>
 <script defer src="../assets/katex/contrib/auto-render.min.js"></script>
+<script defer src="../assets/mermaid/mermaid.min.js"></script>
 <script defer src="../assets/search-index.js"></script>
 <script defer src="../assets/site.js"></script>
 </head>
@@ -111,11 +112,22 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Neural Networks from Scratch</span></nav><article class="doc"><h1 id="04-neural-networks-from-scratch">04 · Neural Networks from Scratch<a class="anchor" href="#04-neural-networks-from-scratch" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 04</span><span>⏱ 6 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/04-neural-nets-from-scratch.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Neural Networks from Scratch</span></nav><article class="doc"><h1 id="04-neural-networks-from-scratch">04 · Neural Networks from Scratch<a class="anchor" href="#04-neural-networks-from-scratch" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 04</span><span>⏱ 13 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/04-neural-nets-from-scratch.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> understand backprop so well you could build PyTorch's core yourself. · <strong>Time:</strong> 15–20 h · <strong>Needs:</strong> 01, 03</p>
 </blockquote>
 <p><strong>The most important module.</strong> Everything after this is architecture choices on top of the same engine.</p>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>write the forward pass of a multi-layer perceptron (MLP) in matrix form, with every shape;</li>
+<li>explain what activations do, and why sigmoid stacks stop learning (vanishing gradients);</li>
+<li>run <strong>backpropagation</strong> by hand on a computational graph and derive the gradients of a whole MLP;</li>
+<li>explain reverse-mode autodiff, gradient checking, and why initialization scale matters (LeCun, Xavier, He);</li>
+<li>train a NumPy MLP on MNIST to ≥ 97% accuracy.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Draw a 2-layer MLP. Write the forward pass in matrix form with shapes.</li>
@@ -127,42 +139,292 @@
 <li class="task"><input type="checkbox"> Say what the initial loss of a 10-class classifier should be, and derive the 2 in He initialization.</li>
 </ul>
 <p>🎯 Not sure? Take the auto-graded <a href="interactive/foundations-quiz.html">Foundations Quiz</a> (filter by module) before deciding.</p>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
-<ul>
-<li><strong>Neuron:</strong> $a = \phi(\mathbf w^\top\mathbf x + b)$. <strong>Layer:</strong> $\mathbf h = \phi(W\mathbf x + \mathbf b)$. <strong>MLP:</strong> a stack of layers.</li>
-<li><strong>Why nonlinearity:</strong> $W_2(W_1\mathbf x) = (W_2W_1)\mathbf x$ is still linear. $\phi$ (ReLU, GELU, tanh) gives expressive power.</li>
-<li><strong>Universal approximation:</strong> one wide enough hidden layer with any non-polynomial activation can approximate any continuous function on a compact set (Cybenko 1989; Hornik 1991; Leshno et al. 1993). It says nothing about how <em>many</em> units you need or whether training finds them. <em>Depth</em> makes it <strong>efficient</strong>: some functions need exponentially many units in a shallow net but few in a deep one (e.g. Telgarsky 2016).</li>
-<li><strong>Computational graph:</strong> each op is a node. Forward computes values. Backward sends <strong>gradients</strong> from the loss back to every parameter.</li>
-<li><strong>Backprop = chain rule + caching.</strong> Each node only needs its <em>local</em> derivative and the upstream gradient:
-  <code>grad_input = local_jacobianᵀ · grad_output</code></li>
-<li><strong>Key local gradients</strong> (for $\mathbf y = W\mathbf x$ in batch form $Y = XW^\top$):<ul>
-<li>$\partial L/\partial W = (\partial L/\partial Y)^\top X$, $\partial L/\partial X = (\partial L/\partial Y)\, W$</li>
-<li>ReLU: pass the gradient where input &gt; 0, zero elsewhere.</li>
-<li>Softmax + CE combined: $\hat{\mathbf y} - \mathbf y$ (clean and stable, which is why frameworks fuse them).</li>
-</ul>
-</li>
-<li><strong>Gradients accumulate (+=)</strong> when a value is used in several places. This is the multivariable chain rule.</li>
-<li>🎛️ <strong>See it:</strong> <a href="interactive/backprop-stepper.html">Backprop Step-Through</a> runs this node by node (neuron, shared variable, vanishing chain, softmax-CE), with a gradient check.</li>
-<li><strong>Reverse-mode AD</strong> costs ~2–3× a forward pass, whatever the number of parameters. That's why training billion-parameter nets is possible.</li>
-<li><strong>Activations:</strong> sigmoid/tanh saturate → <strong>vanishing gradients</strong>. ReLU doesn't saturate for x &gt; 0 (but neurons can "die"). GELU/SiLU are smooth variants used in transformers.</li>
-<li><strong>Initialization matters:</strong> variance-preserving init keeps signals from exploding or vanishing. For $z=\sum_{i=1}^{n_{in}} w_ix_i$ with independent zero-mean weights, $\text{Var}(z)=n_{in}\text{Var}(w)\,\mathbb E[x^2]$. <strong>LeCun:</strong> $\text{Var}(w)=1/n_{in}$. <strong>Xavier/Glorot</strong> (tanh/sigmoid): $\text{Var}(w)=2/(n_{in}+n_{out})$, a compromise between the forward and backward pass. <strong>He/Kaiming</strong> (ReLU): $2/n_{in}$, because ReLU zeroes half the inputs so $\mathbb E[x^2]$ is half the pre-activation variance.</li>
-</ul>
-<h2 id="the-picture">The picture<a class="anchor" href="#the-picture" title="Link to this section">#</a></h2>
-<pre><code class="language-mermaid">flowchart LR
+<h2 id="1-neurons-layers-and-the-forward-pass">1 · Neurons, layers and the forward pass<a class="anchor" href="#1-neurons-layers-and-the-forward-pass" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Neuron</div>
+<p>A <strong>neuron</strong> (unit) takes inputs $\mathbf x$, computes a weighted sum plus a bias, and passes it through an <strong>activation function</strong> $\phi$:
+$$a = \phi(\mathbf w^\top\mathbf x + b)$$
+$z=\mathbf w^\top\mathbf x+b$ is the <strong>pre-activation</strong>; $a$ is the <strong>activation</strong>. With $\phi=\sigma$ this is exactly logistic regression (module 03).</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Layer and multi-layer perceptron (MLP)</div>
+<p>A <strong>dense (fully connected) layer</strong> is many neurons side by side, all reading the same input:
+$$\mathbf h = \phi(W\mathbf x+\mathbf b), \qquad W\in\mathbb R^{H\times D},\ \mathbf b\in\mathbb R^H$$
+An <strong>MLP</strong> stacks layers: the output of one is the input of the next. The last layer produces <strong>logits</strong> (raw scores), which a softmax turns into class probabilities. The layers in between are <strong>hidden layers</strong>; their size $H$ is the <strong>width</strong>, their count the <strong>depth</strong>.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Forward pass of a 2-layer MLP (batch form)</div>
+<p>For a batch $X$ of $N$ examples with $D$ features, $H$ hidden units and $C$ classes:
+$$Z_1 = XW_1^\top + \mathbf b_1\;(N\times H)\quad A_1 = \mathrm{ReLU}(Z_1)\quad Z_2 = A_1W_2^\top + \mathbf b_2\;(N\times C)\quad P = \mathrm{softmax}(Z_2)$$
+$$L = -\frac1N\sum_{n=1}^N\log P_{n,\,y_n}$$
+Parameter count: $W_1$ has $H\cdot D$, $\mathbf b_1$ has $H$, $W_2$ has $C\cdot H$, $\mathbf b_2$ has $C$.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Why nonlinearity is essential</div>
+<p>Without $\phi$, two layers give $W_2(W_1\mathbf x) = (W_2W_1)\mathbf x$: still one linear map, no matter how many layers you stack. The nonlinearity lets each layer bend the space, so the network can carve out curved decision boundaries and compose simple features into complex ones.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Counting parameters</div>
+<p>MNIST: $D=784$ pixels, $H=128$, $C=10$. $W_1$: $128\cdot784=100\,352$; $\mathbf b_1$: 128; $W_2$: $10\cdot128=1\,280$; $\mathbf b_2$: 10. Total <strong>101 770</strong> parameters.</p>
+</div>
+<figure class="video" data-yt="aircAruvnKk" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/aircAruvnKk/hqdefault.jpg)" aria-label="Play video: But what is a neural network?"><span class="video-btn">▶</span><span class="video-label">But what is a neural network?</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=aircAruvnKk" target="_blank" rel="noopener">But what is a neural network?</a> · 3Blue1Brown · 19 min (chapter 1 of the series) <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="2-activation-functions">2 · Activation functions<a class="anchor" href="#2-activation-functions" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Common activations and their derivatives</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Name</th>
+<th>$\phi(z)$</th>
+<th>$\phi'(z)$</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sigmoid</td>
+<td>$\frac{1}{1+e^{-z}}$</td>
+<td>$\sigma(z)(1-\sigma(z))\le\frac14$</td>
+<td>saturates at both ends</td>
+</tr>
+<tr>
+<td>tanh</td>
+<td>$\frac{e^z-e^{-z}}{e^z+e^{-z}}$</td>
+<td>$1-\tanh^2 z\le1$</td>
+<td>zero-centred, still saturates</td>
+</tr>
+<tr>
+<td>ReLU</td>
+<td>$\max(0,z)$</td>
+<td>$1$ if $z&gt;0$, else $0$</td>
+<td>cheap, doesn't saturate for $z&gt;0$</td>
+</tr>
+<tr>
+<td>Leaky ReLU</td>
+<td>$\max(\alpha z, z)$, e.g. $\alpha=0.01$</td>
+<td>$1$ or $\alpha$</td>
+<td>never fully "dies"</td>
+</tr>
+<tr>
+<td>GELU</td>
+<td>$z\,\Phi(z)$ ($\Phi$ = normal CDF)</td>
+<td>smooth</td>
+<td>used in transformers (BERT, GPT)</td>
+</tr>
+<tr>
+<td>SiLU / Swish</td>
+<td>$z\,\sigma(z)$</td>
+<td>smooth</td>
+<td>used in many modern nets (e.g. Llama's SwiGLU)</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Saturation and vanishing gradients</div>
+<p>An activation <strong>saturates</strong> where it is flat (sigmoid for large $|z|$). There its derivative is ≈ 0, so almost no gradient flows back. Backprop multiplies one such factor per layer, so with many layers the gradient reaching the first layers shrinks exponentially: <strong>vanishing gradients</strong>. (If the factors are &gt; 1 it grows exponentially instead: <strong>exploding gradients</strong>.)</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Dead ReLUs</div>
+<p>If a ReLU unit's pre-activation is negative for every input, its gradient is always 0 and it never recovers. A large learning rate or a big negative bias can kill many units. Leaky ReLU, GELU or careful initialization reduce the risk.</p>
+</div>
+<h2 id="3-what-a-network-can-represent">3 · What a network can represent<a class="anchor" href="#3-what-a-network-can-represent" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Universal approximation theorem</div>
+<p>One hidden layer that is wide enough, with any non-polynomial activation, can approximate any continuous function on a bounded region as closely as you like (Cybenko 1989; Hornik 1991; Leshno et al. 1993).</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Why depth anyway?</div>
+<p>The theorem says nothing about <strong>how many</strong> units you need or whether gradient descent will <strong>find</strong> the right weights. Depth makes representation <strong>efficient</strong>: some functions need exponentially many units in a shallow net but only a few in a deep one (e.g. Telgarsky 2016). Deep nets also build features in stages: edges → textures → parts → objects.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/mlp-playground.html">Neural Network Playground</a></div>
+<p>Train a tiny MLP on 2D datasets (moons, spirals, circles). Start with 0 hidden layers (a straight boundary), then add units and layers and watch the boundary bend. Switch activations and compare.</p>
+</div>
+<h2 id="4-computational-graphs-and-the-chain-rule">4 · Computational graphs and the chain rule<a class="anchor" href="#4-computational-graphs-and-the-chain-rule" title="Link to this section">#</a></h2>
+<p>To train, we need $\partial L/\partial\theta$ for every parameter. Doing that by hand for millions of parameters is impossible; <strong>backpropagation</strong> does it automatically by breaking the computation into small steps.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Computational graph</div>
+<p>Write the computation as a graph: each node is one simple operation (add, multiply, ReLU, matmul…), and edges carry values. The <strong>forward pass</strong> computes every node's value from its inputs and <strong>caches</strong> it. The <strong>backward pass</strong> sends gradients from the loss back through the graph.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · The backprop rule at one node</div>
+<p>If a node computes $y = f(x_1,\dots,x_k)$ and you already know the <strong>upstream gradient</strong> $\bar y = \partial L/\partial y$, then for each input
+$$\bar x_i \mathrel{+}= \bar y\cdot\frac{\partial f}{\partial x_i}$$
+(for vectors: $\bar{\mathbf x} \mathrel{+}= J^\top\bar{\mathbf y}$, a vector–Jacobian product). Every node only needs its <strong>local derivative</strong> and the upstream gradient. Process nodes in reverse topological order, starting from $\bar L = 1$.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Gradients accumulate</div>
+<p>If a value feeds into several places, its gradient is the <strong>sum</strong> of the gradients from each use (the multivariable chain rule). That's why implementations use <code>+=</code>, and why you must <strong>zero the gradients</strong> before each training step.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Backprop through a single neuron, by hand</div>
+<p>$L = (\sigma(wx+b) - y)^2$ with $w=2$, $x=1$, $b=-1$, $y=1$.</p>
+<p><strong>Forward:</strong> $z = 2\cdot1-1 = 1$; $a=\sigma(1)\approx0.731$; $L=(0.731-1)^2\approx0.072$.</p>
+<p><strong>Backward:</strong> $\bar a = 2(a-y) \approx -0.538$; $\bar z = \bar a\cdot a(1-a)\approx -0.538\cdot0.197\approx-0.106$; $\bar w = \bar z\cdot x \approx -0.106$; $\bar b = \bar z \approx -0.106$; $\bar x = \bar z\cdot w\approx-0.212$.</p>
+<p>Both $\bar w$ and $\bar b$ are negative, so a gradient step increases $w$ and $b$, raising $a$ toward the target 1 ✓.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Local gradients you'll use constantly</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Backward rule</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>$y = a+b$</td>
+<td>$\bar a \mathrel{+}= \bar y$, $\bar b \mathrel{+}= \bar y$ (copies the gradient)</td>
+</tr>
+<tr>
+<td>$y = a\cdot b$</td>
+<td>$\bar a \mathrel{+}= b\,\bar y$, $\bar b \mathrel{+}= a\,\bar y$ (swaps the inputs)</td>
+</tr>
+<tr>
+<td>$y = \mathrm{ReLU}(z)$</td>
+<td>$\bar z \mathrel{+}= \bar y\cdot\mathbb 1[z&gt;0]$ (a gate)</td>
+</tr>
+<tr>
+<td>$y=\sigma(z)$</td>
+<td>$\bar z \mathrel{+}= \bar y\cdot y(1-y)$</td>
+</tr>
+<tr>
+<td>$y = e^z$</td>
+<td>$\bar z \mathrel{+}= \bar y\cdot y$</td>
+</tr>
+<tr>
+<td>$Y = XW^\top + \mathbf b$</td>
+<td>$\bar W = \bar Y^\top X$, $\bar X = \bar YW$, $\bar{\mathbf b} = \sum_n \bar Y_{n,:}$</td>
+</tr>
+<tr>
+<td>softmax + cross-entropy</td>
+<td>$\bar{\mathbf z} = \hat{\mathbf y}-\mathbf y$ (per example)</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/backprop-stepper.html">Backprop Step-Through</a></div>
+<p>Step through the forward and backward pass node by node on four small graphs (a neuron, a shared variable, a vanishing chain, softmax-CE), and run the built-in gradient check.</p>
+</div>
+<figure class="video" data-yt="VMj-3S1tku0" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/VMj-3S1tku0/hqdefault.jpg)" aria-label="Play video: The spelled-out intro to neural networks and backpropagation: building micrograd"><span class="video-btn">▶</span><span class="video-label">The spelled-out intro to neural networks and backpropagation: building micrograd</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=VMj-3S1tku0" target="_blank" rel="noopener">The spelled-out intro to neural networks and backpropagation: building micrograd</a> · Andrej Karpathy · 2 h 25 min. Code along. <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="5-backprop-for-a-whole-mlp">5 · Backprop for a whole MLP<a class="anchor" href="#5-backprop-for-a-whole-mlp" title="Link to this section">#</a></h2>
+<p>Put the local rules together for the 2-layer MLP from section 1.</p>
+<pre class="mermaid">flowchart LR
   X[&quot;X (N×D)&quot;] --&gt; L1[&quot;Linear W1, b1&quot;] --&gt; H1[&quot;Z1 (N×H)&quot;] --&gt; R[ReLU] --&gt; A1[&quot;A1 (N×H)&quot;] --&gt; L2[&quot;Linear W2, b2&quot;] --&gt; Z2[&quot;logits (N×C)&quot;] --&gt; SM[&quot;softmax + CE&quot;] --&gt; Loss((L))
   Loss -. &quot;dZ2 = (P − Y)/N&quot; .-&gt; Z2
   Z2 -. &quot;dW2 = dZ2ᵀA1, dA1 = dZ2 W2&quot; .-&gt; A1
   A1 -. &quot;dZ1 = dA1 ⊙ 1[Z1 &gt; 0]&quot; .-&gt; H1
   H1 -. &quot;dW1 = dZ1ᵀX&quot; .-&gt; X
-</code></pre>
+</pre>
 <p>Solid arrows: forward pass (values cached). Dotted arrows: backward pass, right to left. Every arrow only needs the cached values next to it.</p>
-<h2 id="worked-examples">Worked examples<a class="anchor" href="#worked-examples" title="Link to this section">#</a></h2>
-<p><strong>1 · Softmax + cross-entropy gives $\hat{\mathbf y}-\mathbf y$.</strong> $p_i=e^{z_i}/\sum_k e^{z_k}$, $L=-\sum_i y_i\log p_i$ with one-hot $\mathbf y$. Since $\log p_i = z_i-\log\sum_k e^{z_k}$,
-$L = -\sum_i y_i z_i + \log\sum_k e^{z_k}$ (using $\sum_i y_i=1$). So $\frac{\partial L}{\partial z_j} = -y_j + \frac{e^{z_j}}{\sum_k e^{z_k}} = p_j - y_j$.
-<em>Numbers:</em> $\mathbf z=(2, 0.5)$, true class 1 → $p_1=e^2/(e^2+e^{0.5})\approx0.818$, so $\nabla_{\mathbf z}L\approx(-0.182,\ +0.182)$. (This is the "softmax" graph in the step-through tool.)</p>
-<p><strong>2 · Linear-layer gradients by the shape trick.</strong> Batch form $Y = XW^\top+\mathbf b$ with $X\,(N\times D)$, $W\,(H\times D)$, $Y\,(N\times H)$, upstream $G=\partial L/\partial Y\,(N\times H)$.
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · The full backward pass</div>
+<p>With $Y$ the one-hot labels ($N\times C$):
+$$\bar Z_2 = \tfrac1N(P-Y)\quad \bar W_2 = \bar Z_2^\top A_1\quad \bar{\mathbf b}_2=\textstyle\sum_n\bar Z_2\quad \bar A_1 = \bar Z_2W_2$$
+$$\bar Z_1 = \bar A_1\odot\mathbb 1[Z_1&gt;0]\quad \bar W_1 = \bar Z_1^\top X\quad \bar{\mathbf b}_1=\textstyle\sum_n\bar Z_1$$
+($\odot$ = element-wise product.) Then update every parameter: $W \leftarrow W - \eta\bar W$.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Softmax + cross-entropy gives $\hat{\mathbf y}-\mathbf y$</div>
+<p>$p_i=e^{z_i}/\sum_k e^{z_k}$, $L=-\sum_i y_i\log p_i$ with one-hot $\mathbf y$. Since $\log p_i = z_i-\log\sum_k e^{z_k}$,
+$L = -\sum_i y_i z_i + \log\sum_k e^{z_k}$ (using $\sum_i y_i=1$). So $\frac{\partial L}{\partial z_j} = -y_j + \frac{e^{z_j}}{\sum_k e^{z_k}} = p_j - y_j$.</p>
+<p><em>Numbers:</em> $\mathbf z=(2, 0.5)$, true class 1 → $p_1=e^2/(e^2+e^{0.5})\approx0.818$, so $\nabla_{\mathbf z}L\approx(-0.182,\ +0.182)$. (This is the "softmax" graph in the step-through tool.)</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Linear-layer gradients by the shape trick</div>
+<p>Batch form $Y = XW^\top+\mathbf b$ with $X\,(N\times D)$, $W\,(H\times D)$, $Y\,(N\times H)$, upstream $G=\partial L/\partial Y\,(N\times H)$.
 $\partial L/\partial W$ must be $H\times D$, and the only product of $G$ and $X$ with that shape is $G^\top X$. $\partial L/\partial X$ must be $N\times D$: $GW$. $\partial L/\partial\mathbf b$ must be $H$: $\sum_n G_{n,:}$ (sum over the batch, because $\mathbf b$ was broadcast). Verified numerically with finite differences ✓.</p>
-<p><strong>3 · Why He init has the 2.</strong> With $\text{Var}(w)=2/n$ and ReLU inputs ($\mathbb E[x^2]=\tfrac12\text{Var}(z_{\text{prev}})$), $\text{Var}(z)=n\cdot\tfrac2n\cdot\tfrac12\text{Var}(z_{\text{prev}})=\text{Var}(z_{\text{prev}})$: the signal keeps its scale through any depth. A quick simulation (n = 512, unit-variance pre-activations) gives $\text{Var}(z)\approx1.02$ ✓. With $1/n$ instead, the variance halves at every layer: after 20 layers it is $2^{-20}\approx10^{-6}$.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · A NumPy training step</div>
+<pre><code class="language-python"># forward
+Z1 = X @ W1.T + b1;  A1 = np.maximum(Z1, 0)
+Z2 = A1 @ W2.T + b2
+Z2 -= Z2.max(1, keepdims=True); P = np.exp(Z2); P /= P.sum(1, keepdims=True)
+loss = -np.log(P[np.arange(N), y]).mean()
+# backward
+dZ2 = P.copy(); dZ2[np.arange(N), y] -= 1; dZ2 /= N
+dW2 = dZ2.T @ A1;  db2 = dZ2.sum(0);  dA1 = dZ2 @ W2
+dZ1 = dA1 * (Z1 &gt; 0)
+dW1 = dZ1.T @ X;   db1 = dZ1.sum(0)
+# update
+for p, g in [(W1, dW1), (b1, db1), (W2, dW2), (b2, db2)]:
+    p -= lr * g
+</code></pre>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/mlp-playground.html">Neural Network Playground</a></div>
+<p>Watch the loss fall and the decision boundary form as this exact loop runs. Raise the learning rate until training becomes unstable.</p>
+</div>
+<h2 id="6-automatic-differentiation">6 · Automatic differentiation<a class="anchor" href="#6-automatic-differentiation" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Reverse-mode and forward-mode autodiff</div>
+<p><strong>Automatic differentiation (autodiff)</strong> applies the local rules above mechanically to any program.</p>
+<ul>
+<li><strong>Reverse mode</strong> (backprop): one backward pass gives the gradient of <strong>one</strong> scalar output with respect to <strong>all</strong> inputs, at about 2–3× the cost of the forward pass, whatever the number of parameters. Perfect for "millions of parameters → one loss".</li>
+<li><strong>Forward mode:</strong> carries derivatives forward alongside values; one pass gives the derivative of all outputs along <strong>one</strong> input direction. Better when there are few inputs and many outputs.</li>
+</ul>
+<p>PyTorch, JAX and TensorFlow build the graph as your code runs and use reverse mode for <code>.backward()</code>.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Why billion-parameter training is possible</div>
+<p>Because reverse mode's cost doesn't grow with the number of parameters, computing the gradient of a 70-billion-parameter model costs only a few forward passes, not 70 billion of them.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Gradient checking</div>
+<p>Compare each analytic gradient with a numerical estimate $\frac{L(\theta+h)-L(\theta-h)}{2h}$ (central difference, $h\approx10^{-5}$, <strong>float64</strong>). Report the relative error $\frac{|g_a-g_n|}{\max(|g_a|,|g_n|)}$: around $10^{-7}$ or smaller is correct; $10^{-2}$ means a bug. Check a few random entries of every parameter.</p>
+</div>
+<h2 id="7-initialization">7 · Initialization<a class="anchor" href="#7-initialization" title="Link to this section">#</a></h2>
+<p>Before training, the weights are random. Their <strong>scale</strong> decides whether signals survive the trip through many layers.</p>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Variance of a pre-activation</div>
+<p>For $z=\sum_{i=1}^{n_{in}} w_ix_i$ with independent zero-mean weights:
+$$\mathrm{Var}(z) = n_{in}\,\mathrm{Var}(w)\,\mathbb E[x^2]$$
+To keep the signal's scale constant from layer to layer, choose $\mathrm{Var}(w)$ to cancel the factor $n_{in}$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · LeCun, Xavier/Glorot and He/Kaiming initialization</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Scheme</th>
+<th>$\mathrm{Var}(w)$</th>
+<th>Use with</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LeCun</td>
+<td>$1/n_{in}$</td>
+<td>SELU, or linear/tanh as a simple default</td>
+</tr>
+<tr>
+<td>Xavier / Glorot</td>
+<td>$2/(n_{in}+n_{out})$</td>
+<td>tanh, sigmoid: a compromise between the forward and backward pass</td>
+</tr>
+<tr>
+<td>He / Kaiming</td>
+<td>$2/n_{in}$</td>
+<td>ReLU and its variants</td>
+</tr>
+</tbody>
+</table></div>
+<p>Biases are usually initialized to 0.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Why He init has the 2</div>
+<p>With $\text{Var}(w)=2/n$ and ReLU inputs ($\mathbb E[x^2]=\tfrac12\text{Var}(z_{\text{prev}})$, because ReLU zeroes half of a symmetric input), $\text{Var}(z)=n\cdot\tfrac2n\cdot\tfrac12\text{Var}(z_{\text{prev}})=\text{Var}(z_{\text{prev}})$: the signal keeps its scale through any depth. A quick simulation (n = 512, unit-variance pre-activations) gives $\text{Var}(z)\approx1.02$ ✓. With $1/n$ instead, the variance halves at every layer: after 20 layers it is $2^{-20}\approx10^{-6}$.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Sanity-check the initial loss</div>
+<p>With small random weights the network predicts roughly uniform probabilities, so the initial cross-entropy should be about $\ln C$: <strong>2.30</strong> for 10 classes. A much larger value means the logits are too big at init (weights too large, or unnormalized inputs).</p>
+</div>
 <h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
 <ol>
 <li>A freshly initialized 10-class classifier reports an initial loss of 9.7. What should it be, and what's likely wrong?</li>
@@ -199,14 +461,20 @@ $\partial L/\partial W$ must be $H\times D$, and the only product of $G$ and $X$
 <summary>Answer</summary>
 <p>Reverse mode gives the gradient of <strong>one</strong> output w.r.t. <strong>all</strong> $n$ inputs in one backward pass (≈ a small constant × the forward cost). Forward mode gives the derivative of all outputs w.r.t. <strong>one</strong> input direction per pass, so a full gradient would take $n$ passes. Forward mode wins when there are few inputs and many outputs (e.g. a Jacobian-vector product for a handful of directions).</p>
 </details>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
-<ul>
-<li>⭐ <strong><a href="https://karpathy.ai/zero-to-hero.html" target="_blank" rel="noopener">Neural Networks: Zero to Hero (Andrej Karpathy)</a></strong>: videos 1–5 (micrograd → makemore with MLPs, BatchNorm, "Becoming a Backprop Ninja"). <strong>Code along with every line.</strong> This is the best single resource in the whole curriculum.</li>
-<li><strong><a href="https://www.3blue1brown.com/topics/neural-networks" target="_blank" rel="noopener">3Blue1Brown: Neural Networks</a></strong>: the intuition, watched first (~1.5 h).</li>
-<li><strong><a href="http://neuralnetworksanddeeplearning.com/" target="_blank" rel="noopener">Neural Networks and Deep Learning (Michael Nielsen)</a></strong>: free book. Ch. 1–3 for a clear backprop derivation.</li>
-<li><strong><a href="https://cs231n.github.io/optimization-2/" target="_blank" rel="noopener">CS231n: Backprop notes</a></strong> + <strong><a href="https://karpathy.medium.com/yes-you-should-understand-backprop-e2f06eab496b" target="_blank" rel="noopener">Yes you should understand backprop</a></strong>.</li>
-<li>Reference code: <strong><a href="https://github.com/karpathy/micrograd" target="_blank" rel="noopener">karpathy/micrograd</a></strong> (compare <em>after</em> you've written your own).</li>
-</ul>
+<ol start="6">
+<li>In the single-neuron example (section 4), change the target to $y=0$. What are the signs of $\bar w$ and $\bar b$ now, and why does that make sense?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\bar a = 2(0.731-0) \approx 1.462 &gt; 0$, so $\bar z = 1.462\cdot0.197\approx0.288$ and $\bar w=\bar b\approx0.288 &gt; 0$. A gradient step now <em>decreases</em> $w$ and $b$, lowering $a$ toward the new target 0 ✓.</p>
+</details>
+<ol start="7">
+<li>How many parameters does an MLP $784\to256\to256\to10$ have?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$(784\cdot256+256)+(256\cdot256+256)+(256\cdot10+10) = 200\,960+65\,792+2\,570 = 269\,322$.</p>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ol>
 <li><strong>micrograd</strong>: a scalar autograd engine (~150 lines) plus a tiny MLP that learns a 2D dataset (moons). Follow Karpathy, then <strong>rewrite it from memory</strong>.</li>
@@ -221,11 +489,23 @@ $\partial L/\partial W$ must be $H\times D$, and the only product of $G$ and $X$
 <li>Computing <code>softmax</code> then <code>log</code> separately. Use log-softmax / log-sum-exp, or <code>exp</code> overflows and <code>log(0)</code> gives <code>-inf</code>.</li>
 <li>Forgetting that the bias gradient sums over the batch (<code>db = dY.sum(axis=0)</code>).</li>
 </ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://karpathy.ai/zero-to-hero.html" target="_blank" rel="noopener">Neural Networks: Zero to Hero (Andrej Karpathy)</a></strong>: videos 1–5 (micrograd → makemore with MLPs, BatchNorm, "Becoming a Backprop Ninja"). <strong>Code along with every line.</strong> The best single resource in the whole curriculum.</li>
+<li><strong><a href="https://www.3blue1brown.com/topics/neural-networks" target="_blank" rel="noopener">3Blue1Brown: Neural Networks</a></strong>: the intuition (~1.5 h). The full series:</li>
+</ul>
+<figure class="video" data-yt="PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi" data-list="1"><button type="button" class="video-play" aria-label="Play video: Neural networks (series)"><span class="video-btn">▶</span><span class="video-label">Playlist · Neural networks (series)</span></button><figcaption>▶️ <a href="https://www.youtube.com/playlist?list=PLZHQObOWTQDNU6R1_67000Dx_ZCJB-3pi" target="_blank" rel="noopener">Neural networks (series)</a> · 3Blue1Brown · gradient descent, backpropagation, backprop calculus <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<ul>
+<li><strong><a href="http://neuralnetworksanddeeplearning.com/" target="_blank" rel="noopener">Neural Networks and Deep Learning (Michael Nielsen)</a></strong>: free book. Ch. 1–3 for a clear backprop derivation.</li>
+<li><strong><a href="https://cs231n.github.io/optimization-2/" target="_blank" rel="noopener">CS231n: Backprop notes</a></strong> + <strong><a href="https://karpathy.medium.com/yes-you-should-understand-backprop-e2f06eab496b" target="_blank" rel="noopener">Yes you should understand backprop</a></strong>.</li>
+<li>Reference code: <strong><a href="https://github.com/karpathy/micrograd" target="_blank" rel="noopener">karpathy/micrograd</a></strong> (compare <em>after</em> you've written your own).</li>
+</ul>
 <h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> micrograd rewritten from memory · <input type="checkbox"> NumPy MLP ≥ 97% on MNIST · <input type="checkbox"> all skip-test derivations done on paper</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/03-ml-fundamentals.html"><small>← Previous</small>Machine Learning Fundamentals</a><a class="pn next" href="../deep-learning/05-pytorch-training.html"><small>Next →</small>PyTorch &amp; the Craft of Training</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#the-picture">The picture</a></li><li><a href="#worked-examples">Worked examples</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-neurons-layers-and-the-forward-pass">1 · Neurons, layers and the forward pass</a></li><li><a href="#2-activation-functions">2 · Activation functions</a></li><li><a href="#3-what-a-network-can-represent">3 · What a network can represent</a></li><li><a href="#4-computational-graphs-and-the-chain-rule">4 · Computational graphs and the chain rule</a></li><li><a href="#5-backprop-for-a-whole-mlp">5 · Backprop for a whole MLP</a></li><li><a href="#6-automatic-differentiation">6 · Automatic differentiation</a></li><li><a href="#7-initialization">7 · Initialization</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

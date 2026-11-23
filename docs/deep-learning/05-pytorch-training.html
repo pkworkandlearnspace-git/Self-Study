@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
 <script defer src="../assets/katex/katex.min.js"></script>
 <script defer src="../assets/katex/contrib/auto-render.min.js"></script>
+<script defer src="../assets/mermaid/mermaid.min.js"></script>
 <script defer src="../assets/search-index.js"></script>
 <script defer src="../assets/site.js"></script>
 </head>
@@ -171,7 +172,7 @@
 <h2 id="worked-examples">Worked examples<a class="anchor" href="#worked-examples" title="Link to this section">#</a></h2>
 <p><strong>1 · Adam's first step has size ≈ η, whatever the gradient's scale.</strong> Take one parameter, $g_1=0.01$. Then $m=0.1\cdot0.01=0.001$, $v=0.001\cdot10^{-4}=10^{-7}$, $\hat m=0.001/0.1=0.01$, $\hat v=10^{-7}/0.001=10^{-4}$, step $=\eta\cdot0.01/(0.01+10^{-8})\approx\eta$. With $g_1=100$ you get the same step. That's why Adam's LR is a <em>step size</em> in parameter units, it needs less tuning than SGD's, and it's why early steps can be too big without warmup.</p>
 <p><strong>2 · "Loss is NaN at step 200": the checklist.</strong></p>
-<pre><code class="language-mermaid">flowchart TD
+<pre class="mermaid">flowchart TD
   A[NaN or inf loss] --&gt; B{&quot;NaN in the inputs or labels?&quot;}
   B -- yes --&gt; B1[&quot;Fix data: assert torch.isfinite(x).all()&quot;]
   B -- no --&gt; C{&quot;Loss rising before the NaN?&quot;}
@@ -179,7 +180,7 @@
   C -- no --&gt; D{&quot;Sudden, in fp16?&quot;}
   D -- yes --&gt; D1[&quot;Overflow: use bf16 or a GradScaler&quot;]
   D -- no --&gt; E[&quot;Unsafe op: log(0), sqrt(neg), x/0, exp(big).\nUse log_softmax, add eps, torch.autograd.set_detect_anomaly(True)&quot;]
-</code></pre>
+</pre>
 <p><strong>3 · Gradient accumulation (effective batch = 4 × 32 = 128).</strong></p>
 <pre><code class="language-python">accum = 4
 opt.zero_grad(set_to_none=True)

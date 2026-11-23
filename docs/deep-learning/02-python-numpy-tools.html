@@ -7,7 +7,9 @@
 <meta name="description" content="From the math and NumPy to transformers, LLMs, generative models and RL.">
 <script>try{var t=localStorage.getItem('ss-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
 <link rel="stylesheet" href="../assets/site.css">
-
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script defer src="../assets/katex/katex.min.js"></script>
+<script defer src="../assets/katex/contrib/auto-render.min.js"></script>
 <script defer src="../assets/search-index.js"></script>
 <script defer src="../assets/site.js"></script>
 </head>
@@ -109,10 +111,22 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Python, NumPy &amp; Tools</span></nav><article class="doc"><h1 id="02-python-numpy-tools">02 · Python, NumPy &amp; Tools<a class="anchor" href="#02-python-numpy-tools" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 02</span><span>⏱ 4 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/02-python-numpy-tools.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Python, NumPy &amp; Tools</span></nav><article class="doc"><h1 id="02-python-numpy-tools">02 · Python, NumPy &amp; Tools<a class="anchor" href="#02-python-numpy-tools" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 02</span><span>⏱ 12 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/02-python-numpy-tools.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> fluent, vectorized numeric Python and a working dev setup. · <strong>Time:</strong> 8–12 h · <strong>Needs:</strong> basic Python</p>
 </blockquote>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>avoid the Python habits that cause silent bugs in numeric code (references, mutability);</li>
+<li>create, index and reduce NumPy arrays, and always know their <strong>shape</strong> and <strong>dtype</strong>;</li>
+<li>predict <strong>broadcasting</strong> results and tell <strong>views</strong> from <strong>copies</strong>;</li>
+<li>replace Python loops with whole-array operations and <code>einsum</code>;</li>
+<li>set up an environment, a notebook, and a git repo.</li>
+</ul>
+<p>Everything you learn about NumPy carries over almost unchanged to PyTorch tensors (module 05).</p>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Explain NumPy <strong>broadcasting</strong> and predict the shape of <code>(32,1,5) + (4,5)</code> and of <code>(N,) - (N,1)</code>. Say why the second is a common bug.</li>
@@ -123,19 +137,206 @@
 <li class="task"><input type="checkbox"> <code>git</code> commit, branch, push. Write a <code>.gitignore</code>.</li>
 </ul>
 <p>🎯 Not sure? Take the auto-graded <a href="interactive/foundations-quiz.html">Foundations Quiz</a> (filter by module) before deciding.</p>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h2 id="1-python-essentials-for-numeric-code">1 · Python essentials for numeric code<a class="anchor" href="#1-python-essentials-for-numeric-code" title="Link to this section">#</a></h2>
+<p>You already know basic Python. These are the parts that matter most when writing ML code, and the ones that bite people coming from C++ or Java.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Names are references</div>
+<p>A Python variable is a <strong>name attached to an object</strong>, not a box holding a value. <code>b = a</code> makes <code>b</code> a second name for the <em>same</em> object; nothing is copied. For immutable objects (numbers, strings, tuples) this never matters. For mutable ones (lists, dicts, arrays) a change through one name is visible through the other.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · References and copies</div>
+<pre><code class="language-python">a = [1, 2, 3]
+b = a          # same list
+b.append(4)    # a is now [1, 2, 3, 4] too
+c = a.copy()   # a new list; changing c leaves a alone
+</code></pre>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Mutable default arguments</div>
+<p>Default values are created <strong>once</strong>, when the function is defined:</p>
+<pre><code class="language-python">def add(x, items=[]):   # BUG: the same list is shared by every call
+    items.append(x); return items
+add(1); add(2)          # -&gt; [1, 2]
+</code></pre>
+<p>Use <code>items=None</code> and create the list inside: <code>items = [] if items is None else items</code>.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Comprehensions</div>
+<p>A compact way to build a list, dict or set from a loop:
+<code>[x**2 for x in range(5) if x % 2 == 0]</code> → <code>[0, 4, 16]</code> · <code>{w: len(w) for w in words}</code> · <code>{x % 3 for x in data}</code>.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Classes and <code>__call__</code></div>
+<p>A class bundles data (attributes) with functions that use it (methods). Defining <code>__call__</code> lets an object be used like a function. This is exactly how PyTorch layers work: <code>layer(x)</code> calls <code>layer.__call__(x)</code>, which runs its <code>forward</code> method.</p>
+<pre><code class="language-python">class Linear:
+    def __init__(self, W, b): self.W, self.b = W, b
+    def __call__(self, x):    return x @ self.W.T + self.b
+</code></pre>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Generators</div>
+<p>A function containing <code>yield</code> produces values one at a time, lazily, instead of building the whole list in memory. Data loaders are generators: they hand you one mini-batch at a time.</p>
+<pre><code class="language-python">def batches(X, size):
+    for i in range(0, len(X), size):
+        yield X[i:i + size]
+</code></pre>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Type hints</div>
+<p>Optional annotations like <code>def f(x: np.ndarray, k: int = 3) -&gt; float:</code>. Python ignores them at runtime, but editors and tools (mypy, pyright) use them to catch mistakes and they document intent.</p>
+</div>
+<h2 id="2-numpy-arrays-shape-dtype-axes">2 · NumPy arrays: shape, dtype, axes<a class="anchor" href="#2-numpy-arrays-shape-dtype-axes" title="Link to this section">#</a></h2>
+<p>NumPy's <code>ndarray</code> is a block of numbers of <strong>one type</strong>, laid out in memory, with a <strong>shape</strong> that says how to read it as a grid. All the speed of NumPy (and PyTorch) comes from running compiled loops over that block instead of looping in Python.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · ndarray, shape, ndim, dtype</div>
 <ul>
-<li><strong>Vectorize everything.</strong> A Python loop over 1M elements is typically 10–100× slower than the equivalent NumPy op (which runs in compiled C over contiguous memory). Thinking in whole arrays is the core DL skill, and PyTorch works the same way.</li>
-<li><strong>Broadcasting rule:</strong> align shapes from the right; missing leading dims count as 1. Each pair of dims must be equal or one of them 1. Dims of size 1 stretch (virtually: no copy). 🎛️ Drill it in the <a href="interactive/broadcasting-lab.html">Broadcasting Lab</a>.</li>
-<li><strong>Axis semantics:</strong> <code>x.sum(axis=0)</code> collapses rows. Use <code>keepdims=True</code> to keep shapes broadcastable.</li>
-<li><strong>Views vs copies:</strong> basic slicing (<code>x[1:4]</code>, <code>x[:, 0]</code>) gives a view (shared memory), while fancy/boolean indexing (<code>x[[1,2]]</code>, <code>x[x&gt;0]</code>) gives a copy. Check with <code>np.shares_memory(a, b)</code>. <code>reshape</code> vs <code>transpose</code> + contiguity matters again in PyTorch.</li>
-<li><strong>dtype matters:</strong> NumPy defaults to <strong>float64</strong>, PyTorch to <strong>float32</strong> (mixing them silently upcasts or errors). Use float64 for gradient checks, float32 for training, and float16/bfloat16 for speed on GPUs.</li>
-<li><strong><code>einsum</code></strong> is a universal tensor op, e.g. <code>np.einsum('bij,bjk-&gt;bik', A, B)</code> = batched matmul. Learn it now and you'll read attention code easily.</li>
-<li><strong>Coming from C++:</strong> Python objects are references. <code>a = b</code> doesn't copy. Mutable default args are a classic bug.</li>
-<li><strong>Tooling:</strong> <code>uv</code> or <code>venv</code> + <code>pip</code> for environments. <strong>Jupyter/Colab</strong> for exploring. <strong>VS Code</strong> for real code. <strong>git</strong> for everything.</li>
+<li><strong>shape:</strong> a tuple of sizes, e.g. <code>(32, 3, 28, 28)</code> = 32 images, 3 channels, 28×28 pixels.</li>
+<li><strong>ndim:</strong> number of axes (<code>len(shape)</code>). A scalar has ndim 0, a vector 1, a matrix 2.</li>
+<li><strong>dtype:</strong> the element type, e.g. <code>float32</code>, <code>int64</code>, <code>bool</code>. Every element has the same dtype.</li>
+<li><strong>size:</strong> total number of elements (product of the shape).</li>
 </ul>
-<h2 id="worked-examples">Worked examples<a class="anchor" href="#worked-examples" title="Link to this section">#</a></h2>
-<p><strong>1 · Pairwise distances with no loop.</strong> <code>A (n,d)</code>, <code>B (m,d)</code> → <code>D (n,m)</code>.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Creating arrays</div>
+<pre><code class="language-python">np.array([[1, 2], [3, 4]])      # from a list, shape (2, 2)
+np.zeros((3, 4)); np.ones(5); np.full((2, 2), 7.0)
+np.arange(0, 10, 2)             # [0 2 4 6 8]
+np.linspace(0, 1, 5)            # 5 evenly spaced points from 0 to 1
+rng = np.random.default_rng(0)  # seeded generator (reproducible)
+rng.normal(size=(100, 3))       # standard normal samples
+</code></pre>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Indexing</div>
+<ul>
+<li><strong>Basic slicing:</strong> <code>x[1:4]</code>, <code>x[:, 0]</code>, <code>x[::2]</code>, <code>x[..., -1]</code>. Start:stop:step, stop excluded. Negative indices count from the end.</li>
+<li><strong>Fancy (integer-array) indexing:</strong> <code>x[[0, 2, 5]]</code> picks those rows.</li>
+<li><strong>Boolean masking:</strong> <code>x[x &gt; 0]</code> picks the elements where the mask is True (result is 1-D).</li>
+<li><code>None</code> (or <code>np.newaxis</code>) inserts an axis of size 1: <code>x[:, None]</code> turns shape <code>(N,)</code> into <code>(N, 1)</code>.</li>
+</ul>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Axes and reductions</div>
+<p>Reductions like <code>sum</code>, <code>mean</code>, <code>max</code>, <code>argmax</code> take an <code>axis</code> argument: the axis that <strong>disappears</strong>. For <code>X</code> of shape <code>(N, C)</code>: <code>X.sum(axis=0)</code> → shape <code>(C,)</code> (sum over rows, one value per column); <code>X.sum(axis=1)</code> → <code>(N,)</code>.
+<code>keepdims=True</code> keeps the reduced axis with size 1, e.g. <code>(N, 1)</code>, so the result still broadcasts against <code>X</code>.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Reshape and transpose</div>
+<p><code>x.reshape(4, -1)</code> reinterprets the same numbers with a new shape (<code>-1</code> = "work it out"); the total size must match. <code>x.T</code> / <code>x.transpose(1, 0, 2)</code> reorders axes. Reshape keeps elements in reading (row-major) order; transpose changes which axis is which. They are <strong>not</strong> interchangeable: reshaping a <code>(2,3)</code> matrix to <code>(3,2)</code> is not its transpose.</p>
+</div>
+<h2 id="3-broadcasting">3 · Broadcasting<a class="anchor" href="#3-broadcasting" title="Link to this section">#</a></h2>
+<p>Broadcasting lets you combine arrays of different shapes without writing loops or making copies, e.g. subtract a per-column mean from every row.</p>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · The broadcasting rule</div>
+<ol>
+<li>Line the shapes up <strong>from the right</strong>. If one has fewer axes, pad it on the left with 1s.</li>
+<li>For each axis, the sizes must be <strong>equal</strong>, or one of them must be <strong>1</strong>.</li>
+<li>Axes of size 1 are stretched (virtually, with no copy) to match. The result takes the larger size on every axis.</li>
+</ol>
+<p>If any axis breaks rule 2, NumPy raises an error.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Predicting shapes</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Left</th>
+<th>Right</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>(32,1,5)</code></td>
+<td><code>(4,5)</code> → <code>(1,4,5)</code></td>
+<td><code>(32,4,5)</code></td>
+</tr>
+<tr>
+<td><code>(N,C)</code></td>
+<td><code>(C,)</code> → <code>(1,C)</code></td>
+<td><code>(N,C)</code>: one value per column</td>
+</tr>
+<tr>
+<td><code>(N,C)</code></td>
+<td><code>(N,1)</code></td>
+<td><code>(N,C)</code>: one value per row</td>
+</tr>
+<tr>
+<td><code>(3,4)</code></td>
+<td><code>(3,)</code> → <code>(1,3)</code></td>
+<td><strong>error</strong>: 4 vs 3</td>
+</tr>
+<tr>
+<td><code>(N,)</code> → <code>(1,N)</code></td>
+<td><code>(N,1)</code></td>
+<td><code>(N,N)</code> ⚠️</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · The <code>(N,)</code> vs <code>(N,1)</code> bug</div>
+<p><code>y_pred</code> of shape <code>(N,1)</code> minus <code>y</code> of shape <code>(N,)</code> gives an <code>(N,N)</code> matrix of every prediction against every target. The loss is then computed on nonsense, often without any error. Always <code>assert y_pred.shape == y.shape</code> before computing a loss.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/broadcasting-lab.html">Broadcasting Lab</a></div>
+<p>Enter two shapes and see how they align, which axes stretch, and the resulting shape, then drill yourself with the random quiz until you get 10 in a row.</p>
+</div>
+<h2 id="4-views-vs-copies">4 · Views vs copies<a class="anchor" href="#4-views-vs-copies" title="Link to this section">#</a></h2>
+<p>Because arrays are blocks of memory with a shape on top, many operations just create a new <em>view</em> of the same memory.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · View, copy</div>
+<p>A <strong>view</strong> is a new array object that shares memory with the original: changing one changes the other. A <strong>copy</strong> has its own memory. Check with <code>np.shares_memory(a, b)</code>.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Operation</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>basic slicing <code>x[1:4]</code>, <code>x[:, 0]</code>, <code>x[::2]</code></td>
+<td>view</td>
+</tr>
+<tr>
+<td><code>x.reshape(...)</code>, <code>x.T</code>, <code>x[None]</code></td>
+<td>view (reshape copies only if it can't avoid it)</td>
+</tr>
+<tr>
+<td>fancy indexing <code>x[[1, 2]]</code></td>
+<td>copy</td>
+</tr>
+<tr>
+<td>boolean masking <code>x[x &gt; 0]</code></td>
+<td>copy</td>
+</tr>
+<tr>
+<td>arithmetic <code>x + 1</code>, <code>x.copy()</code></td>
+<td>new array</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · View vs copy</div>
+<pre><code class="language-python">x = np.arange(6); v = x[1:4]; v[0] = 99       # x is now [0 99 2 3 4 5]: v was a view
+y = np.arange(6); c = y[[1, 2, 3]]; c[0] = 99 # y is unchanged: fancy indexing copied
+</code></pre>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Strides and contiguity</div>
+<p>An array stores <strong>strides</strong>: how many bytes to jump to move one step along each axis. A transpose just swaps strides, so it's free, but the result is no longer laid out row by row (<strong>not contiguous</strong>). Some operations need contiguous memory and will copy; in PyTorch, <code>.view()</code> refuses non-contiguous tensors while <code>.reshape()</code> copies when needed.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · In-place updates through views</div>
+<p><code>v += 1</code> on a view changes the original array too. That is useful when intended and a nasty bug when not.</p>
+</div>
+<h2 id="5-vectorization-and-einsum">5 · Vectorization and einsum<a class="anchor" href="#5-vectorization-and-einsum" title="Link to this section">#</a></h2>
+<p><strong>Vectorizing</strong> means expressing a computation as operations on whole arrays. A Python loop over a million elements is typically 10–100× slower than the equivalent NumPy call, which runs one compiled loop over contiguous memory. Thinking in whole arrays is the core DL skill, and PyTorch works the same way.</p>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Pairwise distances with no loop</div>
+<p><code>A (n,d)</code>, <code>B (m,d)</code> → <code>D (n,m)</code> with $D_{ij} = \|\mathbf a_i-\mathbf b_j\|$.</p>
 <pre><code class="language-python"># Version 1: broadcasting. (n,1,d) - (1,m,d) -&gt; (n,m,d), then sum over d. Memory O(n·m·d).
 D = np.sqrt(((A[:, None, :] - B[None, :, :]) ** 2).sum(-1))
 # Version 2: expand ||a-b||² = ||a||² + ||b||² - 2a·b. Memory O(n·m), and the matmul is fast.
@@ -143,17 +344,142 @@ sq = (A**2).sum(1)[:, None] + (B**2).sum(1)[None, :] - 2 * A @ B.T
 D = np.sqrt(np.maximum(sq, 0))   # clip tiny negatives caused by rounding
 </code></pre>
 <p>Both agree (<code>np.allclose</code> ✓). Version 2 is what k-NN in CS231n assignment 1 asks for.</p>
-<p><strong>2 · Row-wise softmax, stable and vectorized.</strong></p>
-<pre><code class="language-python">def softmax(Z):                       # Z: (N, C)
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Row-wise softmax, stable and vectorized</div>
+<pre><code class="language-python">def softmax(Z):                            # Z: (N, C)
     Z = Z - Z.max(axis=1, keepdims=True)   # keepdims -&gt; (N,1), broadcasts back over C
     E = np.exp(Z)
     return E / E.sum(axis=1, keepdims=True)
 </code></pre>
 <p>Without <code>keepdims</code>, <code>Z.max(axis=1)</code> has shape <code>(N,)</code>, and <code>(N,C) - (N,)</code> either errors or (if N == C) silently subtracts the wrong thing.</p>
-<p><strong>3 · View vs copy.</strong></p>
-<pre><code class="language-python">x = np.arange(6); v = x[1:4]; v[0] = 99   # x is now [0 99 2 3 4 5]: v was a view
-y = np.arange(6); c = y[[1,2,3]]; c[0] = 99   # y is unchanged: fancy indexing copied
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Matrix multiplication with <code>@</code></div>
+<p><code>A @ B</code> is matrix multiplication (module 01). With more than 2 axes it is <strong>batched</strong>: <code>(b,n,k) @ (b,k,m)</code> → <code>(b,n,m)</code>, one matmul per batch element. <code>*</code> is element-wise and never a matrix product.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · einsum</div>
+<p><code>np.einsum</code> describes a tensor operation by <strong>naming the axes</strong>. Letters that appear in the inputs but not in the output are summed over.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>einsum</th>
+<th>Same as</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>'ij,jk-&gt;ik'</code></td>
+<td><code>A @ B</code></td>
+</tr>
+<tr>
+<td><code>'bij,bjk-&gt;bik'</code></td>
+<td>batched <code>A @ B</code></td>
+</tr>
+<tr>
+<td><code>'ij-&gt;j'</code></td>
+<td><code>X.sum(axis=0)</code></td>
+</tr>
+<tr>
+<td><code>'i,i-&gt;'</code></td>
+<td>dot product <code>a @ b</code></td>
+</tr>
+<tr>
+<td><code>'ij-&gt;ji'</code></td>
+<td><code>X.T</code></td>
+</tr>
+<tr>
+<td><code>'bhqd,bhkd-&gt;bhqk'</code></td>
+<td>attention scores $QK^\top$ per batch and head (module 08)</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<h2 id="6-numbers-on-a-computer-dtypes">6 · Numbers on a computer: dtypes<a class="anchor" href="#6-numbers-on-a-computer-dtypes" title="Link to this section">#</a></h2>
+<p>Floating-point numbers have limited precision and range. In DL you trade precision for speed and memory, so you need to know the limits.</p>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Common float types</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>dtype</th>
+<th>Bits</th>
+<th>Machine epsilon (relative precision)</th>
+<th>Largest value</th>
+<th>Typical use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>float64</td>
+<td>64</td>
+<td>$2.2\times10^{-16}$</td>
+<td>$1.8\times10^{308}$</td>
+<td>NumPy default, gradient checks</td>
+</tr>
+<tr>
+<td>float32</td>
+<td>32</td>
+<td>$1.2\times10^{-7}$</td>
+<td>$3.4\times10^{38}$</td>
+<td>PyTorch default, training</td>
+</tr>
+<tr>
+<td>float16</td>
+<td>16</td>
+<td>$9.8\times10^{-4}$</td>
+<td>$65\,504$</td>
+<td>fast GPU math (needs loss scaling)</td>
+</tr>
+<tr>
+<td>bfloat16</td>
+<td>16</td>
+<td>$7.8\times10^{-3}$</td>
+<td>$\approx3.4\times10^{38}$</td>
+<td>fast GPU math, same range as float32</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Mixing dtypes</div>
+<p>NumPy defaults to <strong>float64</strong> and PyTorch to <strong>float32</strong>. Mixing them silently upcasts (NumPy) or raises an error (PyTorch). Integer arrays divide differently too: <code>np.array([1, 2]) / 2</code> gives floats but <code>//</code> floors. Check <code>x.dtype</code> when results look odd.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Overflow and cancellation</div>
+<p><code>np.exp(1000)</code> is <code>inf</code> in any float type, which is why softmax subtracts the max (module 01). Subtracting two nearly equal numbers loses precision ("catastrophic cancellation"), which is why finite-difference gradient checks use float64.</p>
+</div>
+<h2 id="7-tooling-environments-notebooks-git">7 · Tooling: environments, notebooks, git<a class="anchor" href="#7-tooling-environments-notebooks-git" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Virtual environment</div>
+<p>An isolated folder of packages for one project, so projects with different versions don't clash.</p>
+<pre><code class="language-bash">python -m venv .venv &amp;&amp; source .venv/bin/activate   # or: uv venv &amp;&amp; source .venv/bin/activate
+pip install numpy matplotlib jupyter                # or: uv pip install ...
+pip freeze &gt; requirements.txt                        # record exact versions
 </code></pre>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Notebooks vs scripts</div>
+<p><strong>Jupyter</strong> (or <strong>Google Colab</strong>, which gives a free GPU) is ideal for exploring: run a cell, look at a plot, try again. Notebooks hide state (cells run out of order), so move reusable code into <code>.py</code> files and import it. Use <strong>VS Code</strong> (or any real editor) for those files.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · git essentials</div>
+<p>git records snapshots (<strong>commits</strong>) of your project so you can go back, compare, and work on branches.</p>
+<pre><code class="language-bash">git init                       # start tracking a folder
+git add model.py &amp;&amp; git commit -m &quot;Add MLP&quot;   # snapshot
+git switch -c experiment       # new branch for a risky change
+git log --oneline; git diff    # history; what changed
+git push -u origin main        # upload to GitHub
+</code></pre>
+<p>A <code>.gitignore</code> lists files git should never track: <code>.venv/</code>, <code>__pycache__/</code>, <code>*.ckpt</code>, <code>data/</code>, <code>.ipynb_checkpoints/</code>.</p>
+</div>
+<div class="box box-learn">
+<div class="box-title"><span class="box-ico">📚</span> Go deeper (optional)</div>
+<ul>
+<li>⭐ <a href="https://missing.csail.mit.edu/" target="_blank" rel="noopener">The Missing Semester (MIT)</a>: shell, git, editors. Do the git and shell lectures.</li>
+</ul>
+</div>
 <h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
 <ol>
 <li>Shapes: <code>(8,1,6,1) * (7,1,5)</code>? <code>(3,4) + (3,)</code>? <code>(64,10).mean(axis=1, keepdims=True)</code>?</li>
@@ -193,15 +519,20 @@ G = ((N == 3) | ((G == 1) &amp; (N == 2))).astype(int)
 <summary>Answer</summary>
 <p><code>A @ B</code> (batched matmul) and <code>X.sum(axis=0)</code>.</p>
 </details>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
-<ul>
-<li>⭐ <strong><a href="https://numpy.org/doc/stable/user/absolute_beginners.html" target="_blank" rel="noopener">NumPy: the absolute basics</a></strong> + <strong><a href="https://numpy.org/doc/stable/user/basics.broadcasting.html" target="_blank" rel="noopener">Broadcasting</a></strong> (official docs)</li>
-<li>⭐ <strong><a href="https://cs231n.github.io/python-numpy-tutorial/" target="_blank" rel="noopener">CS231n Python/NumPy tutorial</a></strong>: short and DL-oriented.</li>
-<li><strong><a href="https://www.labri.fr/perso/nrougier/from-python-to-numpy/" target="_blank" rel="noopener">From Python to NumPy</a></strong>, N. Rougier (vectorization mindset).</li>
-<li><strong><a href="https://github.com/rougier/numpy-100" target="_blank" rel="noopener">100 NumPy exercises</a></strong>: do ~40 for fluency.</li>
-<li><strong><a href="https://missing.csail.mit.edu/" target="_blank" rel="noopener">The Missing Semester (MIT)</a></strong>: shell, git, editors. Do the git + shell lectures.</li>
-<li>Plotting: <strong><a href="https://matplotlib.org/stable/users/explain/quick_start.html" target="_blank" rel="noopener">Matplotlib quick start</a></strong>.</li>
-</ul>
+<ol start="6">
+<li><code>X</code> has shape <code>(N, D)</code>. Standardize every column to mean 0 and standard deviation 1 in one line.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p><code>(X - X.mean(axis=0)) / (X.std(axis=0) + 1e-8)</code>. The <code>(D,)</code> statistics broadcast over the rows; the small constant avoids division by zero for constant columns.</p>
+</details>
+<ol start="7">
+<li>After <code>x = np.arange(12).reshape(3, 4)</code>, is <code>x.T.reshape(-1)</code> a view? What are its first four elements?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>It's a <strong>copy</strong>: <code>x.T</code> is not contiguous, so flattening it in row order needs new memory. The first four elements are <code>[0, 4, 8, 1]</code> (reading <code>x.T</code> row by row walks down the columns of <code>x</code>).</p>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ol>
 <li>Vectorized <strong>k-nearest-neighbors</strong> classifier on MNIST or CIFAR-10 (CS231n assignment 1 style). Time the loop version against the vectorized one.</li>
@@ -214,11 +545,20 @@ G = ((N == 3) | ((G == 1) &amp; (N == 2))).astype(int)
 <li>In-place ops on a view (<code>v += 1</code>) change the original array too.</li>
 <li>Living in notebooks forever. Move reusable code into <code>.py</code> files early.</li>
 </ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://numpy.org/doc/stable/user/absolute_beginners.html" target="_blank" rel="noopener">NumPy: the absolute basics</a></strong> + <strong><a href="https://numpy.org/doc/stable/user/basics.broadcasting.html" target="_blank" rel="noopener">Broadcasting</a></strong> (official docs)</li>
+<li>⭐ <strong><a href="https://cs231n.github.io/python-numpy-tutorial/" target="_blank" rel="noopener">CS231n Python/NumPy tutorial</a></strong>: short and DL-oriented.</li>
+<li><strong><a href="https://www.labri.fr/perso/nrougier/from-python-to-numpy/" target="_blank" rel="noopener">From Python to NumPy</a></strong>, N. Rougier (vectorization mindset).</li>
+<li><strong><a href="https://github.com/rougier/numpy-100" target="_blank" rel="noopener">100 NumPy exercises</a></strong>: do ~40 for fluency.</li>
+<li><strong><a href="https://missing.csail.mit.edu/" target="_blank" rel="noopener">The Missing Semester (MIT)</a></strong>: shell, git, editors.</li>
+<li>Plotting: <strong><a href="https://matplotlib.org/stable/users/explain/quick_start.html" target="_blank" rel="noopener">Matplotlib quick start</a></strong>.</li>
+</ul>
 <h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> k-NN runs fully vectorized · <input type="checkbox"> project lives in a git repo with a README</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/01-math-for-dl.html"><small>← Previous</small>Math for Deep Learning</a><a class="pn next" href="../deep-learning/03-ml-fundamentals.html"><small>Next →</small>Machine Learning Fundamentals</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#worked-examples">Worked examples</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-python-essentials-for-numeric-code">1 · Python essentials for numeric code</a></li><li><a href="#2-numpy-arrays-shape-dtype-axes">2 · NumPy arrays: shape, dtype, axes</a></li><li><a href="#3-broadcasting">3 · Broadcasting</a></li><li><a href="#4-views-vs-copies">4 · Views vs copies</a></li><li><a href="#5-vectorization-and-einsum">5 · Vectorization and einsum</a></li><li><a href="#6-numbers-on-a-computer-dtypes">6 · Numbers on a computer: dtypes</a></li><li><a href="#7-tooling-environments-notebooks-git">7 · Tooling: environments, notebooks, git</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

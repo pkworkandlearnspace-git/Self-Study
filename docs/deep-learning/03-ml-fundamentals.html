@@ -10,6 +10,7 @@
 <link rel="stylesheet" href="../assets/katex/katex.min.css">
 <script defer src="../assets/katex/katex.min.js"></script>
 <script defer src="../assets/katex/contrib/auto-render.min.js"></script>
+<script defer src="../assets/mermaid/mermaid.min.js"></script>
 <script defer src="../assets/search-index.js"></script>
 <script defer src="../assets/site.js"></script>
 </head>
@@ -111,10 +112,20 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Machine Learning Fundamentals</span></nav><article class="doc"><h1 id="03-machine-learning-fundamentals">03 · Machine Learning Fundamentals<a class="anchor" href="#03-machine-learning-fundamentals" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 03</span><span>⏱ 6 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/03-ml-fundamentals.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Machine Learning Fundamentals</span></nav><article class="doc"><h1 id="03-machine-learning-fundamentals">03 · Machine Learning Fundamentals<a class="anchor" href="#03-machine-learning-fundamentals" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 03</span><span>⏱ 14 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/03-ml-fundamentals.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> the concepts every DL model inherits: loss, generalization, evaluation. · <strong>Time:</strong> 20–30 h · <strong>Needs:</strong> 01, 02</p>
 </blockquote>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>state the supervised-learning setup (data, model, loss, risk) and why we split data three ways;</li>
+<li>fit <strong>linear</strong> and <strong>logistic</strong> regression, derive their gradients, and see that a neural net is stacked logistic regressions;</li>
+<li>diagnose <strong>underfitting vs overfitting</strong> and fix each one, using the bias–variance decomposition and regularization;</li>
+<li>evaluate honestly: cross-validation, <strong>data leakage</strong>, and the right metric (precision, recall, F1, ROC-AUC, PR curves).</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Explain train / validation / test splits and why tuning on the test set is cheating.</li>
@@ -125,57 +136,147 @@
 <li class="task"><input type="checkbox"> Say what ROC-AUC measures as a probability, and why it doesn't change when the class balance changes but precision does.</li>
 </ul>
 <p>🎯 Not sure? Take the auto-graded <a href="interactive/foundations-quiz.html">Foundations Quiz</a> (filter by module) before deciding.</p>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h2 id="1-what-learning-means">1 · What "learning" means<a class="anchor" href="#1-what-learning-means" title="Link to this section">#</a></h2>
+<p>A machine-learning model is a function with adjustable knobs (<strong>parameters</strong>). Learning means turning the knobs so the function does well on examples, and, more importantly, on <strong>examples it has never seen</strong>.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Supervised learning</div>
+<p>You are given $N$ labelled examples $(\mathbf x_i, y_i)$: inputs $\mathbf x_i$ (features) and the correct outputs $y_i$ (labels). You choose</p>
 <ul>
-<li><strong>Learning = optimization + generalization.</strong> Fit training data (minimize empirical risk) and do well on unseen data. The second is the hard part.</li>
-<li><strong>Supervised setup:</strong> data $(x_i, y_i)$, model $f_\theta$, loss $\ell$, minimize $\frac1N\sum\ell(f_\theta(x_i), y_i)$.</li>
-<li><strong>Linear regression:</strong> $\hat y = \mathbf w^\top\mathbf x + b$, MSE loss, closed form $\mathbf w = (X^\top X)^{-1}X^\top\mathbf y$.</li>
-<li><strong>Logistic regression:</strong> $p(y{=}1\mid\mathbf x) = \sigma(\mathbf w^\top\mathbf x)$, binary cross-entropy loss, gradient $X^\top(\hat{\mathbf y}-\mathbf y)$ for the summed loss (divide by $N$ for the mean). The loss is convex in $\mathbf w$, so GD finds the global optimum (if the data are linearly separable, $\|\mathbf w\|\to\infty$ without regularization). <strong>A neural net is stacked logistic regressions.</strong></li>
-<li><strong>Softmax regression:</strong> the multi-class version, with categorical cross-entropy.</li>
-<li><strong>Generalization:</strong><ul>
-<li><strong>Underfitting</strong> (high bias): train error high. → Bigger model, more features, train longer.</li>
-<li><strong>Overfitting</strong> (high variance): train ≪ val error. → More data, regularization, augmentation, early stopping.</li>
-<li><strong>Decomposition (squared loss):</strong> expected test error $=\text{bias}^2+\text{variance}+\sigma^2_{\text{noise}}$. No model beats the noise term.</li>
-<li>Deep nets break the classic U-curve (<strong>double descent</strong>, see module 12), but the diagnosis above still guides practice.</li>
-<li>🎛️ <strong>See it:</strong> <a href="interactive/generalization-lab.html">Generalization Lab</a>: polynomial fits with train/val curves, plus a threshold/ROC/PR simulator.</li>
+<li>a <strong>model</strong> $f_\theta$ with parameters $\theta$, which maps an input to a prediction $\hat y = f_\theta(\mathbf x)$;</li>
+<li>a <strong>loss</strong> $\ell(\hat y, y)\ge0$ that measures how wrong one prediction is.</li>
 </ul>
-</li>
-<li><strong>Regularization:</strong> L2/weight decay (Gaussian prior), L1 (sparsity), early stopping, and later dropout.</li>
-<li><strong>Evaluation:</strong> a held-out <strong>test set touched once</strong>. Use a <strong>validation set</strong> for decisions. Cross-validation for small data.</li>
-<li><strong>Metrics:</strong> accuracy, precision/recall/F1, ROC-AUC, confusion matrix (classification); MSE/MAE/$R^2$ (regression). <strong>ROC-AUC</strong> = probability a random positive is scored above a random negative; it ignores the threshold <em>and</em> the class balance. With rare positives, the <strong>precision–recall curve</strong> (and average precision) is more informative.</li>
-<li><strong>Data leakage:</strong> information from the test set or the future leaks into training (e.g. normalizing with statistics from all data). It's the #1 source of fake results.</li>
-<li><strong>Feature scaling:</strong> standardize inputs (mean 0, std 1). This matters for GD convergence (conditioning, from module 01).</li>
-<li><strong>Other classical models (know what they are, don't master them):</strong> k-NN, decision trees, random forests, <strong>gradient boosting (XGBoost/LightGBM)</strong>, SVM, k-means, PCA. Boosted trees are still the default for medium-sized <em>tabular</em> data (<a href="https://arxiv.org/abs/2207.08815" target="_blank" rel="noopener">Grinsztajn et al., 2022</a>), although tabular foundation models such as <a href="https://www.nature.com/articles/s41586-024-08328-6" target="_blank" rel="noopener">TabPFN (Nature, 2025)</a> now match or beat them on small datasets.</li>
+<p><strong>Regression</strong> predicts a number ($y\in\mathbb R$); <strong>classification</strong> predicts a class ($y\in\{1,\dots,C\}$).</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Empirical risk minimization</div>
+<p>$$\hat\theta = \arg\min_\theta\; \underbrace{\frac1N\sum_{i=1}^N \ell\big(f_\theta(\mathbf x_i), y_i\big)}_{\text{training loss (empirical risk)}}$$
+What we actually care about is the <strong>expected risk</strong> $\mathbb E_{(\mathbf x,y)\sim\text{data}}\,\ell(f_\theta(\mathbf x),y)$ on new data from the same source. The gap between the two is the <strong>generalization gap</strong>.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Learning = optimization + generalization</div>
+<p>Driving training loss down is optimization (module 01, section 6). Making sure that also lowers the loss on new data is generalization, and it is the hard part.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Train / validation / test split</div>
+<ul>
+<li><strong>Training set:</strong> used to fit the parameters.</li>
+<li><strong>Validation set:</strong> used to make decisions (model size, learning rate, regularization strength, when to stop).</li>
+<li><strong>Test set:</strong> used <strong>once</strong>, at the very end, to report performance.</li>
 </ul>
-<h2 id="worked-examples">Worked examples<a class="anchor" href="#worked-examples" title="Link to this section">#</a></h2>
-<p><strong>1 · Logistic-regression gradient in three lines.</strong> One example, $z=\mathbf w^\top\mathbf x$, $p=\sigma(z)$, loss $\ell=-[y\log p+(1-y)\log(1-p)]$.
-Using $\sigma'(z)=\sigma(z)(1-\sigma(z))$: $\frac{\partial\ell}{\partial p}=-\frac yp+\frac{1-y}{1-p}$, so $\frac{\partial\ell}{\partial z}=\frac{\partial\ell}{\partial p}\,p(1-p)=p-y$, and $\nabla_{\mathbf w}\ell=(p-y)\mathbf x$. Stack the rows: $\nabla = X^\top(\hat{\mathbf y}-\mathbf y)$. Same "prediction minus target" form as linear regression. That isn't luck: both are GLMs with their canonical link.
-<em>Numbers:</em> $\mathbf x=(1,2)$, $\mathbf w=\mathbf 0$, $y=1$ → $p=0.5$, gradient $=(0.5-1)(1,2)=(-0.5,-1)$. A GD step increases both weights, pushing $p$ toward 1 ✓.</p>
-<p><strong>2 · The accuracy trap, in numbers.</strong> 1000 patients, 10 sick. A model flags 30 people, 8 of them sick.</p>
-<div class="table-wrap"><table>
-<thead>
-<tr>
-<th></th>
-<th>predicted sick</th>
-<th>predicted healthy</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><strong>sick (10)</strong></td>
-<td>TP = 8</td>
-<td>FN = 2</td>
-</tr>
-<tr>
-<td><strong>healthy (990)</strong></td>
-<td>FP = 22</td>
-<td>TN = 968</td>
-</tr>
-</tbody>
-</table></div>
-<p>Accuracy $=976/1000=97.6\%$, which is <em>worse</em> than "everyone is healthy" (99%). But recall $=8/10=80\%$, precision $=8/30\approx27\%$, F1 $=2\cdot0.27\cdot0.8/(0.27+0.8)\approx0.40$. For screening, this model is useful and the baseline is useless. Accuracy hides that.</p>
-<p><strong>3 · Leakage you won't notice.</strong> You standardize features with the mean/std of the <em>whole</em> dataset, then split. The validation rows influenced the scaling, so the validation score is slightly optimistic. With feature selection on all data ("keep the 20 features most correlated with y") the effect can be huge: on pure noise you can get well-above-chance CV accuracy. Fix: put every fitted step inside the CV loop (<code>sklearn.pipeline.Pipeline</code>).</p>
-<pre><code class="language-mermaid">flowchart LR
+<p>Every time you look at a score and change something, that data stops being "unseen". Tuning on the test set makes the test score optimistic, which is why it is cheating.</p>
+</div>
+<h2 id="2-linear-regression">2 · Linear regression<a class="anchor" href="#2-linear-regression" title="Link to this section">#</a></h2>
+<p>The simplest model: a weighted sum of the features plus a constant.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Linear regression</div>
+<p>$$\hat y = \mathbf w^\top\mathbf x + b$$
+trained with the <strong>mean squared error</strong> $\frac1N\sum_i(\hat y_i-y_i)^2$. Adding a constant-1 feature to every $\mathbf x$ lets you fold $b$ into $\mathbf w$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Closed form (normal equations)</div>
+<p>With all inputs stacked as rows of $X$ ($N\times d$):
+$$\mathbf w^* = (X^\top X)^{-1}X^\top\mathbf y$$
+derived in module 01, section 5 by setting $\nabla_{\mathbf w}\|X\mathbf w-\mathbf y\|^2 = 2X^\top(X\mathbf w-\mathbf y)=0$. In practice use <code>np.linalg.lstsq</code>, or gradient descent when $d$ is huge.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Why MSE?</div>
+<p>MSE is the negative log-likelihood under Gaussian noise (module 01, section 7). If your errors have heavy outliers, the <strong>mean absolute error</strong> (Laplace noise) or the Huber loss is more robust.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Feature scaling (standardization)</div>
+<p>Replace each feature by $(x-\mu)/\sigma$, using the mean and standard deviation <strong>of the training set</strong>. Features on wildly different scales make the loss surface a long thin valley (high condition number, module 01), so gradient descent crawls. Scaling makes it rounder.</p>
+</div>
+<h2 id="3-logistic-and-softmax-regression">3 · Logistic and softmax regression<a class="anchor" href="#3-logistic-and-softmax-regression" title="Link to this section">#</a></h2>
+<p>For classification we want a <strong>probability</strong>, not an unbounded number. Logistic regression squashes the linear score through the sigmoid.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Sigmoid and logistic regression</div>
+<p>$$\sigma(z) = \frac{1}{1+e^{-z}} \in (0,1) \qquad p(y{=}1\mid\mathbf x) = \sigma(\mathbf w^\top\mathbf x)$$
+The <strong>decision boundary</strong> $\mathbf w^\top\mathbf x = 0$ (where $p=0.5$) is a straight line (hyperplane), so logistic regression is a <em>linear classifier</em>. Useful identity: $\sigma'(z) = \sigma(z)\,(1-\sigma(z))$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Binary cross-entropy (log loss)</div>
+<p>$$\ell = -\big[y\log p + (1-y)\log(1-p)\big], \qquad p = \sigma(\mathbf w^\top\mathbf x)$$
+It is the negative log-likelihood of a Bernoulli model (module 01, section 8). The total loss is convex in $\mathbf w$, so gradient descent finds the global optimum. (If the classes are perfectly separable, $\|\mathbf w\|\to\infty$ without regularization.)</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · The logistic-regression gradient in three lines</div>
+<p>One example, $z=\mathbf w^\top\mathbf x$, $p=\sigma(z)$. Using $\sigma'(z)=p(1-p)$:
+$\frac{\partial\ell}{\partial p}=-\frac yp+\frac{1-y}{1-p}$, so $\frac{\partial\ell}{\partial z}=\frac{\partial\ell}{\partial p}\,p(1-p)=p-y$, and $\nabla_{\mathbf w}\ell=(p-y)\mathbf x$.</p>
+<p>Stack the rows: $\nabla = X^\top(\hat{\mathbf y}-\mathbf y)$ for the summed loss (divide by $N$ for the mean). Same "prediction minus target" form as linear regression. That isn't luck: both are generalized linear models with their canonical link.</p>
+<p><em>Numbers:</em> $\mathbf x=(1,2)$, $\mathbf w=\mathbf 0$, $y=1$ → $p=0.5$, gradient $=(0.5-1)(1,2)=(-0.5,-1)$. A GD step increases both weights, pushing $p$ toward 1 ✓.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Softmax regression (multinomial logistic regression)</div>
+<p>For $C$ classes, keep one weight vector per class, compute scores $z_k = \mathbf w_k^\top\mathbf x$, and turn them into probabilities with softmax: $p_k = e^{z_k}/\sum_j e^{z_j}$. The loss is categorical cross-entropy $-\log p_y$, and the gradient with respect to the scores is again $\mathbf p - \mathbf y_{\text{one-hot}}$.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · A neural network is stacked logistic regressions</div>
+<p>A hidden unit computes $\sigma(\mathbf w^\top\mathbf x+b)$, exactly a logistic regression. A network feeds the outputs of many such units into the next layer, and the last layer is a softmax regression on top of features the network learned itself (module 04).</p>
+</div>
+<figure class="video" data-yt="yIYKR4sgzI8" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/yIYKR4sgzI8/hqdefault.jpg)" aria-label="Play video: Logistic Regression"><span class="video-btn">▶</span><span class="video-label">Logistic Regression</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=yIYKR4sgzI8" target="_blank" rel="noopener">Logistic Regression</a> · StatQuest · 9 min <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="4-generalization-underfitting-and-overfitting">4 · Generalization: underfitting and overfitting<a class="anchor" href="#4-generalization-underfitting-and-overfitting" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Underfitting and overfitting</div>
+<ul>
+<li><strong>Underfitting (high bias):</strong> the model is too simple to capture the pattern. <em>Training</em> error is high. → Bigger model, better features, train longer, less regularization.</li>
+<li><strong>Overfitting (high variance):</strong> the model memorizes noise in the training set. Training error is low but validation error is much higher. → More data, data augmentation, regularization, early stopping, smaller model.</li>
+</ul>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Bias–variance decomposition (squared loss)</div>
+<p>Imagine retraining the model on many different training sets drawn from the same source. At a point $\mathbf x$ with true function $f$ and noise variance $\sigma^2$:
+$$\mathbb E\big[(y-\hat f(\mathbf x))^2\big] = \underbrace{\big(\mathbb E\hat f(\mathbf x)-f(\mathbf x)\big)^2}_{\text{bias}^2} + \underbrace{\mathrm{Var}\big(\hat f(\mathbf x)\big)}_{\text{variance}} + \underbrace{\sigma^2}_{\text{noise}}$$
+<strong>Bias:</strong> how far the <em>average</em> fit is from the truth. <strong>Variance:</strong> how much the fit wobbles from one training set to another. <strong>Noise:</strong> irreducible; no model beats it.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Polynomial degree</div>
+<p>Fit polynomials to 20 noisy points from a sine curve. Degree 1: a line, can't bend → high bias, train and validation error both high. Degree 3: follows the curve → both low. Degree 15: wiggles through every point → train error ≈ 0, validation error huge (high variance). Plot validation error against degree and you get the classic <strong>U-curve</strong>.</p>
+</div>
+<div class="box box-note">
+<div class="box-title"><span class="box-ico">📝</span> Note · Deep nets and double descent</div>
+<p>Very large neural networks can fit their training data perfectly <em>and</em> generalize well, and test error can drop again past the point of perfect fit (<strong>double descent</strong>, module 12). The diagnosis above (compare train and validation error) still guides day-to-day practice.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/generalization-lab.html">Generalization Lab</a></div>
+<p>Slide the polynomial degree and the number of training points. Watch the train and validation curves split apart as the model overfits, and close up again with more data or regularization.</p>
+</div>
+<figure class="video" data-yt="EuBBz3bI-aA" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/EuBBz3bI-aA/hqdefault.jpg)" aria-label="Play video: Machine Learning Fundamentals: Bias and Variance"><span class="video-btn">▶</span><span class="video-label">Machine Learning Fundamentals: Bias and Variance</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=EuBBz3bI-aA" target="_blank" rel="noopener">Machine Learning Fundamentals: Bias and Variance</a> · StatQuest · 6 min <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="5-regularization">5 · Regularization<a class="anchor" href="#5-regularization" title="Link to this section">#</a></h2>
+<p>Regularization means anything that discourages the model from fitting noise, usually by preferring "simpler" parameters.</p>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · L2 (ridge) and L1 (lasso)</div>
+<p>$$\text{L2: } \min_{\mathbf w}\;\text{loss} + \lambda\|\mathbf w\|_2^2 \qquad\qquad \text{L1: } \min_{\mathbf w}\;\text{loss} + \lambda\|\mathbf w\|_1$$
+- <strong>L2</strong> shrinks all weights smoothly toward zero. It equals a Gaussian prior on the weights (MAP, module 01). In neural nets it is called <strong>weight decay</strong>.
+- <strong>L1</strong> drives many weights to exactly zero, which selects features (a Laplace prior).
+- $\lambda$ trades fit for simplicity: larger $\lambda$ → more bias, less variance. Choose it on the validation set.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Early stopping</div>
+<p>Watch the validation loss during training and keep the parameters from the epoch where it was lowest. For gradient descent from small weights this acts much like L2 regularization: training longer lets the weights grow.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Don't regularize the bias term</div>
+<p>Penalizing $b$ just drags predictions toward 0 for no reason. Libraries exclude it by default; if you write your own, exclude it too.</p>
+</div>
+<figure class="video" data-yt="Q81RR3yKn30" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/Q81RR3yKn30/hqdefault.jpg)" aria-label="Play video: Regularization Part 1: Ridge (L2) Regression"><span class="video-btn">▶</span><span class="video-label">Regularization Part 1: Ridge (L2) Regression</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=Q81RR3yKn30" target="_blank" rel="noopener">Regularization Part 1: Ridge (L2) Regression</a> · StatQuest · 20 min <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="6-honest-evaluation-cross-validation-and-leakage">6 · Honest evaluation: cross-validation and leakage<a class="anchor" href="#6-honest-evaluation-cross-validation-and-leakage" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · k-fold cross-validation</div>
+<p>Split the (non-test) data into $k$ equal folds. Train on $k-1$ folds, validate on the remaining one, and rotate so each fold is the validation set once. Average the $k$ scores. It gives a more reliable estimate than one split when data is small, at $k$ times the cost. $k=5$ or $10$ is typical.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Data leakage</div>
+<p><strong>Leakage</strong> is any way information about the validation/test data (or the future) gets into training. It produces scores that look great and collapse in the real world. It is the #1 source of fake results.</p>
+<p>Common causes: fitting the scaler or feature selection on all the data before splitting; the same patient/user in train and test; random splits of time-ordered data; duplicated examples across splits.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Leakage you won't notice</div>
+<p>You standardize features with the mean/std of the <em>whole</em> dataset, then split. The validation rows influenced the scaling, so the validation score is slightly optimistic. With feature selection on all data ("keep the 20 features most correlated with y") the effect can be huge: on pure noise you can get well-above-chance CV accuracy. <strong>Fix:</strong> put every fitted step inside the CV loop (<code>sklearn.pipeline.Pipeline</code>).</p>
+</div>
+<pre class="mermaid">flowchart LR
   D[All data] --&gt; S{split first}
   S --&gt; TR[train]
   S --&gt; VA[validation]
@@ -184,7 +285,122 @@ Using $\sigma'(z)=\sigma(z)(1-\sigma(z))$: $\frac{\partial\ell}{\partial p}=-\fr
   F --&gt;|transform only| VA
   F --&gt;|transform only| TE
   VA --&gt; H[choose hyperparameters]
-</code></pre>
+</pre>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Always beat a baseline</div>
+<p>Before any model, compute a trivial baseline: predict the training mean (regression) or the majority class (classification). A model that can't beat it has learned nothing.</p>
+</div>
+<h2 id="7-metrics-is-the-model-actually-good">7 · Metrics: is the model actually good?<a class="anchor" href="#7-metrics-is-the-model-actually-good" title="Link to this section">#</a></h2>
+<p>Accuracy (fraction correct) is misleading when classes are imbalanced. For a binary problem, count the four kinds of outcome.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Confusion matrix</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th></th>
+<th>predicted positive</th>
+<th>predicted negative</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>actually positive</strong></td>
+<td>true positive (TP)</td>
+<td>false negative (FN)</td>
+</tr>
+<tr>
+<td><strong>actually negative</strong></td>
+<td>false positive (FP)</td>
+<td>true negative (TN)</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Precision, recall, F1</div>
+<p>$$\text{precision} = \frac{TP}{TP+FP}\qquad \text{recall} = \frac{TP}{TP+FN}\qquad F_1 = \frac{2\cdot\text{precision}\cdot\text{recall}}{\text{precision}+\text{recall}}$$
+<strong>Precision:</strong> of the cases you flagged, how many were real? <strong>Recall</strong> (sensitivity, true-positive rate): of the real cases, how many did you catch? F1 is their harmonic mean, which is low if either is low.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · The accuracy trap, in numbers</div>
+<p>1000 patients, 10 sick. A model flags 30 people, 8 of them sick: TP = 8, FN = 2, FP = 22, TN = 968.</p>
+<p>Accuracy $=976/1000=97.6\%$, which is <em>worse</em> than "everyone is healthy" (99%). But recall $=8/10=80\%$, precision $=8/30\approx27\%$, F1 $=2\cdot0.27\cdot0.8/(0.27+0.8)\approx0.40$. For screening, this model is useful and the baseline is useless. Accuracy hides that.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Thresholds, ROC curve and AUC</div>
+<p>A classifier outputs a score; you choose a <strong>threshold</strong> above which you say "positive". Lowering it catches more positives (recall ↑) but raises false alarms.</p>
+<ul>
+<li>The <strong>ROC curve</strong> plots the true-positive rate against the false-positive rate $\frac{FP}{FP+TN}$ for every threshold.</li>
+<li><strong>ROC-AUC</strong> (area under it) = the probability that a random positive gets a higher score than a random negative. 1.0 is perfect, 0.5 is random guessing. It ignores the threshold <em>and</em> the class balance.</li>
+<li>The <strong>precision–recall curve</strong> (and its area, <em>average precision</em>) is more informative when positives are rare, because precision reacts to the number of false positives among many negatives.</li>
+</ul>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Regression metrics</div>
+<p>$$\text{MSE} = \frac1N\sum(\hat y_i-y_i)^2\qquad \text{MAE} = \frac1N\sum|\hat y_i-y_i|\qquad R^2 = 1-\frac{\sum(\hat y_i-y_i)^2}{\sum(y_i-\bar y)^2}$$
+$R^2=1$ is a perfect fit; $R^2=0$ means no better than predicting the mean.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/generalization-lab.html">Generalization Lab · threshold simulator</a></div>
+<p>Move the decision threshold and watch the confusion matrix, the ROC point and the PR point move together. Then make the positive class rare and see AUC stay put while precision drops.</p>
+</div>
+<figure class="video" data-yt="4jRBRDbJemM" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/4jRBRDbJemM/hqdefault.jpg)" aria-label="Play video: ROC and AUC, Clearly Explained!"><span class="video-btn">▶</span><span class="video-label">ROC and AUC, Clearly Explained!</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=4jRBRDbJemM" target="_blank" rel="noopener">ROC and AUC, Clearly Explained!</a> · StatQuest · 16 min <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="8-the-classical-toolbox-know-what-they-are">8 · The classical toolbox (know what they are)<a class="anchor" href="#8-the-classical-toolbox-know-what-they-are" title="Link to this section">#</a></h2>
+<p>You don't need to master these, but you should recognize them and know when they win.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Classical models at a glance</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Idea</th>
+<th>Good for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>k-nearest neighbours</td>
+<td>predict from the $k$ closest training points</td>
+<td>baselines, small low-dim data</td>
+</tr>
+<tr>
+<td>decision tree</td>
+<td>a flowchart of feature thresholds</td>
+<td>interpretable rules</td>
+</tr>
+<tr>
+<td>random forest</td>
+<td>average many trees on random subsets</td>
+<td>strong default, little tuning</td>
+</tr>
+<tr>
+<td><strong>gradient boosting</strong> (XGBoost, LightGBM)</td>
+<td>add small trees that fix the previous ones' errors</td>
+<td><strong>medium-sized tabular data</strong></td>
+</tr>
+<tr>
+<td>SVM</td>
+<td>the widest-margin separating boundary, kernels for curves</td>
+<td>small, clean datasets</td>
+</tr>
+<tr>
+<td>k-means</td>
+<td>group points around $k$ centroids</td>
+<td>clustering (no labels)</td>
+</tr>
+<tr>
+<td>PCA</td>
+<td>project onto the top singular vectors (module 01)</td>
+<td>compression, visualization</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Tabular data is different</div>
+<p>Boosted trees are still the default for medium-sized <em>tabular</em> data (<a href="https://arxiv.org/abs/2207.08815" target="_blank" rel="noopener">Grinsztajn et al., 2022</a>), although tabular foundation models such as <a href="https://www.nature.com/articles/s41586-024-08328-6" target="_blank" rel="noopener">TabPFN (Nature, 2025)</a> now match or beat them on small datasets. Deep learning dominates images, audio, text and other unstructured data.</p>
+</div>
 <h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
 <ol>
 <li>Train error 2%, validation error 15%. Train error 18%, validation error 19% (human-level ≈ 2%). Diagnose each and give two fixes.</li>
@@ -221,14 +437,20 @@ Using $\sigma'(z)=\sigma(z)(1-\sigma(z))$: $\frac{\partial\ell}{\partial p}=-\fr
 <summary>Answer</summary>
 <p>Leakage from the future: training folds contain days after the validation days. Use a forward-chaining split (train on the past, validate on the next block), e.g. <code>TimeSeriesSplit</code>.</p>
 </details>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
-<ul>
-<li>⭐ <strong><a href="https://www.coursera.org/specializations/machine-learning-introduction" target="_blank" rel="noopener">Machine Learning Specialization (Andrew Ng, Coursera)</a></strong>: courses 1–2. Coursera's free-audit and financial-aid options change over time, so check the course page. You'll move fast. Or, if you prefer reading:</li>
-<li>⭐ (alt) <strong><a href="https://www.statlearning.com/" target="_blank" rel="noopener">An Introduction to Statistical Learning, with Python (ISLP)</a></strong>: free PDF, ch. 2–6, 8, 10, 12.</li>
-<li><strong><a href="https://cs229.stanford.edu/main_notes.pdf" target="_blank" rel="noopener">Stanford CS229 lecture notes</a></strong>: the math-heavy version, which suits you well (GLMs, the exponential family).</li>
-<li><strong><a href="https://scikit-learn.org/stable/user_guide.html" target="_blank" rel="noopener">scikit-learn user guide</a></strong>: the practical API and a great reference.</li>
-<li><strong><a href="https://developers.google.com/machine-learning/crash-course" target="_blank" rel="noopener">Google ML Crash Course</a></strong>: quick, interactive refresher.</li>
-</ul>
+<ol start="6">
+<li>A spam filter has precision 0.95 and recall 0.60. What does each number mean for the user, and which would you raise for an email client?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Precision 0.95: 5% of emails sent to spam are actually legitimate. Recall 0.60: 40% of spam still reaches the inbox. Losing a real email is worse than seeing some spam, so an email client usually keeps precision high and accepts lower recall.</p>
+</details>
+<ol start="7">
+<li>Compute $\sigma(0)$, $\sigma(2)$ and $\sigma'(0)$. What is the largest possible value of $\sigma'$?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\sigma(0)=0.5$, $\sigma(2)=1/(1+e^{-2})\approx0.881$, $\sigma'(0)=0.5\cdot0.5=0.25$. Since $p(1-p)\le 1/4$, the maximum is $0.25$, which is one reason deep stacks of sigmoids have vanishing gradients (module 04).</p>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ol>
 <li><strong>Logistic regression from scratch in NumPy</strong> (gradient descent, no sklearn) on a binary dataset. Plot the loss curve and the decision boundary.</li>
@@ -243,11 +465,20 @@ Using $\sigma'(z)=\sigma(z)(1-\sigma(z))$: $\frac{\partial\ell}{\partial p}=-\fr
 <li>Reporting the validation score you tuned on as your final result. It's optimistically biased. Report the untouched test score.</li>
 <li>Random splits on grouped or time-ordered data (same patient in train and val, future in train). Split by group or by time.</li>
 </ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://www.coursera.org/specializations/machine-learning-introduction" target="_blank" rel="noopener">Machine Learning Specialization (Andrew Ng, Coursera)</a></strong>: courses 1–2. Coursera's free-audit and financial-aid options change over time, so check the course page.</li>
+<li>⭐ (alt) <strong><a href="https://www.statlearning.com/" target="_blank" rel="noopener">An Introduction to Statistical Learning, with Python (ISLP)</a></strong>: free PDF, ch. 2–6, 8, 10, 12.</li>
+<li><strong><a href="https://cs229.stanford.edu/main_notes.pdf" target="_blank" rel="noopener">Stanford CS229 lecture notes</a></strong>: the math-heavy version (GLMs, the exponential family).</li>
+<li><strong><a href="https://scikit-learn.org/stable/user_guide.html" target="_blank" rel="noopener">scikit-learn user guide</a></strong>: the practical API and a great reference.</li>
+<li><strong><a href="https://developers.google.com/machine-learning/crash-course" target="_blank" rel="noopener">Google ML Crash Course</a></strong>: quick, interactive refresher.</li>
+<li><strong><a href="https://statquest.org/" target="_blank" rel="noopener">StatQuest</a></strong>: short, friendly videos on every classical ML idea (several are embedded above).</li>
+</ul>
 <h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Scratch and sklearn logistic regression agree · <input type="checkbox"> you can explain every number on your confusion matrix</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/02-python-numpy-tools.html"><small>← Previous</small>Python, NumPy &amp; Tools</a><a class="pn next" href="../deep-learning/04-neural-nets-from-scratch.html"><small>Next →</small>Neural Networks from Scratch</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#worked-examples">Worked examples</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-what-learning-means">1 · What "learning" means</a></li><li><a href="#2-linear-regression">2 · Linear regression</a></li><li><a href="#3-logistic-and-softmax-regression">3 · Logistic and softmax regression</a></li><li><a href="#4-generalization-underfitting-and-overfitting">4 · Generalization: underfitting and overfitting</a></li><li><a href="#5-regularization">5 · Regularization</a></li><li><a href="#6-honest-evaluation-cross-validation-and-leakage">6 · Honest evaluation: cross-validation and leakage</a></li><li><a href="#7-metrics-is-the-model-actually-good">7 · Metrics: is the model actually good?</a></li><li><a href="#8-the-classical-toolbox-know-what-they-are">8 · The classical toolbox (know what they are)</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

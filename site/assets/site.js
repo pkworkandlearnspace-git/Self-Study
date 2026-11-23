@@ -82,7 +82,7 @@
   });
 
   /* ---------- copy buttons on code blocks ---------- */
-  $$(".doc pre").forEach((pre) => {
+  $$(".doc pre:not(.mermaid)").forEach((pre) => {
     const btn = document.createElement("button");
     btn.className = "copy-btn"; btn.type = "button"; btn.textContent = "Copy";
     btn.addEventListener("click", async () => {
@@ -92,6 +92,22 @@
     });
     pre.appendChild(btn);
   });
+
+  /* ---------- Mermaid diagrams (bundled; redrawn when the theme changes) ---------- */
+  const diagrams = $$("pre.mermaid");
+  diagrams.forEach((d) => { d.dataset.src = d.textContent; });
+  function drawDiagrams() {
+    if (!window.mermaid || !diagrams.length) return;
+    diagrams.forEach((d) => { d.removeAttribute("data-processed"); d.textContent = d.dataset.src; });
+    window.mermaid.initialize({ startOnLoad: false, theme: currentTheme() === "dark" ? "dark" : "neutral",
+                                securityLevel: "strict", fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+                                themeVariables: { fontSize: "16px" } });
+    window.mermaid.run({ nodes: diagrams }).catch(() => {});
+  }
+  if (diagrams.length) {
+    if (window.mermaid) drawDiagrams(); else addEventListener("load", drawDiagrams);
+    themeBtn && themeBtn.addEventListener("click", drawDiagrams);
+  }
 
   /* ---------- click-to-play YouTube embeds ---------- */
   $$(".video").forEach((fig) => {
