@@ -1,7 +1,7 @@
 # 04 · Graphs & Trees
 > **Goal:** model problems as graphs and pick the right traversal or shortest-path algorithm. · **Time:** 5–6 weeks
 
-👉 Interactive: [Graph search visualizer](interactive/graph-search.html)
+👉 Interactive: [Graph search visualizer](interactive/graph-search.html) · [Shortest paths lab](interactive/shortest-paths.html) (Dijkstra vs Bellman–Ford vs 0-1 BFS) · [MST: Kruskal vs Prim](interactive/mst.html) · [SCC step-through](interactive/scc.html) (Tarjan, Kosaraju, 2-SAT)
 
 ## Skip test
 - [ ] BFS on a grid with walls: the shortest path length and the path itself.

@@ -1,7 +1,7 @@
 # 03 · Data Structures
 > **Goal:** answer queries fast. These structures appear in a large share of IOI tasks. · **Time:** 4–5 weeks
 
-👉 Interactive: [Segment tree visualizer](interactive/segment-tree.html)
+👉 Interactive: [Segment tree visualizer](interactive/segment-tree.html) (now with a lazy range-add mode)
 
 ## Skip test
 - [ ] Implement DSU with path compression + union by size. Explain its α(n) complexity.

@@ -11,7 +11,7 @@ Each topic has one folder containing a **roadmap**, short **modules** you can sk
 |---|---|---|---|
 | 🧮 **Math Olympiad** (IMO track) | regional → national → IMO | [`math-olympiad/`](math-olympiad/README.md) | triangle centers, modular lab, flashcards |
 | ⚛️ **Physics Olympiad** (IPhO track) | regional → national → IPhO | [`physics-olympiad/`](physics-olympiad/README.md) | orbits, oscillator, interference, linear fit, flashcards |
-| 💻 **Informatics Olympiad** (IOI track) | regional → national → IOI | [`informatics-olympiad/`](informatics-olympiad/README.md) | graph search, segment tree, DP table, flashcards |
+| 💻 **Informatics Olympiad** (IOI track) | regional → national → IOI | [`informatics-olympiad/`](informatics-olympiad/README.md) | graph search, shortest paths, MST, SCC, convex hull, segment tree (lazy), DP table, flashcards |
 | 🗣️ **IELTS Academic** | target band 7.0–7.5 | [`ielts/`](ielts/README.md) | band calculator, writing timer, speaking practice, flashcards |
 | 🧠 **Deep Learning** | beginner → research | [`deep-learning/`](deep-learning/README.md) | optimizer landscape, NN playground, attention, flashcards |
 

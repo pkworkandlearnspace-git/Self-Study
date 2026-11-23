@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shortest Paths Lab</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg.plot { aspect-ratio: 8 / 5; }
+  svg text { font: 14px var(--mono); fill: var(--text); pointer-events: none; }
+  svg .nid { font-weight: 700; fill: #fff; }
+  svg .w { font-size: 13px; font-weight: 600; }
+  svg .dl { font-size: 13px; font-weight: 700; }
+  svg g.node { cursor: grab; }
+  .player { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .player input[type=range] { flex: 1 1 160px; width: auto; }
+  .msg { min-height: 3.2em; font-size: 15px; }
+  .ds { font-family: var(--mono); font-size: 13px; display: flex; gap: 4px; flex-wrap: wrap; min-height: 28px; align-items: center; }
+  .ds span { background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 7px; }
+  .ds span.hot { border-color: var(--accent); color: var(--accent); }
+  table.t td.bad { color: var(--bad); font-weight: 700; }
+  table.t td.fin { color: var(--good); }
+  textarea.edges { min-height: 140px; font-family: var(--mono); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Informatics Olympiad tools</a></header>
+  <h1>Shortest Paths Lab</h1>
+  <p class="lead">Run <b>Dijkstra</b>, <b>Bellman–Ford</b> and <b>0-1 BFS</b> on the same small directed graph, one relaxation at a time. Load the "Dijkstra trap" to see exactly where a single negative edge breaks Dijkstra, and the "negative cycle" graph to see how Bellman–Ford spots it (module 04). Drag the nodes to tidy the picture.</p>
+
+  <div class="grid two">
+    <div>
+      <svg class="plot" id="g" viewBox="0 0 800 500" aria-label="Weighted directed graph"></svg>
+      <div class="legend" style="margin:8px 0 0">
+        <span><i style="background:var(--c2)"></i>source</span><span><i style="background:var(--accent)"></i>current node / edge</span>
+        <span><i style="background:var(--c3)"></i>finalized / shortest-path tree</span><span><i style="background:var(--bad)"></i>wrong or −∞</span>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="player">
+          <button id="first" title="Start">⏮</button><button id="prev" title="Step back">◀</button>
+          <button class="primary" id="play">▶ Play</button><button id="next" title="Step">▶|</button><button id="last" title="End">⏭</button>
+          <input type="range" id="scrub" min="0" max="0" value="0" aria-label="Step">
+          <span class="note mono" id="stepno"></span>
+        </div>
+        <div class="msg" id="msg" style="margin-top:10px"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <div><b style="font-size:14px">Algorithm</b>
+        <div class="row" id="algos" style="margin-top:6px">
+          <button data-a="dijkstra" class="active">Dijkstra</button><button data-a="bf">Bellman–Ford</button><button data-a="zo">0-1 BFS</button>
+        </div></div>
+      <label class="ctl">Graph
+        <select id="preset">
+          <option value="basic">Non-negative weights (classic)</option>
+          <option value="trap" selected>Dijkstra trap: one negative edge</option>
+          <option value="negcyc">Negative cycle</option>
+          <option value="zo">0/1 weights (for 0-1 BFS)</option>
+          <option value="custom">Custom (edit the edge list)</option>
+        </select></label>
+      <div class="row">
+        <label class="ctl">Source <select id="src"></select></label>
+        <label class="ctl">Speed <input type="range" id="speed" min="1" max="10" value="4" style="width:120px"></label>
+      </div>
+      <div class="card" style="padding:12px">
+        <b style="font-size:14px" id="dsname">Priority queue</b>
+        <div class="ds" id="ds" style="margin-top:6px"></div>
+      </div>
+      <div class="card scroll-x" style="padding:8px 12px"><table class="t" id="tbl"></table></div>
+    </div>
+  </div>
+
+  <h2>Edit the graph</h2>
+  <div class="grid two">
+    <div class="card">
+      <label class="ctl">One edge per line: <code>u v w</code> (directed u → v, weight w). Nodes are 0, 1, 2, …
+        <textarea class="edges" id="edges" spellcheck="false"></textarea></label>
+      <div class="row" style="margin-top:8px"><label class="ctl" style="display:flex;gap:6px;align-items:center"><input type="checkbox" id="undir"> treat every edge as undirected</label>
+        <button id="apply" class="primary">Apply edges</button><button id="rand">Random graph</button></div>
+      <p class="note" id="err" style="margin:6px 0 0"></p>
+    </div>
+    <div class="card">
+      <b>Which algorithm?</b>
+      <table class="t" style="margin-top:6px">
+        <tr><th>Weights</th><th>Use</th><th>Time</th></tr>
+        <tr><td>all equal</td><td>BFS</td><td>O(n + m)</td></tr>
+        <tr><td>only 0 and 1</td><td>0-1 BFS (deque)</td><td>O(n + m)</td></tr>
+        <tr><td>≥ 0</td><td>Dijkstra (binary heap)</td><td>O((n + m) log n)</td></tr>
+        <tr><td>negative, no negative cycle</td><td>Bellman–Ford / SPFA</td><td>O(n·m)</td></tr>
+        <tr><td>DAG (any sign)</td><td>DP in topological order</td><td>O(n + m)</td></tr>
+        <tr><td>all pairs, n ≤ 500</td><td>Floyd–Warshall</td><td>O(n³)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <h2>What to notice</h2>
+  <div class="card"><ul style="margin:0;padding-left:20px">
+    <li><b>Dijkstra's invariant:</b> when a node leaves the heap with the smallest tentative distance, no later path can beat it, because every other path must continue from a node that is already at least as far away and can only add <i>non-negative</i> weight. One negative edge breaks that "can only add" step. In the trap graph, node 1 is finalized at distance 2, and the cheaper route 0 → 2 → 1 (5 − 4 = 1) arrives too late.</li>
+    <li>This page uses the textbook version with a <code>done[]</code> array: a finalized node is never updated again. The common contest version without <code>done[]</code> (<code>if (d != dist[u]) continue;</code>) <i>re-pushes</i> improved nodes, so on graphs with negative edges but no negative cycle it still ends with the right answer, but it can take exponential time. Do not rely on it. Use Bellman–Ford or re-weight the graph (Johnson's trick).</li>
+    <li><b>Bellman–Ford:</b> after round <i>k</i>, every shortest path that uses at most <i>k</i> edges is correct. A simple path has at most n − 1 edges, so n − 1 rounds are enough. If round <i>n</i> still relaxes an edge, there is a negative cycle reachable from the source. Every node reachable from that edge gets distance −∞.</li>
+    <li><b>0-1 BFS:</b> a 0-edge leads to a node at the same distance, so it goes to the <i>front</i> of the deque; a 1-edge goes to the back. The deque always holds at most two distinct distance values, d and d + 1, so it behaves like a sorted heap at O(1) per operation.</li>
+    <li>Make the "basic" graph undirected and add a negative weight: an undirected negative edge is itself a negative cycle (u → v → u). Negative weights only make sense on directed graphs.</li>
+  </ul></div>
+
+  <h2>Reference code</h2>
+  <div class="grid two">
+<pre class="card mono" style="font-size:13px;overflow-x:auto;white-space:pre;margin:0">// Bellman–Ford with −∞ detection. INF = 4e18
+vector&lt;ll&gt; d(n, INF); d[s] = 0;
+for (int i = 0; i &lt; n - 1; i++)
+  for (auto [u, v, w] : edges)
+    if (d[u] != INF &amp;&amp; d[u] + w &lt; d[v]) d[v] = d[u] + w;
+// round n: anything that still relaxes is on or
+// behind a negative cycle → propagate −∞
+for (int i = 0; i &lt; n; i++)
+  for (auto [u, v, w] : edges)
+    if (d[u] != INF &amp;&amp; (d[u] == -INF || d[u] + w &lt; d[v]))
+      d[v] = -INF;</pre>
+<pre class="card mono" style="font-size:13px;overflow-x:auto;white-space:pre;margin:0">// 0-1 BFS
+vector&lt;int&gt; d(n, INT_MAX); d[s] = 0;
+deque&lt;int&gt; q{s};
+while (!q.empty()) {
+  int u = q.front(); q.pop_front();
+  for (auto [v, w] : adj[u])
+    if (d[u] + w &lt; d[v]) {
+      d[v] = d[u] + w;
+      if (w == 0) q.push_front(v);
+      else        q.push_back(v);
+    }
+}</pre>
+  </div>
+  <p class="note">Sources: <a href="https://cp-algorithms.com/graph/dijkstra.html">cp-algorithms: Dijkstra</a> · <a href="https://cp-algorithms.com/graph/bellman_ford.html">Bellman–Ford</a> · <a href="https://cp-algorithms.com/graph/finding-negative-cycle-in-graph.html">finding a negative cycle</a> · <a href="https://cp-algorithms.com/graph/01_bfs.html">0-1 BFS</a>. The −∞ propagation loop runs n more rounds, so −∞ reaches every node behind the cycle (the pattern used for CSES "High Score").</p>
+  <footer class="foot">Part of the Self-Study repo · informatics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const cssv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const NS = "http://www.w3.org/2000/svg";
+const INF = Infinity;
+
+const PRESETS = {
+  basic: { pos: [[70, 250], [250, 90], [250, 410], [480, 90], [480, 410], [720, 250]],
+    edges: [[0, 1, 4], [0, 2, 1], [2, 1, 2], [1, 3, 5], [2, 4, 8], [3, 4, 3], [2, 3, 9], [3, 5, 6], [4, 5, 2]] },
+  trap: { pos: [[80, 250], [300, 100], [300, 400], [520, 250], [730, 250]],
+    edges: [[0, 1, 2], [0, 2, 5], [2, 1, -4], [1, 3, 2], [3, 4, 1], [2, 3, 6]] },
+  negcyc: { pos: [[70, 250], [260, 110], [470, 110], [365, 330], [650, 330], [260, 430]],
+    edges: [[0, 1, 4], [1, 2, 1], [2, 3, -3], [3, 1, 1], [3, 4, 2], [0, 5, 3], [5, 3, 7]] },
+  zo: { pos: [[70, 120], [270, 120], [470, 120], [670, 120], [170, 380], [400, 380], [670, 380]],
+    edges: [[0, 1, 1], [0, 4, 0], [4, 5, 1], [1, 2, 0], [5, 2, 0], [2, 3, 1], [5, 6, 1], [3, 6, 0], [1, 5, 1], [4, 1, 1]] },
+};
+
+let N = 0, pos = [], edges = [], src = 0, algo = "dijkstra";
+let frames = [], fi = 0, playing = false, lastTick = 0;
+
+const fmt = (x) => (x === INF ? "∞" : x === -INF ? "−∞" : String(x));
+
+function circlePos(n) { return Array.from({ length: n }, (_, i) => [400 + 300 * Math.cos((2 * Math.PI * i) / n - Math.PI / 2), 250 + 190 * Math.sin((2 * Math.PI * i) / n - Math.PI / 2)]); }
+
+function loadPreset(name) {
+  if (name === "custom") return;
+  const p = PRESETS[name];
+  pos = p.pos.map((x) => x.slice()); edges = p.edges.map((e) => e.slice()); N = pos.length; src = 0;
+  $("edges").value = edges.map((e) => e.join(" ")).join("\n"); $("undir").checked = false; $("err").textContent = "";
+  if (name === "zo") setAlgo("zo"); else if (name === "negcyc") setAlgo("bf"); else if (name !== "custom" && algo === "zo") setAlgo("dijkstra");
+  refreshSrc(); recompute();
+}
+function parseEdges() {
+  const lines = $("edges").value.split("\n").map((s) => s.trim()).filter(Boolean), out = [];
+  for (const [i, ln] of lines.entries()) {
+    const p = ln.split(/[\s,]+/).map(Number);
+    if (p.length !== 3 || p.some((x) => !Number.isInteger(x)) || p[0] < 0 || p[1] < 0) throw `Line ${i + 1}: expected three integers "u v w"`;
+    if (p[0] > 11 || p[1] > 11) throw `Line ${i + 1}: keep node ids ≤ 11 so the picture stays readable`;
+    if (Math.abs(p[2]) > 999) throw `Line ${i + 1}: keep |w| ≤ 999`;
+    out.push(p);
+    if ($("undir").checked && p[0] !== p[1]) out.push([p[1], p[0], p[2]]);
+  }
+  if (out.length > 40) throw "At most 40 directed edges, please";
+  if (!out.length) throw "Add at least one edge";
+  return out;
+}
+function applyEdges() {
+  try {
+    const e = parseEdges(), n = Math.max(...e.flatMap((x) => [x[0], x[1]])) + 1;
+    const keep = n === N;
+    edges = e; if (!keep) { N = n; pos = circlePos(n); }
+    $("preset").value = "custom"; $("err").textContent = "";
+    if (src >= N) src = 0; refreshSrc(); recompute();
+  } catch (msg) { $("err").innerHTML = `<span class="bad">${msg}</span>`; }
+}
+function refreshSrc() { $("src").innerHTML = Array.from({ length: N }, (_, i) => `<option ${i === src ? "selected" : ""}>${i}</option>`).join(""); }
+
+// ---------- ground truth: Bellman–Ford with −∞ ----------
+function truth() {
+  const d = Array(N).fill(INF); d[src] = 0;
+  for (let i = 0; i < N - 1; i++) for (const [u, v, w] of edges) if (d[u] !== INF && d[u] + w < d[v]) d[v] = d[u] + w;
+  for (let i = 0; i < N; i++) for (const [u, v, w] of edges) if (d[u] !== INF && (d[u] === -INF || d[u] + w < d[v])) d[v] = -INF;
+  return d;
+}
+
+// ---------- frame recording ----------
+function snap(S, extra) {
+  frames.push({ dist: S.dist.slice(), par: S.par.slice(), done: S.done.slice(), neg: S.neg.slice(), node: -1, edge: -1, edgeOk: null, ds: [], dsHot: -1, msg: "", ...extra });
+}
+function runDijkstra() {
+  const S = { dist: Array(N).fill(INF), par: Array(N).fill(-1), done: Array(N).fill(false), neg: Array(N).fill(false) };
+  const heap = []; // array kept sorted for display: [d, v]
+  const push = (d, v) => { heap.push([d, v]); heap.sort((a, b) => a[0] - b[0] || a[1] - b[1]); };
+  const dsv = () => heap.map(([d, v]) => `(${d}, ${v})`);
+  S.dist[src] = 0; push(0, src);
+  snap(S, { msg: `dist[${src}] = 0 and push (0, ${src}) into the min-heap. All other distances start at ∞.`, ds: dsv() });
+  while (heap.length) {
+    const [d, u] = heap.shift();
+    if (S.done[u]) { snap(S, { node: u, ds: dsv(), msg: `Pop (${d}, ${u}): node ${u} is already finalized, so this is a stale entry. Skip it.` }); continue; }
+    S.done[u] = true;
+    snap(S, { node: u, ds: dsv(), msg: `Pop (${d}, ${u}): the smallest tentative distance. <b>Finalize node ${u}</b> with dist ${d}. Dijkstra assumes nothing can improve it later.` });
+    edges.forEach(([a, v, w], ei) => {
+      if (a !== u) return;
+      const nd = d + w;
+      if (S.done[v]) {
+        const better = nd < S.dist[v];
+        snap(S, { node: u, edge: ei, edgeOk: false, ds: dsv(), msg: better ? `Edge ${u} → ${v} (w = ${w}) would give ${nd} &lt; ${fmt(S.dist[v])}, <b class="bad">but node ${v} is already finalized</b>. Dijkstra never looks at it again, so the better path is lost.` : `Edge ${u} → ${v}: node ${v} is already finalized. Skip it.` });
+        return;
+      }
+      if (nd < S.dist[v]) { const old = S.dist[v]; S.dist[v] = nd; S.par[v] = u; push(nd, v); snap(S, { node: u, edge: ei, edgeOk: true, ds: dsv(), dsHot: v, msg: `Relax ${u} → ${v} (w = ${w}): ${d} + ${w} = ${nd} &lt; ${fmt(old)}. Set dist[${v}] = ${nd} and push (${nd}, ${v}).` }); }
+      else snap(S, { node: u, edge: ei, edgeOk: false, ds: dsv(), msg: `Edge ${u} → ${v} (w = ${w}): ${d} + ${w} = ${nd} ≥ dist[${v}] = ${fmt(S.dist[v])}. No change.` });
+    });
+  }
+  return S;
+}
+function runZO() {
+  const S = { dist: Array(N).fill(INF), par: Array(N).fill(-1), done: Array(N).fill(false), neg: Array(N).fill(false) };
+  const dq = []; const dsv = () => dq.map((v) => `${v}:${S.dist[v]}`);
+  S.dist[src] = 0; dq.push(src);
+  snap(S, { ds: dsv(), msg: `dist[${src}] = 0 and the deque holds only node ${src}.` });
+  while (dq.length) {
+    const u = dq.shift();
+    if (S.done[u]) { snap(S, { node: u, ds: dsv(), msg: `Pop node ${u} from the front: already processed (a stale copy). Skip it.` }); continue; }
+    S.done[u] = true;
+    snap(S, { node: u, ds: dsv(), msg: `Pop node ${u} from the <b>front</b> with dist ${S.dist[u]}. Its distance is now final.` });
+    edges.forEach(([a, v, w], ei) => {
+      if (a !== u) return;
+      const nd = S.dist[u] + w;
+      if (nd < S.dist[v]) {
+        S.dist[v] = nd; S.par[v] = u;
+        if (w === 0) dq.unshift(v); else dq.push(v);
+        snap(S, { node: u, edge: ei, edgeOk: true, ds: dsv(), dsHot: v, msg: `Relax ${u} → ${v} (w = ${w}): dist[${v}] = ${nd}. ${w === 0 ? "Weight 0, so push to the <b>front</b> (same distance as " + u + ")." : "Weight 1, so push to the <b>back</b>."}` });
+      } else snap(S, { node: u, edge: ei, edgeOk: false, ds: dsv(), msg: `Edge ${u} → ${v} (w = ${w}): ${nd} ≥ ${fmt(S.dist[v])}. No change.` });
+    });
+  }
+  return S;
+}
+function runBF() {
+  const S = { dist: Array(N).fill(INF), par: Array(N).fill(-1), done: Array(N).fill(false), neg: Array(N).fill(false) };
+  S.dist[src] = 0;
+  snap(S, { ds: ["round 0"], msg: `dist[${src}] = 0. Bellman–Ford makes up to n − 1 = ${N - 1} passes over all ${edges.length} edges.` });
+  let r = 1;
+  for (; r <= N - 1; r++) {
+    let changed = false;
+    edges.forEach(([u, v, w], ei) => {
+      const lbl = [`round ${r} of ${N - 1}`, `edge ${ei + 1}/${edges.length}`];
+      if (S.dist[u] === INF) { snap(S, { edge: ei, edgeOk: false, node: u, ds: lbl, msg: `Edge ${u} → ${v}: dist[${u}] = ∞ (not reached yet). Skip it.` }); return; }
+      const nd = S.dist[u] + w;
+      if (nd < S.dist[v]) { const old = S.dist[v]; S.dist[v] = nd; S.par[v] = u; changed = true; snap(S, { edge: ei, edgeOk: true, node: u, ds: lbl, dsHot: 0, msg: `Round ${r}: relax ${u} → ${v} (w = ${w}): ${S.dist[u]} + ${w} = ${nd} &lt; ${fmt(old)}.` }); }
+      else snap(S, { edge: ei, edgeOk: false, node: u, ds: lbl, msg: `Round ${r}: ${u} → ${v} (w = ${w}): ${nd} ≥ ${fmt(S.dist[v])}. No change.` });
+    });
+    if (!changed) { snap(S, { ds: [`round ${r}`, "no change"], msg: `Round ${r} changed nothing, so every distance is final. <b>Stop early</b> (no negative cycle is reachable).` }); return S; }
+  }
+  // round n: detection
+  const bad = [];
+  edges.forEach(([u, v, w], ei) => {
+    if (S.dist[u] !== INF && S.dist[u] + w < S.dist[v]) { bad.push(v); snap(S, { edge: ei, edgeOk: false, node: u, ds: [`check round ${N}`], msg: `Check round n = ${N}: edge ${u} → ${v} <b class="bad">still relaxes</b> (${S.dist[u]} + ${w} &lt; ${S.dist[v]}). A negative cycle is reachable from the source.` }); }
+  });
+  if (!bad.length) { snap(S, { ds: [`check round ${N}`, "no relaxation"], msg: `Check round n = ${N}: nothing relaxes, so there is no reachable negative cycle. Distances are final.` }); return S; }
+  const q = [...new Set(bad)]; q.forEach((v) => (S.neg[v] = true));
+  snap(S, { ds: ["propagate −∞", ...q.map(String)], msg: `Mark nodes ${q.join(", ")} as −∞. Now spread −∞ to everything reachable from them.` });
+  while (q.length) {
+    const u = q.shift();
+    edges.forEach(([a, v], ei) => { if (a === u && !S.neg[v]) { S.neg[v] = true; q.push(v); snap(S, { edge: ei, edgeOk: false, node: u, ds: ["propagate −∞", ...q.map(String)], msg: `Node ${v} is reachable from the cycle via ${u} → ${v}, so dist[${v}] = −∞ (you can loop the cycle as often as you like first).` }); } });
+  }
+  return S;
+}
+
+function recompute() {
+  frames = []; fi = 0; playing = false; $("play").textContent = "▶ Play";
+  const zoOk = edges.every((e) => e[2] === 0 || e[2] === 1);
+  document.querySelector('#algos [data-a="zo"]').disabled = !zoOk;
+  if (algo === "zo" && !zoOk) setAlgo("dijkstra", true);
+  const hasNeg = edges.some((e) => e[2] < 0);
+  const T = truth();
+  $("dsname").textContent = { dijkstra: "Min-heap (dist, node), smallest first", bf: "Bellman–Ford progress", zo: "Deque (node:dist), front on the left" }[algo];
+  const S = algo === "dijkstra" ? runDijkstra() : algo === "bf" ? runBF() : runZO();
+  // final verdict
+  const got = S.dist.map((d, i) => (S.neg[i] ? -INF : d));
+  const wrong = got.map((d, i) => d !== T[i]);
+  let msg;
+  if (wrong.some(Boolean)) msg = `<b class="bad">Wrong answer</b> at node${wrong.filter(Boolean).length > 1 ? "s" : ""} ${wrong.map((w, i) => (w ? i : null)).filter((x) => x !== null).join(", ")} (true distances in the last column). ${hasNeg ? "Dijkstra's greedy choice is invalid with negative edges." : ""}`;
+  else if (T.some((d) => d === -INF)) msg = `<b class="bad">Negative cycle reachable.</b> Bellman–Ford correctly reports −∞ for nodes ${T.map((d, i) => (d === -INF ? i : null)).filter((x) => x !== null).join(", ")}.`;
+  else msg = `<b class="good">Done.</b> All distances match the true shortest paths. Green edges form the shortest-path tree. Frames: ${frames.length}.`;
+  snap(S, { msg, truth: T, wrong, final: true });
+  frames.forEach((f) => { f.truth = T; });
+  $("scrub").max = frames.length - 1; show(0);
+}
+
+// ---------- drawing ----------
+let svg = $("g");
+function el(tag, at, txt, parent = svg) { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt != null) e.textContent = txt; parent.appendChild(e); return e; }
+function draw(f) {
+  svg.innerHTML = "";
+  const R = 22, C = { text: cssv("--text"), muted: cssv("--muted"), border: cssv("--border"), acc: cssv("--accent"), good: cssv("--good"), bad: cssv("--bad"), c2: cssv("--c2"), c3: cssv("--c3"), surf: cssv("--surface"), surf2: cssv("--surface-2") };
+  const pair = new Set(edges.map(([u, v]) => u + "," + v));
+  edges.forEach(([u, v, w], ei) => {
+    if (u === v) return;
+    const [x1, y1] = pos[u], [x2, y2] = pos[v];
+    const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+    const bend = pair.has(v + "," + u) ? 26 : 0;
+    const mx = (x1 + x2) / 2 + nx * bend, my = (y1 + y2) / 2 + ny * bend;
+    // end points on the circles
+    const a1 = Math.atan2(my - y1, mx - x1), a2 = Math.atan2(my - y2, mx - x2);
+    const sx = x1 + R * Math.cos(a1), sy = y1 + R * Math.sin(a1), ex = x2 + (R + 2) * Math.cos(a2), ey = y2 + (R + 2) * Math.sin(a2);
+    const inTree = f && f.par[v] === u && !f.neg[v];
+    const active = f && f.edge === ei;
+    const stroke = active ? (f.edgeOk ? C.good : (f.msg.includes("bad") ? C.bad : C.acc)) : inTree ? C.c3 : C.border;
+    const width = active ? 4.5 : inTree ? 3.5 : 2;
+    el("path", { d: `M${sx},${sy} Q${mx * 2 - (sx + ex) / 2},${my * 2 - (sy + ey) / 2} ${ex},${ey}`, fill: "none", stroke, "stroke-width": width });
+    // arrow head: tangent at end = end - control
+    const cx = mx * 2 - (sx + ex) / 2, cy = my * 2 - (sy + ey) / 2, ta = Math.atan2(ey - cy, ex - cx), h = 12;
+    el("polygon", { points: `${ex},${ey} ${ex - h * Math.cos(ta - 0.4)},${ey - h * Math.sin(ta - 0.4)} ${ex - h * Math.cos(ta + 0.4)},${ey - h * Math.sin(ta + 0.4)}`, fill: stroke });
+    const lx = (sx + ex) / 4 + cx / 2, ly = (sy + ey) / 4 + cy / 2;
+    el("rect", { x: lx - 15, y: ly - 11, width: 30, height: 21, rx: 5, fill: C.surf, stroke: w < 0 ? C.bad : C.border });
+    const t = el("text", { x: lx, y: ly + 5, "text-anchor": "middle", class: "w" }, w); if (w < 0) t.setAttribute("style", `fill:${C.bad}`);
+  });
+  pos.forEach(([x, y], v) => {
+    const g = el("g", { class: "node", "data-v": v });
+    const isNeg = f && f.neg[v], wrong = f && f.final && f.wrong[v];
+    const fill = v === src ? C.c2 : f && f.node === v ? C.acc : isNeg || wrong ? C.bad : f && f.done[v] ? C.c3 : C.muted;
+    el("circle", { cx: x, cy: y, r: R, fill, stroke: f && f.node === v ? C.text : "none", "stroke-width": 2 }, null, g);
+    el("text", { x, y: y + 5, "text-anchor": "middle", class: "nid" }, v, g);
+    const dv = f ? (f.neg[v] ? -INF : f.dist[v]) : INF;
+    const below = y < 250 ? -R - 10 : R + 20;
+    el("rect", { x: x - 22, y: y + below - 15, width: 44, height: 21, rx: 10, fill: C.surf2, stroke: wrong ? C.bad : "none" }, null, g);
+    const tt = el("text", { x, y: y + below + 1, "text-anchor": "middle", class: "dl" }, fmt(dv), g);
+    if (wrong || isNeg) tt.setAttribute("style", `fill:${C.bad}`);
+  });
+}
+function show(i) {
+  fi = Math.max(0, Math.min(frames.length - 1, i));
+  const f = frames[fi];
+  draw(f);
+  $("scrub").value = fi; $("stepno").textContent = `${fi + 1} / ${frames.length}`;
+  $("msg").innerHTML = f.msg;
+  $("ds").innerHTML = f.ds.length ? f.ds.map((s, k) => `<span class="${(algo === "dijkstra" && s.endsWith(", " + f.dsHot + ")")) || (algo === "zo" && s.startsWith(f.dsHot + ":")) ? "hot" : ""}">${s}</span>`).join("") : `<span class="note" style="border:0;background:none">empty</span>`;
+  let h = `<tr><th>node</th><th>dist</th><th>parent</th><th>status</th><th>true</th></tr>`;
+  for (let v = 0; v < N; v++) {
+    const d = f.neg[v] ? -INF : f.dist[v], wrong = f.final && f.wrong[v];
+    h += `<tr><td>${v}</td><td class="${wrong ? "bad" : f.done[v] ? "fin" : ""}">${fmt(d)}</td><td>${f.par[v] < 0 ? "—" : f.par[v]}</td><td>${f.neg[v] ? "−∞" : algo === "bf" ? (d === INF ? "unreached" : "tentative") : f.done[v] ? "final" : d === INF ? "unreached" : "in queue"}</td><td class="note">${fmt(f.truth ? f.truth[v] : INF)}</td></tr>`;
+  }
+  $("tbl").innerHTML = h;
+}
+function setAlgo(a, silent) {
+  algo = a; document.querySelectorAll("#algos button").forEach((b) => b.classList.toggle("active", b.dataset.a === a));
+  if (!silent) recompute();
+}
+
+// ---------- controls ----------
+document.querySelectorAll("#algos button").forEach((b) => b.addEventListener("click", () => setAlgo(b.dataset.a)));
+$("preset").addEventListener("change", () => loadPreset($("preset").value));
+$("src").addEventListener("change", () => { src = +$("src").value; recompute(); });
+$("apply").addEventListener("click", applyEdges);
+$("rand").addEventListener("click", () => {
+  const n = 6 + Math.floor(Math.random() * 3), lines = [], seen = new Set();
+  const neg = algo === "bf", zo = algo === "zo";
+  for (let v = 1; v < n; v++) { const u = Math.floor(Math.random() * v); seen.add(u + "," + v); lines.push([u, v]); }
+  while (lines.length < n + 4) { const u = Math.floor(Math.random() * n), v = Math.floor(Math.random() * n); if (u === v || seen.has(u + "," + v) || seen.has(v + "," + u)) continue; seen.add(u + "," + v); lines.push([u, v]); }
+  $("edges").value = lines.map(([u, v]) => `${u} ${v} ${zo ? Math.round(Math.random()) : neg && Math.random() < 0.2 ? -Math.ceil(Math.random() * 3) : 1 + Math.floor(Math.random() * 9)}`).join("\n");
+  N = 0; $("undir").checked = false; applyEdges();
+});
+$("first").addEventListener("click", () => { stop(); show(0); });
+$("prev").addEventListener("click", () => { stop(); show(fi - 1); });
+$("next").addEventListener("click", () => { stop(); show(fi + 1); });
+$("last").addEventListener("click", () => { stop(); show(frames.length - 1); });
+$("scrub").addEventListener("input", () => { stop(); show(+$("scrub").value); });
+$("play").addEventListener("click", () => { if (playing) return stop(); if (fi >= frames.length - 1) show(0); playing = true; $("play").textContent = "⏸ Pause"; });
+function stop() { playing = false; $("play").textContent = "▶ Play"; }
+function tick(t) { if (playing && t - lastTick > 1400 / +$("speed").value) { lastTick = t; if (fi >= frames.length - 1) stop(); else show(fi + 1); } requestAnimationFrame(tick); }
+document.addEventListener("keydown", (e) => { if (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT" && e.target.type !== "range") return; if (e.key === "ArrowRight") { stop(); show(fi + 1); } if (e.key === "ArrowLeft") { stop(); show(fi - 1); } });
+
+// drag nodes
+let drag = -1;
+function svgPt(e) { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); }
+svg.addEventListener("pointerdown", (e) => { const g = e.target.closest("g.node"); if (!g) return; drag = +g.dataset.v; svg.setPointerCapture(e.pointerId); });
+svg.addEventListener("pointermove", (e) => { if (drag < 0) return; const p = svgPt(e); pos[drag] = [Math.max(25, Math.min(775, p.x)), Math.max(35, Math.min(465, p.y))]; draw(frames[fi]); });
+svg.addEventListener("pointerup", () => { drag = -1; });
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => draw(frames[fi]));
+
+loadPreset("trap");
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

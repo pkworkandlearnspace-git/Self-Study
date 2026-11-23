@@ -24,7 +24,11 @@ Order: 01 → 02 → (03 & 04 interleaved) → 05 → 06 → 07. Start doing **v
 
 ## Interactive tools → [`interactive/`](interactive/index.html)
 - **Graph search visualizer:** draw walls/weights on a grid. Step through BFS, DFS, Dijkstra, and A*.
-- **Segment tree visualizer:** watch the build, point update, and range query visit exactly O(log n) nodes.
+- **Segment tree visualizer:** watch the build, point update, and range query visit exactly O(log n) nodes. Lazy mode shows range-add tags and push-down.
+- **Shortest paths lab:** Dijkstra, Bellman–Ford and 0-1 BFS step by step on the same graph. Shows where a negative edge breaks Dijkstra, and −∞ detection.
+- **MST: Kruskal vs Prim:** DSU sets merging edge by edge vs one tree growing; spanning forests on disconnected graphs.
+- **SCC step-through:** Tarjan's tin/low and stack, Kosaraju's two passes, the condensation DAG, and a 2-SAT example.
+- **Convex hull builder:** click points, then step through the monotone chain with every cross product shown.
 - **DP table animator:** LCS, edit distance, 0/1 knapsack filled cell by cell, with traceback.
 - **Flashcards:** complexities, patterns, and "constraints → algorithm" recall.
 

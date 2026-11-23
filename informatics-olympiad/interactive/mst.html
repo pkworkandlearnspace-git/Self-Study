@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MST: Kruskal vs Prim</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg.plot { aspect-ratio: 8 / 5; }
+  svg text { font: 14px var(--mono); fill: var(--text); pointer-events: none; }
+  svg .nid { font-weight: 700; fill: #fff; }
+  svg .w { font-size: 13px; font-weight: 600; }
+  svg g.node { cursor: grab; }
+  .player { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .player input[type=range] { flex: 1 1 160px; width: auto; }
+  .msg { min-height: 3.2em; font-size: 15px; }
+  .elist { font-family: var(--mono); font-size: 13px; display: flex; flex-wrap: wrap; gap: 4px; }
+  .elist span { border: 1px solid var(--border); background: var(--surface-2); border-radius: 6px; padding: 2px 7px; }
+  .elist span.take { border-color: var(--good); color: var(--good); font-weight: 700; }
+  .elist span.rej { text-decoration: line-through; color: var(--muted); opacity: .7; }
+  .elist span.cur { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  textarea.edges { min-height: 120px; font-family: var(--mono); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Informatics Olympiad tools</a></header>
+  <h1>Minimum Spanning Tree: Kruskal vs Prim</h1>
+  <p class="lead">Both algorithms rely on the <b>cut property</b>: for any split of the nodes into two groups, a lightest edge crossing the split belongs to some MST. <b>Kruskal</b> scans edges from light to heavy and uses a DSU to skip edges that would close a cycle. <b>Prim</b> grows one tree and always adds the lightest edge leaving it (module 04). Drag nodes to rearrange.</p>
+
+  <div class="grid two">
+    <div>
+      <svg class="plot" id="g" viewBox="0 0 800 500" aria-label="Weighted undirected graph"></svg>
+      <div class="legend" style="margin:8px 0 0">
+        <span><i style="background:var(--good)"></i>in the MST</span><span><i style="background:var(--accent)"></i>edge being considered</span><span><i style="background:var(--bad)"></i>rejected (would make a cycle)</span><span>node colour = DSU set / tree</span>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="player">
+          <button id="first" title="Start">⏮</button><button id="prev" title="Step back">◀</button>
+          <button class="primary" id="play">▶ Play</button><button id="next" title="Step">▶|</button><button id="last" title="End">⏭</button>
+          <input type="range" id="scrub" min="0" max="0" value="0" aria-label="Step">
+          <span class="note mono" id="stepno"></span>
+        </div>
+        <div class="msg" id="msg" style="margin-top:10px"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <div><b style="font-size:14px">Algorithm</b>
+        <div class="row" id="algos" style="margin-top:6px"><button data-a="kruskal" class="active">Kruskal</button><button data-a="prim">Prim</button></div></div>
+      <label class="ctl">Graph
+        <select id="preset">
+          <option value="classic" selected>Classic 7-node example</option>
+          <option value="ties">Many equal weights (several MSTs)</option>
+          <option value="forest">Disconnected (spanning forest)</option>
+          <option value="custom">Custom (edit below)</option>
+        </select></label>
+      <label class="ctl">Prim starts at <select id="root"></select></label>
+      <label class="ctl">Speed <input type="range" id="speed" min="1" max="10" value="4"></label>
+      <div class="card" style="padding:12px"><b style="font-size:14px" id="lname">Edges sorted by weight</b><div class="elist" id="elist" style="margin-top:6px"></div></div>
+      <div class="card" id="stats" style="padding:12px"></div>
+    </div>
+  </div>
+
+  <h2>Edit the graph</h2>
+  <div class="card">
+    <label class="ctl">One undirected edge per line: <code>u v w</code>. Nodes are 0 … 11.
+      <textarea class="edges" id="edges" spellcheck="false"></textarea></label>
+    <div class="row" style="margin-top:8px"><button id="apply" class="primary">Apply edges</button><button id="rand">Random graph</button></div>
+    <p class="note" id="err" style="margin:6px 0 0"></p>
+  </div>
+
+  <h2>Kruskal or Prim?</h2>
+  <div class="grid two">
+    <div class="card"><b>Kruskal</b> · O(m log m)<ul style="margin:6px 0 0;padding-left:20px">
+      <li>Sort the edges, then one DSU <code>unite</code> per edge.</li>
+      <li>Best when you are given an edge list, which is the usual contest input.</li>
+      <li>Stop early after n − 1 edges.</li>
+      <li>Same idea also gives "minimum bottleneck path" and offline "is u connected to v using edges ≤ w?" queries.</li>
+    </ul></div>
+    <div class="card"><b>Prim</b> · O(m log n) with a heap, O(n²) without<ul style="margin:6px 0 0;padding-left:20px">
+      <li>Looks like Dijkstra, but the key is the <i>edge</i> weight, not the distance from the root.</li>
+      <li>The O(n²) array version wins on <b>dense</b> graphs (complete graphs given by coordinates, n ≈ 5000).</li>
+      <li>Only grows the root's component: on a disconnected graph, restart from an unvisited node.</li>
+    </ul></div>
+  </div>
+<pre class="card mono" style="font-size:13px;overflow-x:auto;white-space:pre;margin-top:14px">// Kruskal with DSU (path compression + union by size)
+vector&lt;int&gt; p(n), sz(n, 1); iota(p.begin(), p.end(), 0);
+function&lt;int(int)&gt; find = [&amp;](int x) { return p[x] == x ? x : p[x] = find(p[x]); };
+sort(edges.begin(), edges.end());               // edges as {w, u, v}
+ll total = 0; int used = 0;
+for (auto [w, u, v] : edges) {
+  int a = find(u), b = find(v);
+  if (a == b) continue;                         // would close a cycle
+  if (sz[a] &lt; sz[b]) swap(a, b);
+  p[b] = a; sz[a] += sz[b]; total += w;
+  if (++used == n - 1) break;
+}
+// used &lt; n - 1 at the end → the graph is disconnected</pre>
+  <p class="note">If all edge weights are distinct, the MST is unique. With ties, Kruskal and Prim can pick different trees, but the total weight is always the same. Sources: <a href="https://cp-algorithms.com/graph/mst_kruskal_with_dsu.html">cp-algorithms: Kruskal with DSU</a> · <a href="https://cp-algorithms.com/graph/mst_prim.html">cp-algorithms: Prim</a>.</p>
+  <footer class="foot">Part of the Self-Study repo · informatics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const cssv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const NS = "http://www.w3.org/2000/svg";
+const PAL = ["--c1", "--c2", "--c4", "--c6", "--c5", "--warn"];
+const pal = (i) => (i < PAL.length ? cssv(PAL[i]) : `hsl(${(i * 67) % 360} 55% 48%)`);
+const PRESETS = {
+  classic: { pos: [[90, 120], [300, 70], [520, 120], [140, 360], [380, 260], [620, 330], [420, 450]],
+    edges: [[0, 1, 7], [0, 3, 5], [1, 2, 8], [1, 3, 9], [1, 4, 7], [2, 4, 5], [3, 4, 15], [3, 6, 6], [4, 6, 8], [4, 5, 9], [5, 6, 11], [2, 5, 10]] },
+  ties: { pos: [[120, 120], [400, 120], [680, 120], [120, 380], [400, 380], [680, 380]],
+    edges: [[0, 1, 2], [1, 2, 2], [3, 4, 2], [4, 5, 2], [0, 3, 2], [1, 4, 2], [2, 5, 2], [0, 4, 3], [1, 5, 3]] },
+  forest: { pos: [[90, 130], [280, 80], [200, 330], [500, 110], [700, 160], [560, 380], [740, 420]],
+    edges: [[0, 1, 4], [1, 2, 3], [0, 2, 6], [3, 4, 2], [4, 5, 7], [3, 5, 5], [5, 6, 1], [4, 6, 9]] },
+};
+let N = 0, pos = [], edges = [], algo = "kruskal", root = 0;
+let frames = [], fi = 0, playing = false, lastTick = 0;
+
+const circlePos = (n) => Array.from({ length: n }, (_, i) => [400 + 300 * Math.cos((2 * Math.PI * i) / n - Math.PI / 2), 250 + 190 * Math.sin((2 * Math.PI * i) / n - Math.PI / 2)]);
+function loadPreset(p) { if (p === "custom") return; const P = PRESETS[p]; pos = P.pos.map((x) => x.slice()); edges = P.edges.map((e) => e.slice()); N = pos.length; root = 0; $("edges").value = edges.map((e) => e.join(" ")).join("\n"); $("err").textContent = ""; refreshRoot(); recompute(); }
+function refreshRoot() { $("root").innerHTML = Array.from({ length: N }, (_, i) => `<option ${i === root ? "selected" : ""}>${i}</option>`).join(""); }
+function applyEdges() {
+  try {
+    const lines = $("edges").value.split("\n").map((s) => s.trim()).filter(Boolean), out = [];
+    for (const [i, ln] of lines.entries()) {
+      const p = ln.split(/[\s,]+/).map(Number);
+      if (p.length !== 3 || p.some((x) => !Number.isInteger(x)) || p[0] < 0 || p[1] < 0 || p[0] > 11 || p[1] > 11) throw `Line ${i + 1}: expected "u v w" with nodes 0 … 11`;
+      if (p[0] === p[1]) throw `Line ${i + 1}: self-loops never belong to an MST`;
+      if (Math.abs(p[2]) > 999) throw `Line ${i + 1}: keep |w| ≤ 999`;
+      out.push(p);
+    }
+    if (!out.length) throw "Add at least one edge"; if (out.length > 40) throw "At most 40 edges, please";
+    const n = Math.max(...out.flatMap((e) => [e[0], e[1]])) + 1;
+    if (n !== N) pos = circlePos(n);
+    N = n; edges = out; if (root >= N) root = 0; $("preset").value = "custom"; $("err").textContent = ""; refreshRoot(); recompute();
+  } catch (m) { $("err").innerHTML = `<span class="bad">${m}</span>`; }
+}
+
+function snap(S, msg, extra = {}) { frames.push({ status: S.status.slice(), set: S.set.slice(), total: S.total, used: S.used, cur: -1, list: S.list ? S.list.slice() : [], msg, ...extra }); }
+function runKruskal() {
+  const p = [...Array(N).keys()], sz = Array(N).fill(1);
+  const find = (x) => (p[x] === x ? x : (p[x] = find(p[x])));
+  const order = edges.map((e, i) => i).sort((a, b) => edges[a][2] - edges[b][2] || a - b);
+  const S = { status: Array(edges.length).fill(""), set: [...Array(N).keys()], total: 0, used: 0, list: order };
+  const relabel = () => { const ids = new Map(); S.set = [...Array(N).keys()].map((v) => { const r = find(v); if (!ids.has(r)) ids.set(r, ids.size); return ids.get(r); }); };
+  relabel();
+  snap(S, `Sort the ${edges.length} edges by weight. Every node starts in its own DSU set (its own colour).`);
+  for (const ei of order) {
+    const [u, v, w] = edges[ei]; const a = find(u), b = find(v);
+    if (S.used === N - 1) { snap(S, `Already have n − 1 = ${N - 1} edges. Stop: the remaining edges are never needed.`, { stopped: true }); break; }
+    snap(S, `Next lightest edge: ${u}–${v} (w = ${w}). find(${u}) = ${a}, find(${v}) = ${b}.`, { cur: ei });
+    if (a === b) { S.status[ei] = "rej"; snap(S, `${u} and ${v} are already in the same set, so this edge would close a cycle. <b>Reject it.</b>`, { cur: ei }); continue; }
+    const [big, small] = sz[a] >= sz[b] ? [a, b] : [b, a];
+    p[small] = big; sz[big] += sz[small]; S.total += w; S.used++; S.status[ei] = "take"; relabel();
+    snap(S, `Different sets, so <b>take it</b> and unite them (attach the smaller set under the larger). Total weight = ${S.total}. Edges used: ${S.used}/${N - 1}.`, { cur: ei });
+  }
+  return S;
+}
+function runPrim() {
+  const S = { status: Array(edges.length).fill(""), set: Array(N).fill(-1), total: 0, used: 0, list: [] };
+  const adj = Array.from({ length: N }, () => []); edges.forEach(([u, v, w], i) => { adj[u].push([v, w, i]); adj[v].push([u, w, i]); });
+  let heap = [], tree = 0;
+  const pushEdges = (u) => { for (const [v, w, i] of adj[u]) if (S.set[v] < 0) heap.push([w, i, u, v]); heap.sort((a, b) => a[0] - b[0] || a[1] - b[1]); };
+  const hl = () => heap.map((h) => h[1]);
+  const startAt = (r) => { S.set[r] = tree; pushEdges(r); S.list = hl(); snap(S, `Start a tree at node ${r}. Push all its edges into the min-heap (keyed by edge weight).`); };
+  startAt(root);
+  const order = [root, ...[...Array(N).keys()].filter((x) => x !== root)];
+  for (;;) {
+    while (heap.length) {
+      const [w, i, u, v] = heap.shift(); S.list = hl();
+      if (S.set[v] >= 0) { if (S.status[i] === "") S.status[i] = "rej"; snap(S, `Pop ${u}–${v} (w = ${w}): ${v} is already in the tree. Skip it (it would close a cycle).`, { cur: i }); continue; }
+      S.set[v] = tree; S.status[i] = "take"; S.total += w; S.used++; pushEdges(v); S.list = hl();
+      snap(S, `Pop ${u}–${v} (w = ${w}): the lightest edge leaving the tree (cut property). <b>Add node ${v}</b>, push its edges. Total = ${S.total}.`, { cur: i });
+    }
+    const nxt = order.find((x) => S.set[x] < 0);
+    if (nxt === undefined) break;
+    tree++; snap(S, `The heap is empty but node ${nxt} is not reached: the graph is <b>disconnected</b>. Restart Prim there to build a spanning forest.`); startAt(nxt);
+  }
+  return S;
+}
+function recompute() {
+  frames = []; fi = 0; stop();
+  const S = algo === "kruskal" ? runKruskal() : runPrim();
+  const comps = new Set(S.set).size;
+  snap(S, comps > 1 || S.used < N - 1 ? `<b class="warn">Graph is disconnected:</b> minimum spanning <b>forest</b> with ${S.used} edges, total weight <b>${S.total}</b>.` : `<b class="good">Done.</b> MST with ${S.used} edges, total weight <b>${S.total}</b>.`, { final: true });
+  $("scrub").max = frames.length - 1; $("lname").textContent = algo === "kruskal" ? "Edges sorted by weight (u–v:w)" : "Min-heap of edges leaving the tree"; show(0);
+}
+
+const svg = $("g");
+function el(tag, at, txt, parent = svg) { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt != null) e.textContent = txt; parent.appendChild(e); return e; }
+function draw(f) {
+  svg.innerHTML = ""; const R = 22, C = { border: cssv("--border"), good: cssv("--good"), bad: cssv("--bad"), acc: cssv("--accent"), surf: cssv("--surface"), muted: cssv("--muted"), text: cssv("--text") };
+  edges.forEach(([u, v, w], i) => {
+    const st = f.status[i], cur = f.cur === i;
+    const stroke = cur ? C.acc : st === "take" ? C.good : st === "rej" ? C.bad : C.border;
+    el("line", { x1: pos[u][0], y1: pos[u][1], x2: pos[v][0], y2: pos[v][1], stroke, "stroke-width": cur ? 6 : st === "take" ? 5 : 2, "stroke-dasharray": st === "rej" && !cur ? "6 6" : "none", opacity: st === "rej" && !cur ? 0.6 : 1 });
+    const lx = (pos[u][0] + pos[v][0]) / 2, ly = (pos[u][1] + pos[v][1]) / 2;
+    el("rect", { x: lx - 15, y: ly - 11, width: 30, height: 21, rx: 5, fill: C.surf, stroke: cur ? C.acc : C.border });
+    el("text", { x: lx, y: ly + 5, "text-anchor": "middle", class: "w" }, w);
+  });
+  pos.forEach(([x, y], v) => {
+    const g = el("g", { class: "node", "data-v": v });
+    const s = f.set[v];
+    const fill = algo === "prim" ? (s >= 0 ? pal(s) : C.muted) : pal(s);
+    el("circle", { cx: x, cy: y, r: R, fill }, null, g);
+    el("text", { x, y: y + 5, "text-anchor": "middle", class: "nid" }, v, g);
+  });
+}
+function show(i) {
+  fi = Math.max(0, Math.min(frames.length - 1, i)); const f = frames[fi];
+  draw(f); $("scrub").value = fi; $("stepno").textContent = `${fi + 1} / ${frames.length}`; $("msg").innerHTML = f.msg;
+  $("elist").innerHTML = f.list.length ? f.list.map((ei) => { const [u, v, w] = edges[ei]; return `<span class="${f.cur === ei ? "cur" : f.status[ei]}">${u}–${v}:${w}</span>`; }).join("") : `<span class="note" style="border:0;background:none">empty</span>`;
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  $("stats").innerHTML = row("Edges in tree", `${f.used} / ${N - 1}`) + row("Total weight", f.total) + row("Edges rejected", f.status.filter((s) => s === "rej").length) + row(algo === "kruskal" ? "DSU sets" : "Nodes in tree", algo === "kruskal" ? new Set(f.set).size : f.set.filter((s) => s >= 0).length);
+}
+function stop() { playing = false; $("play").textContent = "▶ Play"; }
+document.querySelectorAll("#algos button").forEach((b) => b.addEventListener("click", () => { algo = b.dataset.a; document.querySelectorAll("#algos button").forEach((x) => x.classList.toggle("active", x === b)); recompute(); }));
+$("preset").addEventListener("change", () => loadPreset($("preset").value));
+$("root").addEventListener("change", () => { root = +$("root").value; recompute(); });
+$("apply").addEventListener("click", applyEdges);
+$("rand").addEventListener("click", () => {
+  const n = 6 + Math.floor(Math.random() * 4), s = new Set(), out = [];
+  for (let v = 1; v < n; v++) { const u = Math.floor(Math.random() * v); s.add(u + "," + v); out.push([u, v]); }
+  while (out.length < 2 * n) { let u = Math.floor(Math.random() * n), v = Math.floor(Math.random() * n); if (u === v) continue; if (u > v) [u, v] = [v, u]; if (s.has(u + "," + v)) continue; s.add(u + "," + v); out.push([u, v]); }
+  $("edges").value = out.map(([u, v]) => `${u} ${v} ${1 + Math.floor(Math.random() * 15)}`).join("\n"); N = 0; applyEdges();
+});
+$("first").addEventListener("click", () => { stop(); show(0); });
+$("prev").addEventListener("click", () => { stop(); show(fi - 1); });
+$("next").addEventListener("click", () => { stop(); show(fi + 1); });
+$("last").addEventListener("click", () => { stop(); show(frames.length - 1); });
+$("scrub").addEventListener("input", () => { stop(); show(+$("scrub").value); });
+$("play").addEventListener("click", () => { if (playing) return stop(); if (fi >= frames.length - 1) show(0); playing = true; $("play").textContent = "⏸ Pause"; });
+function tick(t) { if (playing && t - lastTick > 1400 / +$("speed").value) { lastTick = t; if (fi >= frames.length - 1) stop(); else show(fi + 1); } requestAnimationFrame(tick); }
+document.addEventListener("keydown", (e) => { if (e.target.tagName === "TEXTAREA") return; if (e.key === "ArrowRight") { stop(); show(fi + 1); } if (e.key === "ArrowLeft") { stop(); show(fi - 1); } });
+let drag = -1;
+const svgPt = (e) => { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); };
+svg.addEventListener("pointerdown", (e) => { const g = e.target.closest("g.node"); if (!g) return; drag = +g.dataset.v; svg.setPointerCapture(e.pointerId); });
+svg.addEventListener("pointermove", (e) => { if (drag < 0) return; const p = svgPt(e); pos[drag] = [Math.max(25, Math.min(775, p.x)), Math.max(25, Math.min(475, p.y))]; draw(frames[fi]); });
+svg.addEventListener("pointerup", () => { drag = -1; });
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => draw(frames[fi]));
+loadPreset("classic"); requestAnimationFrame(tick);
+</script>
+</body>
+</html>

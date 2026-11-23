@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SCC Step-Through</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg.plot { aspect-ratio: 8 / 5; }
+  svg text { font: 14px var(--mono); fill: var(--text); pointer-events: none; }
+  svg .nid { font-weight: 700; fill: #fff; }
+  svg .tl { font-size: 12px; font-weight: 600; }
+  svg g.node { cursor: grab; }
+  .player { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .player input[type=range] { flex: 1 1 160px; width: auto; }
+  .msg { min-height: 3.2em; font-size: 15px; }
+  .stack { display: flex; flex-direction: column-reverse; gap: 3px; min-height: 40px; font-family: var(--mono); font-size: 14px; }
+  .stack span { border: 1px solid var(--border); background: var(--surface-2); border-radius: 6px; padding: 2px 10px; }
+  .stack span.top { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; font-family: var(--mono); font-size: 13px; }
+  .chips span { border-radius: 99px; padding: 2px 10px; color: #fff; }
+  textarea.edges { min-height: 120px; font-family: var(--mono); font-size: 13px; }
+  #cond { aspect-ratio: 8 / 3; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Informatics Olympiad tools</a></header>
+  <h1>Strongly Connected Components: Step-Through</h1>
+  <p class="lead">Two nodes are in the same <b>SCC</b> when each can reach the other. Step through <b>Tarjan</b> (one DFS with <code>tin</code>/<code>low</code> and a stack) or <b>Kosaraju</b> (two DFS passes), then see the <b>condensation DAG</b> that most SCC problems really want (module 04). Drag nodes to rearrange.</p>
+
+  <div class="grid two">
+    <div>
+      <svg class="plot" id="g" viewBox="0 0 800 500" aria-label="Directed graph"></svg>
+      <div class="legend" style="margin:8px 0 0">
+        <span><i style="background:var(--accent)"></i>current node</span><span><i style="background:var(--c2)"></i>on the stack / visited</span>
+        <span><i style="background:var(--text)"></i>DFS tree edge</span><span><i style="background:var(--warn)"></i>edge that lowers low[ ]</span>
+        <span>labels: <code>tin/low</code></span>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="player">
+          <button id="first" title="Start">⏮</button><button id="prev" title="Step back">◀</button>
+          <button class="primary" id="play">▶ Play</button><button id="next" title="Step">▶|</button><button id="last" title="End">⏭</button>
+          <input type="range" id="scrub" min="0" max="0" value="0" aria-label="Step">
+          <span class="note mono" id="stepno"></span>
+        </div>
+        <div class="msg" id="msg" style="margin-top:10px"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <div><b style="font-size:14px">Algorithm</b>
+        <div class="row" id="algos" style="margin-top:6px"><button data-a="tarjan" class="active">Tarjan</button><button data-a="kosaraju">Kosaraju</button></div></div>
+      <label class="ctl">Graph
+        <select id="preset">
+          <option value="classic" selected>Three SCCs</option>
+          <option value="nested">Chained cycles that merge into one SCC</option>
+          <option value="dag">A DAG (every node alone)</option>
+          <option value="twosat">2-SAT: (a∨b)(¬a∨b)(¬b∨c)</option>
+          <option value="custom">Custom (edit below)</option>
+        </select></label>
+      <label class="ctl">Speed <input type="range" id="speed" min="1" max="10" value="4"></label>
+      <div class="card" style="padding:12px"><b style="font-size:14px" id="stname">Tarjan stack (top at the top)</b><div class="stack" id="stack" style="margin-top:6px"></div></div>
+      <div class="card" style="padding:12px"><b style="font-size:14px">Components found, in order</b><div class="chips" id="comps" style="margin-top:6px"></div><p class="note" id="order" style="margin:8px 0 0"></p></div>
+    </div>
+  </div>
+
+  <h2>Condensation DAG</h2>
+  <p class="note" style="margin-top:0">Shrink each SCC to one node. The result has no cycles, so you can run DP in topological order on it (longest path, reachability, 2-SAT assignment …). It fills in as components are found.</p>
+  <svg class="plot" id="cond" viewBox="0 0 800 300" aria-label="Condensation DAG"></svg>
+
+  <h2>Edit the graph</h2>
+  <div class="card">
+    <label class="ctl">One directed edge per line: <code>u v</code>. Nodes are 0 … 11.
+      <textarea class="edges" id="edges" spellcheck="false"></textarea></label>
+    <div class="row" style="margin-top:8px"><button id="apply" class="primary">Apply edges</button><button id="rand">Random graph</button></div>
+    <p class="note" id="err" style="margin:6px 0 0"></p>
+  </div>
+
+  <h2>How it works</h2>
+  <div class="grid two">
+    <div class="card"><b>Tarjan (one pass)</b><ul style="margin:6px 0 0;padding-left:20px">
+      <li><code>tin[v]</code> = DFS entry time. <code>low[v]</code> = smallest <code>tin</code> reachable from v's subtree using tree edges plus <b>one</b> edge to a node <b>still on the stack</b>.</li>
+      <li>Edges to nodes already assigned to a finished SCC are ignored: those nodes cannot reach back.</li>
+      <li>When <code>low[v] == tin[v]</code>, v is the root of an SCC: pop the stack down to v.</li>
+      <li>SCCs come out in <b>reverse topological order</b> of the condensation (sinks first).</li>
+    </ul></div>
+    <div class="card"><b>Kosaraju (two passes)</b><ul style="margin:6px 0 0;padding-left:20px">
+      <li>Pass 1: DFS on G, record nodes by <b>exit time</b>.</li>
+      <li>Pass 2: on the <b>reversed</b> graph, start DFS from nodes in decreasing exit time. Each DFS tree is one SCC.</li>
+      <li>The node that exits last lies in a <b>source</b> SCC of G, which is a sink in the reversed graph, so pass 2 cannot leak out of it.</li>
+      <li>SCCs come out in <b>topological order</b> (sources first).</li>
+    </ul></div>
+  </div>
+<pre class="card mono" style="font-size:13px;overflow-x:auto;white-space:pre;margin-top:14px">// Tarjan, O(n + m). comp[v] = SCC id; ids are in reverse topological order.
+int timer = 0, ncomp = 0; vector&lt;int&gt; tin(n, -1), low(n), comp(n, -1), st;
+void dfs(int v) {
+  tin[v] = low[v] = timer++; st.push_back(v);
+  for (int to : adj[v]) {
+    if (tin[to] == -1) { dfs(to); low[v] = min(low[v], low[to]); }
+    else if (comp[to] == -1) low[v] = min(low[v], tin[to]);   // still on the stack
+  }
+  if (low[v] == tin[v]) {
+    while (true) { int u = st.back(); st.pop_back(); comp[u] = ncomp; if (u == v) break; }
+    ncomp++;
+  }
+}
+// Recursion depth can reach n: for n = 2e5 on a path, raise the stack limit or write it iteratively.</pre>
+  <p class="note">2-SAT: for each clause (a ∨ b) add ¬a → b and ¬b → a. The formula is satisfiable iff no x is in the same SCC as ¬x. With Tarjan's ids (reverse topological), set x = true when <code>comp[x] &lt; comp[¬x]</code>. Sources: <a href="https://cp-algorithms.com/graph/strongly-connected-components.html">cp-algorithms: SCC &amp; condensation</a> · <a href="https://cp-algorithms.com/graph/2SAT.html">cp-algorithms: 2-SAT</a> · <a href="https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm">Wikipedia: Tarjan's algorithm</a>.</p>
+  <footer class="foot">Part of the Self-Study repo · informatics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const cssv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const NS = "http://www.w3.org/2000/svg";
+const PAL = ["--c1", "--c3", "--c4", "--c6", "--c5", "--warn", "--c2"];
+const pal = (i) => (i < PAL.length ? cssv(PAL[i]) : `hsl(${(i * 67) % 360} 55% 48%)`);
+
+const PRESETS = {
+  classic: { pos: [[90, 110], [260, 110], [175, 300], [470, 110], [640, 110], [555, 300], [330, 430], [130, 430]],
+    edges: [[0, 1], [1, 2], [2, 0], [1, 3], [3, 4], [4, 5], [5, 3], [2, 6], [6, 5], [6, 7], [7, 6]] },
+  nested: { pos: [[100, 250], [260, 100], [420, 250], [260, 400], [580, 100], [720, 250], [580, 400]],
+    edges: [[0, 1], [1, 2], [2, 3], [3, 0], [2, 0], [1, 3], [2, 4], [4, 5], [5, 6], [6, 4], [6, 2]] },
+  dag: { pos: [[90, 250], [260, 110], [260, 390], [450, 110], [450, 390], [650, 250]],
+    edges: [[0, 1], [0, 2], [1, 3], [2, 3], [2, 4], [3, 5], [4, 5]] },
+  // nodes: 0=a 1=¬a 2=b 3=¬b 4=c 5=¬c
+  twosat: { pos: [[110, 120], [110, 380], [400, 120], [400, 380], [690, 120], [690, 380]], names: ["a", "¬a", "b", "¬b", "c", "¬c"],
+    edges: [[1, 2], [3, 0], [0, 2], [3, 1], [2, 4], [5, 3]] },
+};
+let N = 0, pos = [], edges = [], names = null, algo = "tarjan";
+let frames = [], fi = 0, playing = false, lastTick = 0;
+const nm = (v) => (names ? names[v] : String(v));
+
+function circlePos(n) { return Array.from({ length: n }, (_, i) => [400 + 300 * Math.cos((2 * Math.PI * i) / n - Math.PI / 2), 250 + 190 * Math.sin((2 * Math.PI * i) / n - Math.PI / 2)]); }
+function loadPreset(p) {
+  if (p === "custom") return;
+  const P = PRESETS[p]; pos = P.pos.map((x) => x.slice()); edges = P.edges.map((e) => e.slice()); N = pos.length; names = P.names || null;
+  $("edges").value = edges.map((e) => e.join(" ")).join("\n"); $("err").textContent = ""; recompute();
+}
+function applyEdges() {
+  try {
+    const lines = $("edges").value.split("\n").map((s) => s.trim()).filter(Boolean), out = [];
+    for (const [i, ln] of lines.entries()) {
+      const p = ln.split(/[\s,]+/).map(Number);
+      if (p.length !== 2 || p.some((x) => !Number.isInteger(x) || x < 0 || x > 11)) throw `Line ${i + 1}: expected "u v" with 0 ≤ u, v ≤ 11`;
+      out.push(p);
+    }
+    if (!out.length) throw "Add at least one edge"; if (out.length > 40) throw "At most 40 edges, please";
+    const n = Math.max(...out.flat()) + 1;
+    if (n !== N || names) pos = circlePos(n);
+    N = n; edges = out; names = null; $("preset").value = "custom"; $("err").textContent = ""; recompute();
+  } catch (m) { $("err").innerHTML = `<span class="bad">${m}</span>`; }
+}
+const adj = () => { const a = Array.from({ length: N }, () => []); edges.forEach(([u, v], i) => a[u].push([v, i])); return a; };
+
+function blank() { return { tin: Array(N).fill(-1), low: Array(N).fill(-1), comp: Array(N).fill(-1), stack: [], etype: Array(edges.length).fill(""), comps: [], cur: -1, edge: -1, visited: Array(N).fill(false), rev: false, order: [] }; }
+function snap(S, msg, extra = {}) { frames.push({ tin: S.tin.slice(), low: S.low.slice(), comp: S.comp.slice(), stack: S.stack.slice(), etype: S.etype.slice(), comps: S.comps.map((c) => c.slice()), cur: S.cur, edge: S.edge, visited: S.visited.slice(), rev: S.rev, order: S.order.slice(), msg, ...extra }); }
+
+function runTarjan() {
+  const S = blank(), A = adj(); let timer = 0;
+  function dfs(v) {
+    S.tin[v] = S.low[v] = timer++; S.stack.push(v); S.visited[v] = true; S.cur = v; S.edge = -1;
+    snap(S, `Enter <b>${nm(v)}</b>: tin = low = ${S.tin[v]}. Push it on the stack.`);
+    for (const [to, ei] of A[v]) {
+      S.cur = v; S.edge = ei;
+      if (S.tin[to] === -1) {
+        S.etype[ei] = "tree"; snap(S, `Edge ${nm(v)} → ${nm(to)}: ${nm(to)} is unvisited. Tree edge, recurse.`);
+        dfs(to);
+        S.cur = v; S.edge = ei;
+        const old = S.low[v]; S.low[v] = Math.min(S.low[v], S.low[to]);
+        snap(S, `Back in ${nm(v)} from ${nm(to)}: low[${nm(v)}] = min(${old}, low[${nm(to)}] = ${S.low[to]}) = ${S.low[v]}.`);
+      } else if (S.comp[to] === -1) {
+        const old = S.low[v]; S.low[v] = Math.min(S.low[v], S.tin[to]); S.etype[ei] = old !== S.low[v] ? "low" : "seen";
+        snap(S, `Edge ${nm(v)} → ${nm(to)}: ${nm(to)} is <b>still on the stack</b>, so it can reach ${nm(v)}'s ancestors. low[${nm(v)}] = min(${old}, tin[${nm(to)}] = ${S.tin[to]}) = ${S.low[v]}.`);
+      } else {
+        S.etype[ei] = "dead";
+        snap(S, `Edge ${nm(v)} → ${nm(to)}: ${nm(to)} already belongs to finished SCC #${S.comp[to]}. It can't come back, so <b>ignore</b> this edge.`);
+      }
+    }
+    S.cur = v; S.edge = -1;
+    if (S.low[v] === S.tin[v]) {
+      const c = []; let u;
+      do { u = S.stack.pop(); S.comp[u] = S.comps.length; c.push(u); } while (u !== v);
+      S.comps.push(c);
+      snap(S, `low[${nm(v)}] = tin[${nm(v)}] = ${S.tin[v]}, so <b>${nm(v)} is the root of an SCC</b>. Pop down to ${nm(v)}: {${c.map(nm).join(", ")}} is SCC #${S.comps.length - 1}.`, { newComp: S.comps.length - 1 });
+    } else snap(S, `Leave ${nm(v)}: low = ${S.low[v]} &lt; tin = ${S.tin[v]}, so ${nm(v)} stays on the stack. It belongs to an SCC rooted higher up.`);
+  }
+  snap(S, `Tarjan runs one DFS from every unvisited node, in order 0, 1, 2, …`);
+  for (let v = 0; v < N; v++) if (S.tin[v] === -1) dfs(v);
+  return S;
+}
+function runKosaraju() {
+  const S = blank(), A = adj(), R = Array.from({ length: N }, () => []); edges.forEach(([u, v], i) => R[v].push([u, i]));
+  let timer = 0;
+  snap(S, `<b>Pass 1:</b> DFS on the original graph. Record each node when it <b>exits</b>.`);
+  function dfs1(v) {
+    S.visited[v] = true; S.tin[v] = timer++; S.cur = v; S.edge = -1; S.stack.push(v);
+    snap(S, `Pass 1: enter ${nm(v)}.`);
+    for (const [to, ei] of A[v]) {
+      S.cur = v; S.edge = ei;
+      if (!S.visited[to]) { S.etype[ei] = "tree"; snap(S, `Pass 1: ${nm(v)} → ${nm(to)} is a tree edge.`); dfs1(to); }
+      else { snap(S, `Pass 1: ${nm(v)} → ${nm(to)}: already visited.`); }
+    }
+    S.stack.pop(); S.order.push(v); S.cur = v; S.edge = -1;
+    snap(S, `Pass 1: ${nm(v)} exits. Exit order so far: [${S.order.map(nm).join(", ")}].`);
+  }
+  for (let v = 0; v < N; v++) if (!S.visited[v]) dfs1(v);
+  S.rev = true; S.etype = Array(edges.length).fill(""); S.visited = Array(N).fill(false); S.cur = -1;
+  snap(S, `<b>Pass 2:</b> reverse every edge. Take nodes in <b>decreasing exit time</b>: [${S.order.slice().reverse().map(nm).join(", ")}]. Each new DFS collects exactly one SCC.`);
+  function dfs2(v, c) {
+    S.visited[v] = true; S.comp[v] = S.comps.length - 1; c.push(v); S.cur = v; S.edge = -1;
+    snap(S, `Pass 2: ${nm(v)} joins SCC #${S.comps.length - 1}.`, { partial: c.slice() });
+    for (const [to, ei] of R[v]) {
+      S.cur = v; S.edge = ei;
+      if (!S.visited[to]) { S.etype[ei] = "tree"; snap(S, `Pass 2 (reversed edge ${nm(v)} → ${nm(to)}): unvisited, follow it.`, { partial: c.slice() }); dfs2(to, c); }
+      else if (S.comp[to] !== S.comps.length - 1) { S.etype[ei] = "dead"; snap(S, `Pass 2 (reversed edge ${nm(v)} → ${nm(to)}): ${nm(to)} is in an earlier SCC. Blocked, so the DFS can't leak out.`, { partial: c.slice() }); }
+    }
+  }
+  for (const v of S.order.slice().reverse()) if (!S.visited[v]) {
+    const c = []; S.comps.push(c); dfs2(v, c);
+    S.cur = -1; S.edge = -1;
+    snap(S, `DFS from ${nm(v)} is done: SCC #${S.comps.length - 1} = {${c.map(nm).join(", ")}}.`, { newComp: S.comps.length - 1 });
+  }
+  return S;
+}
+
+function recompute() {
+  frames = []; fi = 0; stop();
+  const S = algo === "tarjan" ? runTarjan() : runKosaraju();
+  const k = S.comps.length;
+  let fin = `<b class="good">Done:</b> ${k} SCC${k > 1 ? "s" : ""}. ` + (algo === "tarjan" ? "Tarjan emits them in <b>reverse</b> topological order, so read the list backwards for a topological order of the condensation." : "Kosaraju emits them in topological order.");
+  if (names) {
+    const sat = [0, 2, 4].every((x) => S.comp[x] !== S.comp[x + 1]);
+    const val = [0, 2, 4].map((x) => { const t = algo === "tarjan" ? S.comp[x] < S.comp[x + 1] : S.comp[x] > S.comp[x + 1]; return `${names[x]} = ${t ? "true" : "false"}`; });
+    fin += sat ? ` 2-SAT: no variable shares an SCC with its negation, so it is satisfiable: <b>${val.join(", ")}</b> (take x true when comp[x] is later in topological order than comp[¬x]).` : " 2-SAT: some x shares an SCC with ¬x, so it is unsatisfiable.";
+  }
+  snap(S, fin, { final: true });
+  $("scrub").max = frames.length - 1; $("stname").textContent = algo === "tarjan" ? "Tarjan stack (top at the top)" : "Pass 1 DFS stack / exit order";
+  show(0);
+}
+
+const svg = $("g"), csvg = $("cond");
+function el(tag, at, txt, parent) { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt != null) e.textContent = txt; parent.appendChild(e); return e; }
+function arrow(parent, x1, y1, x2, y2, R, bend, stroke, width, dash) {
+  const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L;
+  const mx = (x1 + x2) / 2 + nx * bend, my = (y1 + y2) / 2 + ny * bend;
+  const a1 = Math.atan2(my - y1, mx - x1), a2 = Math.atan2(my - y2, mx - x2);
+  const sx = x1 + R * Math.cos(a1), sy = y1 + R * Math.sin(a1), ex = x2 + (R + 2) * Math.cos(a2), ey = y2 + (R + 2) * Math.sin(a2);
+  const cx = mx * 2 - (sx + ex) / 2, cy = my * 2 - (sy + ey) / 2, ta = Math.atan2(ey - cy, ex - cx), h = 12;
+  el("path", { d: `M${sx},${sy} Q${cx},${cy} ${ex},${ey}`, fill: "none", stroke, "stroke-width": width, "stroke-dasharray": dash || "none" }, null, parent);
+  el("polygon", { points: `${ex},${ey} ${ex - h * Math.cos(ta - 0.4)},${ey - h * Math.sin(ta - 0.4)} ${ex - h * Math.cos(ta + 0.4)},${ey - h * Math.sin(ta + 0.4)}`, fill: stroke }, null, parent);
+}
+function draw(f) {
+  svg.innerHTML = ""; const R = 22, C = { text: cssv("--text"), border: cssv("--border"), acc: cssv("--accent"), warn: cssv("--warn"), c2: cssv("--c2"), muted: cssv("--muted"), surf2: cssv("--surface-2") };
+  // soft hulls behind finished components
+  f.comps.forEach((c, i) => { if (c.length < 2 && !f.comps[i]) return; c.forEach((v) => el("circle", { cx: pos[v][0], cy: pos[v][1], r: R + 9, fill: pal(i), opacity: 0.18 }, null, svg)); });
+  const pair = new Set(edges.map(([u, v]) => u + "," + v));
+  edges.forEach(([u0, v0], ei) => {
+    if (u0 === v0) return;
+    const [u, v] = f.rev ? [v0, u0] : [u0, v0];
+    const t = f.etype[ei], active = f.edge === ei;
+    const stroke = active ? C.acc : t === "tree" ? C.text : t === "low" ? C.warn : C.border;
+    arrow(svg, pos[u][0], pos[u][1], pos[v][0], pos[v][1], R, pair.has(v0 + "," + u0) ? 24 : 0, stroke, active ? 4.5 : t === "tree" ? 3 : t === "low" ? 3 : 2, t === "dead" ? "5 5" : "");
+  });
+  pos.forEach(([x, y], v) => {
+    const g = el("g", { class: "node", "data-v": v }, null, svg);
+    const onSt = f.stack.includes(v), cid = f.comp[v];
+    const fill = f.cur === v ? C.acc : cid >= 0 ? pal(cid) : onSt || f.visited[v] ? C.c2 : C.muted;
+    el("circle", { cx: x, cy: y, r: R, fill, stroke: f.cur === v ? C.text : "none", "stroke-width": 2 }, null, g);
+    el("text", { x, y: y + 5, "text-anchor": "middle", class: "nid" }, nm(v), g);
+    let lab = "";
+    if (algo === "tarjan" && f.tin[v] >= 0) lab = `${f.tin[v]}/${f.low[v]}`;
+    if (algo === "kosaraju") { const k = f.order.indexOf(v); if (k >= 0) lab = `exit ${k}`; }
+    if (lab) { const below = y < 250 ? -R - 12 : R + 18; el("rect", { x: x - 28, y: y + below - 14, width: 56, height: 20, rx: 10, fill: C.surf2 }, null, g); el("text", { x, y: y + below + 1, "text-anchor": "middle", class: "tl" }, lab, g); }
+  });
+  drawCond(f);
+}
+function drawCond(f) {
+  csvg.innerHTML = ""; const k = f.comps.length;
+  if (!k) { el("text", { x: 400, y: 155, "text-anchor": "middle", fill: cssv("--muted") }, "No component finished yet", csvg); return; }
+  // topological order: tarjan → reverse of discovery
+  const topo = [...Array(k).keys()]; if (algo === "tarjan") topo.reverse();
+  const P = {}; topo.forEach((c, i) => (P[c] = [70 + (660 * i) / Math.max(1, k - 1), 150 + (i % 2 ? 60 : -60) * (k > 2 ? 1 : 0)]));
+  if (k === 1) P[topo[0]] = [400, 150];
+  const seen = new Set();
+  edges.forEach(([u, v]) => { const a = f.comp[u], b = f.comp[v]; if (a < 0 || b < 0 || a === b || seen.has(a + "," + b)) return; seen.add(a + "," + b); arrow(csvg, P[a][0], P[a][1], P[b][0], P[b][1], 30, 0, cssv("--muted"), 2); });
+  topo.forEach((c) => { const [x, y] = P[c]; el("circle", { cx: x, cy: y, r: 30, fill: pal(c) }, null, csvg); el("text", { x, y: y + 5, "text-anchor": "middle", class: "nid", style: "font-size:12px" }, f.comps[c].map(nm).join(","), csvg); el("text", { x, y: y + 50, "text-anchor": "middle", class: "tl" }, `#${c}`, csvg); });
+}
+function show(i) {
+  fi = Math.max(0, Math.min(frames.length - 1, i)); const f = frames[fi];
+  draw(f); $("scrub").value = fi; $("stepno").textContent = `${fi + 1} / ${frames.length}`; $("msg").innerHTML = f.msg;
+  $("stack").innerHTML = f.stack.length ? f.stack.map((v, j) => `<span class="${j === f.stack.length - 1 ? "top" : ""}">${nm(v)}${algo === "tarjan" ? `  tin ${f.tin[v]} · low ${f.low[v]}` : ""}</span>`).join("") : `<span class="note" style="border:0;background:none">empty</span>`;
+  $("comps").innerHTML = f.comps.map((c, j) => `<span style="background:${pal(j)}">#${j}: {${c.map(nm).join(", ")}}</span>`).join("") || `<span class="note" style="color:var(--muted)">none yet</span>`;
+  $("order").innerHTML = algo === "kosaraju" && f.order.length ? `Pass 1 exit order: [${f.order.map(nm).join(", ")}]` : "";
+}
+function stop() { playing = false; $("play").textContent = "▶ Play"; }
+document.querySelectorAll("#algos button").forEach((b) => b.addEventListener("click", () => { algo = b.dataset.a; document.querySelectorAll("#algos button").forEach((x) => x.classList.toggle("active", x === b)); recompute(); }));
+$("preset").addEventListener("change", () => loadPreset($("preset").value));
+$("apply").addEventListener("click", applyEdges);
+$("rand").addEventListener("click", () => {
+  const n = 7 + Math.floor(Math.random() * 4), s = new Set(), out = [];
+  while (out.length < n + 3) { const u = Math.floor(Math.random() * n), v = Math.floor(Math.random() * n); if (u === v || s.has(u + "," + v)) continue; s.add(u + "," + v); out.push([u, v]); }
+  $("edges").value = out.map((e) => e.join(" ")).join("\n"); N = 0; applyEdges();
+});
+$("first").addEventListener("click", () => { stop(); show(0); });
+$("prev").addEventListener("click", () => { stop(); show(fi - 1); });
+$("next").addEventListener("click", () => { stop(); show(fi + 1); });
+$("last").addEventListener("click", () => { stop(); show(frames.length - 1); });
+$("scrub").addEventListener("input", () => { stop(); show(+$("scrub").value); });
+$("play").addEventListener("click", () => { if (playing) return stop(); if (fi >= frames.length - 1) show(0); playing = true; $("play").textContent = "⏸ Pause"; });
+function tick(t) { if (playing && t - lastTick > 1400 / +$("speed").value) { lastTick = t; if (fi >= frames.length - 1) stop(); else show(fi + 1); } requestAnimationFrame(tick); }
+document.addEventListener("keydown", (e) => { if (e.target.tagName === "TEXTAREA") return; if (e.key === "ArrowRight") { stop(); show(fi + 1); } if (e.key === "ArrowLeft") { stop(); show(fi - 1); } });
+let drag = -1;
+const svgPt = (e) => { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); };
+svg.addEventListener("pointerdown", (e) => { const g = e.target.closest("g.node"); if (!g) return; drag = +g.dataset.v; svg.setPointerCapture(e.pointerId); });
+svg.addEventListener("pointermove", (e) => { if (drag < 0) return; const p = svgPt(e); pos[drag] = [Math.max(25, Math.min(775, p.x)), Math.max(35, Math.min(465, p.y))]; draw(frames[fi]); });
+svg.addEventListener("pointerup", () => { drag = -1; });
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => draw(frames[fi]));
+loadPreset("classic"); requestAnimationFrame(tick);
+</script>
+</body>
+</html>
