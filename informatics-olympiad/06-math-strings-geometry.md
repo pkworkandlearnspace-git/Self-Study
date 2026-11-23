@@ -1,6 +1,8 @@
 # 06 · Math, Strings & Geometry
 > **Goal:** the math and string toolkit (your math-olympiad training helps here). · **Time:** 3–4 weeks
 
+👉 Interactive: [Convex hull builder](interactive/convex-hull.html) (monotone chain step-through + cross-product quiz)
+
 ## Skip test
 - [ ] Fast modular exponentiation and the modular inverse via Fermat (p prime).
 - [ ] Precompute factorials and inverse factorials to answer nCr mod p in O(1).
