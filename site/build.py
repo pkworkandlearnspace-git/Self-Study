@@ -160,7 +160,7 @@ def page_list() -> list[dict]:
                               "label": label})
     tmpl = ROOT / "_template" / "TOPIC_TEMPLATE.md"
     if tmpl.exists():
-        pages.append({"src": tmpl, "out": "_template/TOPIC_TEMPLATE.html", "topic": None, "kind": "extra",
+        pages.append({"src": tmpl, "out": "template/TOPIC_TEMPLATE.html", "topic": None, "kind": "extra",
                       "label": "Start a new topic"})
     for p in pages:
         first = p["src"].read_text(encoding="utf-8").lstrip().splitlines()[0]
@@ -375,12 +375,15 @@ def main() -> None:
         shutil.rmtree(OUT)
     OUT.mkdir()
     shutil.copytree(SRC / "assets", OUT / "assets")
-    shutil.copytree(ROOT / "_shared", OUT / "_shared")
+    # Published folders must not start with "_" (Jekyll and some hosts hide them),
+    # so _shared/ becomes shared/ and the tool pages are rewritten to match.
+    shutil.copytree(ROOT / "_shared", OUT / "shared")
     for t in TOPICS:
         inter = ROOT / t["slug"] / "interactive"
         if inter.exists():
             shutil.copytree(inter, OUT / t["slug"] / "interactive")
-    (OUT / ".nojekyll").write_text("")  # let GitHub Pages serve the _shared/ folder
+            for f in (OUT / t["slug"] / "interactive").glob("*.html"):
+                f.write_text(f.read_text(encoding="utf-8").replace("../../_shared/", "../../shared/"), encoding="utf-8")
 
     pages = page_list()
     index: list[dict] = []
