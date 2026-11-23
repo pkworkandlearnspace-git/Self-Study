@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Convex Hull Builder</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg.plot { aspect-ratio: 8 / 5; cursor: crosshair; }
+  svg text { font: 12px var(--mono); fill: var(--muted); pointer-events: none; }
+  svg .ord { font-size: 11px; font-weight: 700; fill: var(--text); }
+  .player { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .player input[type=range] { flex: 1 1 160px; width: auto; }
+  .msg { min-height: 3.2em; font-size: 15px; }
+  .stk { font-family: var(--mono); font-size: 13px; display: flex; gap: 4px; flex-wrap: wrap; min-height: 28px; }
+  .stk span { background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 7px; }
+  .stk span.top { border-color: var(--accent); color: var(--accent); }
+  .quiz button.ok { border-color: var(--good); color: var(--good); }
+  .quiz button.no { border-color: var(--bad); color: var(--bad); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Informatics Olympiad tools</a></header>
+  <h1>Convex Hull Builder</h1>
+  <p class="lead">Andrew's <b>monotone chain</b>: sort the points, sweep left to right for the lower hull and right to left for the upper hull, and pop while the last turn is not a left turn. Every decision is one integer <b>cross product</b>, so there is no floating point (module 06). Click to add points, drag to move them.</p>
+
+  <div class="grid two">
+    <div>
+      <svg class="plot" id="g" viewBox="0 0 800 500" aria-label="Points on an integer grid"></svg>
+      <div class="legend" style="margin:8px 0 0">
+        <span><i style="background:var(--c1)"></i>lower hull</span><span><i style="background:var(--c4)"></i>upper hull</span>
+        <span><i style="background:var(--c3)"></i>left turn: keep</span><span><i style="background:var(--bad)"></i>right turn / straight: pop</span>
+      </div>
+      <div class="card" style="margin-top:12px">
+        <div class="player">
+          <button id="first" title="Start">⏮</button><button id="prev" title="Step back">◀</button>
+          <button class="primary" id="play">▶ Play</button><button id="next" title="Step">▶|</button><button id="last" title="End">⏭</button>
+          <input type="range" id="scrub" min="0" max="0" value="0" aria-label="Step">
+          <span class="note mono" id="stepno"></span>
+        </div>
+        <div class="msg" id="msg" style="margin-top:10px"></div>
+      </div>
+    </div>
+    <div class="controls">
+      <div><b style="font-size:14px">Mouse / touch does</b>
+        <div class="row" id="tools" style="margin-top:6px"><button data-t="add" class="active">Add / move</button><button data-t="del">Delete</button></div></div>
+      <label class="ctl">Points
+        <select id="preset">
+          <option value="rand" selected>Random 14</option>
+          <option value="col">Collinear points on the hull</option>
+          <option value="circle">Points on a circle (all on the hull)</option>
+          <option value="line">All on one line (degenerate)</option>
+          <option value="tri">Triangle with many inside</option>
+        </select></label>
+      <div class="row"><button id="regen">New points</button><button id="clear">Clear</button></div>
+      <label class="ctl" style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="keepcol"> keep collinear boundary points (pop only on a strict right turn)</label>
+      <label class="ctl">Speed <input type="range" id="speed" min="1" max="10" value="5"></label>
+      <div class="card" style="padding:12px"><b style="font-size:14px" id="stkname">Stack</b><div class="stk" id="stk" style="margin-top:6px"></div></div>
+      <div class="card" id="stats" style="padding:12px"></div>
+    </div>
+  </div>
+
+  <h2>Quick check: which way does it turn?</h2>
+  <div class="card quiz">
+    <p style="margin-top:0">For O = <span class="mono" id="qO"></span>, A = <span class="mono" id="qA"></span>, B = <span class="mono" id="qB"></span>: what is the sign of cross(O, A, B) = (A − O) × (B − O)?</p>
+    <div class="row"><button data-q="1">positive (left turn, counter-clockwise)</button><button data-q="0">zero (collinear)</button><button data-q="-1">negative (right turn, clockwise)</button><button id="qnew">Next</button></div>
+    <p class="note" id="qfb" style="margin-bottom:0"></p>
+  </div>
+
+  <h2>Code (the version this page runs)</h2>
+<pre class="card mono" style="font-size:13px;overflow-x:auto;white-space:pre">// Andrew's monotone chain, O(n log n). Returns the hull counter-clockwise, no repeated first point.
+// |coords| ≤ 1e9 → cross products reach about 8e18: still fits in long long (max ≈ 9.22e18).
+using P = pair&lt;ll, ll&gt;;
+ll cross(P O, P A, P B) { return (A.first-O.first)*(B.second-O.second) - (A.second-O.second)*(B.first-O.first); }
+vector&lt;P&gt; hull(vector&lt;P&gt; p) {
+  sort(p.begin(), p.end()); p.erase(unique(p.begin(), p.end()), p.end());
+  int n = p.size(), k = 0; if (n &lt; 3) return p;
+  vector&lt;P&gt; h(2 * n);
+  for (int i = 0; i &lt; n; i++) {                      // lower hull
+    while (k &gt;= 2 &amp;&amp; cross(h[k-2], h[k-1], p[i]) &lt;= 0) k--;
+    h[k++] = p[i];
+  }
+  for (int i = n - 2, t = k + 1; i &gt;= 0; i--) {      // upper hull
+    while (k &gt;= t &amp;&amp; cross(h[k-2], h[k-1], p[i]) &lt;= 0) k--;
+    h[k++] = p[i];
+  }
+  h.resize(k - 1); return h;
+}</pre>
+  <div class="card">
+    <b>Traps</b>
+    <ul style="margin:6px 0 0;padding-left:20px">
+      <li><code>&lt;= 0</code> drops collinear boundary points; <code>&lt; 0</code> keeps them. If you keep them and <i>all</i> points are on one line, the "hull" walks the line out and back, so every middle point appears twice. Handle that case separately.</li>
+      <li>Remove duplicate points first, or the pop condition sees a zero-length edge.</li>
+      <li>Twice the area (shoelace) is an integer. Keep it as an integer and only divide by 2 when you print.</li>
+      <li>Sort by x, then y. Sorting by x alone breaks ties on vertical edges in an arbitrary order.</li>
+    </ul>
+    <p class="note" style="margin-bottom:0">Source: <a href="https://cp-algorithms.com/geometry/convex-hull.html">cp-algorithms: Convex hull construction</a> (Graham scan and monotone chain) · <a href="https://en.wikibooks.org/wiki/Algorithm_Implementation/Geometry/Convex_hull/Monotone_chain">Wikibooks: Monotone chain</a>.</p>
+  </div>
+  <footer class="foot">Part of the Self-Study repo · informatics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const cssv = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const NS = "http://www.w3.org/2000/svg";
+const GX = 20, GY = 12, CELL = 36, OX = 40, OY = 470;
+const sx = (x) => OX + x * CELL, sy = (y) => OY - y * CELL;
+let pts = [], frames = [], fi = 0, playing = false, lastTick = 0, tool = "add";
+const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+const P = (p) => `(${p[0]},${p[1]})`;
+const rnd = (k) => Math.floor(Math.random() * k);
+
+function preset(name) {
+  const S = new Set(), out = [], add = (x, y) => { const k = x + "," + y; if (x < 0 || y < 0 || x > GX || y > GY || S.has(k)) return; S.add(k); out.push([x, y]); };
+  if (name === "rand") while (out.length < 14) add(1 + rnd(GX - 1), 1 + rnd(GY - 1));
+  if (name === "col") { [[2, 2], [6, 2], [10, 2], [14, 2], [18, 2], [18, 6], [18, 10], [10, 10], [2, 10], [2, 6], [7, 5], [12, 7], [9, 8], [15, 4]].forEach(([x, y]) => add(x, y)); }
+  if (name === "circle") { const c = [[10, 1], [15, 2], [18, 4], [19, 6], [18, 8], [15, 10], [10, 11], [5, 10], [2, 8], [1, 6], [2, 4], [5, 2]]; c.forEach(([x, y]) => add(x, y)); }
+  if (name === "line") for (let i = 0; i < 7; i++) add(2 + 2 * i, 2 + i);
+  if (name === "tri") { add(2, 1); add(18, 1); add(10, 11); while (out.length < 18) { const x = 3 + rnd(15), y = 2 + rnd(8); if (cross([2, 1], [18, 1], [x, y]) > 0 && cross([18, 1], [10, 11], [x, y]) > 0 && cross([10, 11], [2, 1], [x, y]) > 0) add(x, y); } }
+  pts = out; recompute();
+}
+
+function snap(o) { frames.push({ stack: [], cand: null, tri: null, verdict: null, lower: null, phase: "", msg: "", ...o }); }
+function recompute() {
+  frames = []; fi = 0; stop();
+  const keep = $("keepcol").checked, popIf = (c) => (keep ? c < 0 : c <= 0);
+  const p = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const rank = new Map(p.map((q, i) => [q.join(","), i]));
+  const n = p.length;
+  if (n < 3) { snap({ msg: n ? `Only ${n} point${n > 1 ? "s" : ""}: the hull is the points themselves. Add more by clicking.` : "Click on the grid to add points.", hull: p, rank }); finish(); return; }
+  snap({ rank, msg: `Sort the ${n} points by x, then by y. The numbers show the sorted order. Point 0 (leftmost) and point ${n - 1} (rightmost) are always on the hull.` });
+  const h = [];
+  const run = (idxs, phase, base) => {
+    for (const i of idxs) {
+      const q = p[i];
+      while (h.length >= base + 2) {
+        const a = h[h.length - 2], b = h[h.length - 1], c = cross(a, b, q);
+        const pop = popIf(c);
+        snap({ rank, stack: h.slice(), cand: q, tri: [a, b, q], verdict: pop ? "pop" : "keep", phase, lowerLen: phase === "upper" ? base : null,
+          msg: `${phase === "lower" ? "Lower" : "Upper"} hull, candidate ${P(q)}: cross(${P(a)}, ${P(b)}, ${P(q)}) = <b>${c}</b>. ${c > 0 ? "Left turn: keep " + P(b) + "." : c === 0 ? (pop ? "Collinear: pop " + P(b) + " (it lies on the segment, so it is not a corner)." : "Collinear, and we keep collinear points: keep " + P(b) + ".") : "Right turn: " + P(b) + " is inside, <b>pop it</b>."}` });
+        if (pop) h.pop(); else break;
+      }
+      h.push(q);
+      snap({ rank, stack: h.slice(), cand: q, phase, lowerLen: phase === "upper" ? base : null, msg: `Push ${P(q)}. ${phase} stack: ${h.length - (phase === "upper" ? base - 1 : 0)} point(s).` });
+    }
+  };
+  run([...Array(n).keys()], "lower", 0);
+  const lowerEnd = h.length;
+  snap({ rank, stack: h.slice(), phase: "lower", msg: `Lower hull done: ${h.map(P).join(" → ")}. Now walk back from right to left for the upper hull, starting from the last point of the lower hull.` });
+  run([...Array(n - 1).keys()].reverse(), "upper", lowerEnd - 1);
+  h.pop(); // the first point is repeated at the end
+  let hull = h;
+  const allCol = p.every((q) => cross(p[0], p[n - 1], q) === 0);
+  let extra = "";
+  if (allCol) { extra = keep ? " <b class='warn'>All points are collinear:</b> with collinear points kept, the walk goes out and back, so the middle points appear twice. Special-case this." : " All points are collinear, so the hull degenerates to the segment between the two end points."; }
+  snap({ rank, hull, stack: h.slice(), msg: `<b class="good">Done.</b> The hull has ${hull.length} vertices, listed counter-clockwise from the leftmost point.${extra}`, final: true });
+  finish();
+}
+function finish() { $("scrub").max = frames.length - 1; show(frames.length > 1 ? 0 : 0); }
+
+const svg = $("g");
+function el(tag, at, txt, parent = svg) { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt != null) e.textContent = txt; parent.appendChild(e); return e; }
+function draw(f) {
+  svg.innerHTML = "";
+  const C = { border: cssv("--border"), muted: cssv("--muted"), text: cssv("--text"), c1: cssv("--c1"), c4: cssv("--c4"), good: cssv("--good"), bad: cssv("--bad"), acc: cssv("--accent"), soft: cssv("--accent-soft") };
+  for (let x = 0; x <= GX; x++) el("line", { x1: sx(x), y1: sy(0), x2: sx(x), y2: sy(GY), stroke: C.border, "stroke-width": x % 5 ? 0.5 : 1 });
+  for (let y = 0; y <= GY; y++) el("line", { x1: sx(0), y1: sy(y), x2: sx(GX), y2: sy(y), stroke: C.border, "stroke-width": y % 5 ? 0.5 : 1 });
+  for (let x = 0; x <= GX; x += 5) el("text", { x: sx(x), y: sy(0) + 18, "text-anchor": "middle" }, x);
+  for (let y = 5; y <= GY; y += 5) el("text", { x: sx(0) - 10, y: sy(y) + 4, "text-anchor": "end" }, y);
+  if (f && f.hull && f.hull.length >= 3) el("polygon", { points: f.hull.map((q) => `${sx(q[0])},${sy(q[1])}`).join(" "), fill: C.soft, stroke: C.acc, "stroke-width": 3, opacity: 0.9 });
+  if (f && f.hull && f.hull.length === 2) el("line", { x1: sx(f.hull[0][0]), y1: sy(f.hull[0][1]), x2: sx(f.hull[1][0]), y2: sy(f.hull[1][1]), stroke: C.acc, "stroke-width": 3 });
+  if (f && !f.final && f.stack.length > 1) {
+    const ll = f.lowerLen;
+    for (let i = 1; i < f.stack.length; i++) { const a = f.stack[i - 1], b = f.stack[i]; el("line", { x1: sx(a[0]), y1: sy(a[1]), x2: sx(b[0]), y2: sy(b[1]), stroke: ll != null && i > ll ? C.c4 : C.c1, "stroke-width": 3 }); }
+  }
+  if (f && f.tri) {
+    const [a, b, q] = f.tri, col = f.verdict === "pop" ? C.bad : C.good;
+    el("polygon", { points: [a, b, q].map((t) => `${sx(t[0])},${sy(t[1])}`).join(" "), fill: col, opacity: 0.12 });
+    el("line", { x1: sx(b[0]), y1: sy(b[1]), x2: sx(q[0]), y2: sy(q[1]), stroke: col, "stroke-width": 3, "stroke-dasharray": "6 5" });
+  }
+  const onHull = new Set(f && f.final ? f.hull.map((q) => q.join(",")) : []);
+  const inStack = new Set(f ? f.stack.map((q) => q.join(",")) : []);
+  pts.forEach((q, i) => {
+    const k = q.join(","), cand = f && f.cand && f.cand.join(",") === k;
+    const fill = cand ? C.acc : onHull.has(k) ? C.acc : inStack.has(k) ? C.text : C.muted;
+    el("circle", { cx: sx(q[0]), cy: sy(q[1]), r: cand ? 9 : 7, fill, stroke: cand ? C.text : "none", "stroke-width": 2, "data-i": i, style: "cursor:grab" });
+    if (f && f.rank && f.rank.has(k)) el("text", { x: sx(q[0]) + 9, y: sy(q[1]) - 9, class: "ord" }, f.rank.get(k));
+  });
+}
+function show(i) {
+  fi = Math.max(0, Math.min(frames.length - 1, i)); const f = frames[fi];
+  draw(f); $("scrub").value = fi; $("stepno").textContent = `${fi + 1} / ${frames.length}`; $("msg").innerHTML = f.msg;
+  $("stkname").textContent = f.final ? "Hull (counter-clockwise)" : "Stack (top on the right)";
+  const arr = f.final ? f.hull : f.stack;
+  $("stk").innerHTML = arr.length ? arr.map((q, j) => `<span class="${!f.final && j === arr.length - 1 ? "top" : ""}">${P(q)}</span>`).join("") : `<span class="note" style="border:0;background:none">empty</span>`;
+  const H = frames[frames.length - 1].hull || [];
+  let A2 = 0, per = 0; for (let j = 0; j < H.length; j++) { const a = H[j], b = H[(j + 1) % H.length]; A2 += a[0] * b[1] - a[1] * b[0]; per += Math.hypot(b[0] - a[0], b[1] - a[1]); }
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  $("stats").innerHTML = row("Points", pts.length) + row("Hull vertices", H.length) + row("2 × area (shoelace, integer)", Math.abs(A2)) + row("Area", Math.abs(A2) / 2) + row("Perimeter", per.toFixed(3));
+}
+function stop() { playing = false; $("play").textContent = "▶ Play"; }
+
+// pointer: add, drag, delete
+let drag = -1, moved = false;
+const svgPt = (e) => { const p = svg.createSVGPoint(); p.x = e.clientX; p.y = e.clientY; return p.matrixTransform(svg.getScreenCTM().inverse()); };
+const toGrid = (p) => [Math.max(0, Math.min(GX, Math.round((p.x - OX) / CELL))), Math.max(0, Math.min(GY, Math.round((OY - p.y) / CELL)))];
+svg.addEventListener("pointerdown", (e) => {
+  const [x, y] = toGrid(svgPt(e)); const idx = pts.findIndex((q) => q[0] === x && q[1] === y);
+  if (tool === "del") { if (idx >= 0) { pts.splice(idx, 1); recompute(); show(frames.length - 1); } return; }
+  if (idx >= 0) { drag = idx; moved = false; svg.setPointerCapture(e.pointerId); return; }
+  if (pts.length >= 40) { $("msg").innerHTML = "<span class='warn'>At most 40 points.</span>"; return; }
+  pts.push([x, y]); recompute(); show(frames.length - 1);
+});
+svg.addEventListener("pointermove", (e) => {
+  if (drag < 0) return; const [x, y] = toGrid(svgPt(e));
+  if (pts.some((q, j) => j !== drag && q[0] === x && q[1] === y)) return;
+  if (pts[drag][0] !== x || pts[drag][1] !== y) { pts[drag] = [x, y]; moved = true; recompute(); show(frames.length - 1); }
+});
+svg.addEventListener("pointerup", () => { drag = -1; });
+
+document.querySelectorAll("#tools button").forEach((b) => b.addEventListener("click", () => { tool = b.dataset.t; document.querySelectorAll("#tools button").forEach((x) => x.classList.toggle("active", x === b)); }));
+$("preset").addEventListener("change", () => preset($("preset").value));
+$("regen").addEventListener("click", () => preset($("preset").value));
+$("clear").addEventListener("click", () => { pts = []; recompute(); });
+$("keepcol").addEventListener("change", recompute);
+$("first").addEventListener("click", () => { stop(); show(0); });
+$("prev").addEventListener("click", () => { stop(); show(fi - 1); });
+$("next").addEventListener("click", () => { stop(); show(fi + 1); });
+$("last").addEventListener("click", () => { stop(); show(frames.length - 1); });
+$("scrub").addEventListener("input", () => { stop(); show(+$("scrub").value); });
+$("play").addEventListener("click", () => { if (playing) return stop(); if (fi >= frames.length - 1) show(0); playing = true; $("play").textContent = "⏸ Pause"; });
+function tick(t) { if (playing && t - lastTick > 1400 / +$("speed").value) { lastTick = t; if (fi >= frames.length - 1) stop(); else show(fi + 1); } requestAnimationFrame(tick); }
+document.addEventListener("keydown", (e) => { if (e.key === "ArrowRight") { stop(); show(fi + 1); } if (e.key === "ArrowLeft") { stop(); show(fi - 1); } });
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => draw(frames[fi]));
+
+// cross-product quiz
+let qans = 0;
+function newQ() {
+  const r = () => [rnd(11) - 5, rnd(11) - 5]; let O, A, B;
+  do { O = r(); A = r(); B = r(); } while ((A[0] === O[0] && A[1] === O[1]) || (B[0] === O[0] && B[1] === O[1]) || (Math.random() < 0.6 && cross(O, A, B) === 0));
+  if (Math.random() < 0.2) { const k = 1 + rnd(2); B = [O[0] + k * (A[0] - O[0]), O[1] + k * (A[1] - O[1])]; }
+  qans = Math.sign(cross(O, A, B)); $("qO").textContent = P(O); $("qA").textContent = P(A); $("qB").textContent = P(B);
+  $("qfb").textContent = ""; document.querySelectorAll(".quiz [data-q]").forEach((b) => b.classList.remove("ok", "no"));
+  $("qfb").dataset.exp = `(${A[0] - O[0]})·(${B[1] - O[1]}) − (${A[1] - O[1]})·(${B[0] - O[0]}) = ${cross(O, A, B)}`;
+}
+let qright = 0, qtotal = 0;
+document.querySelectorAll(".quiz [data-q]").forEach((b) => b.addEventListener("click", () => {
+  const ok = +b.dataset.q === qans; qtotal++; if (ok) qright++;
+  b.classList.add(ok ? "ok" : "no");
+  $("qfb").innerHTML = `${ok ? "<b class='good'>Correct.</b>" : "<b class='bad'>Not quite.</b>"} ${$("qfb").dataset.exp}. Score: ${qright}/${qtotal}.`;
+}));
+$("qnew").addEventListener("click", newQ);
+newQ(); preset("rand"); requestAnimationFrame(tick);
+</script>
+</body>
+</html>
