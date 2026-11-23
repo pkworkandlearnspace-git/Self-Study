@@ -7,7 +7,9 @@
 <meta name="description" content="C++ for contests, data structures, graphs, dynamic programming and IOI-level skills.">
 <script>try{var t=localStorage.getItem('ss-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
 <link rel="stylesheet" href="../assets/site.css">
-
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script defer src="../assets/katex/katex.min.js"></script>
+<script defer src="../assets/katex/contrib/auto-render.min.js"></script>
 <script defer src="../assets/search-index.js"></script>
 <script defer src="../assets/site.js"></script>
 </head>
@@ -109,39 +111,149 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../informatics-olympiad/index.html">Informatics Olympiad</a> <span class="sep">›</span> <span>IOI Skills &amp; Advanced Topics</span></nav><article class="doc"><h1 id="07-ioi-skills-advanced-topics">07 · IOI Skills &amp; Advanced Topics<a class="anchor" href="#07-ioi-skills-advanced-topics" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 07</span><span>⏱ 1 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/informatics-olympiad/07-ioi-advanced.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../informatics-olympiad/index.html">Informatics Olympiad</a> <span class="sep">›</span> <span>IOI Skills &amp; Advanced Topics</span></nav><article class="doc"><h1 id="07-ioi-skills-advanced-topics">07 · IOI Skills &amp; Advanced Topics<a class="anchor" href="#07-ioi-skills-advanced-topics" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 07</span><span>⏱ 5 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/informatics-olympiad/07-ioi-advanced.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> convert knowledge into IOI points, and learn the advanced techniques that separate medal colors. · <strong>Time:</strong> ongoing</p>
 </blockquote>
-<h2 id="contest-strategy-the-highest-leverage-skill">Contest strategy (the highest-leverage skill)<a class="anchor" href="#contest-strategy-the-highest-leverage-skill" title="Link to this section">#</a></h2>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
 <ul>
-<li><strong>First 20–30 min:</strong> read <strong>all three</strong> problems. Note every subtask and its points.</li>
-<li><strong>Bank points:</strong> implement the easy subtasks of <em>every</em> problem before going deep. 3 × 40 points beats 1 × 100.</li>
-<li><strong>Subtasks are hints:</strong> "n ≤ 1000", "the tree is a line", "all values distinct" each show a step toward the full solution.</li>
-<li><strong>Think before coding.</strong> Prove (or at least stress-test) your idea. With live feedback at IOI, use it to verify.</li>
-<li><strong>Keep the brute force</strong> for stress testing. Don't delete old working submissions.</li>
-<li><strong>Problem types to practice:</strong> batch (function implementation), <strong>interactive</strong> (minimize the queries), <strong>communication</strong> (two programs), <strong>output-only</strong>, <strong>constructive</strong>.</li>
+<li>plan a 5-hour IOI day to <strong>maximise points</strong> across three tasks;</li>
+<li>use subtasks as hints toward the full solution;</li>
+<li>handle the special task types: interactive, communication, output-only, constructive;</li>
+<li>know what each advanced technique does and when it applies (HLD, centroid decomposition, small-to-large, persistent structures, parallel binary search, Mo's algorithm, flows);</li>
+<li>run realistic contest simulations and learn from them.</li>
 </ul>
-<h2 id="advanced-techniques-learn-after-0106">Advanced techniques (learn after 01–06)<a class="anchor" href="#advanced-techniques-learn-after-0106" title="Link to this section">#</a></h2>
+</div>
+<h2 id="1-how-the-ioi-works">1 · How the IOI works<a class="anchor" href="#1-how-the-ioi-works" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · The format</div>
+<p>Two contest days, <strong>three tasks per day, 5 hours each</strong>. Each task is worth 100 points split into <strong>subtasks</strong>; a subtask's points are awarded only if your solution passes <strong>all</strong> of its tests. You get feedback on your submissions during the contest, and the score for a task is computed from your best results per subtask (rules evolve; read the current year's regulations). Roughly half of the contestants receive medals, in a gold : silver : bronze ratio of about $1:2:3$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Task types</div>
 <ul>
-<li><strong>Trees:</strong> heavy-light decomposition (HLD), <strong>centroid decomposition</strong>, small-to-large merging (DSU on tree), virtual trees.</li>
-<li><strong>Data structures:</strong> persistent segment tree, segment tree beats (rare), Li Chao tree, merge-sort tree, <strong>parallel binary search</strong>, offline divide &amp; conquer (CDQ).</li>
-<li><strong>Sqrt techniques:</strong> sqrt decomposition on queries, Mo's algorithm (with updates), heavy/light threshold splitting.</li>
-<li><strong>Graphs:</strong> max flow / min cut / bipartite matching (rarer at IOI but useful), bridges/2-edge-connected components, Euler tours.</li>
-<li><strong>DP:</strong> CHT, D&amp;C optimization, the Aliens trick, DP over subsets / profiles.</li>
+<li><strong>Batch:</strong> implement a function; the grader calls it (module 01).</li>
+<li><strong>Interactive:</strong> your code asks questions and gets answers; scoring often depends on the <strong>number of queries</strong>. Think in terms of information: each yes/no answer is one bit.</li>
+<li><strong>Communication:</strong> two programs (e.g. an encoder and a decoder) exchange limited information.</li>
+<li><strong>Output-only:</strong> you are given the inputs and submit outputs; any method (even hand or heuristic search) is allowed.</li>
+<li><strong>Constructive:</strong> build an object with given properties; the proof that it exists is the solution.</li>
 </ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+</div>
+<h2 id="2-contest-strategy">2 · Contest strategy<a class="anchor" href="#2-contest-strategy" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · The 5-hour plan</div>
+<ol>
+<li><strong>First 20–30 minutes:</strong> read <strong>all three</strong> tasks fully. Note every subtask, its constraints and points.</li>
+<li><strong>Bank points:</strong> implement the easy subtasks of <em>every</em> task before going deep on one. Three times 40 points beats one 100.</li>
+<li><strong>Then go deep</strong> on the task where the next subtask is nearest; re-evaluate every hour.</li>
+<li><strong>Last 30 minutes:</strong> no risky rewrites; make sure your best submissions are in.</li>
+</ol>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Subtasks are hints</div>
+<p>"$n\le1000$" suggests an $O(n^2)$ idea that the full solution speeds up; "the tree is a line" asks you to solve the array version first; "all values distinct" removes an annoying case. Solve the subtasks in an order that builds the full idea.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Think before coding, verify before trusting</div>
+<p>Write down the algorithm and its complexity before typing. Keep the <strong>brute force</strong> from the small subtask: it's your stress-test reference (module 01). Don't delete working code; save versions.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · A realistic day</div>
+<p>Task A: brute force for subtask 1 (10 pts, 15 min), $O(n^2)$ for subtask 2 (25 pts, 30 min). Task B: subtask 1 by hand-made case analysis (8 pts). Task C: simple greedy for subtask 1 (12 pts). That's 55 points after ~1.5 hours, then 3.5 hours to push the most promising task. Many medals are decided by these "boring" early points.</p>
+</div>
+<h2 id="3-advanced-techniques-learn-after-modules-0106">3 · Advanced techniques (learn after modules 01–06)<a class="anchor" href="#3-advanced-techniques-learn-after-modules-0106" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Trees</div>
+<ul>
+<li><strong>Heavy-light decomposition (HLD):</strong> split a tree into $O(\log n)$ chains per root-to-leaf path, so path queries become $O(\log n)$ segment-tree range queries ($O(\log^2n)$ total).</li>
+<li><strong>Centroid decomposition:</strong> the <strong>centroid</strong> (a vertex whose removal leaves components of size $\le n/2$) splits the tree; recursing gives depth $O(\log n)$. Every path passes through the centroid of some level, so "count paths with property X" becomes $O(n\log n)$ or $O(n\log^2n)$.</li>
+<li><strong>Small-to-large merging (DSU on tree):</strong> merge children's data structures into the largest one; each element moves $O(\log n)$ times.</li>
+<li><strong>Virtual (auxiliary) trees:</strong> compress a tree to a set of $k$ important vertices and their LCAs, size $O(k)$.</li>
+</ul>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Data structures</div>
+<ul>
+<li><strong>Persistent segment tree:</strong> every update creates $O(\log n)$ new nodes and keeps old versions, e.g. "k-th smallest in a range".</li>
+<li><strong>Li Chao tree:</strong> insert lines, query the minimum at a point (convex hull trick, module 05).</li>
+<li><strong>Merge-sort tree:</strong> each segment-tree node stores its sorted elements; counts "values $\le x$ in a range".</li>
+<li><strong>Parallel binary search:</strong> binary search the answer for many queries at once, sharing one sweep per round.</li>
+<li><strong>Offline divide &amp; conquer (CDQ):</strong> split by time, let the first half's updates answer the second half's queries.</li>
+</ul>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Square-root techniques</div>
+<p>Split into $\sqrt n$ blocks, handle "heavy" and "light" cases with different methods (e.g. vertices with degree $&gt;\sqrt m$), or use <strong>Mo's algorithm</strong> to answer range queries offline by moving two pointers in a clever order: $O((n+q)\sqrt n)$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Graphs</div>
+<p><strong>Max flow / min cut</strong> (Dinic) and <strong>bipartite matching</strong> are rarer at IOI but appear in national olympiads; <strong>bridges</strong> and <strong>2-edge-connected components</strong> from DFS low-link values; Euler tours for "use every edge once".</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · DP optimisations</div>
+<p>Convex hull trick, divide &amp; conquer optimisation, Knuth, the <strong>Aliens trick</strong>, DP over profiles (broken-profile DP for grid tilings), SOS DP (module 05).</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>IOI</strong> and <strong>Patterns</strong> decks.</p>
+</div>
+<h2 id="4-training-plan">4 · Training plan<a class="anchor" href="#4-training-plan" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Practise the real thing</div>
+<ul>
+<li><strong>Past IOI tasks on <a href="https://oj.uz/problems" target="_blank" rel="noopener">oj.uz</a></strong>, judged with subtasks, plus regional olympiads (APIO, BOI, CEOI, JOI).</li>
+<li><strong>Full simulations:</strong> 3 past-IOI tasks, 5 hours, scored by subtasks. Log the score of each task and what you'd do differently.</li>
+<li><strong>Regular contests</strong> on Codeforces and AtCoder for speed and variety.</li>
+<li><strong>Upsolving:</strong> after every contest, solve the tasks you couldn't, with the editorial if needed, then rewrite the solution yourself the next day.</li>
+</ul>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>Three tasks; you can see quick subtasks worth 20, 15 and 30 points, and a full solution to task A that would take 3 hours. What order?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Take all three quick subtasks first (65 points banked, low risk), then spend the remaining time on task A's full solution, re-checking progress hourly.</p>
+</details>
+<ol start="2">
+<li>An interactive task asks you to find a hidden number in $[1,10^6]$ with yes/no questions "is it $\ge x$?". How many queries do you need, and why can't you do better?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Binary search: $\lceil\log_2 10^6\rceil=20$ queries. Each answer gives at most one bit, and $10^6$ possibilities need $\log_2 10^6\approx19.9$ bits, so 20 is optimal.</p>
+</details>
+<ol start="3">
+<li>You need the sum of values on the path between two vertices, with value updates, $n,q\le2\times10^5$. Which technique?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Heavy-light decomposition with a segment tree (or a Fenwick tree on the Euler tour for the special case of vertex-to-root sums). $O(\log^2n)$ per query.</p>
+</details>
+<ol start="4">
+<li>Count pairs of vertices in a tree at distance exactly $k$. Which technique?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Centroid decomposition: at each centroid, count pairs in different subtrees whose depths sum to $k$ with an array of depth counts. $O(n\log n)$.</p>
+</details>
+<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<ul>
+<li>Simulate full IOI days: 3 past-IOI problems, 5 h, scored by subtasks on oj.uz. Log the scores.</li>
+</ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
 <ul>
 <li>⭐ <strong>Past IOI problems on <a href="https://oj.uz/problems" target="_blank" rel="noopener">oj.uz</a></strong> (judged with subtasks) plus past <strong>national/regional olympiads</strong> (APIO, BOI, CEOI, JOI). The best practice material.</li>
 <li>⭐ <strong><a href="https://usaco.guide/plat" target="_blank" rel="noopener">USACO Guide: Platinum &amp; Advanced</a></strong>.</li>
 <li><strong><a href="https://ioinformatics.org/" target="_blank" rel="noopener">IOI official site</a></strong>: the syllabus, past tasks, and solutions.</li>
 <li><strong><a href="https://codeforces.com/" target="_blank" rel="noopener">Codeforces</a></strong> (Div 1/2) and <strong><a href="https://atcoder.jp/" target="_blank" rel="noopener">AtCoder</a></strong> (ARC/AGC) for contest practice.</li>
 </ul>
-<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
-<li>Simulate full IOI days: 3 past-IOI problems, 5 h, scored by subtasks on oj.uz. Log the scores.</li>
+<li class="task"><input type="checkbox"> 5 full IOI-day simulations logged · <input type="checkbox"> at least 3 advanced techniques implemented and tested</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../informatics-olympiad/06-math-strings-geometry.html"><small>← Previous</small>Math, Strings &amp; Geometry</a><a class="pn next" href="../informatics-olympiad/cheatsheet.html"><small>Next →</small>Cheatsheet</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#contest-strategy-the-highest-leverage-skill">Contest strategy (the highest-leverage skill)</a></li><li><a href="#advanced-techniques-learn-after-0106">Advanced techniques (learn after 01–06)</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#1-how-the-ioi-works">1 · How the IOI works</a></li><li><a href="#2-contest-strategy">2 · Contest strategy</a></li><li><a href="#3-advanced-techniques-learn-after-modules-0106">3 · Advanced techniques (learn after modules 01–06)</a></li><li><a href="#4-training-plan">4 · Training plan</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

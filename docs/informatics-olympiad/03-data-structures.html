@@ -7,7 +7,9 @@
 <meta name="description" content="C++ for contests, data structures, graphs, dynamic programming and IOI-level skills.">
 <script>try{var t=localStorage.getItem('ss-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
 <link rel="stylesheet" href="../assets/site.css">
-
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script defer src="../assets/katex/katex.min.js"></script>
+<script defer src="../assets/katex/contrib/auto-render.min.js"></script>
 <script defer src="../assets/search-index.js"></script>
 <script defer src="../assets/site.js"></script>
 </head>
@@ -109,11 +111,22 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../informatics-olympiad/index.html">Informatics Olympiad</a> <span class="sep">›</span> <span>Data Structures</span></nav><article class="doc"><h1 id="03-data-structures">03 · Data Structures<a class="anchor" href="#03-data-structures" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 03</span><span>⏱ 1 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/informatics-olympiad/03-data-structures.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../informatics-olympiad/index.html">Informatics Olympiad</a> <span class="sep">›</span> <span>Data Structures</span></nav><article class="doc"><h1 id="03-data-structures">03 · Data Structures<a class="anchor" href="#03-data-structures" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 03</span><span>⏱ 8 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/informatics-olympiad/03-data-structures.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> answer queries fast. These structures appear in a large share of IOI tasks. · <strong>Time:</strong> 4–5 weeks</p>
 </blockquote>
-<p>👉 Interactive: <a href="interactive/segment-tree.html">Segment tree visualizer</a></p>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>use <strong>monotonic stacks and deques</strong> for next-greater and sliding-window problems in $O(n)$;</li>
+<li>use heaps and ordered sets for dynamic problems;</li>
+<li>implement <strong>DSU</strong> (union–find) with near-constant operations;</li>
+<li>implement a <strong>Fenwick tree</strong> and a <strong>segment tree with lazy propagation</strong>, and adapt them to new operations;</li>
+<li>answer static range-min queries in $O(1)$ with a <strong>sparse table</strong>;</li>
+<li>recognise when to process queries <strong>offline</strong>.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Implement DSU with path compression + union by size. Explain its α(n) complexity.</li>
@@ -123,30 +136,219 @@
 <li class="task"><input type="checkbox"> Use a monotonic stack to find the next greater element for every index in O(n).</li>
 <li class="task"><input type="checkbox"> Use a sliding-window maximum with a deque.</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h2 id="1-monotonic-stacks-and-deques">1 · Monotonic stacks and deques<a class="anchor" href="#1-monotonic-stacks-and-deques" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Monotonic stack</div>
+<p>A stack whose values stay sorted. Each element is pushed and popped at most once, so a full pass is $O(n)$. Use it for "nearest element to the left/right that is greater/smaller", and for the largest rectangle in a histogram.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Next greater element for every index</div>
+<pre><code class="language-cpp">vector&lt;int&gt; nextGreater(const vector&lt;int&gt;&amp; a) {
+    int n = a.size();
+    vector&lt;int&gt; res(n, -1);       // -1 = no greater element to the right
+    stack&lt;int&gt; s;                 // indices still waiting for their answer
+    for (int i = 0; i &lt; n; i++) {
+        while (!s.empty() &amp;&amp; a[s.top()] &lt; a[i]) { res[s.top()] = i; s.pop(); }
+        s.push(i);
+    }
+    return res;
+}
+</code></pre>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Sliding-window maximum with a deque</div>
+<pre><code class="language-cpp">vector&lt;int&gt; windowMax(const vector&lt;int&gt;&amp; a, int k) {
+    deque&lt;int&gt; dq;                // indices; their values are decreasing
+    vector&lt;int&gt; res;
+    for (int i = 0; i &lt; (int)a.size(); i++) {
+        while (!dq.empty() &amp;&amp; a[dq.back()] &lt;= a[i]) dq.pop_back();  // can never be the max again
+        dq.push_back(i);
+        if (dq.front() &lt;= i - k) dq.pop_front();                     // left the window
+        if (i &gt;= k - 1) res.push_back(a[dq.front()]);
+    }
+    return res;
+}
+</code></pre>
+</div>
+<h2 id="2-heaps-and-ordered-sets">2 · Heaps and ordered sets<a class="anchor" href="#2-heaps-and-ordered-sets" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · When to use which</div>
 <ul>
-<li><strong>Stacks / queues / deques:</strong> monotonic stack (next greater/smaller, largest rectangle in a histogram), monotonic deque (sliding window min/max).</li>
-<li><strong>Heaps</strong> (<code>priority_queue</code>): k-th largest, merging sorted lists, event simulation.</li>
-<li><strong>Ordered sets/maps:</strong> <code>set</code>, <code>multiset</code>, and <code>map</code> for dynamic order statistics by value. The policy-based <code>ordered_set</code> (GNU pbds) gives the k-th element.</li>
-<li><strong>DSU (union-find):</strong> connectivity, Kruskal, offline queries. Near-O(1) per operation.</li>
-<li><strong>Fenwick tree:</strong> prefix sums with point updates, O(log n), very short code. Variants: range update/point query, 2D.</li>
-<li><strong>Segment tree:</strong> any <strong>associative</strong> operation (sum, min, max, gcd, matrix product, custom merge). <strong>Lazy propagation</strong> for range updates. Walking down the tree ("first index with prefix ≥ k").</li>
-<li><strong>Sparse table:</strong> O(1) idempotent range queries (min/max/gcd) on static arrays.</li>
-<li><strong>Square root decomposition</strong> and <strong>Mo's algorithm</strong> (offline range queries) are useful fallbacks.</li>
-<li><strong>Offline tricks:</strong> sort queries, process events with a sweep line, reverse time (deletions → insertions with DSU).</li>
+<li><strong><code>priority_queue</code>:</strong> repeatedly extract the max (or min): k largest elements, merging $k$ sorted lists, event simulation, Dijkstra (module 04).</li>
+<li><strong><code>set</code> / <code>multiset</code> / <code>map</code>:</strong> a sorted collection that changes: find the successor of $x$ (<code>lower_bound</code>), erase arbitrary elements, keep a running median with two multisets.</li>
+<li><strong>Order statistics</strong> ("the $k$-th smallest", "how many are $&lt;x$"): GNU's policy-based <code>tree</code> (<code>find_by_order</code>, <code>order_of_key</code>) or a Fenwick tree over compressed values.</li>
 </ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+</div>
+<h2 id="3-disjoint-set-union-unionfind">3 · Disjoint set union (union–find)<a class="anchor" href="#3-disjoint-set-union-unionfind" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · DSU</div>
+<p>Maintains a partition of $\{0,\dots,n-1\}$ into groups, with <strong>find</strong> (which group?) and <strong>unite</strong> (merge two groups). Each group is a tree; <code>find</code> walks to the root. <strong>Path compression</strong> points nodes straight at the root; <strong>union by size</strong> hangs the smaller tree under the larger. Together: $O(\alpha(n))$ per operation, where the inverse Ackermann function $\alpha(n)\le4$ for any realistic $n$.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · DSU</div>
+<pre><code class="language-cpp">struct DSU {
+    vector&lt;int&gt; p, sz;
+    DSU(int n) : p(n), sz(n, 1) { iota(p.begin(), p.end(), 0); }
+    int find(int x) { return p[x] == x ? x : p[x] = find(p[x]); }   // path compression
+    bool unite(int a, int b) {
+        a = find(a); b = find(b);
+        if (a == b) return false;                 // already together
+        if (sz[a] &lt; sz[b]) swap(a, b);
+        p[b] = a; sz[a] += sz[b];                  // union by size
+        return true;
+    }
+};
+</code></pre>
+<p>Uses: connectivity as edges are added, Kruskal's MST (module 04), offline problems where deletions become insertions when you reverse time.</p>
+</div>
+<h2 id="4-fenwick-tree-binary-indexed-tree">4 · Fenwick tree (binary indexed tree)<a class="anchor" href="#4-fenwick-tree-binary-indexed-tree" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · How it works</div>
+<p>Array <code>t</code> is 1-indexed; <code>t[i]</code> stores the sum of $a$ over the range $(i-\text{lowbit}(i),\ i]$, where $\text{lowbit}(i)=$ <code>i &amp; -i</code> is the value of the lowest set bit (e.g. lowbit(12) = 4, so <code>t[12]</code> covers $a_9..a_{12}$). A prefix sum jumps down by removing low bits; an update jumps up by adding them. Both take $O(\log n)$.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Fenwick tree: point update, prefix sum</div>
+<pre><code class="language-cpp">struct Fenwick {
+    int n; vector&lt;long long&gt; t;
+    Fenwick(int n) : n(n), t(n + 1, 0) {}
+    void add(int i, long long v) { for (; i &lt;= n; i += i &amp; -i) t[i] += v; }          // a[i] += v
+    long long sum(int i) { long long s = 0; for (; i &gt; 0; i -= i &amp; -i) s += t[i]; return s; }  // a[1..i]
+};
+// range sum a[l..r] = sum(r) - sum(l - 1)
+</code></pre>
+<p>Variant: range update + point query by storing a difference array in the Fenwick tree.</p>
+</div>
+<h2 id="5-segment-tree">5 · Segment tree<a class="anchor" href="#5-segment-tree" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Segment tree</div>
+<p>A binary tree over the array: each node stores the answer (sum, min, max, gcd, …) for a segment; its children split the segment in half. Any range $[a,b]$ is covered by $O(\log n)$ nodes, so queries and point updates are $O(\log n)$. It works for any <strong>associative</strong> operation, including custom "merge" functions (e.g. maximum subarray sum: store sum, best prefix, best suffix, best inside).</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Lazy propagation</div>
+<p>For <strong>range updates</strong>, don't update every leaf. Mark a fully covered node with a pending update ("lazy tag") and push it down to the children only when you later need to go inside that node.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Range add, range sum with lazy propagation</div>
+<pre><code class="language-cpp">struct SegTree {
+    int n; vector&lt;long long&gt; sum, lz;
+    SegTree(int n) : n(n), sum(4 * n, 0), lz(4 * n, 0) {}
+    void apply(int x, int len, long long v) { sum[x] += v * len; lz[x] += v; }
+    void push(int x, int l, int r) {                       // pass the pending add down
+        if (lz[x]) { int m = (l + r) / 2;
+            apply(2 * x, m - l + 1, lz[x]); apply(2 * x + 1, r - m, lz[x]); lz[x] = 0; }
+    }
+    void update(int a, int b, long long v, int x, int l, int r) {   // add v on [a, b]
+        if (b &lt; l || r &lt; a) return;
+        if (a &lt;= l &amp;&amp; r &lt;= b) { apply(x, r - l + 1, v); return; }
+        push(x, l, r); int m = (l + r) / 2;
+        update(a, b, v, 2 * x, l, m); update(a, b, v, 2 * x + 1, m + 1, r);
+        sum[x] = sum[2 * x] + sum[2 * x + 1];
+    }
+    long long query(int a, int b, int x, int l, int r) {             // sum on [a, b]
+        if (b &lt; l || r &lt; a) return 0;
+        if (a &lt;= l &amp;&amp; r &lt;= b) return sum[x];
+        push(x, l, r); int m = (l + r) / 2;
+        return query(a, b, 2 * x, l, m) + query(a, b, 2 * x + 1, m + 1, r);
+    }
+    void update(int a, int b, long long v) { update(a, b, v, 1, 0, n - 1); }
+    long long query(int a, int b) { return query(a, b, 1, 0, n - 1); }
+};
+</code></pre>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/segment-tree.html">Segment tree visualizer</a></div>
+<p>Run a range update and watch which nodes get a lazy tag and when tags are pushed down during a later query.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Walking down the tree</div>
+<p>To find "the first index where the prefix sum reaches $k$", descend from the root: go left if the left child's sum is at least $k$, otherwise subtract it and go right. $O(\log n)$ instead of binary search + query ($O(\log^2n)$).</p>
+</div>
+<h2 id="6-sparse-table">6 · Sparse table<a class="anchor" href="#6-sparse-table" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · $O(1)$ range minimum on a static array</div>
+<p>Precompute $st[k][i]=\min(a_i,\dots,a_{i+2^k-1})$ in $O(n\log n)$. A query $[l,r]$ is covered by two overlapping blocks of length $2^k$, $k=\lfloor\log_2(r-l+1)\rfloor$:
+$$\min(a_l..a_r)=\min\big(st[k][l],\ st[k][r-2^k+1]\big)$$
+Overlap is fine because min is <strong>idempotent</strong> ($\min(x,x)=x$); works for max and gcd, not for sum.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Sparse table</div>
+<pre><code class="language-cpp">struct Sparse {
+    vector&lt;vector&lt;int&gt;&gt; st;
+    Sparse(const vector&lt;int&gt;&amp; a) {
+        int n = a.size(), K = __lg(n) + 1;
+        st.assign(K, a);
+        for (int k = 1; k &lt; K; k++)
+            for (int i = 0; i + (1 &lt;&lt; k) &lt;= n; i++)
+                st[k][i] = min(st[k - 1][i], st[k - 1][i + (1 &lt;&lt; (k - 1))]);
+    }
+    int query(int l, int r) {                     // min on [l, r]
+        int k = __lg(r - l + 1);
+        return min(st[k][l], st[k][r - (1 &lt;&lt; k) + 1]);
+    }
+};
+</code></pre>
+</div>
+<h2 id="7-offline-techniques-and-fallbacks">7 · Offline techniques and fallbacks<a class="anchor" href="#7-offline-techniques-and-fallbacks" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Offline processing</div>
+<p>If all queries are known in advance, you may answer them in any order: sort queries by position and sweep (a <strong>sweep line</strong>), or <strong>reverse time</strong> so that deletions become insertions (handled by DSU). <strong>Mo's algorithm</strong> answers range queries offline in $O((n+q)\sqrt n)$ by ordering them cleverly. <strong>Square-root decomposition</strong> splits the array into $\sqrt n$ blocks: a flexible fallback when no tree structure fits.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>Data structures</strong> deck.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>Which structure for: (a) range sum with point updates; (b) range min on a static array, $10^6$ queries; (c) "are $u$ and $v$ connected?" as edges are added?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>(a) Fenwick tree (or segment tree); (b) sparse table, $O(1)$ per query; (c) DSU.</p>
+</details>
+<ol start="2">
+<li>What range does Fenwick's <code>t[12]</code> cover, and which indices does <code>sum(13)</code> visit?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>lowbit(12) = 4, so <code>t[12]</code> covers $a_9..a_{12}$. <code>sum(13)</code> visits 13 (covers 13), 12 (9..12), 8 (1..8).</p>
+</details>
+<ol start="3">
+<li>You need range <strong>assignment</strong> ("set all of $[l,r]$ to $v$") and range sum. What changes in the lazy segment tree?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>The tag becomes "assign $v$" (with a flag for "no tag"). Applying it sets <code>sum = v * len</code> and <strong>overwrites</strong> any older tag instead of adding to it.</p>
+</details>
+<ol start="4">
+<li>Why can't a sparse table answer range <strong>sum</strong> queries in $O(1)$ the same way?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>The two blocks overlap, so the overlap would be counted twice. Sum isn't idempotent. (Use prefix sums for static sums.)</p>
+</details>
+<ol start="5">
+<li>Edges are deleted from a graph one by one; after each deletion, report the number of connected components. Plan?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Offline, reversed: start from the final graph and add the edges back in reverse order with DSU, recording the component count after each addition. Then output the counts in the original order.</p>
+</details>
+<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<ul>
+<li>Write each structure from memory 3 times on different days. Solve all of CSES <em>Range Queries</em>.</li>
+</ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
 <ul>
 <li>⭐ <strong><a href="https://usaco.guide/" target="_blank" rel="noopener">USACO Guide: Silver → Gold</a></strong>: DSU, prefix sums, Fenwick/segment trees.</li>
 <li>⭐ <strong><a href="https://codeforces.com/edu/courses" target="_blank" rel="noopener">Codeforces EDU: Segment Tree (parts 1–2)</a></strong>: lectures + graded practice.</li>
 <li><strong><a href="https://cp-algorithms.com/" target="_blank" rel="noopener">cp-algorithms: Data structures</a></strong>: segment tree, Fenwick, DSU, sparse table.</li>
-<li><strong>CSES: "Range Queries"</strong> section.</li>
+<li><strong><a href="https://cses.fi/problemset/" target="_blank" rel="noopener">CSES</a>: "Range Queries"</strong> section.</li>
 </ul>
-<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
-<li>Write each structure from memory 3 times on different days. Solve all of CSES <em>Range Queries</em>.</li>
+<li class="task"><input type="checkbox"> Each structure written from memory 3 times · <input type="checkbox"> CSES Range Queries done</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../informatics-olympiad/02-core-techniques.html"><small>← Previous</small>Complexity &amp; Core Techniques</a><a class="pn next" href="../informatics-olympiad/04-graphs-trees.html"><small>Next →</small>Graphs &amp; Trees</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-monotonic-stacks-and-deques">1 · Monotonic stacks and deques</a></li><li><a href="#2-heaps-and-ordered-sets">2 · Heaps and ordered sets</a></li><li><a href="#3-disjoint-set-union-unionfind">3 · Disjoint set union (union–find)</a></li><li><a href="#4-fenwick-tree-binary-indexed-tree">4 · Fenwick tree (binary indexed tree)</a></li><li><a href="#5-segment-tree">5 · Segment tree</a></li><li><a href="#6-sparse-table">6 · Sparse table</a></li><li><a href="#7-offline-techniques-and-fallbacks">7 · Offline techniques and fallbacks</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

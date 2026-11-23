@@ -7,7 +7,9 @@
 <meta name="description" content="C++ for contests, data structures, graphs, dynamic programming and IOI-level skills.">
 <script>try{var t=localStorage.getItem('ss-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
 <link rel="stylesheet" href="../assets/site.css">
-
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script defer src="../assets/katex/katex.min.js"></script>
+<script defer src="../assets/katex/contrib/auto-render.min.js"></script>
 <script defer src="../assets/search-index.js"></script>
 <script defer src="../assets/site.js"></script>
 </head>
@@ -109,10 +111,22 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../informatics-olympiad/index.html">Informatics Olympiad</a> <span class="sep">›</span> <span>Complexity &amp; Core Techniques</span></nav><article class="doc"><h1 id="02-complexity-core-techniques">02 · Complexity &amp; Core Techniques<a class="anchor" href="#02-complexity-core-techniques" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 02</span><span>⏱ 1 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/informatics-olympiad/02-core-techniques.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../informatics-olympiad/index.html">Informatics Olympiad</a> <span class="sep">›</span> <span>Complexity &amp; Core Techniques</span></nav><article class="doc"><h1 id="02-complexity-core-techniques">02 · Complexity &amp; Core Techniques<a class="anchor" href="#02-complexity-core-techniques" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 02</span><span>⏱ 7 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/informatics-olympiad/02-core-techniques.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> read the constraints, infer the target complexity, and use the standard techniques. · <strong>Time:</strong> 3–4 weeks</p>
 </blockquote>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>estimate running time with <strong>big-O</strong> and turn the input limits into a target complexity;</li>
+<li>use <strong>sorting</strong>, <strong>binary search</strong> (including binary search on the answer) and <strong>two pointers</strong>;</li>
+<li>precompute <strong>prefix sums</strong> and <strong>difference arrays</strong>;</li>
+<li>design <strong>greedy</strong> algorithms and prove them with an exchange argument;</li>
+<li>search exhaustively with bitmasks, backtracking and meet-in-the-middle;</li>
+<li>collect <strong>subtask</strong> points before solving the full problem.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Given n ≤ 2·10⁵, name an acceptable complexity and an unacceptable one.</li>
@@ -122,87 +136,214 @@
 <li class="task"><input type="checkbox"> Prove a greedy algorithm correct with an exchange argument (e.g. activity selection).</li>
 <li class="task"><input type="checkbox"> Generate all subsets of n ≤ 20 elements with bitmasks.</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
-<ul>
-<li><strong>The constraints → complexity table</strong> (≈ 10⁸ simple ops/second):</li>
-</ul>
+<h2 id="1-complexity-and-the-constraints-table">1 · Complexity and the constraints table<a class="anchor" href="#1-complexity-and-the-constraints-table" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Big-O</div>
+<p>$f(n)=O(g(n))$ means $f$ grows at most like $g$ up to a constant factor. We count basic operations as a function of the input size $n$ and keep only the dominant term: $3n^2+100n\log n=O(n^2)$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · From constraints to target complexity</div>
+<p>A judge does roughly $10^8$ simple operations per second. Typical limits (1–2 s):</p>
 <div class="table-wrap"><table>
 <thead>
 <tr>
-<th>n</th>
-<th>target</th>
+<th>$n$ up to</th>
+<th>Target complexity</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>≤ 10–12</td>
-<td>O(n!)</td>
+<td>10–12</td>
+<td>$O(n!)$</td>
 </tr>
 <tr>
-<td>≤ 20–25</td>
-<td>O(2ⁿ · n)</td>
+<td>20–25</td>
+<td>$O(2^n\cdot n)$</td>
 </tr>
 <tr>
-<td>≤ 500</td>
-<td>O(n³)</td>
+<td>40</td>
+<td>$O(2^{n/2})$ (meet in the middle)</td>
 </tr>
 <tr>
-<td>≤ 5000</td>
-<td>O(n²)</td>
+<td>500</td>
+<td>$O(n^3)$</td>
 </tr>
 <tr>
-<td>≤ 10⁶</td>
-<td>O(n log n)</td>
+<td>5000</td>
+<td>$O(n^2)$</td>
 </tr>
 <tr>
-<td>≤ 10⁸ or larger</td>
-<td>O(n), O(log n), O(1) math</td>
+<td>$2\times10^5$ – $10^6$</td>
+<td>$O(n\log n)$ or $O(n)$</td>
 </tr>
 <tr>
-<td>- <strong>Sorting</strong> + custom comparators. Coordinate compression.</td>
-<td></td>
-</tr>
-<tr>
-<td>- <strong>Binary search:</strong> on sorted arrays, and <strong>on the answer</strong> (a monotone predicate "is x feasible?"). Write it the same way every time (<code>lo</code> always bad, <code>hi</code> always good).</td>
-<td></td>
-</tr>
-<tr>
-<td>- <strong>Two pointers / sliding window:</strong> when moving the right end only ever moves the left end forward.</td>
-<td></td>
-</tr>
-<tr>
-<td>- <strong>Prefix sums</strong> (1D/2D), <strong>difference arrays</strong>, prefix XOR/min.</td>
-<td></td>
-</tr>
-<tr>
-<td>- <strong>Greedy:</strong> sort by the right key and prove it with an <strong>exchange argument</strong>. If you can't prove it, stress-test it.</td>
-<td></td>
-</tr>
-<tr>
-<td>- <strong>Complete search / backtracking</strong> with pruning. <strong>Meet in the middle</strong> for n ≈ 40.</td>
-<td></td>
-</tr>
-<tr>
-<td>- <strong>Bit manipulation:</strong> subsets, <code>x &amp; -x</code>, XOR tricks.</td>
-<td></td>
-</tr>
-<tr>
-<td>- <strong>Subtask thinking:</strong> brute force for small n is free points. Always submit it first.</td>
-<td></td>
+<td>$10^{9}$ and more</td>
+<td>$O(\log n)$, $O(\sqrt n)$ or a formula</td>
 </tr>
 </tbody>
 </table></div>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
-<ul>
-<li>⭐ <strong><a href="https://usaco.guide/" target="_blank" rel="noopener">USACO Guide: Bronze → Silver</a></strong>: complete search, sorting, binary search, two pointers, prefix sums, greedy.</li>
-<li>⭐ <strong><a href="https://cses.fi/problemset/" target="_blank" rel="noopener">CSES Problem Set</a></strong>: "Introductory Problems" and "Sorting and Searching" (do all ~45).</li>
-<li><strong>Competitive Programmer's Handbook</strong>, ch. 5–8.</li>
-</ul>
+<p><em>Example:</em> $n\le2\times10^5$: $O(n\log n)\approx3.6\times10^6$ ✓; $O(n^2)=4\times10^{10}$ ✗.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Read the constraints first</div>
+<p>The limits tell you the intended algorithm before you've thought about the problem. Each <strong>subtask's</strong> limits tell you which slower algorithms still earn points.</p>
+</div>
+<h2 id="2-sorting-and-binary-search">2 · Sorting and binary search<a class="anchor" href="#2-sorting-and-binary-search" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Sorting tricks</div>
+<p>Sorting costs $O(n\log n)$ and often makes the rest easy: duplicates become adjacent, greedy orders appear, two pointers become possible. <strong>Coordinate compression:</strong> replace values by their rank in the sorted list of distinct values, so huge values (up to $10^9$) can index an array of size $n$.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Binary search on the answer</div>
+<p>If a predicate "is $x$ good enough?" is <strong>monotone</strong> (false…false, true…true), binary search finds the boundary in $O(\log(\text{range}))$ checks. Keep one invariant and never think about <code>+1</code>: <strong><code>lo</code> is always bad, <code>hi</code> is always good</strong>, loop while <code>hi - lo &gt; 1</code>.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Split an array into $k$ parts minimising the largest part sum</div>
+<p>"Can every part have sum $\le cap$?" is monotone in $cap$, and a greedy pass (start a new part when the next element doesn't fit) checks it in $O(n)$.</p>
+<pre><code class="language-cpp">bool feasible(const vector&lt;ll&gt;&amp; a, int k, ll cap) {
+    int parts = 1; ll cur = 0;
+    for (ll x : a) {
+        if (x &gt; cap) return false;
+        if (cur + x &gt; cap) { parts++; cur = 0; }
+        cur += x;
+    }
+    return parts &lt;= k;
+}
+ll minMaxSplit(const vector&lt;ll&gt;&amp; a, int k) {
+    ll lo = 0, hi = accumulate(a.begin(), a.end(), 0LL);   // lo infeasible, hi feasible
+    while (hi - lo &gt; 1) {
+        ll mid = lo + (hi - lo) / 2;
+        if (feasible(a, k, mid)) hi = mid; else lo = mid;
+    }
+    return hi;
+}
+</code></pre>
+<p>Total $O(n\log\sum a)$. (Assumes positive values; with $cap=0$ never feasible for them.)</p>
+</div>
+<figure class="video" data-yt="GU7DpgHINWQ" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/GU7DpgHINWQ/hqdefault.jpg)" aria-label="Play video: Binary search lecture"><span class="video-btn">▶</span><span class="video-label">Binary search lecture</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=GU7DpgHINWQ" target="_blank" rel="noopener">Binary search lecture</a> · Errichto · 30 min. How to stop guessing about +1. <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="3-two-pointers-and-sliding-windows">3 · Two pointers and sliding windows<a class="anchor" href="#3-two-pointers-and-sliding-windows" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Two pointers</div>
+<p>Keep a window $[l, r]$. When moving the right end forward can only ever move the left end forward too, both pointers travel at most $n$ steps: $O(n)$ total instead of $O(n^2)$.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Longest subarray with sum $\le S$ (positive numbers)</div>
+<pre><code class="language-cpp">int longestSubarray(const vector&lt;ll&gt;&amp; a, ll S) {
+    int best = 0; ll sum = 0;
+    for (int l = 0, r = 0; r &lt; (int)a.size(); r++) {
+        sum += a[r];
+        while (sum &gt; S) sum -= a[l++];     // shrink until valid again
+        best = max(best, r - l + 1);
+    }
+    return best;
+}
+</code></pre>
+<p>It works because all numbers are positive: extending the window never makes the sum smaller.</p>
+</div>
+<h2 id="4-prefix-sums-and-difference-arrays">4 · Prefix sums and difference arrays<a class="anchor" href="#4-prefix-sums-and-difference-arrays" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Prefix sums</div>
+<p>$p_0=0$, $p_i=a_1+\dots+a_i$. Then any range sum is $a_l+\dots+a_r=p_r-p_{l-1}$ in $O(1)$. <strong>2D:</strong> $P_{i,j}$ = sum of the rectangle from $(1,1)$ to $(i,j)$, and a sub-rectangle sum uses inclusion–exclusion: $P_{x_2,y_2}-P_{x_1-1,y_2}-P_{x_2,y_1-1}+P_{x_1-1,y_1-1}$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Difference arrays (many range updates, read at the end)</div>
+<p>To add $v$ to $a_l..a_r$: <code>d[l] += v; d[r+1] -= v;</code>. After all $q$ updates, the prefix sums of <code>d</code> give the final array. Total $O(n+q)$.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Range additions</div>
+<p>$n=5$, all zeros; add 2 to $[1,3]$ and 5 to $[2,5]$. <code>d</code> = [2, 5, 0, −2, 0, −5] (indices 1–6). Prefix sums: 2, 7, 7, 5, 5 ✓.</p>
+</div>
+<h2 id="5-greedy-algorithms">5 · Greedy algorithms<a class="anchor" href="#5-greedy-algorithms" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Greedy and the exchange argument</div>
+<p>A greedy algorithm makes the locally best choice at each step. To prove it optimal: take any optimal solution that differs from the greedy one at the first step, and show you can <strong>exchange</strong> its choice for the greedy choice without making it worse. Repeating this transforms it into the greedy solution.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Activity selection</div>
+<p>Choose the maximum number of non-overlapping intervals. <strong>Greedy:</strong> sort by <strong>end time</strong>, repeatedly take the first interval that starts after the last chosen one ends.
+<em>Proof:</em> let the greedy's first choice $g$ have the earliest end. Any optimal solution's first interval $o$ ends no earlier than $g$, so replacing $o$ by $g$ keeps everything disjoint and the count unchanged. Repeat on the remaining intervals. ∎ (Sorting by start time or by length is <strong>wrong</strong>; find counterexamples.)</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Greedy that "feels right"</div>
+<p>Many plausible greedy algorithms are wrong. If you can't prove it, <strong>stress-test it</strong> against a brute force (module 01) before trusting it.</p>
+</div>
+<h2 id="6-complete-search">6 · Complete search<a class="anchor" href="#6-complete-search" title="Link to this section">#</a></h2>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · All subsets with bitmasks ($n\le20$)</div>
+<pre><code class="language-cpp">for (int mask = 0; mask &lt; (1 &lt;&lt; n); mask++) {
+    long long sum = 0;
+    for (int i = 0; i &lt; n; i++)
+        if (mask &gt;&gt; i &amp; 1) sum += a[i];        // is element i in the subset?
+    // use the subset
+}
+</code></pre>
+<p>Bit tricks: <code>x &amp; -x</code> is the lowest set bit; <code>x &amp; (x - 1)</code> clears it; <code>__builtin_popcount(x)</code> counts members.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Backtracking and meet in the middle</div>
+<p><strong>Backtracking</strong> builds a solution step by step and abandons a branch as soon as it can't succeed (pruning). <strong>Meet in the middle</strong> ($n\approx40$): split the items into two halves, enumerate the $2^{n/2}$ subset sums of each, sort one list and binary-search (or two-pointer) for complements: $O(2^{n/2}\cdot n)$ instead of $O(2^n)$.</p>
+</div>
+<h2 id="7-subtasks">7 · Subtasks<a class="anchor" href="#7-subtasks" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Points first, elegance later</div>
+<p>IOI problems are split into subtasks (small $n$, special structure). A brute force for the smallest subtask is often worth 10–20 points and takes minutes. <strong>Submit it first</strong>: it banks points and gives you a reference for stress-testing the full solution.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>Constraints</strong> and <strong>Patterns</strong> decks.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>$n\le5000$, and your algorithm is $O(n^2\log n)$. Will it pass in 1 s?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$2.5\times10^7\cdot12\approx3\times10^8$ operations: borderline. With a small constant (simple loops) maybe; it's safer to remove the $\log$.</p>
+</details>
+<ol start="2">
+<li>Find the smallest integer $x$ with $x^2\ge N$ for $N$ up to $10^{18}$, using binary search. What are good initial <code>lo</code>, <code>hi</code>?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>For $1\le N\le10^{18}$: <code>lo = 0</code> is bad ($0&lt;N$) and <code>hi = 1e9</code> is good ($10^{18}\ge N$). Every <code>mid</code> is at most $10^9$, so <code>mid * mid</code> fits in <code>long long</code>. Loop <code>while (hi - lo &gt; 1)</code>, test <code>mid * mid &gt;= N</code>, and keep <code>lo</code> bad, <code>hi</code> good; the answer is <code>hi</code>.</p>
+</details>
+<ol start="3">
+<li>Count pairs $i&lt;j$ with $a_i+a_j\le S$ in $O(n\log n)$.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Sort. Two pointers: <code>l = 0, r = n-1</code>; if <code>a[l] + a[r] &lt;= S</code> then all pairs <code>(l, l+1..r)</code> work: add <code>r - l</code>, <code>l++</code>; else <code>r--</code>.</p>
+</details>
+<ol start="4">
+<li>Why is "sort jobs by length, take shortest first" optimal for minimising the <strong>sum of completion times</strong> on one machine?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Exchange argument: if a longer job $A$ comes right before a shorter job $B$, swapping them lowers $B$'s completion time by $|A|$ and raises $A$'s by $|B|&lt;|A|$, so the total drops. So an optimal order has no such inversion: it's sorted by length.</p>
+</details>
+<ol start="5">
+<li>$q$ queries ask for the sum of a sub-rectangle of a $1000\times1000$ grid. Plan?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Build the 2D prefix-sum table in $O(10^6)$, then answer each query in $O(1)$ with inclusion–exclusion.</p>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ul>
 <li>Finish CSES <em>Introductory</em> + <em>Sorting and Searching</em>. Track the time per problem.</li>
+</ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://usaco.guide/" target="_blank" rel="noopener">USACO Guide: Bronze → Silver</a></strong>: complete search, sorting, binary search, two pointers, prefix sums, greedy.</li>
+<li>⭐ <strong><a href="https://cses.fi/problemset/" target="_blank" rel="noopener">CSES Problem Set</a></strong>: "Introductory Problems" and "Sorting and Searching" (do all ~45).</li>
+<li><strong><a href="https://cses.fi/book/book.pdf" target="_blank" rel="noopener">Competitive Programmer's Handbook</a></strong>, ch. 5–8.</li>
+</ul>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> CSES Introductory + Sorting and Searching done · <input type="checkbox"> you write binary search without off-by-one errors</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../informatics-olympiad/01-cpp-for-cp.html"><small>← Previous</small>C++ for Competitive Programming</a><a class="pn next" href="../informatics-olympiad/03-data-structures.html"><small>Next →</small>Data Structures</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-complexity-and-the-constraints-table">1 · Complexity and the constraints table</a></li><li><a href="#2-sorting-and-binary-search">2 · Sorting and binary search</a></li><li><a href="#3-two-pointers-and-sliding-windows">3 · Two pointers and sliding windows</a></li><li><a href="#4-prefix-sums-and-difference-arrays">4 · Prefix sums and difference arrays</a></li><li><a href="#5-greedy-algorithms">5 · Greedy algorithms</a></li><li><a href="#6-complete-search">6 · Complete search</a></li><li><a href="#7-subtasks">7 · Subtasks</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

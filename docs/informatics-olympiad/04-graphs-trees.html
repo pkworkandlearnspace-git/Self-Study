@@ -7,7 +7,9 @@
 <meta name="description" content="C++ for contests, data structures, graphs, dynamic programming and IOI-level skills.">
 <script>try{var t=localStorage.getItem('ss-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
 <link rel="stylesheet" href="../assets/site.css">
-
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script defer src="../assets/katex/katex.min.js"></script>
+<script defer src="../assets/katex/contrib/auto-render.min.js"></script>
 <script defer src="../assets/search-index.js"></script>
 <script defer src="../assets/site.js"></script>
 </head>
@@ -109,11 +111,21 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../informatics-olympiad/index.html">Informatics Olympiad</a> <span class="sep">›</span> <span>Graphs &amp; Trees</span></nav><article class="doc"><h1 id="04-graphs-trees">04 · Graphs &amp; Trees<a class="anchor" href="#04-graphs-trees" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 04</span><span>⏱ 1 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/informatics-olympiad/04-graphs-trees.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../informatics-olympiad/index.html">Informatics Olympiad</a> <span class="sep">›</span> <span>Graphs &amp; Trees</span></nav><article class="doc"><h1 id="04-graphs-trees">04 · Graphs &amp; Trees<a class="anchor" href="#04-graphs-trees" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 04</span><span>⏱ 9 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/informatics-olympiad/04-graphs-trees.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> model problems as graphs and pick the right traversal or shortest-path algorithm. · <strong>Time:</strong> 5–6 weeks</p>
 </blockquote>
-<p>👉 Interactive: <a href="interactive/graph-search.html">Graph search visualizer</a></p>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>represent graphs and grids, and traverse them with <strong>DFS</strong> and <strong>BFS</strong>;</li>
+<li>choose the right <strong>shortest-path</strong> algorithm (BFS, 0-1 BFS, Dijkstra, Bellman–Ford, Floyd–Warshall);</li>
+<li>work with DAGs (<strong>topological sort</strong>, DP on DAGs), <strong>minimum spanning trees</strong> and <strong>strongly connected components</strong>;</li>
+<li>solve tree problems with subtree sizes, Euler tours, <strong>binary-lifting LCA</strong>, tree DP and the diameter;</li>
+<li>model a problem as a graph using states, super-sources and reversed edges.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> BFS on a grid with walls: the shortest path length and the path itself.</li>
@@ -123,29 +135,282 @@
 <li class="task"><input type="checkbox"> LCA with binary lifting in O(log n) per query.</li>
 <li class="task"><input type="checkbox"> Find the diameter of a tree with two BFS/DFS passes.</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h2 id="1-graphs-and-how-to-store-them">1 · Graphs and how to store them<a class="anchor" href="#1-graphs-and-how-to-store-them" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Vocabulary</div>
+<p>A <strong>graph</strong> has $n$ vertices and $m$ edges; edges may be <strong>directed</strong> and may have <strong>weights</strong>. A <strong>path</strong> is a sequence of edges; a <strong>cycle</strong> returns to its start. A <strong>tree</strong> is a connected graph with $n-1$ edges and no cycle. A <strong>DAG</strong> is a directed graph with no directed cycle.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Adjacency lists</div>
+<pre><code class="language-cpp">int n, m; cin &gt;&gt; n &gt;&gt; m;
+vector&lt;vector&lt;int&gt;&gt; adj(n);                    // unweighted
+vector&lt;vector&lt;pair&lt;int,long long&gt;&gt;&gt; wadj(n);    // weighted: (neighbour, weight)
+for (int i = 0; i &lt; m; i++) {
+    int u, v; cin &gt;&gt; u &gt;&gt; v; u--; v--;          // input is usually 1-indexed
+    adj[u].push_back(v); adj[v].push_back(u);   // drop the second line if directed
+}
+</code></pre>
+<p><strong>Grids</strong> are implicit graphs: cell $(r,c)$ has neighbours $(r\pm1,c)$, $(r,c\pm1)$. Don't build edges; loop over the four directions.</p>
+</div>
+<h2 id="2-dfs-and-bfs">2 · DFS and BFS<a class="anchor" href="#2-dfs-and-bfs" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Depth-first search</div>
+<p>Go as deep as possible, then backtrack (recursion or an explicit stack). $O(n+m)$. Uses: connected components, cycle detection, <strong>entry/exit times</strong> (for "is $u$ an ancestor of $v$?"), bridges and articulation points (low-link values), topological order (reverse exit order).</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Breadth-first search</div>
+<p>Visit vertices in order of distance using a queue. In an <strong>unweighted</strong> graph it gives shortest paths in $O(n+m)$. <strong>Multi-source BFS:</strong> start with several sources in the queue at distance 0. <strong>0-1 BFS:</strong> for weights 0 and 1, use a deque: push 0-edges to the front, 1-edges to the back.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Shortest path on a grid with walls</div>
+<pre><code class="language-cpp">int gridBFS(const vector&lt;string&gt;&amp; g, int sr, int sc, int tr, int tc) {
+    int R = g.size(), C = g[0].size();
+    vector&lt;vector&lt;int&gt;&gt; dist(R, vector&lt;int&gt;(C, -1));   // -1 = not visited
+    queue&lt;pair&lt;int,int&gt;&gt; q; q.push({sr, sc}); dist[sr][sc] = 0;
+    int dr[] = {1, -1, 0, 0}, dc[] = {0, 0, 1, -1};
+    while (!q.empty()) {
+        auto [r, c] = q.front(); q.pop();
+        for (int k = 0; k &lt; 4; k++) {
+            int nr = r + dr[k], nc = c + dc[k];
+            if (nr &lt; 0 || nr &gt;= R || nc &lt; 0 || nc &gt;= C) continue;
+            if (g[nr][nc] == '#' || dist[nr][nc] != -1) continue;
+            dist[nr][nc] = dist[r][c] + 1;
+            q.push({nr, nc});
+        }
+    }
+    return dist[tr][tc];                                  // -1 if unreachable
+}
+</code></pre>
+<p>To recover the path itself, store each cell's parent when you first reach it, then walk back from the target.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/graph-search.html">Graph search visualizer</a></div>
+<p>Compare DFS, BFS and Dijkstra on the same graph and watch the order in which vertices are discovered.</p>
+</div>
+<h2 id="3-shortest-paths">3 · Shortest paths<a class="anchor" href="#3-shortest-paths" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Which algorithm?</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Algorithm</th>
+<th>Complexity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>unweighted</td>
+<td>BFS</td>
+<td>$O(n+m)$</td>
+</tr>
+<tr>
+<td>weights 0/1</td>
+<td>0-1 BFS</td>
+<td>$O(n+m)$</td>
+</tr>
+<tr>
+<td>non-negative weights</td>
+<td><strong>Dijkstra</strong></td>
+<td>$O((n+m)\log n)$</td>
+</tr>
+<tr>
+<td>negative weights, detect negative cycles</td>
+<td>Bellman–Ford</td>
+<td>$O(nm)$</td>
+</tr>
+<tr>
+<td>all pairs, $n\le500$</td>
+<td>Floyd–Warshall</td>
+<td>$O(n^3)$</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Dijkstra with a priority queue</div>
+<pre><code class="language-cpp">vector&lt;long long&gt; dijkstra(int n, const vector&lt;vector&lt;pair&lt;int,long long&gt;&gt;&gt;&amp; adj, int s) {
+    const long long INF = LLONG_MAX;
+    vector&lt;long long&gt; d(n, INF); d[s] = 0;
+    priority_queue&lt;pair&lt;long long,int&gt;, vector&lt;pair&lt;long long,int&gt;&gt;, greater&lt;&gt;&gt; pq;
+    pq.push({0, s});
+    while (!pq.empty()) {
+        auto [du, u] = pq.top(); pq.pop();
+        if (du != d[u]) continue;                     // outdated entry: skip
+        for (auto [v, w] : adj[u])
+            if (d[u] + w &lt; d[v]) { d[v] = d[u] + w; pq.push({d[v], v}); }
+    }
+    return d;
+}
+</code></pre>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Why Dijkstra fails with negative edges</div>
+<p>Dijkstra finalises the closest unfinished vertex, assuming no later path can be shorter. A negative edge discovered later breaks that. <em>Example:</em> edges $A\to B$ (2), $A\to C$ (3), $C\to B$ (−2), $B\to D$ (1). The textbook algorithm finalises $B$ with $d(B)=2$ and $D$ with $d(D)=3$, but $A\to C\to B\to D$ costs 2. (Lazy versions like the code above re-process a vertex whose distance drops, so they survive this case, but on other graphs they can take exponential time.) Use <strong>Bellman–Ford</strong>: relax all edges $n-1$ times; if an $n$-th round still improves something, there is a negative cycle.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Floyd–Warshall</div>
+<p><code>for k: for i: for j: d[i][j] = min(d[i][j], d[i][k] + d[k][j]);</code> — the order of the loops matters: $k$ (the allowed intermediate vertex) must be outermost.</p>
+</div>
+<h2 id="4-dags-spanning-trees-and-components">4 · DAGs, spanning trees and components<a class="anchor" href="#4-dags-spanning-trees-and-components" title="Link to this section">#</a></h2>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Topological sort (Kahn) with cycle detection</div>
+<pre><code class="language-cpp">vector&lt;int&gt; topoSort(int n, const vector&lt;vector&lt;int&gt;&gt;&amp; adj) {   // empty if there is a cycle
+    vector&lt;int&gt; indeg(n, 0), order;
+    for (int u = 0; u &lt; n; u++) for (int v : adj[u]) indeg[v]++;
+    queue&lt;int&gt; q;
+    for (int u = 0; u &lt; n; u++) if (!indeg[u]) q.push(u);
+    while (!q.empty()) {
+        int u = q.front(); q.pop(); order.push_back(u);
+        for (int v : adj[u]) if (--indeg[v] == 0) q.push(v);
+    }
+    if ((int)order.size() &lt; n) order.clear();                    // some vertices never freed: cycle
+    return order;
+}
+</code></pre>
+<p><strong>DP on a DAG:</strong> process vertices in topological order to get longest paths, numbers of paths, etc.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Minimum spanning tree</div>
+<p>A spanning tree of minimum total weight. <strong>Kruskal:</strong> sort edges by weight and add each edge that connects two different DSU components (module 03): $O(m\log m)$. <strong>Prim:</strong> grow one tree with a priority queue, like Dijkstra. Both rely on the <strong>cut property</strong>: the lightest edge crossing any cut belongs to some MST.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Strongly connected components (SCC)</div>
+<p>In a directed graph, $u$ and $v$ are in the same SCC if each can reach the other. Contracting every SCC to a point gives the <strong>condensation</strong>, which is a DAG. <strong>Kosaraju:</strong> DFS to get the finishing order, then DFS on the <strong>reversed</strong> graph in decreasing finishing order; each tree found is one SCC. <strong>2-SAT</strong> is solved by SCCs of the implication graph.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Kosaraju's algorithm</div>
+<pre><code class="language-cpp">vector&lt;int&gt; scc(int n, const vector&lt;vector&lt;int&gt;&gt;&amp; g) {           // comp[v] = id of v's SCC
+    vector&lt;vector&lt;int&gt;&gt; rg(n);
+    for (int u = 0; u &lt; n; u++) for (int v : g[u]) rg[v].push_back(u);
+    vector&lt;int&gt; order, comp(n, -1); vector&lt;bool&gt; vis(n, false);
+    function&lt;void(int)&gt; dfs1 = [&amp;](int u) {
+        vis[u] = true; for (int v : g[u]) if (!vis[v]) dfs1(v); order.push_back(u); };
+    function&lt;void(int,int)&gt; dfs2 = [&amp;](int u, int c) {
+        comp[u] = c; for (int v : rg[u]) if (comp[v] &lt; 0) dfs2(v, c); };
+    for (int u = 0; u &lt; n; u++) if (!vis[u]) dfs1(u);
+    int c = 0;
+    for (int i = n - 1; i &gt;= 0; i--) if (comp[order[i]] &lt; 0) dfs2(order[i], c++);
+    return comp;
+}
+</code></pre>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Recursion depth</div>
+<p>Recursive DFS on a path of $10^5$–$10^6$ vertices can overflow the stack on some judges. Use an explicit stack, or make sure the judge's stack limit is large.</p>
+</div>
+<h2 id="5-trees">5 · Trees<a class="anchor" href="#5-trees" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Rooted-tree basics</div>
+<p>Root the tree at vertex 0 and compute, with one DFS, each vertex's parent, depth and <strong>subtree size</strong>. <strong>Euler tour:</strong> record entry times <code>tin[v]</code>; the subtree of $v$ is exactly the contiguous range <code>[tin[v], tin[v] + size[v] - 1]</code>, so subtree queries become range queries on a segment tree or Fenwick tree (module 03).</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Lowest common ancestor with binary lifting</div>
+<p>Store <code>up[k][v]</code> = the $2^k$-th ancestor of $v$ ($O(n\log n)$ precomputation). To find $\text{LCA}(a,b)$: lift the deeper vertex to the same depth using the binary digits of the depth difference, then lift both together while their ancestors differ. $O(\log n)$ per query. Distance: $d(a,b)=\text{depth}(a)+\text{depth}(b)-2\,\text{depth}(\text{LCA})$.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Binary-lifting LCA</div>
+<pre><code class="language-cpp">struct LCA {
+    int LOG; vector&lt;vector&lt;int&gt;&gt; up; vector&lt;int&gt; depth;
+    LCA(int n, const vector&lt;vector&lt;int&gt;&gt;&amp; adj, int root = 0) {
+        LOG = __lg(max(n, 1)) + 1;
+        up.assign(LOG, vector&lt;int&gt;(n, root)); depth.assign(n, 0);
+        vector&lt;int&gt; st = {root}; vector&lt;bool&gt; seen(n, false); seen[root] = true;
+        while (!st.empty()) {                                   // iterative DFS
+            int u = st.back(); st.pop_back();
+            for (int v : adj[u]) if (!seen[v]) {
+                seen[v] = true; up[0][v] = u; depth[v] = depth[u] + 1; st.push_back(v); }
+        }
+        for (int k = 1; k &lt; LOG; k++)
+            for (int v = 0; v &lt; n; v++) up[k][v] = up[k - 1][up[k - 1][v]];
+    }
+    int query(int a, int b) {
+        if (depth[a] &lt; depth[b]) swap(a, b);
+        for (int k = LOG - 1; k &gt;= 0; k--)                      // lift a to b's depth
+            if (depth[a] - (1 &lt;&lt; k) &gt;= depth[b]) a = up[k][a];
+        if (a == b) return a;
+        for (int k = LOG - 1; k &gt;= 0; k--)                      // lift both just below the LCA
+            if (up[k][a] != up[k][b]) { a = up[k][a]; b = up[k][b]; }
+        return up[0][a];
+    }
+};
+</code></pre>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Tree diameter with two BFS passes</div>
+<p>The farthest vertex from <strong>any</strong> start is an endpoint of some longest path. So: BFS from vertex 0 to the farthest vertex $a$; BFS from $a$; the largest distance found is the <strong>diameter</strong>. $O(n)$. (Works for non-negative edge weights too, with DFS sums.)</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Tree DP and rerooting</div>
+<p>Compute <code>dp[v]</code> from the children's values in one DFS (e.g. maximum independent set: <code>take[v] = 1 + Σ skip[child]</code>, <code>skip[v] = Σ max(take, skip)[child]</code>, module 05). <strong>Rerooting</strong> computes the answer for every possible root in $O(n)$ with a second DFS that passes information from parent to child.</p>
+</div>
+<h2 id="6-modelling-tricks">6 · Modelling tricks<a class="anchor" href="#6-modelling-tricks" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · When the graph isn't obvious</div>
 <ul>
-<li><strong>Representation:</strong> adjacency lists <code>vector&lt;vector&lt;int&gt;&gt;</code> (or <code>pair&lt;int,int&gt;</code> for weights). Grids are implicit graphs.</li>
-<li><strong>DFS:</strong> connected components, cycle detection, entry/exit times, bridges and articulation points (low-link).</li>
-<li><strong>BFS:</strong> unweighted shortest paths, multi-source BFS, <strong>0-1 BFS</strong> with a deque.</li>
-<li><strong>Shortest paths:</strong> Dijkstra O((n+m) log n) for non-negative weights · Bellman–Ford O(nm) with negative edges/cycles · Floyd–Warshall O(n³) all pairs.</li>
-<li><strong>DAGs:</strong> topological sort, DP over a DAG (longest path, counting paths).</li>
-<li><strong>MST:</strong> Kruskal (sort + DSU) or Prim.</li>
-<li><strong>SCC:</strong> Tarjan/Kosaraju → the condensation DAG. <strong>2-SAT</strong> comes from SCC.</li>
-<li><strong>Trees:</strong> parent/depth arrays, subtree sizes, <strong>Euler tour</strong> (subtree = contiguous range → segment tree), <strong>binary lifting LCA</strong>, distances via LCA, tree DP (rerooting), diameter, centroid.</li>
-<li><strong>Modeling tricks:</strong> add a super-source, put states (node, extra info) in the vertex, reverse the edges, binary search + BFS.</li>
+<li><strong>State graphs:</strong> a vertex = (position, extra information), e.g. (cell, keys collected) or (city, fuel left).</li>
+<li><strong>Super-source:</strong> connect a new vertex to all sources with weight 0 to run one Dijkstra from many starts.</li>
+<li><strong>Reverse the edges</strong> to compute "distance <strong>to</strong> the target" from every vertex.</li>
+<li><strong>Binary search + BFS:</strong> "the minimal $X$ such that a path exists using only edges with property $\le X$".</li>
 </ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
-<ul>
-<li>⭐ <strong><a href="https://usaco.guide/" target="_blank" rel="noopener">USACO Guide: Silver/Gold graphs &amp; trees</a></strong>.</li>
-<li>⭐ <strong>CSES: "Graph Algorithms"</strong> and <strong>"Tree Algorithms"</strong> sections.</li>
-<li><strong><a href="https://cp-algorithms.com/" target="_blank" rel="noopener">cp-algorithms: Graphs</a></strong> · <strong>Competitive Programmer's Handbook</strong>, ch. 11–20.</li>
-</ul>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>Graphs</strong> deck.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>Pick the algorithm: (a) shortest path in a maze; (b) roads with travel times; (c) currency exchange where a cycle might make infinite profit; (d) distances between all pairs of 300 cities.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>(a) BFS; (b) Dijkstra; (c) Bellman–Ford with negative-cycle detection on $-\log(\text{rate})$; (d) Floyd–Warshall.</p>
+</details>
+<ol start="2">
+<li>What happens if Kahn's algorithm finishes with fewer than $n$ vertices in the order?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>The remaining vertices all have positive in-degree, so they lie on or after a directed cycle: the graph is not a DAG.</p>
+</details>
+<ol start="3">
+<li>In a rooted tree with <code>tin</code>/subtree sizes, how do you test whether $u$ is an ancestor of $v$ in $O(1)$?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p><code>tin[u] &lt;= tin[v] &amp;&amp; tin[v] &lt; tin[u] + size[u]</code>.</p>
+</details>
+<ol start="4">
+<li>You must travel from $s$ to $t$ and may use at most one "free ticket" that makes one edge cost 0. Model it.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Two copies of the graph: layer 0 (ticket unused) and layer 1 (used). Normal edges inside each layer; for each edge $u\to v$ add a 0-weight edge from $(u,0)$ to $(v,1)$. Dijkstra from $(s,0)$; answer $\min(d(t,0),d(t,1))$.</p>
+</details>
+<ol start="5">
+<li>How many edges does a spanning tree of a connected graph with 1000 vertices have, and why does Kruskal skip an edge?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<ol start="999">
+<li>Kruskal skips an edge whose endpoints are already in the same DSU component, because adding it would create a cycle.</li>
+</ol>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ul>
 <li>Solve the CSES graph section (≈ 36 problems) and tree section (≈ 16). Implement Dijkstra, LCA, and SCC from memory.</li>
+</ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://usaco.guide/" target="_blank" rel="noopener">USACO Guide: Silver/Gold graphs &amp; trees</a></strong>.</li>
+<li>⭐ <strong><a href="https://cses.fi/problemset/" target="_blank" rel="noopener">CSES</a>: "Graph Algorithms"</strong> and <strong>"Tree Algorithms"</strong> sections.</li>
+<li><strong><a href="https://cp-algorithms.com/" target="_blank" rel="noopener">cp-algorithms: Graphs</a></strong> · <strong><a href="https://cses.fi/book/book.pdf" target="_blank" rel="noopener">Competitive Programmer's Handbook</a></strong>, ch. 11–20.</li>
+</ul>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> CSES graph and tree sections done · <input type="checkbox"> Dijkstra, LCA and SCC written from memory</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../informatics-olympiad/03-data-structures.html"><small>← Previous</small>Data Structures</a><a class="pn next" href="../informatics-olympiad/05-dynamic-programming.html"><small>Next →</small>Dynamic Programming</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-graphs-and-how-to-store-them">1 · Graphs and how to store them</a></li><li><a href="#2-dfs-and-bfs">2 · DFS and BFS</a></li><li><a href="#3-shortest-paths">3 · Shortest paths</a></li><li><a href="#4-dags-spanning-trees-and-components">4 · DAGs, spanning trees and components</a></li><li><a href="#5-trees">5 · Trees</a></li><li><a href="#6-modelling-tricks">6 · Modelling tricks</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

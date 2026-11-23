@@ -7,7 +7,9 @@
 <meta name="description" content="C++ for contests, data structures, graphs, dynamic programming and IOI-level skills.">
 <script>try{var t=localStorage.getItem('ss-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
 <link rel="stylesheet" href="../assets/site.css">
-
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script defer src="../assets/katex/katex.min.js"></script>
+<script defer src="../assets/katex/contrib/auto-render.min.js"></script>
 <script defer src="../assets/search-index.js"></script>
 <script defer src="../assets/site.js"></script>
 </head>
@@ -109,11 +111,20 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../informatics-olympiad/index.html">Informatics Olympiad</a> <span class="sep">›</span> <span>Dynamic Programming</span></nav><article class="doc"><h1 id="05-dynamic-programming">05 · Dynamic Programming<a class="anchor" href="#05-dynamic-programming" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 05</span><span>⏱ 1 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/informatics-olympiad/05-dynamic-programming.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../informatics-olympiad/index.html">Informatics Olympiad</a> <span class="sep">›</span> <span>Dynamic Programming</span></nav><article class="doc"><h1 id="05-dynamic-programming">05 · Dynamic Programming<a class="anchor" href="#05-dynamic-programming" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 05</span><span>⏱ 7 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/informatics-olympiad/05-dynamic-programming.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> IOI's favorite topic. Define states well, then optimize. · <strong>Time:</strong> 5–7 weeks</p>
 </blockquote>
-<p>👉 Interactive: <a href="interactive/dp-table.html">DP table animator</a></p>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>design a DP from scratch with the five-step recipe (state, transition, base, order, answer);</li>
+<li>solve the classic families: linear, <strong>knapsack</strong>, <strong>LIS</strong>, two-sequence (<strong>LCS, edit distance</strong>), <strong>interval</strong>, <strong>bitmask</strong>, <strong>tree</strong> and digit DP;</li>
+<li>reconstruct the optimal solution, not just its value, and save memory with rolling arrays;</li>
+<li>recognise when a transition can be sped up (prefix sums, monotonic deque, convex hull trick, divide &amp; conquer, Aliens trick).</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> 0/1 knapsack in O(nW) time and O(W) memory (loop direction!).</li>
@@ -123,35 +134,239 @@
 <li class="task"><input type="checkbox"> Bitmask DP: TSP on n ≤ 20 in O(2ⁿn²).</li>
 <li class="task"><input type="checkbox"> Tree DP: a maximum independent set on a tree.</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h2 id="1-what-dynamic-programming-is">1 · What dynamic programming is<a class="anchor" href="#1-what-dynamic-programming-is" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Dynamic programming</div>
+<p>Solve a problem by combining answers to <strong>overlapping subproblems</strong>, computing each subproblem <strong>once</strong> and storing it. It applies when the problem has <strong>optimal substructure</strong>: the best solution is built from best solutions of smaller instances. Naive recursion would recompute the same subproblems exponentially often.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · The five-step recipe</div>
+<ol>
+<li><strong>State:</strong> what do I need to know about the past to decide the future? Write it in words: "<code>dp[i][w]</code> = best value using the first $i$ items with capacity $w$".</li>
+<li><strong>Transition:</strong> how is a state computed from smaller ones?</li>
+<li><strong>Base cases.</strong></li>
+<li><strong>Order:</strong> compute states so that dependencies come first (or use memoised recursion).</li>
+<li><strong>Answer:</strong> which state(s) hold the final answer?</li>
+</ol>
+<p>Complexity ≈ (number of states) × (cost per transition).</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Counting paths in a grid</div>
+<p>Number of monotone (right/down) paths from the top-left to $(i,j)$ avoiding blocked cells: <code>dp[i][j] = dp[i-1][j] + dp[i][j-1]</code> (0 on blocked cells), <code>dp[0][0] = 1</code>. Fill row by row. $O(RC)$.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/dp-table.html">DP table animator</a></div>
+<p>Watch LCS, edit distance and knapsack tables fill cell by cell, and follow the arrows back to reconstruct the answer.</p>
+</div>
+<h2 id="2-linear-dp-and-knapsack">2 · Linear DP and knapsack<a class="anchor" href="#2-linear-dp-and-knapsack" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Linear DP classics</div>
 <ul>
-<li><strong>Recipe:</strong> (1) <strong>state</strong>: what do I need to know about the past? (2) <strong>transition</strong> (3) <strong>base cases</strong> (4) <strong>order</strong> of computation (5) <strong>answer</strong> location. Write the state in words first.</li>
-<li><strong>Classic families:</strong><ul>
-<li><strong>Linear:</strong> Fibonacci-like, max subarray, coin change (count vs. minimize), LIS.</li>
-<li><strong>Knapsack:</strong> 0/1 (iterate weight <em>down</em>), unbounded (iterate <em>up</em>), bounded (binary splitting).</li>
-<li><strong>Grid / two-sequence:</strong> paths, LCS, edit distance.</li>
-<li><strong>Interval:</strong> dp[l][r], with the split point inside.</li>
-<li><strong>Bitmask:</strong> dp[mask][last], subsets, SOS DP.</li>
-<li><strong>Tree DP:</strong> dp[v][state] from children. <strong>Rerooting</strong> for "for every root".</li>
-<li><strong>Digit DP:</strong> count numbers ≤ N with a property, with state (pos, tight, …).</li>
-<li><strong>DP on DAGs</strong> = shortest/longest paths.</li>
+<li><strong>Maximum subarray (Kadane):</strong> <code>cur = max(a[i], cur + a[i])</code>, answer = max of <code>cur</code>.</li>
+<li><strong>Coin change:</strong> <em>minimum coins</em> <code>dp[x] = 1 + min(dp[x - c])</code>; <em>number of ways (order doesn't matter)</em>: loop over coins outside, amounts inside: <code>dp[x] += dp[x - c]</code>.</li>
+<li><strong>Climbing stairs / tilings:</strong> Fibonacci-like recurrences.</li>
 </ul>
-</li>
-<li><strong>Optimizations (IOI level):</strong> prefix-sum transitions, monotonic deque, <strong>convex hull trick / Li Chao tree</strong>, divide &amp; conquer DP, Knuth, <strong>"Aliens" trick (Lagrangian relaxation)</strong>, which is famous from IOI 2016.</li>
-<li><strong>Memory:</strong> rolling arrays. <strong>Reconstruction:</strong> store choices or backtrack through the table.</li>
-<li><strong>Subtasks often map to DP states:</strong> O(n³) → O(n²) → O(n log n) as the subtasks get harder.</li>
-</ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
-<ul>
-<li>⭐ <strong><a href="https://atcoder.jp/contests/dp" target="_blank" rel="noopener">AtCoder Educational DP Contest</a></strong>: 26 classic problems A–Z. <strong>Do all of them.</strong></li>
-<li>⭐ <strong><a href="https://usaco.guide/gold" target="_blank" rel="noopener">USACO Guide: Gold DP sections</a></strong> + <strong>CSES "Dynamic Programming"</strong>.</li>
-<li><strong><a href="https://cp-algorithms.com/" target="_blank" rel="noopener">cp-algorithms: DP</a></strong> (CHT, D&amp;C DP, Knuth) · Errichto's DP videos on YouTube.</li>
-</ul>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · 0/1 knapsack in $O(nW)$ time, $O(W)$ memory</div>
+<pre><code class="language-cpp">int knapsack(const vector&lt;int&gt;&amp; w, const vector&lt;int&gt;&amp; v, int W) {
+    vector&lt;int&gt; dp(W + 1, 0);                 // dp[c] = best value with capacity c
+    for (int i = 0; i &lt; (int)w.size(); i++)
+        for (int c = W; c &gt;= w[i]; c--)       // DOWNWARDS: each item used at most once
+            dp[c] = max(dp[c], dp[c - w[i]] + v[i]);
+    return dp[W];
+}
+</code></pre>
+<p>Looping <strong>upwards</strong> instead lets an item be reused: that is the <strong>unbounded</strong> knapsack. Bounded counts (item $i$ available $k_i$ times): split into pieces of sizes 1, 2, 4, …, so $O(nW\log k)$.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Longest increasing subsequence in $O(n\log n)$</div>
+<pre><code class="language-cpp">int lis(const vector&lt;int&gt;&amp; a) {               // strictly increasing
+    vector&lt;int&gt; tails;   // tails[k] = smallest possible last element of an increasing subsequence of length k+1
+    for (int x : a) {
+        auto it = lower_bound(tails.begin(), tails.end(), x);   // upper_bound for non-decreasing
+        if (it == tails.end()) tails.push_back(x); else *it = x;
+    }
+    return tails.size();
+}
+</code></pre>
+<p><code>tails</code> is always sorted, so each element costs one binary search. (The $O(n^2)$ version <code>dp[i] = 1 + max(dp[j])</code> over $j&lt;i$, $a_j&lt;a_i$ is also worth knowing.)</p>
+</div>
+<h2 id="3-two-sequence-and-grid-dp">3 · Two-sequence and grid DP<a class="anchor" href="#3-two-sequence-and-grid-dp" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · LCS and edit distance</div>
+<p><strong>Longest common subsequence:</strong> <code>dp[i][j]</code> = LCS of the prefixes $s_{1..i}$, $t_{1..j}$:
+$dp[i][j]=dp[i-1][j-1]+1$ if $s_i=t_j$, else $\max(dp[i-1][j],dp[i][j-1])$.</p>
+<p><strong>Edit distance</strong> (insert, delete, replace, each cost 1):
+$$dp[i][j]=\min\big(dp[i-1][j]+1,\ dp[i][j-1]+1,\ dp[i-1][j-1]+[s_i\ne t_j]\big)$$
+with $dp[i][0]=i$, $dp[0][j]=j$. Both $O(nm)$. <em>Example:</em> "kitten" → "sitting" has distance 3.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · LCS with reconstruction</div>
+<pre><code class="language-cpp">string lcs(const string&amp; s, const string&amp; t) {
+    int n = s.size(), m = t.size();
+    vector&lt;vector&lt;int&gt;&gt; dp(n + 1, vector&lt;int&gt;(m + 1, 0));
+    for (int i = 1; i &lt;= n; i++) for (int j = 1; j &lt;= m; j++)
+        dp[i][j] = s[i-1] == t[j-1] ? dp[i-1][j-1] + 1 : max(dp[i-1][j], dp[i][j-1]);
+    string r; int i = n, j = m;                       // walk back from the end
+    while (i &gt; 0 &amp;&amp; j &gt; 0) {
+        if (s[i-1] == t[j-1]) { r += s[i-1]; i--; j--; }
+        else if (dp[i-1][j] &gt;= dp[i][j-1]) i--;
+        else j--;
+    }
+    reverse(r.begin(), r.end());
+    return r;                                         // e.g. &quot;ABCBDAB&quot;,&quot;BDCABA&quot; -&gt; &quot;BCBA&quot;
+}
+</code></pre>
+</div>
+<h2 id="4-interval-dp">4 · Interval DP<a class="anchor" href="#4-interval-dp" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Interval DP</div>
+<p>State <code>dp[l][r]</code> = the best answer for the segment $l..r$; the transition chooses a <strong>split point</strong> $k$ inside. Compute by increasing length. Usually $O(n^3)$.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Merging stones</div>
+<p>Merging two adjacent piles costs their total size; find the cheapest way to merge everything into one pile. The last merge joins $[l,k]$ and $[k+1,r]$ and costs the whole segment's sum:
+$$dp[l][r]=\min_{l\le k&lt;r}\big(dp[l][k]+dp[k+1][r]\big)+\text{sum}(l..r)$$
+with prefix sums for the segment sum. <em>Example:</em> piles 1, 2, 3: merge 1+2 (cost 3), then 3+3 (cost 6): total <strong>9</strong>. Matrix-chain multiplication has the same structure.</p>
+</div>
+<h2 id="5-bitmask-dp">5 · Bitmask DP<a class="anchor" href="#5-bitmask-dp" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · DP over subsets</div>
+<p>When $n\le20$, a subset fits in an integer mask, and states like <code>dp[mask][last]</code> are affordable ($2^{20}\cdot20\approx2\times10^7$).</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Travelling salesman in $O(2^nn^2)$</div>
+<pre><code class="language-cpp">int tsp(const vector&lt;vector&lt;int&gt;&gt;&amp; d) {             // shortest tour starting and ending at 0
+    int n = d.size(), FULL = 1 &lt;&lt; n; const int INF = 1e9;
+    vector&lt;vector&lt;int&gt;&gt; dp(FULL, vector&lt;int&gt;(n, INF));  // dp[mask][last]
+    dp[1][0] = 0;                                    // visited {0}, standing at 0
+    for (int mask = 1; mask &lt; FULL; mask++)
+        for (int last = 0; last &lt; n; last++) {
+            if (dp[mask][last] == INF) continue;
+            for (int nx = 0; nx &lt; n; nx++) if (!(mask &gt;&gt; nx &amp; 1))
+                dp[mask | 1 &lt;&lt; nx][nx] = min(dp[mask | 1 &lt;&lt; nx][nx], dp[mask][last] + d[last][nx]);
+        }
+    int best = INF;
+    for (int last = 1; last &lt; n; last++) best = min(best, dp[FULL - 1][last] + d[last][0]);
+    return best;
+}
+</code></pre>
+<p><strong>SOS DP</strong> (sum over subsets) computes, for every mask, the sum of values over all its submasks in $O(2^nn)$.</p>
+</div>
+<h2 id="6-tree-dp-and-digit-dp">6 · Tree DP and digit DP<a class="anchor" href="#6-tree-dp-and-digit-dp" title="Link to this section">#</a></h2>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Maximum independent set on a tree</div>
+<p>Choose the most vertices with no two adjacent. For each vertex $v$: <code>take[v] = 1 + Σ skip[c]</code> and <code>skip[v] = Σ max(take[c], skip[c])</code> over its children $c$. Answer $\max(\text{take}[root],\text{skip}[root])$. Process vertices children-first (reverse DFS order). $O(n)$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Rerooting</div>
+<p>To get the answer "for every vertex as the root", do one DFS for the children's contributions and a second DFS that passes the "everything outside my subtree" contribution from parent to child. $O(n)$ instead of $O(n^2)$.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Digit DP</div>
+<p>Count numbers in $[0,N]$ with some digit property. Process digits from the most significant, with state (position, <strong>tight</strong> = "still equal to $N$'s prefix", extra info such as digit sum mod $k$). Answer for $[A,B]$ = $f(B)-f(A-1)$.</p>
+</div>
+<h2 id="7-speeding-up-transitions">7 · Speeding up transitions<a class="anchor" href="#7-speeding-up-transitions" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Optimization toolbox (IOI level)</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Transition looks like</th>
+<th>Technique</th>
+<th>Speed-up</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>sum over a range of previous states</td>
+<td>prefix sums</td>
+<td>$O(n)$ → $O(1)$</td>
+</tr>
+<tr>
+<td>min/max over a sliding window</td>
+<td>monotonic deque</td>
+<td>$O(n)$ → $O(1)$ amortised</td>
+</tr>
+<tr>
+<td>$\min_j(dp_j+b_j\cdot x_i)$ (lines!)</td>
+<td><strong>convex hull trick</strong> / Li Chao tree</td>
+<td>$O(n)$ → $O(\log n)$</td>
+</tr>
+<tr>
+<td>optimal split point is monotone</td>
+<td>divide &amp; conquer DP, Knuth</td>
+<td>$O(n^2)$ → $O(n\log n)$ per layer</td>
+</tr>
+<tr>
+<td>"use exactly $k$ items"</td>
+<td><strong>Aliens trick</strong> (Lagrangian relaxation: add a penalty per item, binary search the penalty)</td>
+<td>removes the $k$ dimension</td>
+</tr>
+</tbody>
+</table></div>
+<p>The Aliens trick is named after IOI 2016's "Aliens" task.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Subtasks mirror the DP</div>
+<p>IOI subtasks often go $O(n^3)$ → $O(n^2)$ → $O(n\log n)$. Write the slow DP first (points!), then look at its transition and ask which row above applies.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>DP</strong> deck.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>Number of ways to make 10 with coins $\{1,2,5\}$ (order doesn't matter)?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Loop coins outside: after coin 1: all 1s; after 2: <code>dp[10] = 6</code>; after 5: <code>dp[10] = 10</code>. Answer <strong>10</strong>.</p>
+</details>
+<ol start="2">
+<li>LIS of $3, 1, 4, 1, 5, 9, 2, 6$?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Length 4, e.g. $1,4,5,9$ or $3,4,5,6$. The <code>tails</code> array ends as $[1,2,5,6]$.</p>
+</details>
+<ol start="3">
+<li>Why does 0/1 knapsack loop capacity <strong>downwards</strong> in the 1-D version?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>So that <code>dp[c - w[i]]</code> still holds the value from <strong>before</strong> item $i$ was considered. Going upwards, <code>dp[c - w[i]]</code> may already include item $i$, allowing it twice.</p>
+</details>
+<ol start="4">
+<li>State a DP for: "the minimum number of palindromes a string can be cut into".</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p><code>dp[i]</code> = min cuts for the prefix of length $i$; <code>dp[i] = min(dp[j] + 1)</code> over $j&lt;i$ with $s_{j..i-1}$ a palindrome. Precompute <code>pal[l][r]</code> by interval DP. $O(n^2)$.</p>
+</details>
+<ol start="5">
+<li>Edit distance between "sunday" and "saturday"?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>3 (insert "a", insert "t", replace "n" by "r").</p>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ul>
 <li>AtCoder DP contest A–Z + CSES DP section. For each, write the state in one sentence in your progress log.</li>
+</ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://atcoder.jp/contests/dp" target="_blank" rel="noopener">AtCoder Educational DP Contest</a></strong>: 26 classic problems A–Z. <strong>Do all of them.</strong></li>
+<li>⭐ <strong><a href="https://usaco.guide/gold" target="_blank" rel="noopener">USACO Guide: Gold DP sections</a></strong> + <strong><a href="https://cses.fi/problemset/" target="_blank" rel="noopener">CSES</a> "Dynamic Programming"</strong>.</li>
+<li><strong><a href="https://cp-algorithms.com/" target="_blank" rel="noopener">cp-algorithms: DP</a></strong> (CHT, D&amp;C DP, Knuth) · Errichto's DP videos on YouTube.</li>
+</ul>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
+<ul>
+<li class="task"><input type="checkbox"> AtCoder DP A–Z done · <input type="checkbox"> each state written in one sentence in your log</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../informatics-olympiad/04-graphs-trees.html"><small>← Previous</small>Graphs &amp; Trees</a><a class="pn next" href="../informatics-olympiad/06-math-strings-geometry.html"><small>Next →</small>Math, Strings &amp; Geometry</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-what-dynamic-programming-is">1 · What dynamic programming is</a></li><li><a href="#2-linear-dp-and-knapsack">2 · Linear DP and knapsack</a></li><li><a href="#3-two-sequence-and-grid-dp">3 · Two-sequence and grid DP</a></li><li><a href="#4-interval-dp">4 · Interval DP</a></li><li><a href="#5-bitmask-dp">5 · Bitmask DP</a></li><li><a href="#6-tree-dp-and-digit-dp">6 · Tree DP and digit DP</a></li><li><a href="#7-speeding-up-transitions">7 · Speeding up transitions</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

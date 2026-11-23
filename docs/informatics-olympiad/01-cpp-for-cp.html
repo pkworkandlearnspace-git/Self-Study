@@ -7,7 +7,9 @@
 <meta name="description" content="C++ for contests, data structures, graphs, dynamic programming and IOI-level skills.">
 <script>try{var t=localStorage.getItem('ss-theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
 <link rel="stylesheet" href="../assets/site.css">
-
+<link rel="stylesheet" href="../assets/katex/katex.min.css">
+<script defer src="../assets/katex/katex.min.js"></script>
+<script defer src="../assets/katex/contrib/auto-render.min.js"></script>
 <script defer src="../assets/search-index.js"></script>
 <script defer src="../assets/site.js"></script>
 </head>
@@ -109,10 +111,22 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../informatics-olympiad/index.html">Informatics Olympiad</a> <span class="sep">›</span> <span>C++ for Competitive Programming</span></nav><article class="doc"><h1 id="01-c-for-competitive-programming">01 · C++ for Competitive Programming<a class="anchor" href="#01-c-for-competitive-programming" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 01</span><span>⏱ 1 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/informatics-olympiad/01-cpp-for-cp.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../informatics-olympiad/index.html">Informatics Olympiad</a> <span class="sep">›</span> <span>C++ for Competitive Programming</span></nav><article class="doc"><h1 id="01-c-for-competitive-programming">01 · C++ for Competitive Programming<a class="anchor" href="#01-c-for-competitive-programming" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 01</span><span>⏱ 6 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/informatics-olympiad/01-cpp-for-cp.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> turn your STL knowledge into contest speed. · <strong>Time:</strong> ~1 week</p>
 </blockquote>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>start every problem from a fast, safe <strong>template</strong>;</li>
+<li>pick the right STL container and know the cost of each operation;</li>
+<li>avoid integer <strong>overflow</strong> and the other classic silent bugs;</li>
+<li>debug with sanitizers and <code>cerr</code>, and find wrong answers automatically with a <strong>stress test</strong>;</li>
+<li>write solutions in the IOI "implement a function" format.</li>
+</ul>
+<p>Every code snippet in the Informatics chapters was compiled with <code>-Wall -fsanitize=address,undefined</code> and tested against brute force on random inputs.</p>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Write a template with fast I/O, <code>long long</code> aliases, and a multi-test-case loop.</li>
@@ -121,35 +135,214 @@
 <li class="task"><input type="checkbox"> Explain when <code>int</code> overflows (≈ 2.1 × 10⁹) and when to use <code>long long</code>.</li>
 <li class="task"><input type="checkbox"> Write a <strong>stress test</strong>: brute force vs fast solution on random inputs, stopping at the first mismatch.</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h2 id="1-the-template">1 · The template<a class="anchor" href="#1-the-template" title="Link to this section">#</a></h2>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · A contest template</div>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+using ll = long long;
+
+int main() {
+    ios::sync_with_stdio(false);   // fast I/O: don't sync with C stdio
+    cin.tie(nullptr);              // don't flush cout before every cin
+    int t = 1;                     // cin &gt;&gt; t;  for multi-test inputs
+    while (t--) {
+        // solve one test case
+    }
+}
+</code></pre>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Fast I/O rules</div>
+<p>After <code>sync_with_stdio(false)</code>, don't mix <code>cin/cout</code> with <code>scanf/printf</code>. Print <code>"\n"</code>, not <code>endl</code> (which flushes the buffer every time and can be very slow with $10^6$ lines). <strong>Exception:</strong> in <strong>interactive</strong> problems you <em>must</em> flush after each query (<code>cout &lt;&lt; ... &lt;&lt; endl;</code> or <code>cout.flush()</code>).</p>
+</div>
+<h2 id="2-the-stl-toolbox">2 · The STL toolbox<a class="anchor" href="#2-the-stl-toolbox" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Containers and their costs</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Container</th>
+<th>Use it for</th>
+<th>Key operations</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>vector&lt;T&gt;</code></td>
+<td>the default array</td>
+<td>index $O(1)$, <code>push_back</code> amortized $O(1)$</td>
+</tr>
+<tr>
+<td><code>array&lt;T,N&gt;</code>, <code>pair</code>, <code>tuple</code></td>
+<td>small fixed groups</td>
+<td>compared lexicographically</td>
+</tr>
+<tr>
+<td><code>set</code> / <code>multiset</code></td>
+<td>sorted values, dynamic</td>
+<td>insert/erase/find/<code>lower_bound</code> $O(\log n)$</td>
+</tr>
+<tr>
+<td><code>map&lt;K,V&gt;</code></td>
+<td>sorted key → value</td>
+<td>$O(\log n)$</td>
+</tr>
+<tr>
+<td><code>unordered_map</code></td>
+<td>hash map</td>
+<td>$O(1)$ average; can be attacked by anti-hash tests</td>
+</tr>
+<tr>
+<td><code>priority_queue&lt;T&gt;</code></td>
+<td>repeatedly take the max</td>
+<td>push/pop $O(\log n)$, top $O(1)$</td>
+</tr>
+<tr>
+<td><code>deque&lt;T&gt;</code></td>
+<td>push/pop at both ends</td>
+<td>$O(1)$</td>
+</tr>
+<tr>
+<td><code>bitset&lt;N&gt;</code></td>
+<td>fast boolean arrays</td>
+<td>operations ~$N/64$</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Sorting with a comparator</div>
+<pre><code class="language-cpp">vector&lt;pair&lt;int,int&gt;&gt; v = {{1, 5}, {2, 3}, {3, 9}};
+sort(v.begin(), v.end(), [](const auto&amp; a, const auto&amp; b) {
+    return a.second &gt; b.second;          // by second element, descending
+});
+// min-heap instead of the default max-heap:
+priority_queue&lt;int, vector&lt;int&gt;, greater&lt;int&gt;&gt; pq;
+</code></pre>
+<p>A comparator must be a <strong>strict</strong> ordering: use <code>&lt;</code> or <code>&gt;</code>, never <code>&lt;=</code> (that can crash <code>sort</code>).</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · <code>lower_bound</code> on a set: use the member function</div>
+<p>On a sorted <code>vector</code>, <code>lower_bound(v.begin(), v.end(), x)</code> is $O(\log n)$ (first element $\ge x$; <code>upper_bound</code> gives first $&gt;x$). On a <code>set</code>, call <strong><code>s.lower_bound(x)</code></strong>, which is $O(\log n)$. The free function <code>std::lower_bound(s.begin(), s.end(), x)</code> is $O(n)$ on a set, because set iterators can't jump.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Handy functions</div>
+<p><code>iota(v.begin(), v.end(), 0)</code> fills $0,1,2,\dots$ · <code>accumulate(v.begin(), v.end(), 0LL)</code> sums (note the <code>0LL</code>!) · <code>next_permutation</code> iterates over permutations · <code>__builtin_popcount(x)</code> counts set bits (<code>__builtin_popcountll</code> for <code>long long</code>) · <code>__lg(x)</code> gives $\lfloor\log_2x\rfloor$ · <code>unique</code> + <code>erase</code> removes adjacent duplicates.</p>
+</div>
+<h2 id="3-overflow-and-other-silent-bugs">3 · Overflow and other silent bugs<a class="anchor" href="#3-overflow-and-other-silent-bugs" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Integer limits</div>
+<p><code>int</code>: up to $2^{31}-1\approx2.1\times10^9$. <code>long long</code>: up to $2^{63}-1\approx9.2\times10^{18}$. Products of two values up to $10^9$ need <code>long long</code>: write <code>1LL * a * b</code>. Sums of $2\times10^5$ values up to $10^9$ also overflow <code>int</code>.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Classic silent bugs</div>
 <ul>
-<li><strong>Template:</strong>
-  <code>cpp
-  #include &lt;bits/stdc++.h&gt;
-  using namespace std;
-  using ll = long long;
-  int main() {
-      ios::sync_with_stdio(false); cin.tie(nullptr);
-      int t = 1; // cin &gt;&gt; t;
-      while (t--) { /* solve */ }
-  }</code></li>
-<li><strong>STL you'll use constantly:</strong> <code>vector</code>, <code>array</code>, <code>pair</code>/<code>tuple</code>, <code>sort</code> with a custom comparator, <code>lower_bound</code>/<code>upper_bound</code>, <code>set</code>/<code>multiset</code>/<code>map</code> (O(log n)), <code>unordered_map</code> (beware anti-hash tests), <code>priority_queue</code> (max-heap by default; use <code>greater&lt;&gt;</code> for a min-heap), <code>deque</code>, <code>bitset</code>, <code>__builtin_popcount</code>, <code>iota</code>, <code>accumulate</code>, <code>next_permutation</code>.</li>
-<li><strong>Overflow:</strong> products of two ints ≤ 10⁹ need <code>ll</code>. Use <code>1LL * a * b</code>.</li>
-<li><strong>Debugging:</strong> compile with <code>-Wall -Wextra -fsanitize=address,undefined -D_GLIBCXX_DEBUG</code> locally. Print-debug to <code>cerr</code>.</li>
-<li><strong>Stress testing:</strong> a random generator + a brute force + a diff loop. This finds most wrong-answer bugs, and at IOI you have time to do it.</li>
-<li><strong>IOI specifics:</strong> problems often require implementing a <strong>function</strong> (no <code>main</code>). Practice that format on oj.uz / past IOI tasks.</li>
+<li><code>int x = a * b;</code> with large <code>a, b</code>: overflow before the assignment. Use <code>1LL * a * b</code>.</li>
+<li><code>accumulate(v.begin(), v.end(), 0)</code> sums in <code>int</code> because of the <code>0</code>. Use <code>0LL</code>.</li>
+<li><code>v.size() - 1</code> when <code>v</code> is empty: <code>size()</code> is unsigned, so this is a huge number. Cast: <code>(int)v.size() - 1</code>.</li>
+<li>Reading past the end of an array, uninitialised variables, forgetting to reset global arrays between test cases.</li>
+<li>Comparing floating-point numbers with <code>==</code>. Prefer integers; otherwise compare with a tolerance.</li>
 </ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+</div>
+<h2 id="4-debugging-and-stress-testing">4 · Debugging and stress testing<a class="anchor" href="#4-debugging-and-stress-testing" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Sanitizers and debug mode</div>
+<p>Compile locally with</p>
+<pre><code class="language-bash">g++ -std=c++17 -O2 -Wall -Wextra -fsanitize=address,undefined -D_GLIBCXX_DEBUG sol.cpp
+</code></pre>
+<p>The sanitizers stop at the first out-of-bounds access, use-after-free or signed overflow and tell you the line; <code>_GLIBCXX_DEBUG</code> checks STL bounds. Print debug output to <code>cerr</code>, which judges ignore.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Stress testing finds most wrong answers</div>
+<p>Write (1) a <strong>random generator</strong>, (2) a slow but obviously correct <strong>brute force</strong>, (3) your <strong>solution</strong>. Run them on thousands of small random inputs and stop at the first difference. The failing input is small enough to debug by hand.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · stress.sh</div>
+<pre><code class="language-bash">#!/usr/bin/env bash
+# needs gen.cpp, brute.cpp, sol.cpp in this folder
+set -e
+for f in gen brute sol; do g++ -O2 -std=c++17 -o $f $f.cpp; done
+for i in $(seq 1 1000); do
+    ./gen $i &gt; in.txt                 # the seed makes each test different
+    ./brute &lt; in.txt &gt; expected.txt
+    ./sol   &lt; in.txt &gt; got.txt
+    if ! cmp -s expected.txt got.txt; then
+        echo &quot;Mismatch on test $i:&quot;; cat in.txt
+        echo &quot;expected:&quot;; cat expected.txt; echo &quot;got:&quot;; cat got.txt
+        exit 1
+    fi
+done
+echo &quot;All 1000 tests passed&quot;
+</code></pre>
+<p>And the generator, seeded from the command line:</p>
+<pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+int main(int argc, char* argv[]) {
+    mt19937 rng(atoi(argv[1]));
+    int n = rng() % 8 + 1;                  // keep tests small
+    cout &lt;&lt; n &lt;&lt; &quot;\n&quot;;
+    for (int i = 0; i &lt; n; i++) cout &lt;&lt; (int)(rng() % 21) - 10 &lt;&lt; &quot; \n&quot;[i == n - 1];
+}
+</code></pre>
+</div>
+<h2 id="5-the-ioi-task-format">5 · The IOI task format<a class="anchor" href="#5-the-ioi-task-format" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Implementing a function</div>
+<p>IOI tasks usually give you a header and ask you to implement a <strong>function</strong>, with no <code>main</code> and no reading input yourself: the grader calls your function. For example a task might say <em>implement <code>long long solve(int N, std::vector&lt;int&gt; A)</code></em>, and the grader passes the input in and checks what you return. Locally, the task package includes a sample grader to compile with. Practise this format on past IOI tasks at <a href="https://oj.uz/problems" target="_blank" rel="noopener">oj.uz</a>.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Global state between calls</div>
+<p>If the grader calls your function more than once, global arrays keep their old values. Reset everything at the start of the function.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/flashcards.html">Flashcards</a></div>
+<p>Choose the <strong>Constraints</strong> deck to connect input sizes with complexities (next chapter).</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li><code>int a = 100000, b = 100000; long long c = a * b;</code> What is stored in <code>c</code>, and how do you fix it?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p><code>a * b</code> is computed in <code>int</code> and overflows (undefined behaviour; in practice a wrong, often negative, number) <strong>before</strong> conversion. Fix: <code>long long c = 1LL * a * b;</code> giving $10^{10}$.</p>
+</details>
+<ol start="2">
+<li>You need the number of elements in a <code>multiset&lt;int&gt; s</code> that are $&lt;x$. Why is <code>distance(s.begin(), s.lower_bound(x))</code> too slow for many queries, and what can you use instead?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p><code>distance</code> walks the iterator step by step: $O(n)$. Use an order-statistics tree (<code>__gnu_pbds</code> <code>tree</code> with <code>order_of_key</code>), or a Fenwick tree over compressed values (module 03), both $O(\log n)$.</p>
+</details>
+<ol start="3">
+<li>Your solution passes the samples but gets Wrong Answer. What is the fastest systematic way to find the bug?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Write a brute force and a random generator for <strong>small</strong> inputs and run a stress test. The first mismatching input is usually small enough to trace by hand.</p>
+</details>
+<ol start="4">
+<li>Why can <code>sort(v.begin(), v.end(), [](int a, int b){ return a &lt;= b; })</code> crash?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>The comparator must be a strict weak ordering (<code>cmp(a,a)</code> must be false). With <code>&lt;=</code>, <code>cmp(a,a)</code> is true, which can make <code>sort</code> read outside the array.</p>
+</details>
+<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<ul>
+<li>Your personal template + a <code>stress.sh</code> script (generator, brute, solution, compare). Keep both in a repo.</li>
+</ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
 <ul>
 <li>⭐ <strong><a href="https://usaco.guide/general" target="_blank" rel="noopener">USACO Guide: General &amp; Bronze</a></strong>: setup, C++ basics for CP, debugging, and stress testing.</li>
 <li><strong><a href="https://cses.fi/book/book.pdf" target="_blank" rel="noopener">Competitive Programmer's Handbook</a></strong> (Laaksonen), ch. 1–4.</li>
 <li><strong><a href="https://en.cppreference.com/" target="_blank" rel="noopener">cppreference</a></strong> for exact STL semantics.</li>
 </ul>
-<h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
+<h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
-<li>Your personal template + a <code>stress.sh</code> script (generator, brute, solution, compare). Keep both in a repo.</li>
+<li class="task"><input type="checkbox"> Template and stress script in a repo · <input type="checkbox"> stress test has caught at least one real bug of yours</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../informatics-olympiad/index.html"><small>← Previous</small>Overview</a><a class="pn next" href="../informatics-olympiad/02-core-techniques.html"><small>Next →</small>Complexity &amp; Core Techniques</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-the-template">1 · The template</a></li><li><a href="#2-the-stl-toolbox">2 · The STL toolbox</a></li><li><a href="#3-overflow-and-other-silent-bugs">3 · Overflow and other silent bugs</a></li><li><a href="#4-debugging-and-stress-testing">4 · Debugging and stress testing</a></li><li><a href="#5-the-ioi-task-format">5 · The IOI task format</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>
