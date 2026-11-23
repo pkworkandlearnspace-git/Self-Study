@@ -20,6 +20,7 @@
 - ⭐ **[Kevin Zhou's relativity (R) and modern-physics handouts](https://knzhou.github.io/#handouts)** + [Kalda](https://www.ioc.ee/~kalda/ipho/).
 - **Spacetime Physics, Taylor & Wheeler** 💲 (relativity done beautifully) · Morin's *Classical Mechanics* ch. 11–14 (relativity).
 - **[Feynman Lectures, Vol. III](https://www.feynmanlectures.caltech.edu/)** for quantum intuition (free online).
+- 👉 Interactive: [Blackbody & photoelectric](interactive/quantum-light.html). Planck spectra and the Wien peak, plus stopping voltage against frequency for 9 metals, with a quiz.
 
 ## Build
 - 10 relativity problems solved with **invariants only** (no frame juggling). Compare them against the brute-force method.
