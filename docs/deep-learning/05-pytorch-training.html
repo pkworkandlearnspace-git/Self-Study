@@ -112,10 +112,21 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>PyTorch &amp; the Craft of Training</span></nav><article class="doc"><h1 id="05-pytorch-the-craft-of-training">05 · PyTorch &amp; the Craft of Training<a class="anchor" href="#05-pytorch-the-craft-of-training" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 05</span><span>⏱ 6 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/05-pytorch-training.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>PyTorch &amp; the Craft of Training</span></nav><article class="doc"><h1 id="05-pytorch-the-craft-of-training">05 · PyTorch &amp; the Craft of Training<a class="anchor" href="#05-pytorch-the-craft-of-training" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 05</span><span>⏱ 13 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/05-pytorch-training.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> train any model reliably, and know what to do when it doesn't train. · <strong>Time:</strong> 20–30 h · <strong>Needs:</strong> 04</p>
 </blockquote>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>write a complete PyTorch training loop from memory (tensors, autograd, <code>nn.Module</code>, <code>DataLoader</code>, optimizer);</li>
+<li>choose and explain <strong>SGD + momentum, Adam and AdamW</strong>, and design a <strong>learning-rate schedule</strong>;</li>
+<li>explain <strong>BatchNorm, LayerNorm, RMSNorm</strong>, residual connections, dropout and label smoothing;</li>
+<li>debug a model that won't train (the NaN checklist, overfitting one batch, reading loss curves);</li>
+<li>speed training up with mixed precision, gradient clipping and gradient accumulation.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Write a full training loop from memory: <code>Dataset</code>/<code>DataLoader</code>, <code>nn.Module</code>, loss, optimizer, <code>zero_grad → backward → step</code>, eval with <code>torch.no_grad()</code> + <code>model.eval()</code>.</li>
@@ -126,52 +137,211 @@
 <li class="task"><input type="checkbox"> Explain mixed precision (bf16/fp16) and gradient clipping.</li>
 <li class="task"><input type="checkbox"> Write the Adam update from memory, and explain why plain Adam + L2 is not the same as AdamW.</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
-<h3 id="pytorch-mechanics">PyTorch mechanics<a class="anchor" href="#pytorch-mechanics" title="Link to this section">#</a></h3>
+<h2 id="1-tensors-and-autograd">1 · Tensors and autograd<a class="anchor" href="#1-tensors-and-autograd" title="Link to this section">#</a></h2>
+<p>PyTorch is NumPy (module 02) plus two things: arrays that can live on a <strong>GPU</strong>, and <strong>automatic differentiation</strong> (module 04) built in.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Tensor</div>
+<p>A <code>torch.Tensor</code> is an n-dimensional array with a <code>shape</code>, a <code>dtype</code> (default <code>float32</code>) and a <code>device</code> (<code>"cpu"</code> or <code>"cuda"</code>). Almost every NumPy operation has a PyTorch twin: <code>x.sum(dim=0)</code>, <code>x @ y</code>, <code>x.view(...)</code>, broadcasting works the same way.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Autograd</div>
+<p>If a tensor has <code>requires_grad=True</code>, PyTorch records every operation on it into a computational graph. Calling <code>.backward()</code> on a scalar result runs reverse-mode autodiff and <strong>adds</strong> the gradient into each leaf tensor's <code>.grad</code>.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Autograd in four lines</div>
+<pre><code class="language-python">w = torch.tensor([2.0], requires_grad=True)
+x, y = torch.tensor([1.0]), torch.tensor([1.0])
+loss = (torch.sigmoid(w * x - 1) - y) ** 2
+loss.backward(); print(w.grad)   # tensor([-0.1058]), the single-neuron example from module 04
+</code></pre>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Things that silently cut the graph</div>
+<p><code>.item()</code>, <code>.detach()</code>, <code>.numpy()</code>, and doing math in NumPy or Python floats all produce values with no gradient history. If a parameter's <code>.grad</code> stays <code>None</code> after <code>backward()</code>, one of these is usually why.</p>
+</div>
+<h2 id="2-models-data-and-the-training-loop">2 · Models, data and the training loop<a class="anchor" href="#2-models-data-and-the-training-loop" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · nn.Module</div>
+<p>The base class for every layer and model. Create sub-layers in <code>__init__</code> and describe the computation in <code>forward</code>. Any <code>nn.Parameter</code> or sub-module you assign as an attribute is registered automatically, so <code>model.parameters()</code> finds them all.</p>
+<pre><code class="language-python">class MLP(nn.Module):
+    def __init__(self, d_in, d_hidden, n_classes):
+        super().__init__()
+        self.net = nn.Sequential(nn.Linear(d_in, d_hidden), nn.ReLU(), nn.Linear(d_hidden, n_classes))
+    def forward(self, x):
+        return self.net(x)          # returns logits
+</code></pre>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Dataset and DataLoader</div>
+<p>A <code>Dataset</code> knows how many examples there are (<code>__len__</code>) and how to fetch example <code>i</code> (<code>__getitem__</code>). A <code>DataLoader</code> wraps it to produce shuffled mini-batches, optionally using several worker processes to load data in parallel.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · The canonical training loop</div>
+<pre><code class="language-python">device = &quot;cuda&quot; if torch.cuda.is_available() else &quot;cpu&quot;
+model = MLP(784, 256, 10).to(device)
+opt = torch.optim.AdamW(model.parameters(), lr=1e-3, weight_decay=0.01)
+loss_fn = nn.CrossEntropyLoss()                       # expects logits
+train_dl = DataLoader(train_ds, batch_size=128, shuffle=True)
+
+for epoch in range(10):
+    model.train()                                     # dropout/BatchNorm in training mode
+    for x, y in train_dl:
+        x, y = x.to(device), y.to(device)
+        loss = loss_fn(model(x), y)
+        opt.zero_grad(set_to_none=True)               # clear old gradients
+        loss.backward()                               # compute new ones
+        opt.step()                                    # update the parameters
+
+    model.eval()                                      # inference mode for dropout/BatchNorm
+    with torch.no_grad():                             # no graph: faster, less memory
+        correct = sum((model(x.to(device)).argmax(1) == y.to(device)).sum().item() for x, y in val_dl)
+    print(epoch, correct / len(val_ds))
+</code></pre>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · train() vs eval(), and devices</div>
+<p><code>model.train()</code> / <code>model.eval()</code> switch <strong>dropout</strong> and <strong>BatchNorm</strong> between their training and inference behaviour. <code>torch.no_grad()</code> separately turns off graph building. The model <em>and</em> every batch must be on the same device: most "Expected all tensors to be on the same device" errors come from forgetting one <code>.to(device)</code>.</p>
+</div>
+<div class="box box-note">
+<div class="box-title"><span class="box-ico">📝</span> Note · torch.compile</div>
+<p><code>model = torch.compile(model)</code> often speeds training up with a one-line change by fusing operations into optimized GPU kernels. The first few steps are slow while it compiles.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Which loss for which task</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Task</th>
+<th>Final layer</th>
+<th>PyTorch loss</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>multi-class classification</td>
+<td>$C$ logits</td>
+<td><code>nn.CrossEntropyLoss</code> (log-softmax inside; pass <strong>logits</strong>)</td>
+</tr>
+<tr>
+<td>binary / multi-label</td>
+<td>1 logit per label</td>
+<td><code>nn.BCEWithLogitsLoss</code> (sigmoid inside)</td>
+</tr>
+<tr>
+<td>regression</td>
+<td>linear output</td>
+<td><code>nn.MSELoss</code>, <code>nn.L1Loss</code>, <code>nn.HuberLoss</code></td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<h2 id="3-optimizers">3 · Optimizers<a class="anchor" href="#3-optimizers" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · SGD with momentum</div>
+<p>$$\mathbf v \leftarrow \beta\mathbf v + \mathbf g,\qquad \theta\leftarrow\theta-\eta\,\mathbf v \qquad(\beta\approx0.9)$$
+A heavy ball rolling downhill 🔭: it smooths out zig-zags and builds speed along consistent directions. Still the strongest choice for many CNNs when well tuned.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Adam</div>
+<p>Keep running averages of the gradient and of its square, per parameter:
+$$\mathbf m\leftarrow\beta_1\mathbf m+(1-\beta_1)\mathbf g,\qquad \mathbf v\leftarrow\beta_2\mathbf v+(1-\beta_2)\mathbf g^2$$
+$$\hat{\mathbf m}=\frac{\mathbf m}{1-\beta_1^t},\qquad \hat{\mathbf v}=\frac{\mathbf v}{1-\beta_2^t},\qquad \theta\leftarrow\theta-\eta\,\frac{\hat{\mathbf m}}{\sqrt{\hat{\mathbf v}}+\epsilon}$$
+Defaults $\beta_1=0.9,\ \beta_2=0.999,\ \epsilon=10^{-8}$. Dividing by $\sqrt{\hat{\mathbf v}}$ gives every parameter its own step size: parameters with consistently large gradients take smaller steps. The hats correct the bias from starting $\mathbf m,\mathbf v$ at zero.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Adam's first step has size ≈ η, whatever the gradient's scale</div>
+<p>Take one parameter, $g_1=0.01$. Then $m=0.1\cdot0.01=0.001$, $v=0.001\cdot10^{-4}=10^{-7}$, $\hat m=0.001/0.1=0.01$, $\hat v=10^{-7}/0.001=10^{-4}$, step $=\eta\cdot0.01/(0.01+10^{-8})\approx\eta$. With $g_1=100$ you get the same step. That's why Adam's LR is a <em>step size</em> in parameter units, why it needs less tuning than SGD's, and why early steps can be too big without warmup.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · AdamW (decoupled weight decay)</div>
+<p>$$\theta\leftarrow\theta-\eta\Big(\frac{\hat{\mathbf m}}{\sqrt{\hat{\mathbf v}}+\epsilon}+\lambda\theta\Big)$$
+The decay is applied <em>directly</em> to the weights (<a href="https://arxiv.org/abs/1711.05101" target="_blank" rel="noopener">Loshchilov &amp; Hutter, 2019</a>). With plain Adam + an L2 term in the loss, the penalty's gradient $\lambda\theta$ gets divided by $\sqrt{\hat{\mathbf v}}$, so weights with large gradients are barely regularized. <strong>AdamW is the default for transformers.</strong> Don't decay biases and normalization gains.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/gradient-descent.html">Optimizer Landscape</a></div>
+<p>Race SGD, momentum and Adam on a narrow valley and on a saddle. Notice how Adam's per-parameter scaling straightens the path.</p>
+</div>
+<h2 id="4-the-learning-rate-and-its-schedule">4 · The learning rate and its schedule<a class="anchor" href="#4-the-learning-rate-and-its-schedule" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · The learning rate is the #1 hyperparameter</div>
+<p>If you tune only one thing, tune the LR, on a log scale (e.g. 1e-4, 3e-4, 1e-3, 3e-3). A good LR is usually a bit below the value where training becomes unstable.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Warmup + cosine decay</div>
+<p>Linear <strong>warmup</strong> for the first $T_w$ steps, then <strong>cosine decay</strong> to $\eta_{\min}$ at step $T$:
+$$\eta_t = \eta_{\max}\frac{t}{T_w}\ \ (t&lt;T_w),\qquad \eta_t = \eta_{\min}+\tfrac12(\eta_{\max}-\eta_{\min})\Big(1+\cos\frac{\pi(t-T_w)}{T-T_w}\Big)\ \ (t\ge T_w)$$
+<strong>Warmup</strong> avoids huge early steps while Adam's statistics are still noisy and the weights are random. <strong>Decay</strong> lets the model settle into a minimum at the end. Linear decay and "warmup–stable–decay" schedules are common alternatives.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · LR range test</div>
+<p>Train for a few hundred steps while increasing the LR exponentially from tiny to huge, and plot loss against LR. Pick a value somewhat below where the loss is falling fastest, well before it blows up.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Batch size and the learning rate</div>
+<p>Larger batches mean less gradient noise, so you can take bigger steps. Rules of thumb: scale the LR linearly with batch size for SGD (<a href="https://arxiv.org/abs/1706.02677" target="_blank" rel="noopener">Goyal et al., 2017</a>) and roughly with √(batch size) for Adam. Both stop working past a <em>critical batch size</em>, after which bigger batches stop speeding up training.</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/lr-schedules.html">LR Schedule Designer</a></div>
+<p>Shape a warmup + decay schedule, compare cosine, linear and step decay, and copy the generated PyTorch code.</p>
+</div>
+<h2 id="5-normalization-and-residual-connections">5 · Normalization and residual connections<a class="anchor" href="#5-normalization-and-residual-connections" title="Link to this section">#</a></h2>
+<p>Deep networks train much better when activations keep a sensible scale. Normalization layers enforce that explicitly.</p>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Batch normalization</div>
+<p>For each channel, compute the mean $\mu_B$ and variance $\sigma_B^2$ <strong>over the batch</strong> (and over spatial positions in a CNN), then
+$$\hat x = \frac{x-\mu_B}{\sqrt{\sigma_B^2+\epsilon}},\qquad y = \gamma\hat x + \beta$$
+$\gamma,\beta$ are learned, so the layer can undo the normalization if that helps. At <strong>eval</strong> time BatchNorm uses running averages of $\mu,\sigma^2$ collected during training. Common in CNNs; fragile with tiny batches.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Layer normalization and RMSNorm</div>
+<p><strong>LayerNorm</strong> normalizes over the <strong>features of each example (token)</strong>, independently of the rest of the batch:
+$$y = \gamma\odot\frac{\mathbf x-\mu(\mathbf x)}{\sqrt{\sigma^2(\mathbf x)+\epsilon}}+\beta$$
+<strong>RMSNorm</strong> skips the mean: $y = \mathbf g\odot\mathbf x\,/\sqrt{\tfrac1d\sum_i x_i^2+\epsilon}$. Both behave the same in training and eval and don't care about batch size, which is why transformers use them (module 08).</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Residual (skip) connection</div>
+<p>Instead of $\mathbf y = F(\mathbf x)$, compute $\mathbf y = \mathbf x + F(\mathbf x)$. The layer only has to learn a <em>correction</em> to its input, and in the backward pass the gradient flows straight through the "+" (its local gradient is 1), giving it a highway back to early layers. This is what makes 100+ layer networks trainable (ResNets, module 06; transformers, module 08).</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/norm-explorer.html">Normalization Explorer</a></div>
+<p>Click through a batch tensor and highlight exactly which numbers BatchNorm, LayerNorm, RMSNorm and GroupNorm average over.</p>
+</div>
+<figure class="video" data-yt="P6sfmUTpUmc" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/P6sfmUTpUmc/hqdefault.jpg)" aria-label="Play video: Building makemore Part 3: Activations &amp; Gradients, BatchNorm"><span class="video-btn">▶</span><span class="video-label">Building makemore Part 3: Activations &amp; Gradients, BatchNorm</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=P6sfmUTpUmc" target="_blank" rel="noopener">Building makemore Part 3: Activations &amp; Gradients, BatchNorm</a> · Andrej Karpathy · 1 h 56 min <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="6-regularization-in-deep-nets">6 · Regularization in deep nets<a class="anchor" href="#6-regularization-in-deep-nets" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Dropout (inverted dropout)</div>
+<p>During training, zero each activation with probability $p$ and scale the survivors up:
+$$\tilde h = \frac{m\cdot h}{1-p},\qquad m\sim\text{Bernoulli}(1-p)$$
+The scaling keeps the expected value unchanged, so at eval time dropout simply does nothing. It stops units from relying on each other and acts like averaging many thinned networks.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Label smoothing</div>
+<p>Replace the one-hot target by $\mathbf y' = (1-\varepsilon)\,\mathbf y + \varepsilon/C$ (e.g. $\varepsilon=0.1$). The model is no longer pushed to infinite logits, which often improves calibration and generalization. In PyTorch: <code>nn.CrossEntropyLoss(label_smoothing=0.1)</code>.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Other regularizers</div>
 <ul>
-<li><strong>Tensor</strong> = a NumPy array + device (CPU/GPU) + autograd. <code>requires_grad=True</code> records ops into a graph.</li>
-<li><code>loss.backward()</code> fills <code>.grad</code>. The optimizer reads <code>.grad</code> to update parameters. <code>optimizer.zero_grad()</code> resets them.</li>
-<li><strong><code>nn.Module</code></strong>: define layers in <code>__init__</code> and compute in <code>forward</code>. Parameters register automatically.</li>
-<li><strong><code>Dataset</code> / <code>DataLoader</code></strong>: batching, shuffling, worker processes.</li>
-<li><strong>Modes:</strong> <code>model.train()</code> / <code>model.eval()</code> switch dropout and BatchNorm behavior. <code>torch.no_grad()</code> turns off graph building.</li>
-<li><strong>Devices:</strong> move the model <em>and</em> the data <code>.to(device)</code>. Most "device mismatch" errors come from this.</li>
-<li><strong><code>torch.compile(model)</code></strong> often speeds training up with a one-line change (it fuses ops into optimized kernels). The first steps are slow while it compiles.</li>
+<li><strong>Weight decay</strong> (AdamW's $\lambda$, section 3).</li>
+<li><strong>Data augmentation:</strong> random crops, flips, colour jitter, mixup… new training examples for free (module 06).</li>
+<li><strong>Early stopping:</strong> keep the checkpoint with the best validation score.</li>
 </ul>
-<h3 id="optimizers">Optimizers<a class="anchor" href="#optimizers" title="Link to this section">#</a></h3>
-<ul>
-<li><strong>SGD + momentum:</strong> $v \leftarrow \beta v + g,\ \theta \leftarrow \theta - \eta v$ (heavy ball 🔭).</li>
-<li><strong>Adam:</strong> per-parameter adaptive step from running averages of $g$ and $g^2$:
-  $m\leftarrow\beta_1m+(1-\beta_1)g$, $v\leftarrow\beta_2v+(1-\beta_2)g^2$, $\hat m=m/(1-\beta_1^t)$, $\hat v=v/(1-\beta_2^t)$, $\theta\leftarrow\theta-\eta\,\hat m/(\sqrt{\hat v}+\epsilon)$. Defaults $\beta_1=0.9,\ \beta_2=0.999,\ \epsilon=10^{-8}$.</li>
-<li><strong>AdamW</strong> (<a href="https://arxiv.org/abs/1711.05101" target="_blank" rel="noopener">Loshchilov &amp; Hutter, 2019</a>): $\theta\leftarrow\theta-\eta\big(\hat m/(\sqrt{\hat v}+\epsilon)+\lambda\theta\big)$. The decay is applied <em>directly</em> to the weights. With plain Adam + L2, the penalty's gradient $\lambda\theta$ gets divided by $\sqrt{\hat v}$, so weights with large gradients are barely regularized. <strong>The default for transformers.</strong> Don't decay biases and norm gains.</li>
-<li><strong>LR is the #1 hyperparameter.</strong> Use warmup (stability early) + cosine/linear decay. LR range test to find a good value. 🎛️ Shape one in the <a href="interactive/lr-schedules.html">LR Schedule Designer</a> (it generates PyTorch code).</li>
-<li><strong>Batch size:</strong> larger means less gradient noise. Rules of thumb: scale the LR linearly with batch size for SGD (<a href="https://arxiv.org/abs/1706.02677" target="_blank" rel="noopener">Goyal et al., 2017</a>) and roughly with √ for Adam. Both stop working past a <em>critical batch size</em>, after which bigger batches stop speeding up training.</li>
-</ul>
-<h3 id="normalization-regularization">Normalization &amp; regularization<a class="anchor" href="#normalization-regularization" title="Link to this section">#</a></h3>
-<ul>
-<li><strong>BatchNorm:</strong> normalize each channel over the <em>batch</em> (and spatial positions, for CNNs). It uses running statistics at eval time. Common in CNNs, fragile with tiny batches.</li>
-<li><strong>LayerNorm / RMSNorm:</strong> normalize over the <em>features</em> of each example (token). Independent of batch size. Used in transformers; RMSNorm skips the mean subtraction. 🎛️ Click through them in the <a href="interactive/norm-explorer.html">Normalization Explorer</a>.</li>
-<li><strong>Residual connections</strong> $\mathbf x + F(\mathbf x)$ give gradients a highway. This is what makes deep nets trainable.</li>
-<li><strong>Dropout:</strong> randomly zero activations in training, which acts like an ensemble. <strong>Weight decay</strong>, <strong>data augmentation</strong>, <strong>early stopping</strong>, <strong>label smoothing</strong>.</li>
-</ul>
-<h3 id="debugging-recipe-from-karpathys-recipe">Debugging recipe (from Karpathy's "Recipe")<a class="anchor" href="#debugging-recipe-from-karpathys-recipe" title="Link to this section">#</a></h3>
+</div>
+<h2 id="7-debugging-when-training-goes-wrong">7 · Debugging: when training goes wrong<a class="anchor" href="#7-debugging-when-training-goes-wrong" title="Link to this section">#</a></h2>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Karpathy's recipe</div>
 <ol>
 <li>Get to know the data: look at samples and label distributions.</li>
-<li>Build a dumb baseline, fix random seeds, check the <strong>initial loss</strong> (≈ $\ln(C)$ for $C$ classes).</li>
+<li>Build a dumb baseline, fix random seeds, check the <strong>initial loss</strong> (≈ $\ln C$ for $C$ classes).</li>
 <li><strong>Overfit a single batch</strong> to ~0 loss. If you can't, there's a bug.</li>
 <li>Then add regularization and scale up. Change <strong>one thing at a time</strong>.</li>
 <li>Track everything: loss curves (train and val), LR, gradient norms. Use <strong>Weights &amp; Biases</strong> or TensorBoard.</li>
 </ol>
-<p>🎛️ Practice reading curves in the <a href="interactive/training-doctor.html">Training Doctor</a>: 11 realistic failure modes to diagnose.</p>
-<h3 id="performance">Performance<a class="anchor" href="#performance" title="Link to this section">#</a></h3>
-<ul>
-<li><strong>Mixed precision</strong> (<code>torch.autocast</code>, prefer <strong>bf16</strong>) often gives up to ~2× speed on GPUs with tensor cores and roughly halves activation memory. bf16 has float32's exponent range, so it needs no loss scaling; fp16 needs <code>torch.amp.GradScaler</code> to avoid underflow/overflow.</li>
-<li><strong>Gradient clipping</strong> (clip by norm, e.g. 1.0) prevents explosions.</li>
-<li><strong>Gradient accumulation</strong> simulates a large batch on a small GPU.</li>
-<li><strong>Checkpointing:</strong> save model + optimizer + step so you can resume.</li>
-</ul>
-<h2 id="worked-examples">Worked examples<a class="anchor" href="#worked-examples" title="Link to this section">#</a></h2>
-<p><strong>1 · Adam's first step has size ≈ η, whatever the gradient's scale.</strong> Take one parameter, $g_1=0.01$. Then $m=0.1\cdot0.01=0.001$, $v=0.001\cdot10^{-4}=10^{-7}$, $\hat m=0.001/0.1=0.01$, $\hat v=10^{-7}/0.001=10^{-4}$, step $=\eta\cdot0.01/(0.01+10^{-8})\approx\eta$. With $g_1=100$ you get the same step. That's why Adam's LR is a <em>step size</em> in parameter units, it needs less tuning than SGD's, and it's why early steps can be too big without warmup.</p>
-<p><strong>2 · "Loss is NaN at step 200": the checklist.</strong></p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · "Loss is NaN at step 200": the checklist</div>
+<p>Work through the flowchart below from the top.</p>
+</div>
 <pre class="mermaid">flowchart TD
   A[NaN or inf loss] --&gt; B{&quot;NaN in the inputs or labels?&quot;}
   B -- yes --&gt; B1[&quot;Fix data: assert torch.isfinite(x).all()&quot;]
@@ -181,7 +351,55 @@
   D -- yes --&gt; D1[&quot;Overflow: use bf16 or a GradScaler&quot;]
   D -- no --&gt; E[&quot;Unsafe op: log(0), sqrt(neg), x/0, exp(big).\nUse log_softmax, add eps, torch.autograd.set_detect_anomaly(True)&quot;]
 </pre>
-<p><strong>3 · Gradient accumulation (effective batch = 4 × 32 = 128).</strong></p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Reading loss curves</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>What you see</th>
+<th>Likely cause</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>loss flat from the start</td>
+<td>LR far too small, gradients not flowing (detached tensor), or wrong labels</td>
+</tr>
+<tr>
+<td>loss explodes or oscillates wildly</td>
+<td>LR too high; add warmup or clipping</td>
+</tr>
+<tr>
+<td>train ↓, validation ↑ after a while</td>
+<td>overfitting: regularize, augment, stop early</td>
+</tr>
+<tr>
+<td>both high and close together</td>
+<td>underfitting: bigger model, train longer</td>
+</tr>
+<tr>
+<td>regular sawtooth pattern</td>
+<td>data not shuffled</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/training-doctor.html">Training Doctor</a></div>
+<p>Diagnose 11 realistic failure modes from their loss curves alone, then check your answer.</p>
+</div>
+<h2 id="8-speed-and-memory">8 · Speed and memory<a class="anchor" href="#8-speed-and-memory" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Mixed precision</div>
+<p>Run most of the forward and backward pass in 16-bit floats (<code>torch.autocast</code>) while keeping a float32 copy of the weights. On GPUs with tensor cores this often gives up to ~2× speed and roughly halves activation memory. Prefer <strong>bf16</strong>: it has float32's exponent range, so it needs no loss scaling. <strong>fp16</strong> has a tiny range (max 65 504) and needs <code>torch.amp.GradScaler</code> to avoid underflow and overflow.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Gradient clipping (by global norm)</div>
+<p>$$\mathbf g\leftarrow\mathbf g\cdot\min\Big(1,\ \frac{c}{\|\mathbf g\|}\Big)$$
+If the gradient's total norm exceeds $c$ (e.g. 1.0), scale it down to length $c$; the direction is unchanged. It stops one bad batch from wrecking the weights. <code>torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)</code>.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Gradient accumulation (effective batch = 4 × 32 = 128)</div>
 <pre><code class="language-python">accum = 4
 opt.zero_grad(set_to_none=True)
 for i, (x, y) in enumerate(loader):              # loader batch size 32
@@ -193,6 +411,14 @@ for i, (x, y) in enumerate(loader):              # loader batch size 32
         opt.zero_grad(set_to_none=True)
 </code></pre>
 <p>Not identical to a real batch of 128 if the model has BatchNorm (its statistics still see 32 at a time).</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Checkpointing</div>
+<p>Save everything needed to resume, not just the weights:</p>
+<pre><code class="language-python">torch.save({&quot;model&quot;: model.state_dict(), &quot;opt&quot;: opt.state_dict(),
+            &quot;sched&quot;: sched.state_dict(), &quot;step&quot;: step}, &quot;ckpt.pt&quot;)
+</code></pre>
+</div>
 <h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
 <ol>
 <li>You evaluate a CNN with BatchNorm and get 10% accuracy, though training accuracy was 95%. One line fixes it. Which?</li>
@@ -229,15 +455,20 @@ for i, (x, y) in enumerate(loader):              # loader batch size 32
 <summary>Answer</summary>
 <p><code>CrossEntropyLoss</code> applies log-softmax internally and expects raw <strong>logits</strong>. Applying softmax first squashes the inputs to [0, 1], so gradients become tiny and training stalls. Pass <code>logits</code> directly.</p>
 </details>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
-<ul>
-<li>⭐ <strong><a href="https://d2l.ai/" target="_blank" rel="noopener">Dive into Deep Learning (d2l.ai)</a></strong>: free, PyTorch, math + code. Ch. 2–5, 8 (modern CNNs), 12 (optimization). Use it as your main textbook for modules 05–07.</li>
-<li>⭐ <strong><a href="https://karpathy.github.io/2019/04/25/recipe/" target="_blank" rel="noopener">A Recipe for Training Neural Networks (Karpathy)</a></strong>: read twice.</li>
-<li><strong><a href="https://udlbook.github.io/udlbook/" target="_blank" rel="noopener">Understanding Deep Learning (Simon Prince, 2023)</a></strong>: free, beautifully illustrated, and strong on theory. Ch. 6–9 (training, init, regularization). Your best <em>theory</em> companion.</li>
-<li><strong><a href="https://docs.pytorch.org/tutorials/beginner/basics/intro.html" target="_blank" rel="noopener">PyTorch: Learn the Basics</a></strong> + <strong><a href="https://www.learnpytorch.io/" target="_blank" rel="noopener">Zero to Mastery PyTorch</a></strong>.</li>
-<li><strong><a href="https://github.com/google-research/tuning_playbook" target="_blank" rel="noopener">Deep Learning Tuning Playbook (Google)</a></strong>: a systematic way to tune hyperparameters.</li>
-<li>Alt. top-down style: <strong><a href="https://course.fast.ai/" target="_blank" rel="noopener">fast.ai Practical Deep Learning</a></strong>. Great if you want quick wins before theory.</li>
-</ul>
+<ol start="6">
+<li>With dropout $p=0.5$, an activation is $h=3$. What values can $\tilde h$ take during training, and what is its expected value?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$0$ (probability 0.5) or $3/0.5=6$ (probability 0.5). Expected value $0.5\cdot6=3=h$, which is why no rescaling is needed at eval time.</p>
+</details>
+<ol start="7">
+<li>A cosine schedule with $\eta_{\max}=10^{-3}$, $\eta_{\min}=0$, no warmup and $T=1000$ steps. What is the LR at steps 0, 500 and 1000?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$10^{-3}\cdot\tfrac12(1+\cos 0)=10^{-3}$; at 500: $\tfrac12(1+\cos\tfrac\pi2)\cdot10^{-3}=5\times10^{-4}$; at 1000: $\tfrac12(1+\cos\pi)\cdot10^{-3}=0$.</p>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ol>
 <li>Re-implement your MNIST MLP in PyTorch. Compare it to your NumPy version.</li>
@@ -252,11 +483,20 @@ for i, (x, y) in enumerate(loader):              # loader batch size 32
 <li>Passing probabilities (after softmax) to <code>CrossEntropyLoss</code>, which expects logits.</li>
 <li>Calling <code>sched.step()</code> per epoch for a schedule defined in steps (or vice versa). Plot the LR you actually used.</li>
 </ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://d2l.ai/" target="_blank" rel="noopener">Dive into Deep Learning (d2l.ai)</a></strong>: free, PyTorch, math + code. Ch. 2–5, 8 (modern CNNs), 12 (optimization).</li>
+<li>⭐ <strong><a href="https://karpathy.github.io/2019/04/25/recipe/" target="_blank" rel="noopener">A Recipe for Training Neural Networks (Karpathy)</a></strong>: read twice.</li>
+<li><strong><a href="https://udlbook.github.io/udlbook/" target="_blank" rel="noopener">Understanding Deep Learning (Simon Prince, 2023)</a></strong>: free, beautifully illustrated, and strong on theory. Ch. 6–9 (training, init, regularization).</li>
+<li><strong><a href="https://docs.pytorch.org/tutorials/beginner/basics/intro.html" target="_blank" rel="noopener">PyTorch: Learn the Basics</a></strong> + <strong><a href="https://www.learnpytorch.io/" target="_blank" rel="noopener">Zero to Mastery PyTorch</a></strong>.</li>
+<li><strong><a href="https://github.com/google-research/tuning_playbook" target="_blank" rel="noopener">Deep Learning Tuning Playbook (Google)</a></strong>: a systematic way to tune hyperparameters.</li>
+<li>Alt. top-down style: <strong><a href="https://course.fast.ai/" target="_blank" rel="noopener">fast.ai Practical Deep Learning</a></strong>. Great if you want quick wins before theory.</li>
+</ul>
 <h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Training loop written from memory · <input type="checkbox"> ablation report done · <input type="checkbox"> you recognize failure modes from the loss curves alone</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/04-neural-nets-from-scratch.html"><small>← Previous</small>Neural Networks from Scratch</a><a class="pn next" href="../deep-learning/06-cnns-vision.html"><small>Next →</small>CNNs &amp; Computer Vision</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a><ul><li><a href="#pytorch-mechanics">PyTorch mechanics</a></li><li><a href="#optimizers">Optimizers</a></li><li><a href="#normalization-regularization">Normalization &amp; regularization</a></li><li><a href="#debugging-recipe-from-karpathys-recipe">Debugging recipe (from Karpathy's "Recipe")</a></li><li><a href="#performance">Performance</a></li></ul></li><li><a href="#worked-examples">Worked examples</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-tensors-and-autograd">1 · Tensors and autograd</a></li><li><a href="#2-models-data-and-the-training-loop">2 · Models, data and the training loop</a></li><li><a href="#3-optimizers">3 · Optimizers</a></li><li><a href="#4-the-learning-rate-and-its-schedule">4 · The learning rate and its schedule</a></li><li><a href="#5-normalization-and-residual-connections">5 · Normalization and residual connections</a></li><li><a href="#6-regularization-in-deep-nets">6 · Regularization in deep nets</a></li><li><a href="#7-debugging-when-training-goes-wrong">7 · Debugging: when training goes wrong</a></li><li><a href="#8-speed-and-memory">8 · Speed and memory</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

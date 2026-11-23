@@ -111,10 +111,22 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Transformers</span></nav><article class="doc"><h1 id="08-transformers">08 · Transformers<a class="anchor" href="#08-transformers" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 08</span><span>⏱ 3 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/08-transformers.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Transformers</span></nav><article class="doc"><h1 id="08-transformers">08 · Transformers<a class="anchor" href="#08-transformers" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 08</span><span>⏱ 10 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/08-transformers.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> be able to write a GPT from a blank file and explain every line. · <strong>Time:</strong> 20–30 h · <strong>Needs:</strong> 05, 07</p>
 </blockquote>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>compute <strong>scaled dot-product attention</strong> by hand and in code, with every shape, and explain the $\sqrt{d_k}$;</li>
+<li>explain <strong>causal masking</strong> and <strong>multi-head attention</strong>;</li>
+<li>draw a modern (pre-norm) <strong>transformer block</strong> and count its parameters;</li>
+<li>compare sinusoidal, learned and <strong>RoPE</strong> position encodings;</li>
+<li>explain attention's $O(T^2)$ cost, FlashAttention and the KV cache;</li>
+<li>tell encoder-only, decoder-only and encoder–decoder models apart, and build a small GPT.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Write scaled dot-product attention with shapes, and explain the $\sqrt{d_k}$.</li>
@@ -125,45 +137,225 @@
 <li class="task"><input type="checkbox"> Give the time and memory complexity of attention in sequence length $T$.</li>
 <li class="task"><input type="checkbox"> Explain encoder-only (BERT) vs decoder-only (GPT) vs encoder-decoder (T5).</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
-<ul>
-<li><strong>Attention:</strong> $\text{Attention}(Q,K,V) = \text{softmax}\!\left(\frac{QK^\top}{\sqrt{d_k}} + M\right)V$<ul>
-<li>$Q = XW_Q,\ K = XW_K,\ V = XW_V$. Each token <em>queries</em> every other token's <em>keys</em> and takes a weighted mix of their <em>values</em>.</li>
-<li><strong>Why $\sqrt{d_k}$:</strong> for random unit-variance entries, $\mathbf q\cdot\mathbf k$ has variance $d_k$. Dividing keeps the softmax out of its saturated (zero-gradient) regime.</li>
-<li><strong>Mask $M$:</strong> $-\infty$ above the diagonal = <strong>causal</strong> (can't see the future). This lets one forward pass train on all $T$ next-token predictions at once.</li>
-<li>Attention is a <strong>set operation</strong>: permutation-equivariant, with no built-in notion of order.</li>
-</ul>
-</li>
-<li><strong>Multi-head:</strong> split $d_{model}$ into $h$ heads of size $d_k = d_{model}/h$. Each head learns a different relation (syntax, coreference, position…). Concatenate, then project with $W_O$.</li>
-<li><strong>Transformer block (modern pre-norm, GPT-style):</strong>
-  <code>x = x + Attention(LayerNorm(x))
-  x = x + MLP(LayerNorm(x))        # MLP: d → 4d → d, GELU (or SwiGLU in Llama-style models)</code>
-  <strong>Residual stream view:</strong> every layer <em>reads from and writes to</em> a shared residual stream. This is the basis of interpretability work.</li>
-<li><strong>Positional encoding:</strong><ul>
-<li>Sinusoidal (original), learned absolute (GPT-2), <strong>RoPE</strong> (rotates Q/K by a position-dependent angle so attention depends on <em>relative</em> position; used by Llama, Qwen, and most modern LLMs).</li>
-<li>🔭 RoPE is a complex-phase rotation $e^{i m\theta}$: relative phase = relative position.</li>
-</ul>
-</li>
-<li><strong>Complexity:</strong> $O(T^2 d)$ compute and $O(T^2)$ memory for the score matrix. Fixes: <strong>FlashAttention</strong> (exact, tiles in fast GPU SRAM, never stores $T\times T$), sparse/sliding-window attention, linear attention, and state-space models (module 12).</li>
-<li><strong>Three families:</strong><ul>
-<li><strong>Encoder-only (BERT):</strong> bidirectional, masked-token objective → classification and embeddings.</li>
-<li><strong>Decoder-only (GPT):</strong> causal, next-token objective → generation. <strong>Dominant today.</strong></li>
-<li><strong>Encoder-decoder (T5, original Transformer):</strong> translation and seq2seq.</li>
-</ul>
-</li>
-<li><strong>Parameter count (decoder):</strong> ≈ $12\,L\,d^2$ (attention $4d^2$ + MLP $8d^2$ per layer), plus embeddings $V d$.</li>
-<li><strong>Same block everywhere:</strong> text, images (ViT), audio (Whisper), proteins (AlphaFold-style components), actions (robotics). Learn it once and it applies everywhere.</li>
-</ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
-<ul>
-<li>⭐ <strong><a href="https://www.youtube.com/watch?v=kCc8FmEb1nY" target="_blank" rel="noopener">Let's build GPT: from scratch, in code, spelled out (Karpathy)</a></strong> + <strong><a href="https://github.com/karpathy/nanoGPT" target="_blank" rel="noopener">nanoGPT</a></strong> / <strong><a href="https://github.com/karpathy/build-nanogpt" target="_blank" rel="noopener">build-nanogpt</a></strong> (the "Let's reproduce GPT-2 (124M)" video).</li>
-<li>⭐ <strong><a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener">The Illustrated Transformer (Jay Alammar)</a></strong>: read before the video.</li>
-<li><strong><a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">Attention Is All You Need (2017)</a></strong>: read the paper <em>after</em> building it. It'll be easy by then.</li>
-<li><strong><a href="https://nlp.seas.harvard.edu/annotated-transformer/" target="_blank" rel="noopener">The Annotated Transformer (Harvard NLP)</a></strong>: the paper line by line in PyTorch.</li>
-<li><strong><a href="https://www.3blue1brown.com/topics/neural-networks" target="_blank" rel="noopener">3Blue1Brown: Transformers &amp; Attention</a></strong> (chapters 5–7): superb visual intuition.</li>
-<li><strong><a href="https://poloclub.github.io/transformer-explainer/" target="_blank" rel="noopener">Transformer Explainer (interactive)</a></strong>: GPT-2 running live in the browser.</li>
-<li>Understanding Deep Learning (Prince) ch. 12.</li>
-</ul>
+<h2 id="1-self-attention">1 · Self-attention<a class="anchor" href="#1-self-attention" title="Link to this section">#</a></h2>
+<p>In module 07, a decoder <em>attended</em> to encoder states. <strong>Self-attention</strong> lets every token in a sequence attend to every other token of the <em>same</em> sequence, so each token's vector can absorb information from wherever it is relevant ("it" looks at the noun it refers to).</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Queries, keys and values</div>
+<p>From each token's vector $\mathbf x_t$, compute three vectors with learned matrices:
+$$\mathbf q_t = W_Q\mathbf x_t\ (\text{what am I looking for?}),\quad \mathbf k_t = W_K\mathbf x_t\ (\text{what do I contain?}),\quad \mathbf v_t = W_V\mathbf x_t\ (\text{what do I pass on?})$$
+Token $t$ compares its query with every key (dot product = similarity, module 01), turns the scores into weights with softmax, and takes the weighted average of the values.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Scaled dot-product attention</div>
+<p>Stacking all tokens as rows ($X$ is $T\times d$; $Q=XW_Q^\top$, $K=XW_K^\top$, $V=XW_V^\top$):
+$$\mathrm{Attention}(Q,K,V) = \mathrm{softmax}\!\Big(\frac{QK^\top}{\sqrt{d_k}}+M\Big)V$$
+Shapes: $QK^\top$ is $T\times T$ (every query against every key); softmax runs along each <strong>row</strong>; the result is $T\times d_v$. $M$ is an optional mask (section 2).</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Why divide by $\sqrt{d_k}$?</div>
+<p>If the entries of $\mathbf q$ and $\mathbf k$ are independent with variance 1, then $\mathbf q\cdot\mathbf k=\sum_{i=1}^{d_k}q_ik_i$ has variance $d_k$. For $d_k=64$ the scores would be ~8× too spread out, pushing softmax into a nearly one-hot, saturated regime where gradients vanish. Dividing by $\sqrt{d_k}$ brings the variance back to 1.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Attention by hand</div>
+<p>One query $\mathbf q=(2,0)$; three keys $\mathbf k_1=(1,0)$, $\mathbf k_2=(0,1)$, $\mathbf k_3=(1,1)$ with values $\mathbf v_1=(1,0)$, $\mathbf v_2=(0,1)$, $\mathbf v_3=(1,1)$; $d_k=2$.</p>
+<p>Scores $\mathbf q\cdot\mathbf k_j/\sqrt2 = (1.414,\ 0,\ 1.414)$ → softmax weights $(0.446,\ 0.108,\ 0.446)$ → output $0.446\,\mathbf v_1+0.108\,\mathbf v_2+0.446\,\mathbf v_3 = (0.892,\ 0.554)$.</p>
+<p>The query "points along the first axis", so it attends mostly to keys 1 and 3 and pulls in a mix of their values.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Attention is a set operation</div>
+<p>Nothing in the formula knows the <em>order</em> of the tokens: shuffle the rows of $X$ and the outputs shuffle the same way (permutation equivariance). Word order has to be injected separately (section 5).</p>
+</div>
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/attention.html">Attention Visualizer</a></div>
+<p>Edit queries and keys, toggle the causal mask and the $\sqrt{d_k}$ scaling, and watch the attention matrix and the outputs change.</p>
+</div>
+<figure class="video" data-yt="eMlx5fFNoYc" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/eMlx5fFNoYc/hqdefault.jpg)" aria-label="Play video: Attention in transformers, step-by-step"><span class="video-btn">▶</span><span class="video-label">Attention in transformers, step-by-step</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=eMlx5fFNoYc" target="_blank" rel="noopener">Attention in transformers, step-by-step</a> · 3Blue1Brown · 26 min <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="2-causal-masking">2 · Causal masking<a class="anchor" href="#2-causal-masking" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Causal mask</div>
+<p>A GPT predicts token $t+1$ from tokens $1..t$, so token $t$ must not see the future. Set $M_{ij}=-\infty$ for $j&gt;i$ (above the diagonal) and $0$ elsewhere. After softmax, $e^{-\infty}=0$, so every token attends only to itself and earlier tokens.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Training on all positions at once</div>
+<p>With the mask, one forward pass over a sequence of $T$ tokens produces $T$ next-token predictions, each using only its own past. Training on all of them in parallel is what makes transformers so much faster to train than RNNs.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Mask before the softmax</div>
+<p>The $-\infty$ must be added to the <strong>scores</strong>, before softmax. Zeroing weights <em>after</em> softmax leaves rows that no longer sum to 1, and the future has already leaked into the normalization.</p>
+</div>
+<h2 id="3-multi-head-attention">3 · Multi-head attention<a class="anchor" href="#3-multi-head-attention" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Multi-head attention</div>
+<p>Instead of one attention with $d_k=d_{model}$, run $h$ smaller attentions ("heads") in parallel, each with its own $W_Q,W_K,W_V$ and head size $d_k=d_{model}/h$. Concatenate their outputs and mix them with an output matrix $W_O$:
+$$\mathrm{MHA}(X) = \mathrm{Concat}(\text{head}_1,\dots,\text{head}_h)\,W_O^\top$$
+Different heads learn different relations (previous token, syntax, coreference, position…) at the same total cost as one big head.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Causal multi-head attention in PyTorch</div>
+<pre><code class="language-python">class CausalSelfAttention(nn.Module):
+    def __init__(self, d, h):
+        super().__init__()
+        self.h = h
+        self.qkv = nn.Linear(d, 3 * d)       # W_Q, W_K, W_V in one matmul
+        self.proj = nn.Linear(d, d)          # W_O
+    def forward(self, x):                    # x: (B, T, d)
+        B, T, d = x.shape
+        q, k, v = self.qkv(x).split(d, dim=-1)
+        # (B, T, d) -&gt; (B, h, T, d/h): each head attends independently
+        q, k, v = (t.view(B, T, self.h, d // self.h).transpose(1, 2) for t in (q, k, v))
+        y = F.scaled_dot_product_attention(q, k, v, is_causal=True)   # (B, h, T, d/h)
+        y = y.transpose(1, 2).contiguous().view(B, T, d)               # concat heads
+        return self.proj(y)
+</code></pre>
+</div>
+<h2 id="4-the-transformer-block">4 · The transformer block<a class="anchor" href="#4-the-transformer-block" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · A modern (pre-norm, GPT-style) block</div>
+<pre><code>x = x + MultiHeadAttention(LayerNorm(x))     # tokens exchange information
+x = x + MLP(LayerNorm(x))                    # each token is processed on its own
+</code></pre>
+<p>The <strong>MLP</strong> is two linear layers with a nonlinearity, applied to every token separately: $d\to4d\to d$ with GELU (or a SwiGLU variant in Llama-style models). A GPT is: token embedding (+ positions) → $L$ blocks → final LayerNorm → linear layer to $V$ logits.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · The residual stream</div>
+<p>Because every sub-layer <em>adds</em> its output to $\mathbf x$, you can view the model as one vector per token (the <strong>residual stream</strong>) that each attention and MLP layer reads from and writes into. Attention moves information <em>between</em> positions; the MLP transforms information <em>within</em> a position. This view is the basis of mechanistic interpretability (module 12).</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Parameter count (decoder-only)</div>
+<p>Per block: attention $4d^2$ ($W_Q,W_K,W_V,W_O$) + MLP $8d^2$ ($d\times4d$ and $4d\times d$) $=12d^2$ (ignoring biases and norms). Total:
+$$N\approx12\,L\,d^2 + V d$$
+<strong>GPT-2 small:</strong> $L=12$, $d=768$, $V=50\,257$: $12\cdot12\cdot768^2\approx84.9$M + $Vd\approx38.6$M + positions $1024\cdot768\approx0.8$M $\approx$ <strong>124M</strong> ✓.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Why pre-norm?</div>
+<p>The original Transformer put LayerNorm <em>after</em> each residual addition (post-norm), which is hard to train when deep without careful warmup. Putting it <em>before</em> each sub-layer (pre-norm) leaves a clean identity path through the whole network, so modern LLMs almost all use pre-norm (often with RMSNorm, module 05).</p>
+</div>
+<figure class="video" data-yt="wjZofJX0v4M" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/wjZofJX0v4M/hqdefault.jpg)" aria-label="Play video: But what is a GPT? Visual intro to transformers"><span class="video-btn">▶</span><span class="video-label">But what is a GPT? Visual intro to transformers</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=wjZofJX0v4M" target="_blank" rel="noopener">But what is a GPT? Visual intro to transformers</a> · 3Blue1Brown · 27 min <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="5-positional-information">5 · Positional information<a class="anchor" href="#5-positional-information" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Sinusoidal positions (original Transformer)</div>
+<p>Add a fixed vector to each token embedding:
+$$PE(pos,2i)=\sin\frac{pos}{10000^{2i/d}},\qquad PE(pos,2i+1)=\cos\frac{pos}{10000^{2i/d}}$$
+Each pair of dimensions is a clock ticking at a different frequency, so every position gets a unique pattern. <strong>Learned</strong> absolute positions (GPT-2) simply train a table of $T_{\max}$ vectors instead, but can't go beyond $T_{\max}$.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · RoPE (rotary position embedding)</div>
+<p>Instead of adding anything, <strong>rotate</strong> each pair of dimensions $(x_{2i},x_{2i+1})$ of the query and key at position $m$ by an angle $m\theta_i$, with $\theta_i = 10000^{-2i/d}$. Rotations preserve dot products up to the angle difference, so
+$$\langle R_m\mathbf q,\ R_n\mathbf k\rangle\ \text{depends only on}\ \mathbf q,\mathbf k\ \text{and}\ m-n$$
+Attention therefore sees <strong>relative</strong> positions. Used by Llama, Qwen and most modern LLMs, and it extends to longer contexts with tricks that rescale the angles.</p>
+<p>🔭 In complex notation it is multiplication by $e^{im\theta}$: relative phase = relative position.</p>
+</div>
+<h2 id="6-cost-and-efficiency">6 · Cost and efficiency<a class="anchor" href="#6-cost-and-efficiency" title="Link to this section">#</a></h2>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Complexity of attention</div>
+<p>For sequence length $T$ and width $d$: computing $QK^\top$ costs $O(T^2d)$ time, and the score matrix needs $O(T^2)$ memory per head. Doubling the context quadruples that part of the cost. The MLPs cost $O(Td^2)$, which dominates for short contexts.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · FlashAttention</div>
+<p>An <strong>exact</strong> attention algorithm that computes softmax in tiles inside the GPU's small, fast on-chip memory (SRAM) and never writes the full $T\times T$ matrix to slow memory. Same result, much less memory traffic: a large speed-up and memory that grows linearly with $T$. PyTorch's <code>scaled_dot_product_attention</code> uses it automatically when it can.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · KV cache</div>
+<p>When generating token by token, the keys and values of earlier tokens never change, so store them instead of recomputing them. Each new token then needs only one new query against the cached keys. The cache costs $2\cdot L\cdot T\cdot d$ numbers per sequence: for 32 layers, $d=4096$, $T=4096$ in 16-bit floats that is about <strong>2.1 GB</strong>. Variants like grouped-query attention (GQA) share keys/values across heads to shrink it.</p>
+</div>
+<div class="box box-note">
+<div class="box-title"><span class="box-ico">📝</span> Note · Other ways around $T^2$</div>
+<p>Sparse or sliding-window attention, linear-attention approximations, and state-space models such as Mamba (module 12) trade some flexibility for cost that grows linearly with $T$.</p>
+</div>
+<h2 id="7-three-families-of-transformers">7 · Three families of transformers<a class="anchor" href="#7-three-families-of-transformers" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Encoder-only, decoder-only, encoder–decoder</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Family</th>
+<th>Attention</th>
+<th>Training objective</th>
+<th>Examples</th>
+<th>Used for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>encoder-only</td>
+<td>bidirectional (no mask)</td>
+<td>predict masked tokens</td>
+<td>BERT, RoBERTa</td>
+<td>classification, embeddings, search</td>
+</tr>
+<tr>
+<td><strong>decoder-only</strong></td>
+<td>causal</td>
+<td>next token</td>
+<td>GPT, Llama, Claude-style LLMs</td>
+<td>generation, chat, <strong>dominant today</strong></td>
+</tr>
+<tr>
+<td>encoder–decoder</td>
+<td>encoder bidirectional + decoder causal with cross-attention</td>
+<td>predict the output sequence</td>
+<td>T5, original Transformer, Whisper</td>
+<td>translation, summarization, speech</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · The same block everywhere</div>
+<p>Text, images (ViT, module 06), audio (Whisper), proteins (AlphaFold-style components) and robot actions all use the same block with a different tokenizer. Learn it once and it applies everywhere.</p>
+</div>
+<h2 id="8-build-a-gpt">8 · Build a GPT<a class="anchor" href="#8-build-a-gpt" title="Link to this section">#</a></h2>
+<figure class="video" data-yt="kCc8FmEb1nY" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/kCc8FmEb1nY/hqdefault.jpg)" aria-label="Play video: Let&#x27;s build GPT: from scratch, in code, spelled out"><span class="video-btn">▶</span><span class="video-label">Let&#x27;s build GPT: from scratch, in code, spelled out</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=kCc8FmEb1nY" target="_blank" rel="noopener">Let&#x27;s build GPT: from scratch, in code, spelled out</a> · Andrej Karpathy · 1 h 56 min. Code along, then rebuild it from a blank file. <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<div class="box box-try">
+<div class="box-title"><span class="box-ico">🎛️</span> Try it · <a href="interactive/attention.html">Attention Visualizer</a></div>
+<p>Before you code, predict the attention matrix for a short sentence with and without the causal mask, then check.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>$X$ is $(B=8, T=128, d=512)$ with $h=8$ heads. What is the shape of $Q$ per head, of the score matrix, and of the output?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Per head $d_k=512/8=64$: $Q,K,V$ are $(8, 8, 128, 64)$ (batch, heads, $T$, $d_k$); scores $(8, 8, 128, 128)$; output after concatenation $(8, 128, 512)$.</p>
+</details>
+<ol start="2">
+<li>Why would attention without the $\sqrt{d_k}$ train badly at $d_k=128$?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Scores would have standard deviation $\sqrt{128}\approx11$, so softmax would be almost one-hot: tiny gradients for all but one key (saturation), slow and unstable training.</p>
+</details>
+<ol start="3">
+<li>Write the causal mask for $T=3$, and the attention weights of token 1 (the first token).</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$M=\begin{pmatrix}0&amp;-\infty&amp;-\infty\\0&amp;0&amp;-\infty\\0&amp;0&amp;0\end{pmatrix}$. Token 1 can only see itself, so its weights are $(1,0,0)$.</p>
+</details>
+<ol start="4">
+<li>Estimate the parameter count of a decoder with $L=24$, $d=1024$, $V=50\,000$.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$12\cdot24\cdot1024^2\approx302$M + $50\,000\cdot1024\approx51$M $\approx353$M (GPT-2 medium is ~350M).</p>
+</details>
+<ol start="5">
+<li>Going from 4k to 32k context, how do the attention score memory and the KV-cache size change?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Context grows 8×. Score memory (without FlashAttention) grows $8^2=64$×; the KV cache grows linearly, 8×.</p>
+</details>
+<ol start="6">
+<li>Show that attention without positions can't tell "dog bites man" from "man bites dog".</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Both sentences have the same set of token embeddings. Attention is permutation-equivariant, so each word's output vector is the same in both orders (just in different positions), and any order-independent readout gives the same answer. Positional encodings break the symmetry.</p>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ol>
 <li><strong>Single-head attention in NumPy</strong>, checked against <code>torch.nn.functional.scaled_dot_product_attention</code>.</li>
@@ -177,11 +369,21 @@
 <li>A causal mask applied <em>after</em> the softmax (wrong) instead of before (right).</li>
 <li>Thinking you understand it after watching. Close the video and rebuild from nothing.</li>
 </ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://github.com/karpathy/nanoGPT" target="_blank" rel="noopener">nanoGPT</a></strong> / <strong><a href="https://github.com/karpathy/build-nanogpt" target="_blank" rel="noopener">build-nanogpt</a></strong> (the "Let's reproduce GPT-2 (124M)" video).</li>
+<li>⭐ <strong><a href="https://jalammar.github.io/illustrated-transformer/" target="_blank" rel="noopener">The Illustrated Transformer (Jay Alammar)</a></strong>.</li>
+<li><strong><a href="https://arxiv.org/abs/1706.03762" target="_blank" rel="noopener">Attention Is All You Need (2017)</a></strong>: read the paper <em>after</em> building it. It'll be easy by then.</li>
+<li><strong><a href="https://nlp.seas.harvard.edu/annotated-transformer/" target="_blank" rel="noopener">The Annotated Transformer (Harvard NLP)</a></strong>: the paper line by line in PyTorch.</li>
+<li><strong><a href="https://www.3blue1brown.com/topics/neural-networks" target="_blank" rel="noopener">3Blue1Brown: Neural Networks</a></strong> (chapters 5–7): superb visual intuition.</li>
+<li><strong><a href="https://poloclub.github.io/transformer-explainer/" target="_blank" rel="noopener">Transformer Explainer (interactive)</a></strong>: GPT-2 running live in the browser.</li>
+<li><a href="https://udlbook.github.io/udlbook/" target="_blank" rel="noopener">Understanding Deep Learning (Prince)</a> ch. 12.</li>
+</ul>
 <h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> GPT written from a blank file without referencing code · <input type="checkbox"> every skip-test item answered on paper</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/07-sequences-rnns.html"><small>← Previous</small>Sequences, Embeddings &amp; RNNs</a><a class="pn next" href="../deep-learning/09-llms.html"><small>Next →</small>Large Language Models</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-self-attention">1 · Self-attention</a></li><li><a href="#2-causal-masking">2 · Causal masking</a></li><li><a href="#3-multi-head-attention">3 · Multi-head attention</a></li><li><a href="#4-the-transformer-block">4 · The transformer block</a></li><li><a href="#5-positional-information">5 · Positional information</a></li><li><a href="#6-cost-and-efficiency">6 · Cost and efficiency</a></li><li><a href="#7-three-families-of-transformers">7 · Three families of transformers</a></li><li><a href="#8-build-a-gpt">8 · Build a GPT</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

@@ -111,11 +111,22 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Sequences, Embeddings &amp; RNNs</span></nav><article class="doc"><h1 id="07-sequences-embeddings-rnns">07 · Sequences, Embeddings &amp; RNNs<a class="anchor" href="#07-sequences-embeddings-rnns" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 07</span><span>⏱ 2 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/07-sequences-rnns.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>Sequences, Embeddings &amp; RNNs</span></nav><article class="doc"><h1 id="07-sequences-embeddings-rnns">07 · Sequences, Embeddings &amp; RNNs<a class="anchor" href="#07-sequences-embeddings-rnns" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 07</span><span>⏱ 7 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/07-sequences-rnns.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> learn how to model sequences, and why attention replaced recurrence. · <strong>Time:</strong> 10–15 h · <strong>Needs:</strong> 05</p>
 </blockquote>
 <p>This module is deliberately <strong>short</strong>. RNNs are mostly history now, but the problems they ran into explain every transformer design choice. (Modern state-space models such as Mamba bring recurrence back. See module 12.)</p>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>state the <strong>language-modelling</strong> objective and turn text into tokens and <strong>embeddings</strong>;</li>
+<li>write the RNN update and explain why gradients <strong>vanish or explode</strong> through time;</li>
+<li>explain how LSTM/GRU gates fix that;</li>
+<li>explain the seq2seq bottleneck and how <strong>attention</strong> removes it, leading straight to the transformer;</li>
+<li>generate text autoregressively with greedy, temperature, top-k and top-p sampling.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Explain tokenization and embeddings: why one-hot is bad and what an embedding table is.</li>
@@ -124,37 +135,169 @@
 <li class="task"><input type="checkbox"> Explain the seq2seq encoder-decoder bottleneck and how <strong>attention</strong> removes it.</li>
 <li class="task"><input type="checkbox"> Explain teacher forcing and autoregressive generation.</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
-<ul>
-<li><strong>Language modeling</strong> = predicting the next token: $p(x_1..x_T) = \prod_t p(x_t\mid x_{&lt;t})$. This one objective powers GPT.</li>
-<li><strong>Tokens:</strong> characters, words, or subwords (BPE, see module 09). <strong>Embedding</strong> = a learned lookup table $E \in \mathbb R^{V\times d}$, where similar meanings end up as nearby vectors.</li>
-<li><strong>word2vec</strong> (2013): learn embeddings by predicting context words. Famous vector arithmetic: king − man + woman ≈ queen.</li>
-<li><strong>Vanilla RNN:</strong> $\mathbf h_t = \tanh(W_h\mathbf h_{t-1} + W_x\mathbf x_t + \mathbf b)$. <strong>BPTT</strong> multiplies by $W_h$ $T$ times, so gradients scale like $\lambda_{\max}^T$ → <strong>vanish or explode</strong>.</li>
-<li><strong>LSTM / GRU:</strong> an additive cell state $\mathbf c_t = \mathbf f_t\odot\mathbf c_{t-1} + \mathbf i_t\odot\tilde{\mathbf c}_t$ creates a gradient highway, the same idea as residual connections.</li>
-<li><strong>Seq2seq:</strong> an encoder squeezes the input into one vector, and a decoder generates from it. <strong>Bottleneck:</strong> one vector for a whole sentence.</li>
-<li><strong>Attention (Bahdanau 2014):</strong> at each decoder step, take a weighted average of <em>all</em> encoder states, with weights = softmax(similarity). → "Attention is all you need" (2017) drops recurrence entirely.</li>
-<li><strong>Why transformers won:</strong> RNNs are sequential (no parallelism over time) and struggle with long range. Attention connects all positions in $O(1)$ steps and trains in parallel.</li>
-<li><strong>Generation:</strong> autoregressive sampling. Train with <strong>teacher forcing</strong> (feed the ground-truth previous token). Decoding: greedy, temperature, top-k, top-p.</li>
-</ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
-<ul>
-<li>⭐ <strong><a href="https://karpathy.ai/zero-to-hero.html" target="_blank" rel="noopener">Karpathy Zero to Hero: makemore series</a></strong>: you'll already be partway through it from module 04. It builds bigram → MLP → WaveNet-style LMs.</li>
-<li>⭐ <strong><a href="https://colah.github.io/posts/2015-08-Understanding-LSTMs/" target="_blank" rel="noopener">Understanding LSTM Networks (colah)</a></strong>: the classic diagrams.</li>
-<li><strong><a href="https://karpathy.github.io/2015/05/21/rnn-effectiveness/" target="_blank" rel="noopener">The Unreasonable Effectiveness of RNNs (Karpathy)</a></strong>.</li>
-<li><strong><a href="https://web.stanford.edu/class/cs224n/" target="_blank" rel="noopener">Stanford CS224n</a></strong>: lectures on word vectors, RNNs, seq2seq + attention.</li>
-<li><strong>d2l.ai</strong> ch. 9–11 (RNNs, modern RNNs, attention).</li>
-</ul>
+<h2 id="1-language-modelling">1 · Language modelling<a class="anchor" href="#1-language-modelling" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Language model</div>
+<p>A <strong>language model</strong> assigns a probability to a sequence of tokens. By the chain rule of probability it can always be factored into next-token predictions:
+$$p(x_1,\dots,x_T) = \prod_{t=1}^{T} p(x_t\mid x_1,\dots,x_{t-1})$$
+So a model that predicts "the next token given everything so far" is a complete language model. <strong>This single objective powers GPT</strong> (modules 08–09).</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Training loss and perplexity</div>
+<p>Train by minimizing the average cross-entropy of the next token:
+$$L = -\frac1T\sum_{t=1}^T\log p_\theta(x_t\mid x_{&lt;t}),\qquad \text{perplexity} = e^{L}$$
+Perplexity is the "effective number of choices" the model is torn between at each step. A uniform guess over a vocabulary of $V$ tokens has perplexity $V$.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · A bigram model</div>
+<p>The simplest LM looks only at the previous character: count how often each pair occurs in the training text, normalize each row into probabilities, and sample. On a list of names it produces name-like gibberish ("kalia", "jonen"). Everything after this (MLP, RNN, transformer) is a better way to use <strong>more</strong> context.</p>
+</div>
+<figure class="video" data-yt="PaCmpygFfXo" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/PaCmpygFfXo/hqdefault.jpg)" aria-label="Play video: The spelled-out intro to language modeling: building makemore"><span class="video-btn">▶</span><span class="video-label">The spelled-out intro to language modeling: building makemore</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=PaCmpygFfXo" target="_blank" rel="noopener">The spelled-out intro to language modeling: building makemore</a> · Andrej Karpathy · 1 h 57 min <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="2-tokens-and-embeddings">2 · Tokens and embeddings<a class="anchor" href="#2-tokens-and-embeddings" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Tokenization</div>
+<p>Text is split into <strong>tokens</strong> and each token gets an integer id from a fixed <strong>vocabulary</strong> of size $V$. Tokens can be characters (small $V$, long sequences), words (huge $V$, unknown words are a problem) or <strong>subwords</strong> (the standard: frequent words stay whole, rare ones split into pieces; byte-pair encoding, module 09).</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Embedding</div>
+<p>One-hot vectors (length $V$, a single 1) treat every pair of tokens as equally different and are huge. Instead, keep a learned table $E\in\mathbb R^{V\times d}$ and represent token $i$ by its row $E_i$, a dense $d$-dimensional vector (e.g. $d=768$). Looking up a row is the same as multiplying a one-hot vector by $E$, so the table is trained by backprop like any other weight. Tokens used in similar contexts end up with nearby vectors.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · word2vec</div>
+<p>A 2013 method that learns word embeddings by predicting the words around each word (skip-gram) with a cheap trick (<strong>negative sampling</strong>: tell real context words from random ones). The resulting vectors show striking structure, like $\vec{\text{king}}-\vec{\text{man}}+\vec{\text{woman}}\approx\vec{\text{queen}}$. Similarity between embeddings is measured with cosine similarity (module 01).</p>
+</div>
+<h2 id="3-recurrent-neural-networks">3 · Recurrent neural networks<a class="anchor" href="#3-recurrent-neural-networks" title="Link to this section">#</a></h2>
+<p>An RNN reads a sequence one step at a time, carrying a <strong>hidden state</strong> that summarizes everything seen so far.</p>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Vanilla RNN</div>
+<p>$$\mathbf h_t = \tanh\big(W_h\mathbf h_{t-1} + W_x\mathbf x_t + \mathbf b\big),\qquad \hat{\mathbf y}_t = \mathrm{softmax}(W_y\mathbf h_t)$$
+The <strong>same</strong> weights are used at every time step (weight sharing over time, like a convolution shares over space).</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Backpropagation through time (BPTT)</div>
+<p>Unroll the RNN over the $T$ steps of a sequence into one long feed-forward graph and run ordinary backprop on it. Long sequences are often cut into chunks (<strong>truncated BPTT</strong>) to save memory.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Why gradients vanish or explode</div>
+<p>The gradient from step $t$ back to step $t-k$ passes through $k$ copies of the Jacobian $\partial\mathbf h_t/\partial\mathbf h_{t-1} = \mathrm{diag}(\tanh')\,W_h$. Roughly, it scales like $\lambda_{\max}^k$, where $\lambda_{\max}$ is the largest eigenvalue magnitude of $W_h$ (times the tanh slopes, which are ≤ 1). If that is below 1 the gradient <strong>vanishes</strong> exponentially and the network can't learn long-range dependencies; above 1 it <strong>explodes</strong> (fix: gradient clipping, module 05).</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · LSTM (long short-term memory)</div>
+<p>Add a separate <strong>cell state</strong> $\mathbf c_t$ that is updated <em>additively</em>, controlled by gates (sigmoids between 0 and 1):
+$$\mathbf f_t,\mathbf i_t,\mathbf o_t = \sigma(\cdot),\quad \tilde{\mathbf c}_t = \tanh(\cdot)\qquad(\text{each a linear function of } \mathbf h_{t-1},\mathbf x_t)$$
+$$\mathbf c_t = \mathbf f_t\odot\mathbf c_{t-1} + \mathbf i_t\odot\tilde{\mathbf c}_t,\qquad \mathbf h_t = \mathbf o_t\odot\tanh(\mathbf c_t)$$
+<strong>Forget gate</strong> $\mathbf f$: how much old memory to keep. <strong>Input gate</strong> $\mathbf i$: how much new content to write. <strong>Output gate</strong> $\mathbf o$: how much memory to expose. When $\mathbf f\approx1$ the gradient flows along $\mathbf c$ almost unchanged: a gradient highway, the same idea as residual connections. The <strong>GRU</strong> is a simpler two-gate variant.</p>
+</div>
+<h2 id="4-seq2seq-and-the-birth-of-attention">4 · Seq2seq and the birth of attention<a class="anchor" href="#4-seq2seq-and-the-birth-of-attention" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Sequence-to-sequence (seq2seq)</div>
+<p>For tasks like translation, an <strong>encoder</strong> RNN reads the whole input sentence into its final hidden state; a <strong>decoder</strong> RNN then generates the output one token at a time starting from that state. <strong>The bottleneck:</strong> one fixed-size vector must hold the meaning of an entire sentence, and quality drops for long inputs.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Attention (Bahdanau et al., 2014)</div>
+<p>At each decoder step $t$, look back at <strong>all</strong> encoder states $\mathbf h_1,\dots,\mathbf h_S$:
+$$\alpha_{t,s} = \mathrm{softmax}_s\big(\mathrm{score}(\mathbf s_t,\mathbf h_s)\big),\qquad \mathbf c_t = \sum_s\alpha_{t,s}\,\mathbf h_s$$
+The <strong>attention weights</strong> $\alpha_{t,s}$ (summing to 1) say how much the decoder focuses on each input position; the <strong>context vector</strong> $\mathbf c_t$ is their weighted average. No more single-vector bottleneck, and the weights are interpretable (they align words across languages).</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · Why transformers won</div>
+<p>RNNs must process tokens one after another, so they can't use GPU parallelism over time, and information between distant tokens passes through many steps. "Attention Is All You Need" (2017) dropped recurrence entirely: every token attends to every other token directly, in one parallel step. That is module 08.</p>
+</div>
+<h2 id="5-generating-text">5 · Generating text<a class="anchor" href="#5-generating-text" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Teacher forcing and autoregressive generation</div>
+<p><strong>Training</strong> (teacher forcing): feed the <em>true</em> previous tokens and predict each next one, so all positions train in parallel. <strong>Generation</strong> (autoregressive): feed the model's <em>own</em> sampled token back in as the next input, one step at a time.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Decoding strategies</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Rule</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>greedy</td>
+<td>always take the most likely token</td>
+<td>deterministic, often repetitive</td>
+</tr>
+<tr>
+<td>temperature $T$</td>
+<td>sample from $\mathrm{softmax}(\mathbf z/T)$</td>
+<td>$T&lt;1$ sharper, $T&gt;1$ more random</td>
+</tr>
+<tr>
+<td>top-k</td>
+<td>sample only among the $k$ most likely tokens</td>
+<td>cuts off the long tail of nonsense</td>
+</tr>
+<tr>
+<td>top-p (nucleus)</td>
+<td>sample among the smallest set whose probability sums to $p$ (e.g. 0.9)</td>
+<td>adapts the cut-off to the model's confidence</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>A model's average next-token cross-entropy on validation text is 1.2 nats. What is its perplexity, and how does it compare to uniform guessing over 65 characters?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$e^{1.2}\approx3.3$: the model is about as uncertain as a choice between 3.3 equally likely characters, versus 65 for uniform guessing ($\ln65\approx4.17$ nats).</p>
+</details>
+<ol start="2">
+<li>An embedding table has $V=50\,000$ tokens and $d=768$. How many parameters, and what does looking up token 42 do?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$50\,000\cdot768 = 38.4$ million parameters. The lookup returns row 42 of the table, equivalent to multiplying the one-hot vector for token 42 by $E$.</p>
+</details>
+<ol start="3">
+<li>An RNN's recurrent Jacobian has largest eigenvalue magnitude 0.9. By roughly what factor is a gradient scaled after 50 steps? And with 1.1?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$0.9^{50}\approx0.005$ (vanishing) and $1.1^{50}\approx117$ (exploding).</p>
+</details>
+<ol start="4">
+<li>In an LSTM, what forget-gate value lets information survive for many steps, and why does that help the gradient?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$\mathbf f_t\approx1$. Then $\mathbf c_t\approx\mathbf c_{t-1}+\dots$, so $\partial\mathbf c_t/\partial\mathbf c_{t-1}\approx I$ and the gradient passes back without shrinking, like a residual connection.</p>
+</details>
+<ol start="5">
+<li>Logits for three tokens are $(2, 1, 0)$. Give the sampling probabilities at temperature 1 and at temperature 0.5.</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$T=1$: $e^{(2,1,0)}/\Sigma = (7.39, 2.72, 1)/11.11 \approx (0.67, 0.24, 0.09)$. $T=0.5$: logits become $(4,2,0)$: $(54.6, 7.39, 1)/63.0\approx(0.87, 0.12, 0.02)$. Lower temperature concentrates probability on the top token.</p>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ol>
 <li><strong>Character-level LM</strong> (makemore): bigram → MLP → small RNN/LSTM on a names or Shakespeare dataset. Compare samples and validation loss.</li>
 <li>Train word2vec (skip-gram with negative sampling) on a small corpus. Show nearest neighbors and analogies.</li>
 <li>Stretch: a seq2seq + attention model for date-format translation ("3rd of May 2021" → "2021-05-03"). Plot the attention heatmap.</li>
 </ol>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://karpathy.ai/zero-to-hero.html" target="_blank" rel="noopener">Karpathy Zero to Hero: makemore series</a></strong>: you'll already be partway through it from module 04. It builds bigram → MLP → WaveNet-style LMs.</li>
+<li>⭐ <strong><a href="https://colah.github.io/posts/2015-08-Understanding-LSTMs/" target="_blank" rel="noopener">Understanding LSTM Networks (colah)</a></strong>: the classic diagrams.</li>
+<li><strong><a href="https://karpathy.github.io/2015/05/21/rnn-effectiveness/" target="_blank" rel="noopener">The Unreasonable Effectiveness of RNNs (Karpathy)</a></strong>.</li>
+<li><strong><a href="https://web.stanford.edu/class/cs224n/" target="_blank" rel="noopener">Stanford CS224n</a></strong>: lectures on word vectors, RNNs, seq2seq + attention.</li>
+<li><strong><a href="https://d2l.ai/" target="_blank" rel="noopener">d2l.ai</a></strong> ch. 9–11 (RNNs, modern RNNs, attention).</li>
+</ul>
 <h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Char-LM produces plausible samples · <input type="checkbox"> you can explain the path from RNN → attention → transformer</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/06-cnns-vision.html"><small>← Previous</small>CNNs &amp; Computer Vision</a><a class="pn next" href="../deep-learning/08-transformers.html"><small>Next →</small>Transformers</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-language-modelling">1 · Language modelling</a></li><li><a href="#2-tokens-and-embeddings">2 · Tokens and embeddings</a></li><li><a href="#3-recurrent-neural-networks">3 · Recurrent neural networks</a></li><li><a href="#4-seq2seq-and-the-birth-of-attention">4 · Seq2seq and the birth of attention</a></li><li><a href="#5-generating-text">5 · Generating text</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>

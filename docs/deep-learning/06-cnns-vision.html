@@ -111,10 +111,21 @@
 <a class="side-home" href="../template/TOPIC_TEMPLATE.html">🧩 Start a new topic</a>
 </nav></aside>
   <div class="scrim" hidden></div>
-  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>CNNs &amp; Computer Vision</span></nav><article class="doc"><h1 id="06-cnns-computer-vision">06 · CNNs &amp; Computer Vision<a class="anchor" href="#06-cnns-computer-vision" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 06</span><span>⏱ 2 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/06-cnns-vision.md" target="_blank" rel="noopener">View Markdown source</a></div>
+  <main id="content" class="main"><nav class="crumbs" aria-label="Breadcrumb"><a href="../index.html">Home</a> <span class="sep">›</span> <a href="../deep-learning/index.html">Deep Learning</a> <span class="sep">›</span> <span>CNNs &amp; Computer Vision</span></nav><article class="doc"><h1 id="06-cnns-computer-vision">06 · CNNs &amp; Computer Vision<a class="anchor" href="#06-cnns-computer-vision" title="Link to this section">#</a></h1><div class="page-meta"><span class="chip">Module 06</span><span>⏱ 9 min read</span><a class="src-link" href="https://github.com/pkworkandlearnspace-git/Self-Study/blob/main/deep-learning/06-cnns-vision.md" target="_blank" rel="noopener">View Markdown source</a></div>
 <blockquote>
 <p><strong>Goal:</strong> understand convolution, the classic architectures, and modern vision. · <strong>Time:</strong> 20–25 h · <strong>Needs:</strong> 05</p>
 </blockquote>
+<div class="box box-goal">
+<div class="box-title"><span class="box-ico">🎯</span> What you'll learn</div>
+<p>By the end of this chapter you can:</p>
+<ul>
+<li>compute a convolution by hand, and its output size and parameter count;</li>
+<li>explain <strong>weight sharing, translation equivariance, receptive field</strong> and pooling;</li>
+<li>tell the story of vision architectures from LeNet to ResNet, ConvNeXt and the <strong>Vision Transformer</strong>;</li>
+<li>use data augmentation and <strong>transfer learning</strong> effectively;</li>
+<li>describe detection and segmentation, and the vision foundation models you can download today.</li>
+</ul>
+</div>
 <h2 id="skip-test">Skip test<a class="anchor" href="#skip-test" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> Compute the output size of a conv: input 32, kernel 5, stride 2, padding 2.</li>
@@ -124,40 +135,223 @@
 <li class="task"><input type="checkbox"> Explain transfer learning: when to freeze, when to fine-tune.</li>
 <li class="task"><input type="checkbox"> Explain how a Vision Transformer (ViT) turns an image into tokens.</li>
 </ul>
-<h2 id="core-ideas">Core ideas<a class="anchor" href="#core-ideas" title="Link to this section">#</a></h2>
+<h2 id="1-why-not-just-use-an-mlp-on-images">1 · Why not just use an MLP on images?<a class="anchor" href="#1-why-not-just-use-an-mlp-on-images" title="Link to this section">#</a></h2>
+<p>A 224×224 colour image has $224\cdot224\cdot3\approx150\,000$ numbers. A dense layer with 1000 hidden units on it would need <strong>150 million</strong> weights for one layer, and it would have to learn "a cat in the top-left" and "a cat in the bottom-right" as unrelated patterns. Images have structure an MLP ignores:</p>
 <ul>
-<li><strong>Convolution</strong> = sliding the same small filter everywhere. This builds in the <em>prior</em> that local patterns matter anywhere in the image.<ul>
-<li>Output size: $\lfloor (n + 2p - k)/s \rfloor + 1$. Params: $C_{in}\cdot C_{out}\cdot k^2 + C_{out}$.</li>
-<li>🔭 A convolution is the discrete version of what you know from Green's functions and signal filtering. In DL it's technically cross-correlation.</li>
+<li><strong>Locality:</strong> nearby pixels are related; a useful pattern (an edge, an eye) is small.</li>
+<li><strong>Translation:</strong> the same pattern can appear anywhere.</li>
 </ul>
-</li>
-<li><strong>Pooling / strided conv</strong> downsample, so the receptive field grows. <strong>Feature hierarchy:</strong> edges → textures → parts → objects.</li>
-<li><strong>Architecture timeline (know the <em>idea</em> of each):</strong><ul>
-<li><strong>LeNet</strong> (1998): conv + pool. <strong>AlexNet</strong> (2012): ReLU, GPU, dropout, the "ImageNet moment".</li>
-<li><strong>VGG</strong>: stacks of 3×3 convs. <strong>GoogLeNet/Inception</strong>: parallel branches, 1×1 convs.</li>
-<li><strong>ResNet</strong> (2015): $\mathbf y = \mathbf x + F(\mathbf x)$. <strong>The most important architecture idea in DL.</strong></li>
-<li><strong>MobileNet/EfficientNet</strong>: depthwise-separable convs, compound scaling.</li>
-<li><strong>ConvNeXt</strong> (2022): a CNN modernized with transformer-era training tricks.</li>
-<li><strong>ViT</strong> (2020): split the image into 16×16 patches → linear embeddings → transformer. Wins with enough data or pretraining.</li>
-</ul>
-</li>
-<li><strong>Data augmentation:</strong> flips, crops, color jitter, Mixup/CutMix, RandAugment. Often worth more than architecture changes.</li>
-<li><strong>Transfer learning:</strong> take an ImageNet-pretrained backbone and replace the head. Small data → freeze most layers. More data → fine-tune all at a low LR.</li>
-<li><strong>Tasks beyond classification:</strong><ul>
-<li><strong>Detection</strong> (boxes): two-stage (Faster R-CNN), one-stage (YOLO family), transformer-based (DETR).</li>
-<li><strong>Segmentation</strong> (pixels): <strong>U-Net</strong> (encoder-decoder + skip connections, also the backbone of diffusion models!), Mask R-CNN, SAM.</li>
-</ul>
-</li>
-<li><strong>Foundation vision models:</strong> CLIP (image–text), DINOv2 (self-supervised features), SAM (segment anything). Grab them from <code>timm</code> / Hugging Face.</li>
-</ul>
-<h2 id="learn-from">Learn from<a class="anchor" href="#learn-from" title="Link to this section">#</a></h2>
+<p>Convolutional networks (CNNs) build both facts into the architecture.</p>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Convolution (as used in DL)</div>
+<p>Slide a small <strong>filter</strong> (kernel) $K$ of size $k\times k$ over the image. At each position, multiply the filter with the patch underneath element-wise and sum:
+$$Y[i,j] = \sum_{u=0}^{k-1}\sum_{v=0}^{k-1} K[u,v]\;X[i+u,\,j+v] + b$$
+With $C_{in}$ input channels the filter is $C_{in}\times k\times k$ and the sum also runs over channels. A layer has $C_{out}$ such filters, producing $C_{out}$ output <strong>feature maps</strong>. (Strictly this is cross-correlation; true convolution flips the kernel. With learned kernels the difference doesn't matter.)</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · A vertical-edge detector</div>
+<p>Image patch (left half dark, right half bright) and kernel:
+$$X=\begin{pmatrix}0&amp;0&amp;9\\0&amp;0&amp;9\\0&amp;0&amp;9\end{pmatrix},\quad K=\begin{pmatrix}-1&amp;0&amp;1\\-1&amp;0&amp;1\\-1&amp;0&amp;1\end{pmatrix}\ \Rightarrow\ \sum K\odot X = 27$$
+On a flat region (all 9s) the same kernel gives $0$. The filter "lights up" exactly where there is a vertical edge, wherever it is in the image.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Output size and parameter count</div>
+<p>For input size $n$, kernel $k$, padding $p$, stride $s$:
+$$n_{out} = \Big\lfloor\frac{n+2p-k}{s}\Big\rfloor+1 \qquad \#\text{params} = C_{in}\cdot C_{out}\cdot k^2 + C_{out}$$
+<strong>Padding</strong> adds zeros around the border (with $p=(k-1)/2$ and $s=1$ the size is preserved: "same" padding). <strong>Stride</strong> $s$ moves the filter $s$ pixels at a time, shrinking the output.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · The skip-test numbers</div>
+<p>Input 32, $k=5$, $s=2$, $p=2$: $\lfloor(32+4-5)/2\rfloor+1 = 15+1 = 16$.
+<code>Conv2d(64, 128, 3)</code>: $64\cdot128\cdot9+128 = 73\,856$ parameters, independent of the image size. A dense layer from a $64\times32\times32$ map to a $128\times32\times32$ map would need $65\,536\times131\,072\approx8.6$ <strong>billion</strong> weights.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">🔭</span> Intuition · Physics view</div>
+<p>A convolution is the discrete version of filtering a signal with an impulse response (or a Green's function). The Fourier transform turns it into multiplication, which is why the convolution theorem and FFT-based convolution exist.</p>
+</div>
+<figure class="video" data-yt="KuXjwB4LzSA" data-list="0"><button type="button" class="video-play" style="background-image:url(https://i.ytimg.com/vi/KuXjwB4LzSA/hqdefault.jpg)" aria-label="Play video: But what is a convolution?"><span class="video-btn">▶</span><span class="video-label">But what is a convolution?</span></button><figcaption>▶️ <a href="https://www.youtube.com/watch?v=KuXjwB4LzSA" target="_blank" rel="noopener">But what is a convolution?</a> · 3Blue1Brown · 23 min <span class="video-hint">(plays here; or open on YouTube)</span></figcaption></figure>
+
+<h2 id="2-the-properties-that-make-cnns-work">2 · The properties that make CNNs work<a class="anchor" href="#2-the-properties-that-make-cnns-work" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Weight sharing and translation equivariance</div>
+<p>The <strong>same</strong> filter weights are used at every position (<strong>weight sharing</strong>), which is why the parameter count is tiny. A consequence: if you shift the input, the feature map shifts by the same amount. That is <strong>translation equivariance</strong>: $\text{conv}(\text{shift}(X)) = \text{shift}(\text{conv}(X))$. Pooling and global averaging then make the final prediction approximately <strong>invariant</strong> to small shifts.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Receptive field</div>
+<p>The <strong>receptive field</strong> of a unit is the region of the input image that can affect it. Each 3×3 conv layer (stride 1) grows it by 2: after $L$ such layers it is $(2L+1)\times(2L+1)$. Strides and pooling make it grow much faster. Deep layers therefore "see" large parts of the image.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Pooling</div>
+<p><strong>Max pooling</strong> (e.g. 2×2, stride 2) keeps the largest value in each window; <strong>average pooling</strong> keeps the mean. Both halve the height and width, have no parameters, and add some robustness to small shifts. Modern nets often use strided convolutions instead, and <strong>global average pooling</strong> at the end (average each channel over all positions) before the classifier.</p>
+</div>
+<div class="box box-key">
+<div class="box-title"><span class="box-ico">💡</span> Key idea · The feature hierarchy</div>
+<p>Early layers detect edges and colour blobs; middle layers combine them into textures and parts; late layers respond to whole objects. Each stage works at lower resolution but with more channels: a typical shape path is $3\times224\times224 \to 64\times112\times112 \to\dots\to 512\times7\times7$.</p>
+</div>
+<div class="box box-example">
+<div class="box-title"><span class="box-ico">✍️</span> Worked example · Two 3×3 convs vs one 5×5</div>
+<p>Two stacked 3×3 convs have a 5×5 receptive field, using $2\cdot9C^2=18C^2$ weights (for $C$ channels in and out) versus $25C^2$ for one 5×5 conv, and they add an extra nonlinearity in between. This is VGG's key insight.</p>
+</div>
+<h2 id="3-architectures-the-ideas-that-mattered">3 · Architectures: the ideas that mattered<a class="anchor" href="#3-architectures-the-ideas-that-mattered" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Architecture timeline (know the <em>idea</em> of each)</div>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Year</th>
+<th>Model</th>
+<th>Key idea</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1998</td>
+<td>LeNet</td>
+<td>conv + pool + dense, for digits</td>
+</tr>
+<tr>
+<td>2012</td>
+<td>AlexNet</td>
+<td>ReLU, GPUs, dropout: the "ImageNet moment"</td>
+</tr>
+<tr>
+<td>2014</td>
+<td>VGG</td>
+<td>only 3×3 convs, stacked deep</td>
+</tr>
+<tr>
+<td>2014</td>
+<td>GoogLeNet / Inception</td>
+<td>parallel branches; cheap 1×1 convs to mix channels</td>
+</tr>
+<tr>
+<td>2015</td>
+<td><strong>ResNet</strong></td>
+<td>residual connections $\mathbf y=\mathbf x+F(\mathbf x)$: 100+ layers train</td>
+</tr>
+<tr>
+<td>2017–19</td>
+<td>MobileNet / EfficientNet</td>
+<td>depthwise-separable convs; scale width, depth and resolution together</td>
+</tr>
+<tr>
+<td>2020</td>
+<td><strong>ViT</strong></td>
+<td>image patches as tokens → a plain transformer</td>
+</tr>
+<tr>
+<td>2022</td>
+<td>ConvNeXt</td>
+<td>a CNN modernized with transformer-era design and training tricks</td>
+</tr>
+</tbody>
+</table></div>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Residual block (ResNet)</div>
+<p>$$\mathbf y = \mathrm{ReLU}\big(\mathbf x + F(\mathbf x)\big),\qquad F = \text{conv-BN-ReLU-conv-BN}$$
+Before ResNet, <em>adding</em> layers to a deep plain net made even the <strong>training</strong> error worse: optimization, not overfitting, was the problem. With the skip, a block can represent the identity trivially (set $F=0$), and gradients reach early layers through the "+" unchanged. <strong>The most important architecture idea in DL</strong>: transformers use the same trick (module 08).</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · 1×1 convolutions and depthwise-separable convolutions</div>
+<p>A <strong>1×1 conv</strong> mixes channels at each pixel without looking at neighbours: a cheap way to change the channel count. A <strong>depthwise-separable</strong> conv splits a normal conv into a per-channel $k\times k$ conv (spatial) followed by a 1×1 conv (channels), cutting cost by roughly a factor of $k^2$. MobileNet and EfficientNet are built from them.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Vision Transformer (ViT)</div>
+<p>Cut the image into non-overlapping $16\times16$ patches, flatten each one and map it with a linear layer to a $d$-dimensional <strong>token</strong>, add position embeddings (and a learnable <code>[CLS]</code> token), then run a standard transformer encoder (module 08). A 224×224 image becomes $14\times14=196$ tokens. ViTs have weaker built-in priors than CNNs, so they need more data or pretraining, but they scale extremely well.</p>
+</div>
+<h2 id="4-data-augmentation-and-transfer-learning">4 · Data augmentation and transfer learning<a class="anchor" href="#4-data-augmentation-and-transfer-learning" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Data augmentation</div>
+<p>Create new training examples by transforming existing ones in ways that don't change the label: random crops and resizes, horizontal flips, colour jitter, rotation; stronger recipes like <strong>RandAugment</strong>; and mixing methods like <strong>Mixup</strong> (blend two images and their labels) and <strong>CutMix</strong> (paste a patch of one image into another). It is often worth more than any architecture change.</p>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Augment only the training set</div>
+<p>Evaluate on clean, centre-cropped images. Leaving random augmentation on at test time makes your scores noisy and lower.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Transfer learning</div>
+<p>Start from a network <strong>pretrained</strong> on a large dataset (ImageNet, or a foundation model), replace its final classification layer (the <strong>head</strong>) with one for your classes, and train on your data.</p>
 <ul>
-<li>⭐ <strong><a href="https://cs231n.stanford.edu/" target="_blank" rel="noopener">Stanford CS231n</a></strong>: <a href="https://cs231n.github.io/" target="_blank" rel="noopener">course notes</a> + lecture videos (YouTube) + <strong>assignments 1–2</strong>. A gold standard.</li>
-<li><strong>d2l.ai</strong> ch. 7–8 (CNNs, modern CNNs) and ch. 14 (computer vision).</li>
-<li><strong><a href="https://poloclub.github.io/cnn-explainer/" target="_blank" rel="noopener">CNN Explainer (interactive)</a></strong>: see a conv net run in your browser.</li>
-<li><strong><a href="https://distill.pub/2017/feature-visualization/" target="_blank" rel="noopener">Feature Visualization (Distill)</a></strong>: what CNN neurons actually detect.</li>
-<li><strong><a href="https://github.com/huggingface/pytorch-image-models" target="_blank" rel="noopener">PyTorch Image Models (timm)</a></strong>: pretrained models for transfer learning.</li>
+<li><strong>Small dataset (hundreds of images):</strong> freeze the backbone, train only the head (or the last block).</li>
+<li><strong>More data / a different domain:</strong> fine-tune everything at a low learning rate (e.g. 10× lower than from scratch), often with a smaller LR for early layers.</li>
 </ul>
+</div>
+<div class="box box-warn">
+<div class="box-title"><span class="box-ico">⚠️</span> Common mistake · Match the pretraining preprocessing</div>
+<p>Pretrained models expect inputs normalized the way they were trained (for ImageNet: per-channel mean $(0.485, 0.456, 0.406)$ and std $(0.229, 0.224, 0.225)$, at the right resolution). Forgetting this silently costs a lot of accuracy.</p>
+</div>
+<div class="box box-code">
+<div class="box-title"><span class="box-ico">💻</span> In code · Fine-tuning a pretrained ResNet with torchvision</div>
+<pre><code class="language-python">from torchvision.models import resnet18, ResNet18_Weights
+weights = ResNet18_Weights.DEFAULT
+model = resnet18(weights=weights)
+for p in model.parameters(): p.requires_grad = False   # freeze the backbone
+model.fc = nn.Linear(model.fc.in_features, 5)           # new head for 5 classes (trainable)
+preprocess = weights.transforms()                       # the matching resize + normalization
+</code></pre>
+</div>
+<h2 id="5-beyond-classification">5 · Beyond classification<a class="anchor" href="#5-beyond-classification" title="Link to this section">#</a></h2>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Object detection</div>
+<p>Predict a <strong>bounding box</strong> and a class for every object. <strong>Two-stage</strong> detectors (Faster R-CNN) first propose regions, then classify them. <strong>One-stage</strong> detectors (the YOLO family) predict boxes directly on a grid, which is fast. <strong>DETR</strong> uses a transformer to output a set of boxes directly.</p>
+</div>
+<div class="box box-formula">
+<div class="box-title"><span class="box-ico">🧮</span> Formula · Intersection over union (IoU)</div>
+<p>$$\text{IoU}(A,B) = \frac{\text{area}(A\cap B)}{\text{area}(A\cup B)}$$
+How much a predicted box overlaps the true box (1 = perfect). A detection usually counts as correct if IoU ≥ 0.5. <strong>Non-maximum suppression</strong> removes duplicate boxes that overlap a higher-scoring one.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Segmentation</div>
+<p>Classify <strong>every pixel</strong>. <strong>U-Net</strong> is an encoder–decoder: the encoder downsamples to capture context, the decoder upsamples back to full resolution, and skip connections carry fine detail across. (U-Nets are also the backbone of many diffusion models, module 10.) <strong>Mask R-CNN</strong> adds a mask per detected object; <strong>SAM</strong> (Segment Anything) segments any object from a click or box prompt.</p>
+</div>
+<div class="box box-def">
+<div class="box-title"><span class="box-ico">📖</span> Definition · Vision foundation models</div>
+<p>Large pretrained models you can download and reuse: <strong>CLIP</strong> (images and text in a shared embedding space; zero-shot classification by comparing an image to text prompts), <strong>DINOv2</strong> (self-supervised features that work well for almost any task), <strong>SAM</strong> (segmentation). Get them from <code>timm</code> or Hugging Face.</p>
+</div>
+<h2 id="practice-answers-hidden">Practice (answers hidden)<a class="anchor" href="#practice-answers-hidden" title="Link to this section">#</a></h2>
+<ol>
+<li>Input $64\times64$, conv with $k=3$, $s=1$, $p=1$, then $2\times2$ max pool, then conv with $k=3$, $s=2$, $p=0$. What is the final spatial size?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$64 \to 64$ (same padding) $\to 32$ (pool) $\to \lfloor(32-3)/2\rfloor+1 = 14+1 = 15$.</p>
+</details>
+<ol start="2">
+<li>How many parameters does <code>Conv2d(3, 32, kernel_size=5)</code> have? And a depthwise-separable version (5×5 depthwise on 3 channels, then 1×1 to 32), ignoring biases?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Standard: $3\cdot32\cdot25+32 = 2\,432$. Separable: $3\cdot25 + 3\cdot32 = 75+96 = 171$ weights.</p>
+</details>
+<ol start="3">
+<li>What is the receptive field after five 3×3 convolutions with stride 1?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$2\cdot5+1 = 11$, i.e. $11\times11$ pixels.</p>
+</details>
+<ol start="4">
+<li>You have 300 labelled photos of 3 kinds of leaves. What's your plan?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Transfer learning: take a pretrained backbone (e.g. ResNet-50 or a DINOv2 ViT), use its preprocessing, freeze it and train a new 3-way head with strong augmentation. Hold out a validation set. If accuracy plateaus, unfreeze the last block (or everything) at a low LR. Training from scratch on 300 images would badly overfit.</p>
+</details>
+<ol start="5">
+<li>Two boxes: $A = [0,0]\text{–}[4,4]$ and $B=[2,2]\text{–}[6,6]$. What is their IoU?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>Intersection $[2,2]\text{–}[4,4]$ has area 4. Union $=16+16-4=28$. IoU $=4/28\approx0.14$: not a match at the usual 0.5 threshold.</p>
+</details>
+<ol start="6">
+<li>How many tokens does a ViT with $14\times14$ patches produce for a $224\times224$ image (plus <code>[CLS]</code>)?</li>
+</ol>
+<details>
+<summary>Answer</summary>
+<p>$224/14=16$ patches per side, so $16^2=256$ patch tokens + 1 <code>[CLS]</code> = 257.</p>
+</details>
 <h2 id="build">Build<a class="anchor" href="#build" title="Link to this section">#</a></h2>
 <ol>
 <li><strong>ResNet-18 from scratch</strong> on CIFAR-10. Target ≥ 93% with augmentation and a good LR schedule.</li>
@@ -171,11 +365,19 @@
 <li>Forgetting ImageNet normalization (mean/std) when using a pretrained model.</li>
 <li>Evaluating with train-time augmentation turned on.</li>
 </ul>
+<h2 id="go-deeper-all-optional">Go deeper (all optional)<a class="anchor" href="#go-deeper-all-optional" title="Link to this section">#</a></h2>
+<ul>
+<li>⭐ <strong><a href="https://cs231n.stanford.edu/" target="_blank" rel="noopener">Stanford CS231n</a></strong>: <a href="https://cs231n.github.io/" target="_blank" rel="noopener">course notes</a> + lecture videos (YouTube) + <strong>assignments 1–2</strong>. A gold standard.</li>
+<li><strong><a href="https://d2l.ai/" target="_blank" rel="noopener">d2l.ai</a></strong> ch. 7–8 (CNNs, modern CNNs) and ch. 14 (computer vision).</li>
+<li><strong><a href="https://poloclub.github.io/cnn-explainer/" target="_blank" rel="noopener">CNN Explainer (interactive)</a></strong>: see a conv net run in your browser.</li>
+<li><strong><a href="https://distill.pub/2017/feature-visualization/" target="_blank" rel="noopener">Feature Visualization (Distill)</a></strong>: what CNN neurons actually detect.</li>
+<li><strong><a href="https://github.com/huggingface/pytorch-image-models" target="_blank" rel="noopener">PyTorch Image Models (timm)</a></strong>: pretrained models for transfer learning.</li>
+</ul>
 <h2 id="done-when">Done when<a class="anchor" href="#done-when" title="Link to this section">#</a></h2>
 <ul>
 <li class="task"><input type="checkbox"> ResNet on CIFAR-10 ≥ 93% · <input type="checkbox"> fine-tuned model works on your own photos</li>
 </ul></article><nav class="pager"><a class="pn prev" href="../deep-learning/05-pytorch-training.html"><small>← Previous</small>PyTorch &amp; the Craft of Training</a><a class="pn next" href="../deep-learning/07-sequences-rnns.html"><small>Next →</small>Sequences, Embeddings &amp; RNNs</a></nav></main>
-  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#core-ideas">Core ideas</a></li><li><a href="#learn-from">Learn from</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
+  <aside class="toc-col"><nav class="toc" aria-label="On this page"><p class="toc-title">On this page</p><ul><li><a href="#skip-test">Skip test</a></li><li><a href="#1-why-not-just-use-an-mlp-on-images">1 · Why not just use an MLP on images?</a></li><li><a href="#2-the-properties-that-make-cnns-work">2 · The properties that make CNNs work</a></li><li><a href="#3-architectures-the-ideas-that-mattered">3 · Architectures: the ideas that mattered</a></li><li><a href="#4-data-augmentation-and-transfer-learning">4 · Data augmentation and transfer learning</a></li><li><a href="#5-beyond-classification">5 · Beyond classification</a></li><li><a href="#practice-answers-hidden">Practice (answers hidden)</a></li><li><a href="#build">Build</a></li><li><a href="#traps">Traps</a></li><li><a href="#go-deeper-all-optional">Go deeper (all optional)</a></li><li><a href="#done-when">Done when</a></li></ul></nav></aside>
 </div>
 </body>
 </html>
