@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Field Lines & Images</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  #cv { aspect-ratio: 4 / 3; cursor: crosshair; }
+  .chk { display: flex; gap: 6px; align-items: center; font-size: 14px; color: var(--muted); }
+  details.card summary { cursor: pointer; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Physics Olympiad tools</a></header>
+  <h1>Field Lines, Equipotentials & Image Charges</h1>
+  <p class="lead">Drag point charges around and watch the field lines (arrows) and equipotentials (thin contours) update. Field lines always cross equipotentials at right angles. The image-charge presets show <i>why</i> the method of images works: the conductor's surface is exactly the V = 0 contour (module 04).</p>
+  <div class="grid two">
+    <div>
+      <canvas id="cv" width="800" height="600" aria-label="Electric field of point charges; drag charges, tap empty space to move the probe"></canvas>
+      <div class="legend" style="margin-top:6px"><span><i style="background:var(--c5)"></i>positive</span><span><i style="background:var(--c1)"></i>negative</span><span><i style="background:var(--text)"></i>field lines</span><span><i style="background:var(--c3)"></i>V = 0 contour</span><span><i style="background:var(--c4)"></i>probe E</span></div>
+    </div>
+    <div class="controls">
+      <div class="row"><span class="note">Presets:</span>
+        <button data-p="dipole">Dipole</button><button data-p="like">Like charges</button><button data-p="q4q">q and 4q</button><button data-p="quad">Quadrupole</button><button data-p="unequal">+2 and −1</button><button data-p="plane">Image: plane</button><button data-p="sphere">Image: sphere</button>
+      </div>
+      <div class="row"><button id="addp">+ add positive</button><button id="addn">+ add negative</button><button id="del">Remove selected</button></div>
+      <label class="ctl">Selected charge q = <span class="val" id="qv"></span><input type="range" id="q" min="-4" max="4" step="0.1" value="1"></label>
+      <div class="row">
+        <label class="chk"><input type="checkbox" id="lines" checked> Field lines</label>
+        <label class="chk"><input type="checkbox" id="equi" checked> Equipotentials</label>
+        <label class="chk"><input type="checkbox" id="heat"> Potential shading</label>
+        <label class="chk"><input type="checkbox" id="hideimg"> Hide image region</label>
+      </div>
+      <label class="ctl">Lines per unit charge = <span class="val" id="dv"></span><input type="range" id="dens" min="4" max="20" step="1" value="10"></label>
+      <div class="card" id="stats"></div>
+      <div class="callout" id="hint"></div>
+    </div>
+  </div>
+
+  <h2>Practice</h2>
+  <div class="card">
+    <details><summary><b>1.</b> Charges +q and +4q are 3 m apart. Where is E = 0?</summary><p>Between them, at distance x from +q: q/x² = 4q/(3 − x)², so 3 − x = 2x and <b>x = 1 m</b>. Load "q and 4q" and put the probe there: |E| drops to zero and field lines bend away (a saddle point of V).</p></details>
+    <details><summary><b>2.</b> A charge q sits at height d above a grounded plane. What is the force on it, and how much work does it take to pull it to infinity?</summary><p>The image −q is at depth d, so F = kq²/(2d)², attractive. Work = ∫<sub>d</sub><sup>∞</sup> kq²/(4z²) dz = <b>kq²/(4d)</b>. That is <i>half</i> of kq²/(2d), the energy of two real charges 2d apart. The image moves as you move q, and the field exists only above the plane.</p></details>
+    <details><summary><b>3.</b> Grounded sphere, radius R, charge q at distance D from the center. Find the image and check that V = 0 on the sphere.</summary><p>q' = −qR/D at distance R²/D from the center. A point on the sphere is at distance r₁ from q and r₂ from q'. The triangles are similar, so r₂/r₁ = R/D, and kq/r₁ + kq'/r₂ = kq/r₁ − kq(R/D)/(r₁R/D) = 0 ✓. Load "Image: sphere": the green V = 0 contour lies on the dashed circle.</p></details>
+    <details><summary><b>4.</b> Why can't two field lines cross, and why do some lines from +2 in "+2 and −1" go off to infinity?</summary><p>E has one direction at each point, so lines can't cross (except where E = 0). The net charge is +1, so at large distance the field looks like a single +1 charge. Of the lines leaving +2, only half end on −1. The rest escape.</p></details>
+  </div>
+  <p class="note">Model: point charges in 3D, drawn in the plane that contains them. V = Σ kq/r and E = Σ kq r̂/r², with k = 1. The line density is only qualitative in a 2D slice of a 3D field, but the line directions and the equipotentials are exact.</p>
+  <footer class="foot">Part of the Self-Study repo · physics-olympiad/interactive · RK4 line tracing, marching-squares contours</footer>
+</div>
+<script>
+const cv = document.getElementById("cv"), ctx = cv.getContext("2d");
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const XW = 4, YW = 3; // world half-widths
+let charges = [], sel = 0, probe = { x: 0.6, y: 1.2 }, drag = -1, preset = "dipole", extra = null;
+const presets = {
+  dipole: () => [{ x: -1, y: 0, q: 1 }, { x: 1, y: 0, q: -1 }],
+  like: () => [{ x: -1, y: 0, q: 1 }, { x: 1, y: 0, q: 1 }],
+  q4q: () => [{ x: -1.5, y: 0, q: 1 }, { x: 1.5, y: 0, q: 4 }],
+  quad: () => [{ x: -1, y: -1, q: 1 }, { x: 1, y: 1, q: 1 }, { x: -1, y: 1, q: -1 }, { x: 1, y: -1, q: -1 }],
+  unequal: () => [{ x: -0.8, y: 0, q: 2 }, { x: 0.8, y: 0, q: -1 }],
+  plane: () => [{ x: 0, y: 1, q: 1 }, { x: 0, y: -1, q: -1, image: true }],
+  sphere: () => [{ x: 2.5, y: 0, q: 1 }, { x: 1 / 2.5, y: 0, q: -1 / 2.5, image: true }],
+};
+const hints = {
+  dipole: "Every line from + ends on −. Far away, V ∝ p cosθ / r² and E ∝ 1/r³.",
+  like: "Midway the field vanishes: a saddle point of V. No line passes through it. Far away the pair looks like a single 2q charge.",
+  q4q: "E = 0 one third of the way from q to 4q (x = −0.5 here). Move the probe there.",
+  quad: "Net charge and dipole moment are both zero, so the far field falls off like 1/r⁴.",
+  unequal: "Net charge +1: half the lines from +2 end on −1, and the other half escape to infinity. The V = 0 contour is a circle (an Apollonius circle).",
+  plane: "Grounded plane y = 0. The real charge q at height 1 plus the image −q at depth 1 give V = 0 on the whole line y = 0, so the field above the plane is exactly right. Tick \"Hide image region\": only the top half is physical. Drag the real charge and the image follows.",
+  sphere: "Grounded sphere, R = 1. Charge q at D gives an image q' = −qR/D at R²/D. The V = 0 contour (green) lies exactly on the sphere. Drag the real charge and the image updates.",
+  custom: "Drag charges, adjust the selected one with the slider. Equipotentials meet field lines at 90°.",
+};
+function load(k) { preset = k; charges = presets[k](); sel = 0; extra = k === "plane" ? "plane" : k === "sphere" ? "sphere" : null; $("q").value = charges[0].q; $("hideimg").checked = false; draw(); }
+function syncImage() {
+  if (extra === "plane") { const r = charges[0]; r.y = Math.max(0.15, r.y); charges[1].x = r.x; charges[1].y = -r.y; charges[1].q = -r.q; }
+  if (extra === "sphere") { const r = charges[0], D = Math.max(1.1, Math.hypot(r.x, r.y)); const ux = r.x / Math.hypot(r.x, r.y) || 1, uy = r.y / Math.hypot(r.x, r.y) || 0; r.x = ux * D; r.y = uy * D; charges[1].x = ux / D; charges[1].y = uy / D; charges[1].q = -r.q / D; }
+}
+function field(x, y) {
+  let ex = 0, ey = 0, v = 0;
+  for (const c of charges) { const dx = x - c.x, dy = y - c.y, r2 = dx * dx + dy * dy + 1e-9, r = Math.sqrt(r2); v += c.q / r; ex += (c.q * dx) / (r2 * r); ey += (c.q * dy) / (r2 * r); }
+  return [ex, ey, v];
+}
+let W, H, S;
+const P = (x, y) => [W / 2 + x * S, H / 2 - y * S], Winv = (px, py) => [(px - W / 2) / S, (H / 2 - py) / S];
+function size() { const dpr = devicePixelRatio || 1; W = cv.clientWidth; H = W * 0.75; S = W / (2 * XW); cv.width = W * dpr; cv.height = H * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+function hexToRgb(h) { h = h.replace("#", ""); if (h.length === 3) h = h.split("").map((c) => c + c).join(""); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; }
+function trace(x, y, dir) { // follow E (dir=+1) or −E (dir=−1) with RK4 on the unit direction field
+  const pts = [[x, y]], h = 0.03; let end = null;
+  const f = (x, y) => { const [ex, ey] = field(x, y), m = Math.hypot(ex, ey) || 1; return [(dir * ex) / m, (dir * ey) / m]; };
+  for (let i = 0; i < 1400; i++) {
+    const k1 = f(x, y), k2 = f(x + (h / 2) * k1[0], y + (h / 2) * k1[1]), k3 = f(x + (h / 2) * k2[0], y + (h / 2) * k2[1]), k4 = f(x + h * k3[0], y + h * k3[1]);
+    x += (h / 6) * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0]); y += (h / 6) * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1]);
+    pts.push([x, y]);
+    if (Math.abs(x) > XW + 0.5 || Math.abs(y) > YW + 0.5) { end = "out"; break; }
+    const hit = charges.findIndex((c) => Math.hypot(x - c.x, y - c.y) < 0.06);
+    if (hit >= 0 && i > 3) { end = hit; break; }
+  }
+  return { pts, end };
+}
+function drawLine(pts, c) {
+  ctx.strokeStyle = c; ctx.lineWidth = 1.2; ctx.beginPath();
+  pts.forEach((p, i) => { const q = P(p[0], p[1]); i ? ctx.lineTo(...q) : ctx.moveTo(...q); }); ctx.stroke();
+  // arrowhead at the middle of the visible part, pointing along E
+  const vis = pts.filter((p) => Math.abs(p[0]) < XW && Math.abs(p[1]) < YW); if (vis.length < 12) return;
+  const m = Math.floor(vis.length / 2), a = P(...vis[m - 1]), b = P(...vis[m + 1]), ang = Math.atan2(b[1] - a[1], b[0] - a[0]), h = 6, mid = P(...vis[m]);
+  ctx.fillStyle = c; ctx.beginPath(); ctx.moveTo(mid[0] + h * Math.cos(ang), mid[1] + h * Math.sin(ang));
+  ctx.lineTo(mid[0] - h * Math.cos(ang - 0.5), mid[1] - h * Math.sin(ang - 0.5)); ctx.lineTo(mid[0] - h * Math.cos(ang + 0.5), mid[1] - h * Math.sin(ang + 0.5)); ctx.closePath(); ctx.fill();
+}
+function contours(levels) {
+  const nx = 200, ny = 150, gx = (i) => -XW + (2 * XW * i) / nx, gy = (j) => YW - (2 * YW * j) / ny;
+  const V = []; for (let j = 0; j <= ny; j++) { const row = []; for (let i = 0; i <= nx; i++) row.push(field(gx(i), gy(j))[2]); V.push(row); }
+  const segs = (lv) => {
+    const out = [];
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) {
+      const a = V[j][i], b = V[j][i + 1], c = V[j + 1][i + 1], d = V[j + 1][i];
+      if (![a, b, c, d].every(isFinite) || Math.max(Math.abs(a), Math.abs(b), Math.abs(c), Math.abs(d)) > 40) continue;
+      const pts = [], edge = (v1, v2, x1, y1, x2, y2) => { if ((v1 - lv) * (v2 - lv) < 0) { const t = (lv - v1) / (v2 - v1); pts.push([x1 + t * (x2 - x1), y1 + t * (y2 - y1)]); } };
+      edge(a, b, gx(i), gy(j), gx(i + 1), gy(j)); edge(b, c, gx(i + 1), gy(j), gx(i + 1), gy(j + 1)); edge(c, d, gx(i + 1), gy(j + 1), gx(i), gy(j + 1)); edge(d, a, gx(i), gy(j + 1), gx(i), gy(j));
+      if (pts.length >= 2) out.push([pts[0], pts[1]]); if (pts.length === 4) out.push([pts[2], pts[3]]);
+    }
+    return out;
+  };
+  return { V, levels: levels.map((lv) => ({ lv, s: segs(lv) })) };
+}
+function draw() {
+  syncImage(); size();
+  ctx.fillStyle = col("--surface"); ctx.fillRect(0, 0, W, H);
+  const pos = hexToRgb(col("--c5")), neg = hexToRgb(col("--c1")), bg = hexToRgb(col("--surface"));
+  if ($("heat").checked) {
+    const n = 4; for (let py = 0; py < H; py += n) for (let px = 0; px < W; px += n) {
+      const [x, y] = Winv(px + n / 2, py + n / 2), v = field(x, y)[2], t = Math.tanh(v / 2), c = t > 0 ? pos : neg, a = Math.abs(t) * 0.45;
+      ctx.fillStyle = `rgb(${bg.map((b, i) => Math.round(b + (c[i] - b) * a)).join(",")})`; ctx.fillRect(px, py, n, n);
+    }
+  }
+  if ($("equi").checked) {
+    const L = [-4, -2, -1, -0.5, -0.25, 0.25, 0.5, 1, 2, 4];
+    const C = contours([...L, 0]);
+    C.levels.forEach(({ lv, s }) => {
+      ctx.strokeStyle = lv === 0 ? col("--c3") : col("--muted"); ctx.lineWidth = lv === 0 ? 2.2 : 0.8; ctx.globalAlpha = lv === 0 ? 1 : 0.7;
+      ctx.beginPath(); s.forEach(([a, b]) => { ctx.moveTo(...P(...a)); ctx.lineTo(...P(...b)); }); ctx.stroke(); ctx.globalAlpha = 1;
+    });
+  }
+  if ($("lines").checked) {
+    const dens = +$("dens").value, txt = col("--text");
+    charges.forEach((c, ci) => {
+      if (c.q === 0) return;
+      const n = Math.max(2, Math.round(dens * Math.abs(c.q))), dir = c.q > 0 ? 1 : -1;
+      for (let k = 0; k < n; k++) {
+        const th = (2 * Math.PI * (k + 0.5)) / n, tr = trace(c.x + 0.07 * Math.cos(th), c.y + 0.07 * Math.sin(th), dir);
+        if (dir < 0 && typeof tr.end === "number" && charges[tr.end].q > 0) continue; // already drawn from the + side
+        drawLine(dir > 0 ? tr.pts : tr.pts.slice().reverse(), txt);
+      }
+    });
+  }
+  if (extra === "sphere") { const c = P(0, 0); ctx.strokeStyle = col("--text"); ctx.setLineDash([5, 4]); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(c[0], c[1], S, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
+  if ($("hideimg").checked && extra) {
+    ctx.fillStyle = col("--surface-2");
+    if (extra === "plane") { const y0 = P(0, 0)[1]; ctx.fillRect(0, y0, W, H - y0); }
+    else { const c = P(0, 0); ctx.beginPath(); ctx.arc(c[0], c[1], S, 0, 7); ctx.fill(); }
+    ctx.fillStyle = col("--muted"); ctx.font = "13px system-ui"; ctx.fillText("conductor (E = 0)", extra === "plane" ? 10 : P(0, 0)[0] - 55, extra === "plane" ? P(0, 0)[1] + 20 : P(0, 0)[1] + 4);
+  }
+  if (extra === "plane") { const y0 = P(0, 0)[1]; ctx.strokeStyle = col("--text"); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0, y0); ctx.lineTo(W, y0); ctx.stroke(); }
+  // charges
+  charges.forEach((c, i) => {
+    if (c.image && $("hideimg").checked) return;
+    const q = P(c.x, c.y), r = 9 + 3 * Math.min(3, Math.abs(c.q));
+    ctx.fillStyle = c.q >= 0 ? col("--c5") : col("--c1"); ctx.globalAlpha = c.image ? 0.55 : 1;
+    ctx.beginPath(); ctx.arc(q[0], q[1], r, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+    if (i === sel) { ctx.strokeStyle = col("--text"); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(q[0], q[1], r + 4, 0, 7); ctx.stroke(); }
+    ctx.fillStyle = "#fff"; ctx.font = "bold 12px system-ui"; ctx.textAlign = "center"; ctx.fillText(c.q > 0 ? "+" : c.q < 0 ? "−" : "0", q[0], q[1] + 4); ctx.textAlign = "start";
+    if (c.image) { ctx.fillStyle = col("--muted"); ctx.font = "12px system-ui"; ctx.fillText("image", q[0] + r + 3, q[1] + 4); }
+  });
+  // probe
+  const [ex, ey, v] = field(probe.x, probe.y), em = Math.hypot(ex, ey), pp = P(probe.x, probe.y);
+  ctx.strokeStyle = col("--c4"); ctx.fillStyle = col("--c4"); ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(pp[0], pp[1], 4, 0, 7); ctx.fill();
+  if (em > 1e-6) { const L = Math.min(70, 30 * Math.sqrt(em)), ux = ex / em, uy = -ey / em; ctx.beginPath(); ctx.moveTo(...pp); ctx.lineTo(pp[0] + L * ux, pp[1] + L * uy); ctx.stroke(); }
+  stats(v, em, ex, ey);
+}
+function stats(v, em, ex, ey) {
+  const c = charges[sel], row = (l, x) => `<div class="stat"><span>${l}</span><b>${x}</b></div>`;
+  const Q = charges.reduce((a, c) => a + c.q, 0);
+  let html = row("Charges", charges.length) + row("Total charge Q", Q.toFixed(2)) +
+    row("Selected: (x, y), q", c ? `(${c.x.toFixed(2)}, ${c.y.toFixed(2)}), ${c.q.toFixed(2)}${c.image ? " (image)" : ""}` : "—") +
+    row("Probe at", `(${probe.x.toFixed(2)}, ${probe.y.toFixed(2)})`) + row("V at probe", v.toFixed(4)) + row("|E| at probe", em.toFixed(4)) +
+    row("E direction", em > 1e-9 ? ((Math.atan2(ey, ex) * 180) / Math.PI).toFixed(1) + "°" : "—");
+  if (extra === "sphere") { let mx = 0; for (let k = 0; k < 360; k++) mx = Math.max(mx, Math.abs(field(Math.cos(k * Math.PI / 180), Math.sin(k * Math.PI / 180))[2])); const D = Math.hypot(charges[0].x, charges[0].y); html += row("D, q' = −qR/D, R²/D", `${D.toFixed(2)}, ${charges[1].q.toFixed(3)}, ${(1 / D).toFixed(3)}`) + row("max |V| on sphere", mx.toExponential(1)); }
+  if (extra === "plane") { const r = charges[0]; html += row("Force on q: kq²/(2d)²", (r.q * r.q / (4 * r.y * r.y)).toFixed(4)); }
+  $("stats").innerHTML = html; $("qv").textContent = c ? c.q.toFixed(1) : "—"; $("dv").textContent = $("dens").value;
+  $("hint").innerHTML = hints[preset] || hints.custom;
+}
+// interaction
+let pending = false;
+function requestDraw() { if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; draw(); }); }
+function worldFromEvent(e) { const r = cv.getBoundingClientRect(); return Winv(e.clientX - r.left, e.clientY - r.top); }
+cv.addEventListener("pointerdown", (e) => {
+  const [x, y] = worldFromEvent(e);
+  const hit = charges.findIndex((c) => !(c.image && extra) && Math.hypot(c.x - x, c.y - y) < 22 / S);
+  if (hit >= 0) { drag = hit; sel = hit; $("q").value = charges[hit].q; cv.setPointerCapture(e.pointerId); }
+  else { probe = { x, y }; }
+  draw();
+});
+cv.addEventListener("pointermove", (e) => {
+  const [x, y] = worldFromEvent(e);
+  if (drag >= 0) { charges[drag].x = Math.max(-XW + 0.1, Math.min(XW - 0.1, x)); charges[drag].y = Math.max(-YW + 0.1, Math.min(YW - 0.1, y)); if (!extra) preset = "custom"; requestDraw(); }
+  else if (e.pointerType === "mouse") { probe = { x, y }; requestDraw(); }
+});
+cv.addEventListener("pointerup", () => (drag = -1));
+$("q").addEventListener("input", () => { const c = charges[sel]; if (!c || (c.image && extra)) return; c.q = +$("q").value; if (!extra) preset = "custom"; draw(); });
+$("addp").addEventListener("click", () => { if (extra) { extra = null; charges = charges.filter((c) => !c.image); } charges.push({ x: Math.random() * 4 - 2, y: Math.random() * 3 - 1.5, q: 1 }); sel = charges.length - 1; $("q").value = 1; preset = "custom"; draw(); });
+$("addn").addEventListener("click", () => { if (extra) { extra = null; charges = charges.filter((c) => !c.image); } charges.push({ x: Math.random() * 4 - 2, y: Math.random() * 3 - 1.5, q: -1 }); sel = charges.length - 1; $("q").value = -1; preset = "custom"; draw(); });
+$("del").addEventListener("click", () => { if (extra || charges.length <= 1) return; charges.splice(sel, 1); sel = 0; preset = "custom"; draw(); });
+document.querySelectorAll("[data-p]").forEach((b) => b.addEventListener("click", () => load(b.dataset.p)));
+["lines", "equi", "heat", "hideimg", "dens"].forEach((id) => $(id).addEventListener("input", draw));
+window.addEventListener("resize", draw);
+load("dipole");
+</script>
+</body>
+</html>

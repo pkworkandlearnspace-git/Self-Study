@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blackbody & Photoelectric</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  svg text { font: 12px system-ui, sans-serif; fill: var(--muted); }
+  #bb { aspect-ratio: 1.6 / 1; } #vf { aspect-ratio: 1.5 / 1; } #anim { aspect-ratio: 2 / 1; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 14px; }
+  .pane[hidden] { display: none; }
+  .chk { display: flex; gap: 6px; align-items: center; font-size: 14px; color: var(--muted); }
+  .swatch { display: inline-block; width: 28px; height: 18px; border-radius: 4px; border: 1px solid var(--border); vertical-align: -4px; }
+  input.ans { width: 110px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Physics Olympiad tools</a></header>
+  <h1>Light as Quanta: Blackbody & Photoelectric</h1>
+  <p class="lead">Two experiments that forced quantum physics on us (module 06, and the radiation part of module 03). Planck's law explains the blackbody spectrum. Einstein's E = hf explains why the photoelectric effect depends on colour, not brightness.</p>
+  <div class="tabs"><button class="active" data-tab="bb">Blackbody spectrum</button><button data-tab="pe">Photoelectric effect</button></div>
+
+  <section class="pane" id="p-bb">
+    <div class="grid two">
+      <div>
+        <svg class="plot" id="bb" viewBox="0 0 640 400" aria-label="Planck spectra"></svg>
+        <p class="note">Log wavelength axis. The rainbow band is the visible range, 380–750 nm. Dots mark the Wien peaks λ<sub>max</sub> = b/T.</p>
+      </div>
+      <div class="controls">
+        <label class="ctl">Temperature T = <span class="val" id="tv"></span><input type="range" id="t" min="2.3" max="4.6" step="any" value="3.7613"></label>
+        <div class="row"><span class="note">Presets:</span><button data-t="310">Human 310 K</button><button data-t="1000">Hot plate 1000 K</button><button data-t="2700">Bulb 2700 K</button><button data-t="5772">Sun 5772 K</button><button data-t="10000">Vega ~10⁴ K</button></div>
+        <div class="row"><button id="pin">Pin this curve</button><button id="unpin">Clear pinned</button><label class="chk"><input type="checkbox" id="norm"> Normalize each curve</label></div>
+        <div class="card" id="bbstats"></div>
+      </div>
+    </div>
+    <details class="card" style="margin-top:12px"><summary><b>Practice:</b> Earth's equilibrium temperature</summary>
+      <p>The Sun (T = 5772 K, R = 6.96×10⁸ m) is 1.496×10¹¹ m away. Absorbed power: (1 − A)·L/(4πd²)·πR<sub>E</sub>². Emitted: 4πR<sub>E</sub>²σT<sub>E</sub>⁴. So T<sub>E</sub> = T<sub>☉</sub>(1 − A)<sup>1/4</sup>√(R/2d).</p>
+      <p>With A = 0: T<sub>E</sub> = 5772 × √(6.96×10⁸ / 2.992×10¹¹) ≈ 5772 × 0.04823 ≈ <b>278 K</b>. With A = 0.30 it is ≈ <b>255 K</b>. The real mean of about 288 K is higher because of the greenhouse effect.</p>
+    </details>
+  </section>
+
+  <section class="pane" id="p-pe" hidden>
+    <div class="grid two">
+      <div>
+        <canvas id="anim" width="640" height="320" aria-label="Photons hitting a metal plate"></canvas>
+        <svg class="plot" id="vf" viewBox="0 0 600 400" style="margin-top:10px" aria-label="Stopping voltage against frequency"></svg>
+        <p class="note">Stopping voltage V<sub>s</sub> against frequency for every metal. Each line has slope h/e. It crosses zero at the threshold f₀ = φ/h. Millikan measured h this way (1916).</p>
+      </div>
+      <div class="controls">
+        <label class="ctl">Metal<select id="metal"></select></label>
+        <label class="ctl">Wavelength λ = <span class="val" id="lv"></span><input type="range" id="lam" min="150" max="750" step="1" value="400"></label>
+        <label class="ctl">Intensity (photons per second) <input type="range" id="inten" min="0" max="100" value="50"></label>
+        <div class="card" id="pestats"></div>
+        <div class="callout">Raising the intensity raises the <b>number</b> of electrons (the current), not their maximum energy. Below the threshold frequency, no electrons come out, however bright the light.</div>
+        <h3 style="margin-bottom:0">Quick check</h3>
+        <div class="card" id="qtext"></div>
+        <div class="row"><label class="ctl">V<sub>s</sub> (volts) =<input type="text" inputmode="decimal" class="ans" id="qa" placeholder="0 if none"></label><button id="qgo" class="primary">Check</button><button id="qnew">New</button></div>
+        <div id="qres"></div>
+        <p class="note">Score: <b id="qscore">0 / 0</b>. Answers within 0.05 V count. Use hc = 1240 eV·nm.</p>
+      </div>
+    </div>
+  </section>
+  <p class="note">Constants (exact SI values since 2019): h = 6.62607015×10⁻³⁴ J s, c = 299 792 458 m/s, k = 1.380649×10⁻²³ J/K, e = 1.602176634×10⁻¹⁹ C. Derived: σ = 5.670374×10⁻⁸ W m⁻² K⁻⁴, b = 2.897772×10⁻³ m K. Work functions are typical polycrystalline values. Real ones depend on the crystal face and surface cleanliness by a few tenths of an eV.</p>
+  <footer class="foot">Part of the Self-Study repo · physics-olympiad/interactive</footer>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const NS = "http://www.w3.org/2000/svg";
+function mk(svg, tag, at, txt) { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt != null) e.textContent = txt; svg.appendChild(e); return e; }
+const h = 6.62607015e-34, c = 299792458, kB = 1.380649e-23, qe = 1.602176634e-19;
+const sigma = (2 * Math.PI ** 5 * kB ** 4) / (15 * h ** 3 * c ** 2), bW = 2.897771955e-3;
+// ---------------- Blackbody ----------------
+const B = (lam, T) => { const x = (h * c) / (lam * kB * T); return x > 700 ? 0 : (2 * h * c * c) / lam ** 5 / Math.expm1(x); }; // W sr⁻¹ m⁻³
+function wlColor(nm) { // approximate sRGB of a spectral colour
+  let r = 0, g = 0, b = 0;
+  if (nm < 440) { r = (440 - nm) / 60; b = 1; } else if (nm < 490) { g = (nm - 440) / 50; b = 1; } else if (nm < 510) { g = 1; b = (510 - nm) / 20; }
+  else if (nm < 580) { r = (nm - 510) / 70; g = 1; } else if (nm < 645) { r = 1; g = (645 - nm) / 65; } else r = 1;
+  const f = nm < 420 ? 0.3 + (0.7 * (nm - 380)) / 40 : nm > 700 ? 0.3 + (0.7 * (750 - nm)) / 50 : 1;
+  return `rgb(${[r, g, b].map((v) => Math.round(255 * Math.max(0, v * f))).join(",")})`;
+}
+// CIE-free approximation of a blackbody's colour (Tanner Helland fit, good to ~1000–40000 K)
+function bbColor(T) {
+  const t = T / 100; let r, g, b;
+  r = t <= 66 ? 255 : 329.7 * (t - 60) ** -0.1332;
+  g = t <= 66 ? 99.47 * Math.log(t) - 161.1 : 288.1 * (t - 60) ** -0.0755;
+  b = t >= 66 ? 255 : t <= 19 ? 0 : 138.5 * Math.log(t - 10) - 305.0;
+  const cl = (v) => Math.round(Math.max(0, Math.min(255, v)));
+  return T < 800 ? "rgb(20,20,20)" : `rgb(${cl(r)},${cl(g)},${cl(b)})`;
+}
+let pinned = [];
+const L0 = Math.log10(100e-9), L1 = Math.log10(100e-6);
+function integrate(T, a, b, n = 4000) { // ∫ πB dλ over [a,b] with log spacing
+  let s = 0; const la = Math.log(a), lb = Math.log(b), d = (lb - la) / n;
+  for (let i = 0; i < n; i++) { const l = Math.exp(la + (i + 0.5) * d); s += Math.PI * B(l, T) * l * d; }
+  return s;
+}
+function drawBB() {
+  const T = Math.round(10 ** +$("t").value); $("tv").textContent = T + " K";
+  const svg = $("bb"); svg.innerHTML = "";
+  const W = 640, H = 400, L = 50, R = 14, Tp = 14, Bm = 40;
+  const X = (lam) => L + ((Math.log10(lam) - L0) / (L1 - L0)) * (W - L - R);
+  const temps = [...pinned, T], norm = $("norm").checked;
+  const peak = (t) => B(bW / t, t), ymax = norm ? 1.08 : Math.max(...temps.map(peak)) * 1.08;
+  const Y = (v) => H - Bm - (v / ymax) * (H - Bm - Tp);
+  for (let nm = 380; nm < 750; nm += 2) mk(svg, "rect", { x: X(nm * 1e-9), y: Tp, width: Math.max(1, X((nm + 2) * 1e-9) - X(nm * 1e-9)) + 0.3, height: H - Bm - Tp, fill: wlColor(nm), opacity: 0.16 });
+  mk(svg, "rect", { x: L, y: Tp, width: W - L - R, height: H - Bm - Tp, fill: "none", stroke: col("--border") });
+  [[100e-9, "100 nm"], [1e-6, "1 µm"], [10e-6, "10 µm"], [100e-6, "100 µm"]].forEach(([l, s]) => { mk(svg, "text", { x: X(l), y: H - Bm + 16, "text-anchor": "middle" }, s); mk(svg, "line", { x1: X(l), x2: X(l), y1: Tp, y2: H - Bm, stroke: col("--border"), "stroke-dasharray": "2 4" }); });
+  mk(svg, "text", { x: (W + L) / 2, y: H - 6, "text-anchor": "middle" }, "wavelength λ (log scale)");
+  mk(svg, "text", { x: 14, y: (H - Bm) / 2, transform: `rotate(-90 14 ${(H - Bm) / 2})`, "text-anchor": "middle" }, norm ? "B_λ / peak" : "spectral radiance B_λ");
+  const colors = [col("--c4"), col("--c6"), col("--c3"), col("--c2")];
+  temps.forEach((t, k) => {
+    const cur = k === temps.length - 1, s = norm ? 1 / peak(t) : 1;
+    let d = ""; for (let i = 0; i <= 400; i++) { const lam = 10 ** (L0 + ((L1 - L0) * i) / 400); d += (i ? "L" : "M") + X(lam).toFixed(1) + " " + Y(B(lam, t) * s).toFixed(1); }
+    mk(svg, "path", { d, fill: "none", stroke: cur ? col("--c1") : colors[k % 4], "stroke-width": cur ? 2.6 : 1.6 });
+    const lp = bW / t; if (lp > 100e-9 && lp < 100e-6) { mk(svg, "circle", { cx: X(lp), cy: Y(peak(t) * s), r: 4, fill: cur ? col("--c1") : colors[k % 4] }); mk(svg, "text", { x: X(lp) + 6, y: Y(peak(t) * s) - 6 }, t + " K"); }
+  });
+  const lp = bW / T, tot = integrate(T, 1e-8, 1e-2), vis = integrate(T, 380e-9, 750e-9);
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  const fmtL = (l) => (l < 1e-6 ? (l * 1e9).toFixed(0) + " nm" : (l * 1e6).toFixed(2) + " µm");
+  $("bbstats").innerHTML = row("Wien peak λ<sub>max</sub> = b/T", fmtL(lp)) +
+    row("Peak photon energy hc/λ<sub>max</sub>", ((h * c) / lp / qe).toFixed(3) + " eV") +
+    row("σT⁴ (Stefan–Boltzmann)", (sigma * T ** 4).toExponential(3) + " W/m²") +
+    row("∫πB<sub>λ</sub> dλ (numerical)", tot.toExponential(3) + " W/m²") +
+    row("Fraction emitted as visible light", vis / tot < 1e-3 ? ((100 * vis) / tot).toExponential(1) + " %" : ((100 * vis) / tot).toFixed(1) + " %") +
+    row("Doubling T multiplies power by", "2⁴ = 16") +
+    row("Colour of the glow", `<span class="swatch" style="background:${bbColor(T)}"></span>`);
+}
+$("t").addEventListener("input", drawBB); $("norm").addEventListener("input", drawBB);
+document.querySelectorAll("[data-t]").forEach((b) => b.addEventListener("click", () => { $("t").value = Math.log10(+b.dataset.t); drawBB(); }));
+$("pin").addEventListener("click", () => { const T = Math.round(10 ** +$("t").value); if (!pinned.includes(T) && pinned.length < 4) pinned.push(T); drawBB(); });
+$("unpin").addEventListener("click", () => { pinned = []; drawBB(); });
+// ---------------- Photoelectric ----------------
+const metals = [["Caesium", 2.1], ["Potassium", 2.29], ["Sodium", 2.36], ["Lithium", 2.9], ["Aluminium", 4.08], ["Silver", 4.26], ["Zinc", 4.3], ["Copper", 4.7], ["Platinum", 5.6]];
+$("metal").innerHTML = metals.map((m, i) => `<option value="${i}">${m[0]} (φ ≈ ${m[1]} eV)</option>`).join("");
+$("metal").value = 2;
+const HC = (h * c) / qe * 1e9; // eV·nm ≈ 1239.84
+let electrons = [], photons = [], acc = 0;
+function peState() { const [name, phi] = metals[+$("metal").value], lam = +$("lam").value, E = HC / lam; return { name, phi, lam, E, K: Math.max(0, E - phi), on: E > phi }; }
+function drawVF() {
+  const svg = $("vf"); svg.innerHTML = ""; const s = peState();
+  const W = 600, H = 400, L = 50, R = 14, Tp = 14, Bm = 40, f0 = 0, f1 = 2.0e15, v0 = -1, v1 = 6.5;
+  const X = (f) => L + ((f - f0) / (f1 - f0)) * (W - L - R), Y = (v) => H - Bm - ((v - v0) / (v1 - v0)) * (H - Bm - Tp);
+  mk(svg, "rect", { x: L, y: Tp, width: W - L - R, height: H - Bm - Tp, fill: "none", stroke: col("--border") });
+  mk(svg, "line", { x1: L, x2: W - R, y1: Y(0), y2: Y(0), stroke: col("--muted") });
+  for (let f = 0; f <= 2e15; f += 0.5e15) mk(svg, "text", { x: X(f), y: H - Bm + 16, "text-anchor": "middle" }, (f / 1e15).toFixed(1));
+  for (let v = 0; v <= 6; v += 2) mk(svg, "text", { x: L - 6, y: Y(v) + 4, "text-anchor": "end" }, v);
+  mk(svg, "text", { x: (W + L) / 2, y: H - 6, "text-anchor": "middle" }, "frequency f (10¹⁵ Hz)");
+  mk(svg, "text", { x: 14, y: (H - Bm) / 2, transform: `rotate(-90 14 ${(H - Bm) / 2})`, "text-anchor": "middle" }, "stopping voltage V_s (V)");
+  for (let nm = 380; nm < 750; nm += 3) { const fa = c / ((nm + 3) * 1e-9), fb = c / (nm * 1e-9); mk(svg, "rect", { x: X(fa), y: Tp, width: X(fb) - X(fa) + 0.3, height: H - Bm - Tp, fill: wlColor(nm), opacity: 0.15 }); }
+  metals.forEach(([n, phi], i) => {
+    const fth = (phi * qe) / h, cur = i === +$("metal").value;
+    mk(svg, "line", { x1: X(fth), y1: Y(0), x2: X(f1), y2: Y((h * f1) / qe - phi), stroke: cur ? col("--c1") : col("--border"), "stroke-width": cur ? 2.4 : 1.2 });
+    if (cur) mk(svg, "text", { x: X(fth) + 4, y: Y(0) + 15 }, "f₀ = " + (fth / 1e14).toFixed(2) + "×10¹⁴ Hz");
+  });
+  const f = c / (s.lam * 1e-9);
+  mk(svg, "circle", { cx: X(f), cy: Y(s.K), r: 6, fill: s.on ? col("--c2") : col("--bad") });
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  $("lv").textContent = s.lam + " nm";
+  $("pestats").innerHTML = row("Photon energy hf = hc/λ", s.E.toFixed(3) + " eV") + row("Work function φ (" + s.name + ")", s.phi.toFixed(2) + " eV") +
+    row("Threshold wavelength λ₀ = hc/φ", (HC / s.phi).toFixed(0) + " nm") +
+    row("K<sub>max</sub> = hf − φ", s.on ? s.K.toFixed(3) + " eV" : '<span class="bad">no emission</span>') +
+    row("Stopping voltage V<sub>s</sub> = K<sub>max</sub>/e", s.on ? s.K.toFixed(3) + " V" : "—") +
+    row("Fastest electron speed", s.on ? (Math.sqrt((2 * s.K * qe) / 9.1093837e-31) / 1e3).toFixed(0) + " km/s" : "—");
+}
+const anim = $("anim"), actx = anim.getContext("2d");
+function frame() {
+  if (!$("p-pe").hidden) {
+    const dpr = devicePixelRatio || 1, W = anim.clientWidth, H = W / 2; if (anim.width !== Math.round(W * dpr)) { anim.width = W * dpr; anim.height = H * dpr; }
+    actx.setTransform(dpr, 0, 0, dpr, 0, 0); actx.fillStyle = col("--surface"); actx.fillRect(0, 0, W, H);
+    const s = peState(), px = W * 0.62;
+    actx.fillStyle = col("--muted"); actx.fillRect(px, H * 0.1, 14, H * 0.8);
+    actx.font = "13px system-ui"; actx.fillText(s.name, px - 10, H * 0.08);
+    acc += +$("inten").value / 100 * 0.6; while (acc >= 1) { acc--; photons.push({ x: 0, y: H * (0.15 + 0.7 * Math.random()), ph: Math.random() * 6 }); }
+    const pc = s.lam >= 380 && s.lam <= 750 ? wlColor(s.lam) : col("--c4");
+    actx.strokeStyle = pc; actx.lineWidth = 2;
+    photons = photons.filter((p) => {
+      p.x += W * 0.012; const k = 2 * Math.PI / (6 + s.lam / 40);
+      actx.beginPath(); for (let i = 0; i < 18; i++) { const x = p.x - i * 1.5; actx.lineTo(x, p.y + 4 * Math.sin(k * x + p.ph)); } actx.stroke();
+      if (p.x >= px) { if (s.on && Math.random() < 0.6) { const u = Math.random(); electrons.push({ x: px + 14, y: p.y, vx: Math.sqrt(s.K) * u * W * 0.006 + 0.3, vy: (Math.random() - 0.5) * 1.5 }); } return false; }
+      return true;
+    });
+    actx.fillStyle = col("--c1");
+    electrons = electrons.filter((e) => { e.x += e.vx; e.y += e.vy; actx.beginPath(); actx.arc(e.x, e.y, 3, 0, 7); actx.fill(); return e.x < W && e.y > 0 && e.y < H; });
+    actx.fillStyle = col("--text"); actx.font = "13px system-ui";
+    actx.fillText(s.on ? "e⁻ ejected: K up to " + s.K.toFixed(2) + " eV" : "hf < φ: no electrons", px + 24, H * 0.95);
+  }
+  requestAnimationFrame(frame);
+}
+let quiz = null, score = [0, 0];
+function newQ() { const i = Math.floor(Math.random() * metals.length), lam = Math.round(150 + Math.random() * 500); quiz = { i, lam }; $("qtext").innerHTML = `Light of λ = <b>${lam} nm</b> falls on <b>${metals[i][0]}</b> (φ = ${metals[i][1]} eV). What is the stopping voltage?`; $("qa").value = ""; $("qres").textContent = ""; }
+$("qnew").addEventListener("click", newQ);
+$("qgo").addEventListener("click", () => {
+  const ans = Math.max(0, 1240 / quiz.lam - metals[quiz.i][1]), u = parseFloat($("qa").value.replace(",", "."));
+  const ok = Math.abs(u - ans) <= 0.05; score[1]++; if (ok) score[0]++; $("qscore").textContent = `${score[0]} / ${score[1]}`;
+  $("qres").innerHTML = (ok ? '<span class="good">✓ correct.</span> ' : '<span class="bad">✗</span> ') + `hc/λ = 1240/${quiz.lam} = ${(1240 / quiz.lam).toFixed(3)} eV, so V<sub>s</sub> = ${ans > 0 ? (1240 / quiz.lam).toFixed(3) + " − " + metals[quiz.i][1] + " = <b>" + ans.toFixed(2) + " V</b>" : "<b>0</b> (below threshold: no emission)"}.`;
+  $("metal").value = quiz.i; $("lam").value = Math.min(750, quiz.lam); drawVF();
+});
+["metal", "lam"].forEach((id) => $(id).addEventListener("input", drawVF));
+document.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => {
+  document.querySelectorAll("[data-tab]").forEach((x) => x.classList.toggle("active", x === b));
+  $("p-bb").hidden = b.dataset.tab !== "bb"; $("p-pe").hidden = b.dataset.tab !== "pe";
+  if (b.dataset.tab === "pe") drawVF(); else drawBB();
+}));
+if (location.hash === "#photoelectric") document.querySelector('[data-tab="pe"]').click();
+drawBB(); drawVF(); newQ(); frame();
+</script>
+</body>
+</html>

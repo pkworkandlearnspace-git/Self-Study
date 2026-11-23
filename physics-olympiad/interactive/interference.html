@@ -11,7 +11,7 @@
 <div class="wrap">
   <header class="top"><a class="back" href="index.html">← Physics Olympiad tools</a></header>
   <h1>Wave Interference & Diffraction</h1>
-  <p class="lead">Part 1: two coherent point sources make ripples, and you can see the nodal lines form. Part 2: the far-field intensity of an N-slit grating with finite slit width (module 05).</p>
+  <p class="lead">Part 1: two coherent point sources make ripples, and you can see the nodal lines form. Part 2: the far-field (Fraunhofer) intensity of a single slit, a double slit or an N-slit grating with finite slit width, with a live phasor diagram that explains every maximum and zero (module 05).</p>
 
   <h2>1 · Two-source ripple tank</h2>
   <div class="grid two">
@@ -22,22 +22,38 @@
       <label class="ctl">Phase difference Δφ = <span class="val" id="pv"></span><input type="range" id="ph" min="0" max="360" value="0"></label>
       <div class="row"><button id="mode" class="active">Showing: instantaneous wave</button></div>
       <div class="card" id="fstats"></div>
-      <p class="note">Nodal (dark) lines satisfy |r₁ − r₂| = (m + ½)λ for in-phase sources. They are hyperbolas with the sources as foci. The number of lines ≈ 2d/λ.</p>
+      <p class="note">Nodal (dark) lines satisfy |r₁ − r₂| = (m + ½)λ for in-phase sources. They are hyperbolas with the sources as foci, and there are about 2d/λ of them. A phase lag Δφ on one source slides the whole pattern toward that source, because it needs a shorter path to catch up. This is how a phased-array antenna steers its beam.</p>
     </div>
   </div>
 
-  <h2>2 · N-slit grating on a far screen</h2>
-  <canvas id="screen" width="960" height="400" aria-label="Grating intensity pattern"></canvas>
-  <div class="legend" style="margin:6px 0 12px"><span><i style="background:var(--c1)"></i>I(θ) total</span><span><i style="background:var(--c2)"></i>single-slit envelope (sin β / β)²</span></div>
+  <h2>2 · Single slit, double slit, grating on a far screen</h2>
+  <div class="row" style="margin-bottom:8px"><span class="note">Presets:</span>
+    <button data-g="1,4,2">Single slit</button><button data-g="2,4,1">Young double slit</button><button data-g="2,6,2">Missing order (d = 3a)</button><button data-g="6,4,0.6">Grating N = 6</button><button data-g="20,2.5,0.5">Fine grating N = 20</button>
+  </div>
+  <canvas id="screen" width="960" height="400" aria-label="Diffraction intensity pattern; tap or drag to pick an angle"></canvas>
+  <div class="legend" style="margin:6px 0 12px"><span><i style="background:var(--c1)"></i>I(θ) total</span><span><i style="background:var(--c2)"></i>single-slit envelope (sin β / β)²</span><span><i style="background:var(--c4)"></i>cursor: tap or drag on the plot</span></div>
   <div class="grid two">
     <div class="controls">
       <label class="ctl">Number of slits N = <span class="val" id="nv"></span><input type="range" id="n" min="1" max="20" value="2"></label>
       <label class="ctl">Slit spacing d = <span class="val" id="d2v"></span> λ<input type="range" id="d2" min="1" max="12" step="0.1" value="4"></label>
       <label class="ctl">Slit width a = <span class="val" id="av"></span> λ<input type="range" id="a" min="0.1" max="4" step="0.05" value="1"></label>
+      <label class="ctl">Cursor sin θ = <span class="val" id="sv"></span><input type="range" id="s" min="-0.99" max="0.99" step="0.001" value="0.05"></label>
+      <div class="card" id="gstats"></div>
     </div>
-    <div class="card" id="gstats"></div>
+    <div>
+      <canvas id="phasor" width="400" height="400" style="aspect-ratio:1/1" aria-label="Phasor diagram at the cursor angle"></canvas>
+      <p class="note">Phasor sum at the cursor. Each slit is split into 16 strips (small arrows). Inside one slit the phase turns through 2β, giving the single-slit curl. From one slit to the next it jumps by δ = 2α. The thick arrow is the resultant, and its length² is I/I₀. A <b>minimum</b> is where the chain closes into a polygon. A <b>principal maximum</b> is where every slit's chain points the same way.</p>
+    </div>
   </div>
-  <div class="callout" style="margin-top:14px">I(θ) = I₀ · (sin β / β)² · (sin Nα / (N sin α))², with α = π d sinθ / λ and β = π a sinθ / λ. Principal maxima: d sinθ = mλ. There are N − 2 small secondary maxima between them. A maximum goes missing when it lands on a single-slit zero (d/a an integer).</div>
+  <div class="callout" style="margin-top:14px">I(θ) = I₀ · (sin β / β)² · (sin Nα / (N sin α))², with α = π d sinθ / λ and β = π a sinθ / λ. Principal maxima: d sinθ = mλ. Between two principal maxima there are N − 1 zeros and N − 2 small secondary maxima. A maximum goes missing when it lands on a single-slit zero (d/a an integer). Resolving power of a grating: λ/Δλ = mN.</div>
+
+  <h2>Practice</h2>
+  <div class="card">
+    <details><summary><b>1.</b> Young's slits 0.25 mm apart, screen 1.5 m away, λ = 600 nm. Fringe spacing?</summary><p>Small angles: Δy = λL/d = (600×10⁻⁹)(1.5)/(2.5×10⁻⁴) = <b>3.6 mm</b>.</p></details>
+    <details><summary><b>2.</b> d = 3a. Which orders are missing, and how many bright fringes lie inside the central diffraction peak?</summary><p>Order m sits at sinθ = mλ/d. The first single-slit zero is at sinθ = λ/a = 3λ/d, so m = ±3, ±6, … are missing. Inside the central peak (|m| &lt; 3) there are m = 0, ±1, ±2: <b>5 fringes</b>. Load the "Missing order" preset to check.</p></details>
+    <details><summary><b>3.</b> Can a grating with 600 lines/mm, 2 cm wide, resolve the sodium D lines (589.0 and 589.6 nm) in first order?</summary><p>N = 600 × 20 = 12 000. Required λ/Δλ = 589.3/0.6 ≈ 982. Available: mN = 12 000 ≫ 982, so <b>yes</b>. Even N ≈ 1000 slits would do in first order.</p></details>
+    <details><summary><b>4.</b> Why is the N-slit minimum next to a principal maximum at δ = 2π/N?</summary><p>N equal phasors, each turned by δ from the previous, close into a regular N-gon when Nδ = 2π. The sum is then zero. Set the cursor just beside m = 0 with N = 6 and watch the hexagon close. The angular half-width of a principal max is therefore Δ(sinθ) = λ/(Nd).</p></details>
+  </div>
   <footer class="foot">Part of the Self-Study repo · physics-olympiad/interactive</footer>
 </div>
 <script>
@@ -77,14 +93,16 @@ function drawField() {
   fctx.imageSmoothingEnabled = true; fctx.drawImage(off, 0, 0, W, H);
   fctx.fillStyle = col("--text");
   [s1, s2].forEach((s) => { fctx.beginPath(); fctx.arc((s[0] / GW) * W, (s[1] / GH) * H, 4, 0, 7); fctx.fill(); });
-  const dl = d / lam;
-  $("fstats").innerHTML = `<div class="stat"><span>d / λ</span><b>${dl.toFixed(2)}</b></div><div class="stat"><span>Nodal lines (in phase)</span><b>${ph === 0 ? 2 * Math.round(dl) : "shifted by Δφ"}</b></div><div class="stat"><span>Max order m (d sinθ = mλ)</span><b>${Math.floor(dl)}</b></div>`;
+  const dl = d / lam, f = ph / (2 * Math.PI);
+  let nodal = 0; for (let n = -100; n <= 100; n++) if (Math.abs(n + 0.5 + f) < dl) nodal++;
+  let maxima = 0; for (let n = -100; n <= 100; n++) if (Math.abs(n + f) < dl) maxima++;
+  $("fstats").innerHTML = `<div class="stat"><span>d / λ</span><b>${dl.toFixed(2)}</b></div><div class="stat"><span>Nodal (dark) lines: |r₁ − r₂| = (n + ½ + Δφ/2π)λ &lt; d</span><b>${nodal}</b></div><div class="stat"><span>Bright (antinodal) lines</span><b>${maxima}</b></div><div class="stat"><span>Central bright line</span><b>${Math.abs(f) < 1e-9 || Math.abs(f - 1) < 1e-9 ? "on the axis" : "shifted toward the lagging source"}</b></div>`;
   t += 1;
   requestAnimationFrame(drawField);
 }
 
 // ---------- Part 2: grating ----------
-const sc = $("screen"), sctx = sc.getContext("2d");
+const sc = $("screen"), sctx = sc.getContext("2d"), pc = $("phasor"), pctx = pc.getContext("2d");
 function grating(N, d, a, s) { // s = sinθ, lengths in units of λ
   const al = Math.PI * d * s, be = Math.PI * a * s;
   const env = Math.abs(be) < 1e-9 ? 1 : (Math.sin(be) / be) ** 2;
@@ -92,26 +110,90 @@ function grating(N, d, a, s) { // s = sinθ, lengths in units of λ
   const arr = Math.abs(sa) < 1e-9 ? 1 : (Math.sin(N * al) / (N * sa)) ** 2;
   return [env * arr, env];
 }
+let geo = {};
+function params() { const N = +$("n").value, d = +$("d2").value, a = Math.min(+$("a").value, d); return { N, d, a }; }
 function drawScreen() {
-  const N = +$("n").value, d = +$("d2").value, a = Math.min(+$("a").value, d);
-  $("nv").textContent = N; $("d2v").textContent = d.toFixed(1); $("av").textContent = a.toFixed(2);
+  const { N, d, a } = params(), cs = +$("s").value;
+  $("nv").textContent = N; $("d2v").textContent = d.toFixed(1); $("av").textContent = a.toFixed(2); $("sv").textContent = cs.toFixed(3);
   const dpr = devicePixelRatio || 1, W = sc.clientWidth, H = W / 2.4, pad = 26;
   sc.width = W * dpr; sc.height = H * dpr; sctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   sctx.fillStyle = col("--surface"); sctx.fillRect(0, 0, W, H);
   const X = (s) => pad + ((s + 1) / 2) * (W - 2 * pad), Y = (v) => H - pad - v * (H - 2 * pad - 14);
+  geo = { W, pad };
   sctx.strokeStyle = col("--border"); sctx.beginPath(); sctx.moveTo(pad, H - pad); sctx.lineTo(W - pad, H - pad); sctx.stroke();
   sctx.fillStyle = col("--muted"); sctx.font = "12px system-ui";
   [-1, -0.5, 0, 0.5, 1].forEach((s) => sctx.fillText(s, X(s) - 8, H - pad + 16)); sctx.fillText("sin θ", W - pad - 30, H - pad - 6);
-  // principal maxima marks
-  for (let m = -Math.floor(d); m <= Math.floor(d); m++) { const s = m / d; sctx.strokeStyle = col("--border"); sctx.setLineDash([3, 3]); sctx.beginPath(); sctx.moveTo(X(s), pad); sctx.lineTo(X(s), H - pad); sctx.stroke(); sctx.setLineDash([]); sctx.fillText("m=" + m, X(s) - 12, pad - 2); }
-  const plot = (k, color, w) => { sctx.strokeStyle = color; sctx.lineWidth = w; sctx.beginPath(); for (let i = 0; i <= 1600; i++) { const s = -1 + (2 * i) / 1600; const q = [X(s), Y(grating(N, d, a, s)[k])]; i ? sctx.lineTo(...q) : sctx.moveTo(...q); } sctx.stroke(); };
+  const mMax = Math.ceil(d) - 1; // orders with |sinθ| < 1
+  const lblEvery = Math.max(1, Math.ceil((2 * mMax + 1) / Math.max(4, W / 45)));
+  for (let m = -mMax; m <= mMax; m++) { const s = m / d; sctx.strokeStyle = col("--border"); sctx.setLineDash([3, 3]); sctx.beginPath(); sctx.moveTo(X(s), pad); sctx.lineTo(X(s), H - pad); sctx.stroke(); sctx.setLineDash([]); if (m % lblEvery === 0) sctx.fillText("m=" + m, X(s) - 12, pad - 2); }
+  const plot = (k, color, w) => { sctx.strokeStyle = color; sctx.lineWidth = w; sctx.beginPath(); for (let i = 0; i <= 2000; i++) { const s = -1 + (2 * i) / 2000; const q = [X(s), Y(grating(N, d, a, s)[k])]; i ? sctx.lineTo(...q) : sctx.moveTo(...q); } sctx.stroke(); };
   sctx.globalAlpha = 0.6; plot(1, col("--c2"), 1.5); sctx.globalAlpha = 1; plot(0, col("--c1"), 2);
-  // visual "screen" strip
   for (let i = 0; i < W - 2 * pad; i++) { const s = -1 + (2 * i) / (W - 2 * pad); const v = Math.sqrt(grating(N, d, a, s)[0]); sctx.fillStyle = `rgba(${hexToRgb(col("--c1")).join(",")},${v})`; sctx.fillRect(pad + i, H - pad + 20, 1, 6); }
-  const ratio = d / a, missing = Math.abs(ratio - Math.round(ratio)) < 0.02 ? `orders m = ±${Math.round(ratio)}, ±${2 * Math.round(ratio)}, … are missing` : "none";
-  $("gstats").innerHTML = `<div class="stat"><span>Principal maxima visible</span><b>${2 * Math.floor(d) + 1}</b></div><div class="stat"><span>Secondary maxima between principals</span><b>${Math.max(0, N - 2)}</b></div><div class="stat"><span>Angular width of a principal max ∝</span><b>1 / (N d)</b></div><div class="stat"><span>Missing orders (d/a = ${ratio.toFixed(2)})</span><b style="text-align:right">${missing}</b></div>`;
+  // cursor
+  const Ic = grating(N, d, a, cs)[0];
+  sctx.strokeStyle = col("--c4"); sctx.lineWidth = 1.5; sctx.beginPath(); sctx.moveTo(X(cs), pad); sctx.lineTo(X(cs), H - pad); sctx.stroke();
+  sctx.fillStyle = col("--c4"); sctx.beginPath(); sctx.arc(X(cs), Y(Ic), 4.5, 0, 7); sctx.fill();
+  // stats
+  const ratio = d / a, r = Math.round(ratio), isInt = Math.abs(ratio - r) < 0.02 && r >= 1;
+  let visible = 0, missing = [];
+  for (let m = -mMax; m <= mMax; m++) { if (isInt && m !== 0 && m % r === 0) missing.push(m); else visible++; }
+  const mPos = missing.filter((m) => m > 0);
+  const missTxt = N === 1 ? "n/a (one slit)" : !isInt ? "none" : mPos.length ? "m = ±" + mPos.join(", ±") : "none within |sinθ| < 1";
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b style="text-align:right">${v}</b></div>`;
+  $("gstats").innerHTML = (N === 1
+    ? row("Single-slit zeros at sinθ =", "mλ/a = ±" + (1 / a).toFixed(3) + (2 / a < 1 ? ", ±" + (2 / a).toFixed(3) : "") + (1 / a >= 1 ? " (none: a < λ)" : "")) + row("Central peak full width in sinθ", (Math.min(2, 2 / a)).toFixed(3))
+    : row("Bright principal maxima (|sinθ| < 1)", visible) + row("Missing orders (d/a = " + ratio.toFixed(2) + ")", missTxt) +
+      row("Zeros / secondary maxima between principals", (N - 1) + " / " + Math.max(0, N - 2)) +
+      row("Half-width of a principal max, Δ(sinθ) = 1/(Nd)", (1 / (N * d)).toFixed(4)) +
+      row("Resolving power λ/Δλ = mN (m = 1, 2)", N + ", " + 2 * N)) +
+    row("At cursor: α, β (rad)", (Math.PI * d * cs).toFixed(3) + ", " + (Math.PI * a * cs).toFixed(3)) +
+    row("At cursor: I / I₀", Ic.toFixed(4));
+  drawPhasor(N, d, a, cs, Ic);
 }
-["n", "d2", "a"].forEach((id) => $(id).addEventListener("input", drawScreen));
+function drawPhasor(N, d, a, s, Ic) {
+  const dpr = devicePixelRatio || 1, W = pc.clientWidth, H = W;
+  pc.width = W * dpr; pc.height = H * dpr; pctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  pctx.fillStyle = col("--surface"); pctx.fillRect(0, 0, W, H);
+  const M = 16, tot = N * M; let x = 0, y = 0; const pts = [[0, 0]];
+  for (let j = 0; j < N; j++) for (let k = 0; k < M; k++) {
+    const pos = j * d + ((k + 0.5) / M) * a, ph = 2 * Math.PI * pos * s;
+    x += Math.cos(ph) / tot; y += Math.sin(ph) / tot; pts.push([x, y]);
+  }
+  // fit drawing to the bounding box of the chain (always include origin)
+  let x0 = Math.min(...pts.map((p) => p[0])), x1 = Math.max(...pts.map((p) => p[0])), y0 = Math.min(...pts.map((p) => p[1])), y1 = Math.max(...pts.map((p) => p[1]));
+  const span = Math.max(x1 - x0, y1 - y0, 0.05), scl = (W - 50) / span, ox = W / 2 - ((x0 + x1) / 2) * scl, oy = H / 2 + ((y0 + y1) / 2) * scl;
+  const P = (p) => [ox + p[0] * scl, oy - p[1] * scl];
+  pctx.lineWidth = 1.5;
+  for (let i = 1; i < pts.length; i++) {
+    const slit = Math.floor((i - 1) / M);
+    pctx.strokeStyle = slit % 2 ? col("--c6") : col("--c1");
+    pctx.beginPath(); pctx.moveTo(...P(pts[i - 1])); pctx.lineTo(...P(pts[i])); pctx.stroke();
+  }
+  // slit boundaries
+  pctx.fillStyle = col("--muted");
+  for (let j = 0; j <= N; j++) { const q = P(pts[j * M]); pctx.beginPath(); pctx.arc(q[0], q[1], 2.5, 0, 7); pctx.fill(); }
+  // resultant
+  const end = P(pts[pts.length - 1]), st = P([0, 0]), c = col("--c4");
+  pctx.strokeStyle = c; pctx.fillStyle = c; pctx.lineWidth = 3;
+  pctx.beginPath(); pctx.moveTo(...st); pctx.lineTo(...end); pctx.stroke();
+  const ang = Math.atan2(end[1] - st[1], end[0] - st[0]), h = 10;
+  if (Math.hypot(end[0] - st[0], end[1] - st[1]) > 12) { pctx.beginPath(); pctx.moveTo(...end); pctx.lineTo(end[0] - h * Math.cos(ang - 0.4), end[1] - h * Math.sin(ang - 0.4)); pctx.lineTo(end[0] - h * Math.cos(ang + 0.4), end[1] - h * Math.sin(ang + 0.4)); pctx.closePath(); pctx.fill(); }
+  pctx.font = "13px system-ui"; pctx.fillStyle = col("--text");
+  const R2 = x * x + y * y;
+  pctx.fillText(`|resultant|² = ${R2.toFixed(4)}   (exact I/I₀ = ${Ic.toFixed(4)})`, 10, H - 10);
+  pctx.fillText(`δ = 2α = ${((2 * Math.PI * d * s) % (2 * Math.PI)).toFixed(3)} rad between slits`, 10, 18);
+}
+function pickFromPointer(ev) {
+  const r = sc.getBoundingClientRect(), xpx = ev.clientX - r.left, { W, pad } = geo;
+  const s = Math.max(-0.99, Math.min(0.99, ((xpx - pad) / (W - 2 * pad)) * 2 - 1));
+  $("s").value = s; drawScreen();
+}
+let dragging = false;
+sc.addEventListener("pointerdown", (e) => { dragging = true; sc.setPointerCapture(e.pointerId); pickFromPointer(e); });
+sc.addEventListener("pointermove", (e) => { if (dragging) pickFromPointer(e); });
+sc.addEventListener("pointerup", () => (dragging = false));
+document.querySelectorAll("[data-g]").forEach((b) => b.addEventListener("click", () => { const [N, d, a] = b.dataset.g.split(",").map(Number); $("n").value = N; $("d2").value = d; $("a").value = a; drawScreen(); }));
+["n", "d2", "a", "s"].forEach((id) => $(id).addEventListener("input", drawScreen));
 window.addEventListener("resize", drawScreen);
 drawField(); drawScreen();
 </script>

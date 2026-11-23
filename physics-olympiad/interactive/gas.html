@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kinetic Gas Lab</title>
+<link rel="stylesheet" href="../../_shared/style.css">
+<style>
+  #box { aspect-ratio: 1 / 1; }
+  #hist { aspect-ratio: 1.7 / 1; }
+  svg text { font: 12px system-ui, sans-serif; fill: var(--muted); }
+  .chk { display: flex; gap: 6px; align-items: center; font-size: 14px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="back" href="index.html">← Physics Olympiad tools</a></header>
+  <h1>Kinetic Gas Lab</h1>
+  <p class="lead">Hard disks bounce elastically in a box. Every disk starts with the <b>same speed</b>, yet collisions quickly spread the speeds into the Maxwell–Boltzmann distribution. Meanwhile the wall impacts give a pressure you can compare with the ideal-gas law (module 03). This is a 2D gas: 2 degrees of freedom, so ⟨½mv²⟩ = kT.</p>
+  <div class="grid two">
+    <canvas id="box" width="600" height="600" aria-label="Gas of hard disks"></canvas>
+    <div class="controls">
+      <label class="ctl">Number of disks N = <span class="val" id="nv"></span><input type="range" id="n" min="20" max="500" step="10" value="250"></label>
+      <label class="ctl">Disk radius r = <span class="val" id="rv"></span><input type="range" id="r" min="0.003" max="0.02" step="0.001" value="0.008"></label>
+      <div class="row">
+        <button id="play" class="primary">Pause</button><button id="reset">Restart (all same speed)</button>
+        <button id="heat">Heat ×1.2</button><button id="cool">Cool ÷1.2</button>
+      </div>
+      <div class="row">
+        <label class="chk"><input type="checkbox" id="tracer" checked> Track one disk (free paths)</label>
+        <label class="chk"><input type="checkbox" id="color" checked> Colour by speed</label>
+      </div>
+      <svg class="plot" id="hist" viewBox="0 0 420 250" aria-label="Speed histogram with Maxwell–Boltzmann curve"></svg>
+      <div class="legend"><span><i style="background:var(--c1)"></i>measured speeds (recent average)</span><span><i style="background:var(--c2)"></i>2D Maxwell–Boltzmann</span></div>
+      <div class="card" id="stats"></div>
+    </div>
+  </div>
+
+  <h2>What to look for</h2>
+  <div class="card"><ol style="margin:0;padding-left:20px">
+    <li><b>Relaxation:</b> the histogram starts as a spike at v₀ and becomes f(v) = (mv/kT) e<sup>−mv²/2kT</sup> (2D) within a few collision times. Total kinetic energy never changes, only its distribution does.</li>
+    <li><b>Ideal-gas law:</b> measured P·A ≈ NkT for small disks. Raise r and the pressure rises <i>above</i> NkT/A, because the disks' own area is excluded. To first order P A/(NkT) ≈ 1 + nB₂ with B₂ = πd²/2 for hard disks of diameter d = 2r (the van der Waals "b" term). The estimate also uses A′ = (L − 2r)², the area that disk centres can actually reach.</li>
+    <li><b>Mean free path:</b> the dilute 2D result is λ = 1/(2√2 n d) (a disk sweeps a strip of width 2d, and the √2 comes from relative motion). The 3D analogue is 1/(√2 nσ) with σ = πd². The measured value comes out a little shorter, because finite disk size raises the collision rate (the Enskog factor; for hard disks it is about (1 − 7φ/16)/(1 − φ)² ≈ 1.08 at area fraction φ = 0.05).</li>
+    <li><b>Heat ×1.2:</b> every speed scales by 1.2, so T scales by 1.44 and P by 1.44, at constant N and A (isochoric).</li>
+  </ol></div>
+  <details class="card" style="margin-top:12px"><summary><b>Practice:</b> 2D vs 3D speed averages</summary>
+    <p>In 2D with m = k = 1: the most probable speed is v<sub>p</sub> = √T, the mean speed is ⟨v⟩ = √(πT/2) ≈ 1.253√T, and the rms speed is v<sub>rms</sub> = √(2T) ≈ 1.414√T.</p>
+    <p>In 3D the same three are √(2kT/m), √(8kT/πm) and √(3kT/m). Their ratios are 1 : 1.128 : 1.225. Check the 2D values against the readouts once the histogram has settled.</p>
+  </details>
+  <footer class="foot">Part of the Self-Study repo · physics-olympiad/interactive · box side L = 1, m = k = 1, elastic hard disks on a cell grid</footer>
+</div>
+<script>
+const cv = document.getElementById("box"), ctx = cv.getContext("2d");
+const $ = (id) => document.getElementById(id);
+const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const NS = "http://www.w3.org/2000/svg";
+function mk(svg, tag, at, txt) { const e = document.createElementNS(NS, tag); for (const k in at) e.setAttribute(k, at[k]); if (txt != null) e.textContent = txt; svg.appendChild(e); return e; }
+let X, Y, VX, VY, N, R, running = true, t, impulse, tWin, collisions, tracerColl, dist, trail, hist, histSamples, pHist = [];
+const V0 = 1, BINS = 40, VMAX = 4;
+function reset() {
+  N = +$("n").value; R = +$("r").value;
+  $("nv").textContent = N; $("rv").textContent = R.toFixed(3);
+  X = new Float64Array(N); Y = new Float64Array(N); VX = new Float64Array(N); VY = new Float64Array(N);
+  // place on a jittered lattice so no overlaps
+  const side = Math.ceil(Math.sqrt(N)), h = 1 / side;
+  if (h < 2.05 * R) { R = h / 2.1; $("rv").textContent = R.toFixed(3) + " (capped)"; }
+  for (let i = 0; i < N; i++) {
+    const a = i % side, b = Math.floor(i / side), j = (h - 2.05 * R) / 2;
+    X[i] = (a + 0.5) * h + (Math.random() * 2 - 1) * j; Y[i] = (b + 0.5) * h + (Math.random() * 2 - 1) * j;
+    const th = Math.random() * 2 * Math.PI; VX[i] = V0 * Math.cos(th); VY[i] = V0 * Math.sin(th);
+  }
+  t = 0; impulse = 0; tWin = 0; collisions = 0; tracerColl = 0; dist = 0; trail = []; hist = new Float64Array(BINS); histSamples = 0; pHist = [];
+}
+function step(dt) {
+  for (let i = 0; i < N; i++) {
+    X[i] += VX[i] * dt; Y[i] += VY[i] * dt;
+    if (X[i] < R) { X[i] = 2 * R - X[i]; VX[i] = -VX[i]; impulse += 2 * Math.abs(VX[i]); }
+    if (X[i] > 1 - R) { X[i] = 2 * (1 - R) - X[i]; VX[i] = -VX[i]; impulse += 2 * Math.abs(VX[i]); }
+    if (Y[i] < R) { Y[i] = 2 * R - Y[i]; VY[i] = -VY[i]; impulse += 2 * Math.abs(VY[i]); }
+    if (Y[i] > 1 - R) { Y[i] = 2 * (1 - R) - Y[i]; VY[i] = -VY[i]; impulse += 2 * Math.abs(VY[i]); }
+  }
+  for (let i = 0; i < N; i++) dist += Math.hypot(VX[i], VY[i]) * dt;
+  // cell grid
+  const cs = Math.max(2 * R, 0.02), nc = Math.floor(1 / cs), cell = new Map();
+  for (let i = 0; i < N; i++) { const k = Math.min(nc - 1, Math.floor(X[i] / cs)) * 1000 + Math.min(nc - 1, Math.floor(Y[i] / cs)); let a = cell.get(k); if (!a) cell.set(k, (a = [])); a.push(i); }
+  const d2 = 4 * R * R;
+  for (const [k, a] of cell) {
+    const cx = Math.floor(k / 1000), cy = k % 1000;
+    for (let dx = 0; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+      if (dx === 0 && dy < 0) continue;
+      const b = dx === 0 && dy === 0 ? a : cell.get((cx + dx) * 1000 + cy + dy); if (!b) continue;
+      for (let ii = 0; ii < a.length; ii++) for (let jj = b === a ? ii + 1 : 0; jj < b.length; jj++) {
+        const i = a[ii], j = b[jj], rx = X[j] - X[i], ry = Y[j] - Y[i], r2 = rx * rx + ry * ry;
+        if (r2 >= d2 || r2 === 0) continue;
+        const vx = VX[j] - VX[i], vy = VY[j] - VY[i], dot = rx * vx + ry * vy;
+        if (dot >= 0) continue; // already separating
+        const f = dot / r2; VX[i] += f * rx; VY[i] += f * ry; VX[j] -= f * rx; VY[j] -= f * ry;
+        collisions++; if (i === 0 || j === 0) tracerColl++;
+      }
+    }
+  }
+  t += dt; tWin += dt;
+}
+function kT() { let s = 0; for (let i = 0; i < N; i++) s += VX[i] * VX[i] + VY[i] * VY[i]; return s / (2 * N); } // 2D: <½mv²> = kT
+function sampleHist() {
+  for (let b = 0; b < BINS; b++) hist[b] *= 0.97; histSamples *= 0.97; // moving average: old snapshots fade
+  for (let i = 0; i < N; i++) { const v = Math.hypot(VX[i], VY[i]) / Math.sqrt(kT()); const b = Math.floor((v / VMAX) * BINS); if (b < BINS) hist[b]++; }
+  histSamples += N;
+}
+let frame = 0;
+function tick() {
+  if (running) {
+    const T = kT(), vrms = Math.sqrt(2 * T), dt = Math.min(0.002, (0.25 * R) / Math.max(vrms * 3, 1e-6));
+    const steps = Math.max(1, Math.round(0.016 / dt));
+    for (let s = 0; s < Math.min(steps, 60); s++) step(dt);
+    if (++frame % 3 === 0) sampleHist();
+    if ($("tracer").checked) { trail.push([X[0], Y[0]]); if (trail.length > 800) trail.splice(0, trail.length - 800); }
+    if (tWin > 1.5) { pHist.push(impulse / (tWin * 4)); if (pHist.length > 8) pHist.shift(); impulse = 0; tWin = 0; }
+  }
+  draw(); requestAnimationFrame(tick);
+}
+function draw() {
+  const dpr = devicePixelRatio || 1, W = cv.clientWidth; cv.width = W * dpr; cv.height = W * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = col("--surface"); ctx.fillRect(0, 0, W, W);
+  const T = kT(), vp = Math.sqrt(T), c1 = col("--c1"), c2 = col("--c2"), c5 = col("--c5");
+  const byS = $("color").checked;
+  for (let i = 0; i < N; i++) {
+    const v = Math.hypot(VX[i], VY[i]) / vp;
+    ctx.fillStyle = byS ? (v < 0.7 ? c1 : v < 1.6 ? col("--c6") : v < 2.4 ? c2 : c5) : c1;
+    ctx.beginPath(); ctx.arc(X[i] * W, (1 - Y[i]) * W, Math.max(1.5, R * W), 0, 7); ctx.fill();
+  }
+  if ($("tracer").checked && trail.length > 1) {
+    ctx.strokeStyle = col("--text"); ctx.lineWidth = 1.2; ctx.beginPath();
+    trail.forEach((p, i) => { const q = [p[0] * W, (1 - p[1]) * W]; i ? ctx.lineTo(...q) : ctx.moveTo(...q); }); ctx.stroke();
+    ctx.strokeStyle = col("--text"); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X[0] * W, (1 - Y[0]) * W, Math.max(3, R * W) + 3, 0, 7); ctx.stroke();
+  }
+  drawHist(T); stats(T);
+}
+function drawHist(T) {
+  const svg = $("hist"); svg.innerHTML = "";
+  const W = 420, H = 250, L = 34, Rr = 10, Tp = 10, B = 34, bw = (W - L - Rr) / BINS;
+  const f = (u) => u * Math.exp(-u * u / 2); // 2D MB in u = v/√(kT/m): ∫ f du = 1
+  const dens = Array.from(hist, (c) => (histSamples ? c / (histSamples * (VMAX / BINS)) : 0));
+  const ymax = Math.max(0.7, ...dens) * 1.08;
+  const X = (u) => L + (u / VMAX) * (W - L - Rr), Y = (y) => H - B - (y / ymax) * (H - B - Tp);
+  mk(svg, "rect", { x: L, y: Tp, width: W - L - Rr, height: H - B - Tp, fill: "none", stroke: col("--border") });
+  dens.forEach((d, i) => mk(svg, "rect", { x: L + i * bw + 0.5, y: Y(d), width: bw - 1, height: H - B - Y(d), fill: col("--c1"), opacity: 0.75 }));
+  let path = ""; for (let i = 0; i <= 200; i++) { const u = (VMAX * i) / 200; path += (i ? "L" : "M") + X(u).toFixed(1) + " " + Y(f(u)).toFixed(1); }
+  mk(svg, "path", { d: path, fill: "none", stroke: col("--c2"), "stroke-width": 2.2 });
+  [0, 1, 2, 3, 4].forEach((u) => mk(svg, "text", { x: X(u), y: H - B + 15, "text-anchor": "middle" }, u));
+  mk(svg, "text", { x: (W + L) / 2, y: H - 5, "text-anchor": "middle" }, "speed v / √(kT/m)");
+  if (!histSamples) mk(svg, "text", { x: W / 2, y: H / 2, "text-anchor": "middle" }, "collecting… (all speeds start equal)");
+}
+function stats(T) {
+  const A = 1, n = N / A, d = 2 * R, P = pHist.length ? pHist.reduce((a, b) => a + b) / pHist.length : NaN;
+  let sv = 0, sv2 = 0; for (let i = 0; i < N; i++) { const v = Math.hypot(VX[i], VY[i]); sv += v; sv2 += v * v; }
+  const lam = 1 / (2 * Math.SQRT2 * n * d), lamMeas = collisions >= 50 ? dist / (2 * collisions) : NaN;
+  const row = (l, v) => `<div class="stat"><span>${l}</span><b>${v}</b></div>`;
+  const B2 = Math.PI * d * d / 2, Aeff = (1 - 2 * R) ** 2, phi = N * Math.PI * R * R;
+  $("stats").innerHTML =
+    row("kT = ⟨½mv²⟩ (constant)", T.toFixed(4)) +
+    row("⟨v⟩: measured vs √(πkT/2m)", (sv / N).toFixed(3) + " vs " + Math.sqrt(Math.PI * T / 2).toFixed(3)) +
+    row("v<sub>rms</sub>: measured vs √(2kT/m)", Math.sqrt(sv2 / N).toFixed(3) + " vs " + Math.sqrt(2 * T).toFixed(3)) +
+    row("Pressure P (force per wall length)", isFinite(P) ? P.toFixed(1) : "measuring…") +
+    row("Ideal NkT/A", (N * T / A).toFixed(1)) +
+    row("Hard-disk estimate (NkT/A′)(1 + nB₂)", (N * T / Aeff * (1 + n * B2)).toFixed(1)) +
+    row("PA/(NkT) measured", isFinite(P) ? (P * A / (N * T)).toFixed(3) : "…") +
+    row("Area fraction of disks", phi.toFixed(3)) +
+    row("Mean free path (all disks) vs 1/(2√2 nd)", (isFinite(lamMeas) ? lamMeas.toFixed(4) : "…") + " vs " + lam.toFixed(4)) +
+    row("Time t", t.toFixed(2)) +
+    (phi > 0.15 ? '<p class="note" style="margin:6px 0 0">Dense gas: the one-term virial estimate and the dilute free path both fail here. Collisions are more frequent than 1/(2√2 nd) predicts, and higher virial terms push P up further.</p>' : "");
+}
+$("reset").addEventListener("click", reset);
+["n", "r"].forEach((id) => $(id).addEventListener("input", reset));
+$("play").addEventListener("click", () => { running = !running; $("play").textContent = running ? "Pause" : "Play"; });
+const scale = (k) => { for (let i = 0; i < N; i++) { VX[i] *= k; VY[i] *= k; } hist.fill(0); histSamples = 0; pHist = []; impulse = 0; tWin = 0; };
+$("heat").addEventListener("click", () => scale(1.2));
+$("cool").addEventListener("click", () => scale(1 / 1.2));
+reset(); tick();
+</script>
+</body>
+</html>
